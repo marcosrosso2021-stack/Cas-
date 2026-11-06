@@ -1,5 +1,5 @@
 /* casô : appli hors ligne + notifications (copie pour la version GitHub ; le serveur casô sert le même code) */
-const CACHE='caso-app-3',APP=/(\/|\/index\.html|\/devis\.html|\/manifest\.webmanifest|\/(?:icon-[a-z0-9-]+|favicon-32)\.png)$/;
+const CACHE='caso-app-4',APP=/(\/|\/index\.html|\/devis\.html|\/manifest\.webmanifest|\/(?:icon-[a-z0-9-]+|favicon-32)\.png)$/;
 const home=()=>new URL('./',self.registration.scope).pathname;
 const fromCache=u=>caches.open(CACHE).then(x=>x.match(u.pathname).then(m=>m||(/\.(?:png|webmanifest)$/.test(u.pathname)?null:x.match(home()))));
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>fetch(self.registration.scope,{cache:'reload'}).then(r=>{if(r.ok)return c.put(home(),r)})).catch(()=>{}))});
