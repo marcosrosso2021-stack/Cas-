@@ -130,6 +130,7 @@ input.bad{border-color:var(--ko)}
 #toast.on{opacity:1;transform:translate(-50%,0)}
 .pg{background:#fff;color:#141414;border-radius:8px;box-shadow:0 0 0 1px #0000000f,0 12px 32px #0000001f;padding:0;overflow:hidden;max-width:820px;margin:0 auto}
 /* document (devis) : couleurs pilotées par le logo */
+.cvd,.pg,.th{direction:ltr}
 .cvd{--cv-ac:#ffc21a;--cv-ink:#18181a;--cv-al:#c99700;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.45;color:#141414;background:#fff;text-align:left;container-type:inline-size}
 .cvd .cvb{margin:0 0 16px}
 .cvd p{margin:0 0 6px}
@@ -417,6 +418,18 @@ const estEI=f=>/^(ei|e\.i|entrepreneur|micro|auto)/i.test(clean(f));
 const uid=()=>Math.random().toString(36).slice(2,9);
 const lev=(a,b)=>{const m=a.length,n=b.length;if(!m)return n;if(!n)return m;let p=Array.from({length:n+1},(_,j)=>j);for(let i=1;i<=m;i++){const c=[i];for(let j=1;j<=n;j++)c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));p=c}return p[n]};
 const sim=(a,b)=>{a=norm(a);b=norm(b);if(!a||!b)return 0;if(a===b)return 1;let best=0;const ta=a.split(' '),tb=b.split(' ');for(const x of ta)for(const y of tb){if(x.length<2||y.length<2)continue;let s=1-lev(x,y)/Math.max(x.length,y.length);if(y.startsWith(x)&&x.length>=3||x.startsWith(y)&&y.length>=3)s=Math.max(s,.9);best=Math.max(best,s)}const s2=1-lev(a,b)/Math.max(a.length,b.length);return Math.max(best,s2)};
+
+/* ---------- langue de l'interface : fournie par casô (le document du devis reste en français) ---------- */
+const TR={fn:null},TXT=new WeakMap(),ATT=new WeakMap();
+function trS(s){const f=TR.fn;if(!f)return s;const m=/^(\s*[✓·]?\s*)([\s\S]*?)(\s*)$/.exec(s),c=m[2];if(!/\p{L}{2}/u.test(c))return s;
+  let v=f(c);if(v===c&&c.includes(' · '))v=c.split(' · ').map(x=>f(x)).join(' · ');return m[1]+v+m[3]}
+const trSkip=el=>!el||!!el.closest('.cvd,script,style,textarea,datalist,[data-noi18n]');
+function trTout(){const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);let n;
+  while(n=w.nextNode()){if(trSkip(n.parentElement))continue;let o=TXT.get(n);if(!o||n.data!==o.out)o={fr:n.data};o.out=trS(o.fr);if(n.data!==o.out)n.data=o.out;TXT.set(n,o)}
+  document.querySelectorAll('[placeholder],[aria-label],[title]').forEach(e=>{if(trSkip(e))return;let m=ATT.get(e);if(!m){m={};ATT.set(e,m)}
+    ['placeholder','aria-label','title'].forEach(a=>{const v=e.getAttribute(a);if(v==null)return;let o=m[a];if(!o||v!==o.out)o=m[a]={fr:v};o.out=trS(o.fr);if(v!==o.out)e.setAttribute(a,o.out)})})}
+let trT=0;const trObs=new MutationObserver(()=>{if(!TR.fn&&!TR.retour)return;if(trT)return;trT=requestAnimationFrame(()=>{trT=0;trTout();TR.retour=false})});
+trObs.observe(document.documentElement,{childList:true,subtree:true,characterData:true});
 
 /* ---------- icônes ---------- */
 const IC={file:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>',grid:'<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>',plus:'<path d="M12 5v14M5 12h14"/>',send:'<path d="M4 12 20 4l-5 16-3-7z"/>',eye:'<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',back:'<path d="M15 5l-7 7 7 7"/>',alert:'<path d="M12 3 2 20h20z"/><path d="M12 10v5M12 18v.5"/>',check:'<path d="M5 12l5 5 9-10"/>',trash:'<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',upload:'<path d="M12 16V4M7 9l5-5 5 5M4 20h16"/>',x:'<path d="M6 6l12 12M18 6 6 18"/>',pen:'<path d="M4 20l4-1L19 8l-3-3L5 16z"/>',building:'<path d="M4 21V5l8-2v18M12 8h8v13M2 21h20M7 8h2M7 12h2M7 16h2M15 12h2M15 16h2"/>'};
@@ -835,6 +848,8 @@ const api={
   // casô : integrer({barre:false, masquer:['valide'], ecran:'list'}) ; la barre de casô appelle aller('list'|'mod'|'prof')
   integrer(o={}){document.body.classList.toggle('embed',o.barre===false);if('entreprise' in o){S.sansEnt=o.entreprise===false;$('#nav button[data-t=prof]').hidden=S.sansEnt;if(S.sansEnt&&S.tab==='prof')go('list')}if(Array.isArray(o.masquer))S.masquer=o.masquer.slice();if(o.ecran)go(o.ecran);else refresh()},
   aller:t=>go(t),
+  // casô : langue({lang:'en', dir:'ltr', t:s=>i18nT(s)}) ; l'interface suit, le devis reste en français
+  langue(o={}){const l=o.lang||'fr';TR.fn=l==='fr'||typeof o.t!=='function'?null:o.t;TR.retour=!TR.fn;document.documentElement.lang=l;document.documentElement.dir=o.dir||(l==='ar'?'rtl':'ltr');trTout();return l},
   theme,
   // catalogue métiers : sert au chat pour préremplir les lignes
   modeles:()=>MODELES.filter(m=>!m.hidden).map(m=>({id:m.id,categorie:m.cat,nom:m.nom,motsCles:m.kw.slice()})),
@@ -1003,7 +1018,7 @@ function bindEditor(d0){
   on('aDate','input',e=>{d().avenant.date=e.target.value;sv()});
   on('dAl','change',e=>{d().autoliq=e.target.checked;sv();eLines()});
   on('addS','click',()=>{d().lignes.push({id:uid(),sec:''});sv();eLines();const li=$$('#eL .ln');li[li.length-1].querySelector('input').focus()});
-  const del=$('#eDel');if(del)del.onclick=()=>{if(confirm('Supprimer ?')){S.devis=S.devis.filter(x=>x.id!==S.cur);S.mesModeles=S.mesModeles.filter(x=>x.id!==S.cur);saveD();fermerEditeur()}};
+  const del=$('#eDel');if(del)del.onclick=()=>{if(confirm(trS('Supprimer ?'))){S.devis=S.devis.filter(x=>x.id!==S.cur);S.mesModeles=S.mesModeles.filter(x=>x.id!==S.cur);saveD();fermerEditeur()}};
   const setC=(f,v)=>{d().client[f]=v;sv()};
   if($('#cNom'))$('#cNom').oninput=async e=>{setC('nom',e.target.value);const q=e.target.value.trim();const box=$('#cSug');if(q.length<2){box.innerHTML='';return}
     const cs=(await lireClients()).map(c=>({c,s:sim(q,c.nom)})).filter(x=>x.s>=.6&&norm(x.c.nom)!==norm(q)).sort((a,b)=>b.s-a.s).slice(0,4);
