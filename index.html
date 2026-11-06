@@ -2998,8 +2998,8 @@ function cfTelFix(el){const v=el.value.trim();if(v)el.value=ctTel(v)}
 function cfNameFix(el){const v=el.value.trim();if(v)el.value=ctCap(v)}
 /* adresses proposées pendant la frappe (Base Adresse Nationale, service gratuit de l'État ; seulement avec internet) */
 const ADR={t:0,ctl:null,el:null};
-function adrBox(el){let b=el.nextElementSibling;if(!b||!b.classList.contains('adr-sug')){b=document.createElement('div');b.className='adr-sug';b.hidden=true;b.setAttribute('role','listbox');b.setAttribute('data-noi18n','');el.after(b)}return b}
-function adrHide(el){const b=el&&el.nextElementSibling;if(b&&b.classList.contains('adr-sug'))b.hidden=true}
+function adrBox(el){let b=el._adr;if(!b||!b.isConnected){b=document.createElement('div');b.className='adr-sug';b.hidden=true;b.setAttribute('role','listbox');b.setAttribute('data-noi18n','');const r=el.parentElement&&el.parentElement.classList.contains('row')?el.parentElement:el;r.after(b);el._adr=b}return b}
+function adrHide(el){const b=el&&el._adr;if(b)b.hidden=true}
 function adrInput(el){clearTimeout(ADR.t);const v=el.value.trim();
  if(v.length<5||!/\p{L}{3}/u.test(v)||navigator.onLine===false){adrHide(el);return}
  ADR.t=setTimeout(async()=>{try{if(ADR.ctl)ADR.ctl.abort();ADR.ctl=new AbortController();
