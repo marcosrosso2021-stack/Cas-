@@ -722,6 +722,35 @@ body.starting #dwL,body.starting #dwR,body.starting #dwBg{display:none!important
 .composer{bottom:calc(70px + env(safe-area-inset-bottom,0px));padding-bottom:0}
 body:has(#s-chat.on){padding-bottom:calc(74px + env(safe-area-inset-bottom,0px))}
 #s-chat.on{padding-bottom:0;min-height:calc(100dvh - 150px)}
+/* ---- chat : dictée intégrée à la barre, plan 3D discret ---- */
+.composer .vn{display:none!important}
+.composer.rec .vn,.composer.wake .vn{display:flex!important;flex-direction:column;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:10px 12px;margin:0 0 8px;box-shadow:var(--lift,none)}
+.vn-live{display:flex;align-items:center;gap:10px;min-height:32px}
+.vn-dot{width:10px;height:10px;border-radius:50%;background:#e5484d;flex:none;animation:vnB 1.2s ease-in-out infinite}
+@keyframes vnB{50%{opacity:.25}}
+.vn-wave{display:flex;align-items:center;gap:3px;height:22px}
+.vn-wave i{display:block;width:3px;height:6px;border-radius:2px;background:var(--ink);animation:vnW 1s ease-in-out infinite}
+.vn-wave i:nth-child(2){animation-delay:.12s}.vn-wave i:nth-child(3){animation-delay:.24s}.vn-wave i:nth-child(4){animation-delay:.36s}.vn-wave i:nth-child(5){animation-delay:.48s}.vn-wave i:nth-child(6){animation-delay:.6s}.vn-wave i:nth-child(7){animation-delay:.72s}
+@keyframes vnW{0%,100%{height:5px}50%{height:20px}}
+.vn-time{font-family:var(--mono);font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
+.vn-fill{flex:1}
+.vn-x{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--mut);display:grid;place-items:center;cursor:pointer;flex:none}
+.vn-x .i{width:16px;height:16px}
+.composer.wake:not(.rec) .vn-live{display:none}
+.composer .vn-st{font-size:13px;color:var(--mut)}
+.composer .vn-row{display:flex!important;gap:8px 12px}
+.vn-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.cmp-row{align-items:flex-end;padding:5px 5px 5px 5px}
+.cmp-3d{width:40px;height:40px;margin:2px 0;border:0;border-radius:50%;background:transparent;color:var(--mut);display:grid;place-items:center;cursor:pointer;flex:none;opacity:.75}
+.cmp-3d .i{width:20px;height:20px}
+.cmp-3d:active{opacity:1;background:var(--soft,#0000000d)}
+.cmp-mic{width:44px;height:44px;border:0;border-radius:50%;background:transparent;color:var(--ink);display:grid;place-items:center;cursor:pointer;flex:none;position:relative}
+.cmp-mic .i{width:22px;height:22px}
+.cmp-row:has(#chatIn:placeholder-shown) .cmp-send{display:none}
+.cmp-row:has(#chatIn:placeholder-shown) .cmp-mic{background:var(--acc);color:#18181a}
+.cmp-mic.rec{background:var(--ink)!important;color:var(--card)!important;animation:vnP 1.4s ease-in-out infinite}
+.composer.rec .cmp-send{display:grid}
+
 .vn-top{display:flex;justify-content:flex-end;margin:0 0 6px}
 .pl-entry{display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:0 12px 0 10px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
 .pl-entry .i{width:18px;height:18px}
@@ -1275,10 +1304,9 @@ body.tr-on{overflow:hidden}
  <div class="ct-bar"><button class="ct-q" onclick="go('edit')"><svg class="i"><use href="#i-quote"/></svg><span class="ct-t"><b id="ctNum" data-noi18n></b><span id="ctTot" class="mut"></span></span></button></div>
  <div id="chatLog" class="chat-log" aria-live="polite"></div>
  <div class="composer" id="composer">
- <div class="vn-top"><button type="button" class="pl-entry" onclick="m3dOpen()"><svg class="i"><use href="#i-plan"/></svg><span>Plan 3D</span></button></div>
  <div class="vn" id="vnCard">
-  <button id="vnRec" class="vn-rec" onclick="vnRec()" aria-pressed="false"><svg class="i"><use href="#i-mic"/></svg><span id="vnRecT">Dicter une note</span></button>
-  <div class="vn-row" hidden>
+  <div class="vn-live"><span class="vn-dot" aria-hidden="true"></span><span class="vn-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="vn-time" id="vnTime" data-noi18n>0:00</span><span class="vn-fill"></span><button type="button" class="vn-x" onclick="vnCancel()" aria-label="Annuler"><svg class="i"><use href="#i-x"/></svg></button></div>
+  <div class="vn-row">
    <label class="vn-wake" id="vnWakeL"><input type="checkbox" id="vnWake" onchange="vnWakeToggle(this.checked)"> <span id="vnWakeT">Réagir à « casô note »</span></label>
    <select id="vnLang" class="vn-lang lang-sel" aria-label="Langue de dictée" onchange="vnSetLang(this.value)"></select>
   </div>
@@ -1300,7 +1328,8 @@ body.tr-on{overflow:hidden}
    <button type="button" data-u="h" onclick="qkApply('h')"><svg class="i"><use href="#i-height"/></svg><span>Hauteur</span><span class="qk-n" data-noi18n></span></button>
    <button type="button" data-u="hr" onclick="qkApply('hr')"><svg class="i"><use href="#i-clock"/></svg><span class="qk-n" data-noi18n></span><span>Heures</span></button>
   </div>
-  <div class="cmp-row"><textarea id="chatIn" rows="1" placeholder="Écris ici : client, travaux, quantités…" oninput="chatGrow(this);qkUpdate()" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();chatSend()}"></textarea>
+  <div class="cmp-row"><button type="button" class="cmp-3d" onclick="m3dOpen()" aria-label="Plan 3D" title="Plan 3D"><svg class="i"><use href="#i-plan"/></svg></button><textarea id="chatIn" rows="1" placeholder="Écris ici : client, travaux, quantités…" oninput="chatGrow(this);qkUpdate()" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();chatSend()}"></textarea>
+   <button type="button" id="vnRec" class="cmp-mic" onclick="vnRec()" aria-pressed="false" aria-label="Dicter une note"><svg class="i"><use href="#i-mic"/></svg><span id="vnRecT" class="vn-sr">Dicter une note</span></button>
    <button class="cmp-send" onclick="chatSend()" aria-label="Envoyer"><svg class="i"><use href="#i-send"/></svg></button></div>
  </div>
 </section>
@@ -2547,6 +2576,8 @@ function vnReportHtml(R){
 function fmtN(n){return String(Math.round(n*100)/100).replace('.',',')}
 function vnState(mode,msg){
  VN.mode=mode;const b=$('vnRec');if(!b)return;
+ const cp=$('composer');if(cp){cp.classList.toggle('rec',mode==='note');cp.classList.toggle('wake',mode!=='note'&&!!VN.wake)}
+ clearInterval(VN.tick);if(mode==='note'){const t0=Date.now(),tm=$('vnTime');const f=()=>{const s=Math.floor((Date.now()-t0)/1000);if(tm)tm.textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};f();VN.tick=setInterval(f,500)}
  b.classList.toggle('rec',mode==='note');b.setAttribute('aria-pressed',mode==='note');
  $('vnRecT').textContent=vlT(mode==='note'?1:0,'fr');
  $('vnSt').textContent=msg!=null?msg:(mode==='note'?vlT(3,'fr'):VN.wake?vlT(4,'fr'):'');
@@ -2579,6 +2610,7 @@ function vnRec(){
  VN.buf='';$('vnTxt').value='';vnState('note');
  if(!VN.sr||!VN.wake)vnStart();vnIdle();
 }
+function vnCancel(){VN.buf='';const t=$('vnTxt');if(t)t.value='';const c=$('chatIn');if(c){c.value='';chatGrow(c);qkUpdate()}vnStop()}
 function vnStop(){
  clearTimeout(VN.timer);
  const was=VN.mode==='note';
