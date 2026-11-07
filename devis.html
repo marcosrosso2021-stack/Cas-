@@ -96,6 +96,8 @@ input.bad{border-color:var(--ko)}
 .sw button.on{box-shadow:0 0 0 3px var(--ink)}
 .slot{border:1.5px dashed var(--line);border-radius:12px;min-height:72px;display:grid;place-items:center;color:var(--mut);font-size:13px;overflow:hidden}
 .slot img{max-height:70px;max-width:100%}
+.slot .sp-v{display:flex;align-items:center;justify-content:center;gap:14px;padding:10px 10px 4px;max-width:100%}.slot .sp-v img{min-width:0}.slot .sp-q{width:64px;height:64px;flex:none}
+.slot .sp-id{display:block;text-align:center;padding:0 0 8px;font-family:ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.04em}
 .tg{display:flex;align-items:center;gap:10px;margin-top:12px;font:inherit;font-size:16px;letter-spacing:0;text-transform:none;color:var(--ink)}
 /* overlays */
 .ov{position:fixed;inset:0;z-index:20;background:var(--bg);display:flex;flex-direction:column}
@@ -975,6 +977,7 @@ function rProf(){
   $('#tvaW').hidden=!!p.franchise;
   $('#capW').hidden=!has(p.forme)||estEI(p.forme);
   $('#lgPv').innerHTML=p.logo?`<img src="${E(p.logo)}" alt="">`:ico('upload');
+  const sgS=$('[data-caso-slot="signature-profil"]');if(sgS)sgS.innerHTML=has(p.sigArtisan)?`<div class="sp-v"><img src="${E(p.sigArtisan)}" alt="">${/^data:image\/svg\+xml;base64,/.test(p.sigQr||'')?`<img class="sp-q" src="${E(p.sigQr)}" alt="QR">`:''}</div>${has(p.sigId)?`<span class="sp-id">${E(p.sigId)}</span>`:''}`:ico('pen');
   $('#accSeg').innerHTML=['Acompte','Arrhes','Aucun'].map(v=>`<button data-v="${v}" class="${p.acompteType===v?'on':''}">${v}</button>`).join('');
   $$('#accSeg button').forEach(b=>b.onclick=()=>{S.profil.acompteType=b.dataset.v;saveP();rProf()});
   progres();
