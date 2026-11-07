@@ -7040,12 +7040,12 @@ function dvRecevoir(L){let ch=false;const ids=new Set();
   const i=db.quotes.findIndex(y=>y.id===o.id);if(typeof qGuard==='function'&&!qGuard(o))return;if(!o.num)o.num=qNextNum(String(o.date||ymdL()).slice(0,4));
   if(i>=0)db.quotes[i]=o;else db.quotes.push(o);ch=true});
  DV_IDS.forEach(id=>{if(!ids.has(id)){const o=db.quotes.find(y=>y.id===id);if(o&&!(o.sign&&o.sign.st==='signed')){db.quotes=db.quotes.filter(y=>y.id!==id);ch=true}delete DV_LAST[id]}});
- DV_IDS=ids;if(ch)save()}
+ DV_IDS=ids;if(ch){save();DV_SIG.q=JSON.stringify(db.quotes||[])}}
 function dvProfil(){let sg='';try{sg=localStorage.getItem('caso_sig')||''}catch(e){}return Object.assign({},db.prof||{},{sigArtisan:sg})}
 const DV_CHAMP={nom:'eNom',adr:'eAdr',siret:'eSiret',tel:'eTel',forme:'eForme',rm:'eRm',tvai:'eTvai',email:'eMail',assur:'eAssur',zone:'eZone',rcpro:'eRcpro',mediateur:'eMed',capital:'eCapital',valid:'eValid'};
 function dvBrancher(){const w=DVF.contentWindow,A=w&&w.CasoDevis;if(!A)return;DVA=A;const h=A.hooks;
  h.saveDevis=L=>dvRecevoir(L);
- h.saveProfil=p=>{const c=Object.assign({},p);delete c.sigArtisan;db.prof=Object.assign({},db.prof||{},c);db.profAt=Date.now();save()};
+ h.saveProfil=p=>{const c=Object.assign({},p);delete c.sigArtisan;db.prof=Object.assign({},db.prof||{},c);db.profAt=Date.now();save();DV_SIG.p=JSON.stringify(dvProfil())};
  h.getClients=()=>(db.clients||[]).map(c=>({id:c.id,nom:c.nom||'',adr:c.adr||'',tel:c.tel||'',chantier:c.chantier||'',type:c.type||'part'}));
  h.saveClient=c=>{if(!c||!c.nom)return;let x=(db.clients||[]).find(y=>y.id===c.id)||(db.clients||[]).find(y=>vnNorm(y.nom)===vnNorm(c.nom));
   if(!x){x={id:c.id||uid(),nom:c.nom,tel:c.tel||'',email:'',adr:c.adr||'',note:''};db.clients.push(x)}else{if(c.adr&&!x.adr)x.adr=c.adr}if(c.type)x.type=c.type;save()};
@@ -7055,10 +7055,21 @@ function dvBrancher(){const w=DVF.contentWindow,A=w&&w.CasoDevis;if(!A)return;DV
  h.ouvrirEntreprise=k=>{dvClose(true);cptPage('ent');setTimeout(()=>{const el=$(DV_CHAMP[k]||'');if(el){el.scrollIntoView({block:'center'});el.focus()}},250)};
  A.integrer({entreprise:false,masquer:['valide','retracte'],ecran:'list'});
  dvSync()}
-function dvSync(){if(!DVA)return;try{DVA.langue({lang:I18N.lang,dir:I18N.lang==='ar'?'rtl':'ltr',t:x=>i18nT(x)})}catch(e){}DVA.chargerProfil(dvProfil());dvEnvoyer()}
+// n'envoie au module que ce qui a changé depuis la dernière ouverture (ouverture instantanée)
+let DV_SIG={};
+function dvSync(){if(!DVA)return;
+ if(DV_SIG.l!==I18N.lang){DV_SIG.l=I18N.lang;try{DVA.langue({lang:I18N.lang,dir:I18N.lang==='ar'?'rtl':'ltr',t:x=>i18nT(x)})}catch(e){}}
+ const p=dvProfil(),sp=JSON.stringify(p);if(DV_SIG.p!==sp){DV_SIG.p=sp;DVA.chargerProfil(p)}
+ const sq=JSON.stringify(db.quotes||[]);if(DV_SIG.q!==sq){DV_SIG.q=sq;dvEnvoyer()}}
+// le module est préchargé en arrière-plan au démarrage : le bouton Devis l'affiche sans attente
+let DV_PEND=null;
+function dvPrecharger(){if(DVF)return;DVF=document.createElement('iframe');DVF.title='casô Devis';DVF.src='devis.html';
+ DVF.onload=()=>{dvBrancher();if(DV_PEND&&DVA){const id=DV_PEND;DV_PEND=null;if(id!==true)DVA.ouvrir(id)}};$('dvx').appendChild(DVF)}
 function dvOpen(id){drawerClose(true);const box=$('dvx');box.hidden=false;document.body.classList.add('dv-on');
- if(!DVF){DVF=document.createElement('iframe');DVF.title='casô Devis';DVF.src='devis.html';DVF.onload=()=>{dvBrancher();if(id&&DVA)DVA.ouvrir(id)};box.appendChild(DVF)}
- else{dvSync();DVA&&DVA.aller('list');if(id&&DVA)DVA.ouvrir(id)}}
+ if(!DVF||!DVA){DV_PEND=id||true;dvPrecharger();return}
+ dvSync();DVA.aller('list');if(id)DVA.ouvrir(id)}
+(function(){const go=()=>{try{dvPrecharger()}catch(e){}};const later=()=>('requestIdleCallback' in window)?requestIdleCallback(go,{timeout:4000}):setTimeout(go,1500);
+ if(document.readyState==='complete')setTimeout(later,800);else addEventListener('load',()=>setTimeout(later,800))})();
 function dvClose(rester){$('dvx').hidden=true;document.body.classList.remove('dv-on');if(!rester)go('chat')}
 function entLogo(inp){const f=inp.files[0];inp.value='';if(!f)return;const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const k=Math.min(1,480/Math.max(i.naturalWidth,i.naturalHeight)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(i.naturalWidth*k));c.height=Math.max(1,Math.round(i.naturalHeight*k));c.getContext('2d').drawImage(i,0,0,c.width,c.height);
   db.prof=Object.assign({},db.prof||{},{logo:c.toDataURL('image/png'),couleurs:[],couleur:'',logoCle:''});db.profAt=Date.now();save();entExtra();toast(i18nT('Enregistré.'))};i.src=r.result};r.readAsDataURL(f)}
