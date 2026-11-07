@@ -2561,7 +2561,10 @@ function parseNote(raw,prices,lang){
   if(/\b(?:il faut|faut|a faire|penser a|rappeler|acheter|commander|envoyer|passer|appeler|demander|recontacter|ne pas oublier|n'oublie pas|a prevoir)\b/.test(c)&&!/\d+\s*(?:m2|m²|metre|ml|m3)/.test(c)){R.todo.push(O(c.replace(/^(?:il )?faut\s+/,'')));continue}
   if(/\b(?:attention|remarque|note|probleme|humidite|fissure|acces|parking|etage|ascenseur|amiante|plomb|delai|urgent|disponible|libre|cle|cles)\b/.test(c)&&!/^\d/.test(c)&&!/\d+\s*(?:m2|m²|ml|m3|h\b|heure)/.test(c)){R.remarques.push(O(c.replace(/^(?:remarque|note)\s*:?\s*/,"")));continue}
   // travaux : « 20 m² de carrelage » ou « carrelage 20 m² » ou « forfait évacuation »
-  let qty=null,unit='',label='';
+  let qty=null,unit='',label='',puDit=null;
+  /* prix dit dans la phrase : « 20 m² de carrelage à 40 € », « carrelage 20 m² 40 € le m² » */
+  {const pm=c.match(/\s*(?:\b(?:a|à|au prix de|pour|prix)\s+)?(\d+(?:[.,]\d+)?)\s*(?:€|euros?\b|eur\b)(?:\s*(?:ht|ttc)\b)?(?:\s*(?:le|la|l'|par|\/)\s*(?:m2|m²|ml|m|h|heure|jour|u|unite|piece|sac|forfait)\b)?/);
+   if(pm&&/\d/.test(c.replace(pm[0],' '))){puDit=parseFloat(pm[1].replace(',','.'));c=(c.slice(0,pm.index)+' '+c.slice(pm.index+pm[0].length)).replace(/\s+/g,' ').trim()}}
   let m=c.match(/(\d+(?:[.,]\d+)?)\s*(.*)$/);
   if(m){qty=parseFloat(m[1].replace(',','.'));let rest=m[2];
    for(const [re,u] of VN_UNITS){const um=rest.match(re);if(um){unit=u;rest=rest.slice(um[0].length);break}}
@@ -2580,6 +2583,8 @@ function parseNote(raw,prices,lang){
    else{ln.warn='Dit en '+unit+', ton prix est en '+p.unit+' : vérifie';ln.pu=0;ln.ok=false;ln.label=p.nom}
   }
   if(!p&&R.miss.length){const nl=vnNorm(label);if(R.miss.some(w=>nl.includes(vnNorm(w))))ln.warn='Mot(s) à traduire en français';}
+  if(puDit!=null&&puDit>0){ln.pu=puDit;ln.ok=true;if(ln.warn&&/^Dit en/.test(ln.warn))ln.warn='';}
+  if(ln.label&&ln.label===ln.label.toUpperCase()&&/\p{L}{2}/u.test(ln.label))ln.label=ln.label.charAt(0)+ln.label.slice(1).toLowerCase();
   R.travaux.push(ln);
  }
  if(R.segs&&R.segs.length){const back=a=>{const out=[];a.forEach(x=>{const n=vnNorm(x).replace(/^(?:il faut|remarque)\s*/,'');const sg=R.segs.find(g=>g.t.includes(n.slice(0,Math.min(n.length,24))));const v=sg?sg.o:x;if(!out.includes(v))out.push(v)});return out};
@@ -3251,6 +3256,8 @@ document.addEventListener('click',ev=>{const b=ev.target.closest('#chatLog [data
 function chatNew(){newQuote();CHAT={qid:q.id,m:[]};chatSave();chatRender()}
 function chatUndo(){const m=CHAT.m[CHAT.m.length-1];if(!m||!m.undo)return;{const cur=q;q=JSON.parse(m.undo);if(cur.num)q.num=cur.num;if(cur.sign)q.sign=cur.sign;if(cur.status)q.status=cur.status}fillForm();store();CHAT.m.pop();
  const me=CHAT.m[CHAT.m.length-1];if(me&&me.who==='me'){$('chatIn').value=me.text;CHAT.m.pop()}chatSave();chatRender()}
+/* « FONTAINE » tapé en majuscules : Fontaine */
+function chatCasse(n){return n&&n===n.toUpperCase()&&/\p{L}{2}/u.test(n)?n.toLowerCase().replace(/(^|[\s'’.-])(\p{L})/gu,(m,a,b)=>a+b.toUpperCase()):n}
 function chatSend(text){
  const inp=$('chatIn');const t0=String(text??inp.value).trim();if(!t0)return;
  if(window.casoPont&&casoPont.essaie(t0)){inp.value='';chatGrow(inp);qkUpdate();return}
@@ -3261,7 +3268,11 @@ function chatSend(text){
  if(typeof svcChat==='function'&&svcChat(t))return;
  if(typeof prixChat==='function'&&prixChat(t))return;
  if(typeof agChat==='function'&&agChat(t))return;
+ if(window.casoPont&&casoPont.essaie(t0,true))return;
  const R=parseNote(t,db.prices,VN.lang);VN.last=R;
+ /* « Lui Dire », « Carreler » : des mots de la phrase, pas un client ; « FONTAINE » tapé en majuscules : Fontaine */
+ const nomOk=n=>!(window.casoPont&&casoPont.ready&&casoPont.pasUnNom(n)),casse=chatCasse;
+ if(R.client)R.client=nomOk(R.client)?casse(R.client):null;
  const det=vlDetect(vnAfter(t));
  if(det&&det.l!==VN.lang&&det.score>=3){vnSetLang(det.l);toast(vlT(12).replace('{l}',VL_DEF[det.l].n))}
  if(!db.notes)db.notes=[];db.notes.unshift({id:uid(),date:new Date().toISOString(),texte:t});db.notes=db.notes.slice(0,30);
@@ -3270,7 +3281,7 @@ function chatSend(text){
  CHAT.m.push({who:'me',text:t});
  const out=[];let any=false;
  if(!R.client){const kc=knownClient(t);if(kc)R.client=kc.nom}
- let cand=R.client?null:nameCand(t,R),pick=null;
+ let cand=R.client?null:nameCand(t,R),pick=null;if(cand)cand=nomOk(cand)?casse(cand):null;
  if(!R.client&&cand&&cliMatches(cand).length){R.client=cand;cand=null}
  if(R.client){const M=cliMatches(R.client);if(M.length===1&&!M.fz)R.client=M[0].nom;else if(M.length){pick=cliPickHtml(R.client,M,'q');R.client=null}}
  if(R.client){
@@ -6815,6 +6826,8 @@ function agScan(F){
  agEach(o,new RegExp('(?<![\\p{L}])(?:ce |le |cette )?('+AG_DRX+')(\\s+prochain|\\s+qui vient)?(?![\\p{L}])','gu'),m=>{
   const k=AG_DAYS.indexOf(m[1]);if(o.listDays){o.listDays.push(k);return}
   o.dayNames=(o.dayNames||[]).concat(k);
+  /* « lundi 14 décembre », « mardi 10/11 » : la date suit le jour, c'est elle qui compte */
+  if(o.dates.length&&m.index!=null&&/^\s+(?:le\s+)?\d{1,2}(?:er)?(?:\s|\/|$)/.test(agFold(o.F).slice(m.index+m[0].length)))return;
   if(o.nextWeek&&o.nwMon){const d=agAdd(o.nwMon,(k+6)%7),ix=o.dates.indexOf(o.nwMon);if(ix>=0)o.dates[ix]=d;else agPD(o,d);o.nwMon=null;return}
   let n=(k-now.getDay()+7)%7;if(m[2]&&n===0)n=7;agPD(o,agAdd(td,n))});
  if(o.dp&&o.dp.length===o.dates.length){const I=o.dates.map((d,k)=>k).sort((x,y)=>o.dp[x]-o.dp[y]);o.dates=I.map(k=>o.dates[k]);o.dp=I.map(k=>o.dp[k])}
@@ -6947,7 +6960,7 @@ function agChat(t){
   if(!d){const now=new Date(),nm=now.getHours()*60+now.getMinutes();d=a&&agMin(a)>nm?agToday():agAdd(agToday(),1)}
   let cl=null,isNew=false,sup=null,pickM=null;
   if(P.who){sup=findBy(db.suppliers,P.who.nom);if(!sup){const M=cliMatches(P.who.nom);
-   if(M.length===1&&!M.fz)cl=M[0];else if(M.length)pickM=M;else{const r=upsert('clients',{nom:P.who.nom});cl=r.x;isNew=r.isNew}}}
+   if(M.length===1&&!M.fz)cl=M[0];else if(M.length)pickM=M;else{const r=upsert('clients',{nom:chatCasse(P.who.nom)});cl=r.x;isNew=r.isNew}}}
   else{const kc=knownClient(t);if(kc){const M=cliMatches(kc.nom);if(M.length>1)pickM=M;else cl=kc}}
   const ev={id:uid(),t:'rdv',d,d2:o.drange?o.drange[1]:undefined,a,b,title:P.title||(sup?sup.nom:'')||(pickM&&P.who?P.who.nom:''),cid:cl?cl.id:undefined,adr:cl&&cl.adr||'',src:'chat',at:Date.now()};
   if(rr)ev.rr=rr;if(P.team&&P.team.length)ev.who=P.team.slice();agRemCompute(ev);
