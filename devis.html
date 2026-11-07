@@ -879,7 +879,7 @@ function go(t){S.tab=t;$('#hdT').textContent=TITRES[t]||'';$$('section').forEach
 $$('#nav button').forEach(b=>b.onclick=()=>go(b.dataset.t));
 
 // groupes repris de « Mes devis » de casô ; les validés partent dans l'Historique de casô une fois branché
-const GROUPES=[['envoye','En attente de signature'],['brouillon','Brouillons'],['valide','Validés'],['retracte','Rétractés']];
+const GROUPES=[['envoye','En cours de signature'],['brouillon','Brouillons'],['valide','Validés'],['retracte','Rétractés']];
 function rList(){
   const Lst=$('#lst');
   if(!S.devis.length){Lst.innerHTML='<div class="lst"><div class="empty">—</div></div>';return}
