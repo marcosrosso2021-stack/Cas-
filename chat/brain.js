@@ -237,7 +237,9 @@ function create(E,X,saved,opts){
   function stripTimes(n){return n.replace(/\b(?:a|vers|des)\s*\d{1,2}\s*(?:h|heures?)(?:\s*\d{2})?(?:\s+(?:et\s+)?(?:demie?|quart)|\s+moins\s+(?:le\s+)?quart)?(?:\s+(?:du matin|de l apres midi|du soir))?\b/g," ").replace(/\b(?:a|vers)\s+(?:midi|minuit)(?:\s+(?:et\s+)?(?:demie?|quart))?\b/g," ").replace(/\b\d{1,2}h\d{2}\b/g," ").replace(/\b(?:de|entre)\s*\d{1,2}\s*h(?:\s*\d{2})?\s*(?:a|et)\s*\d{1,2}\s*h(?:\s*\d{2})?\b/g," ");}
   function clientKey(s){return hn(s).replace(/^(m|mme|mlle|monsieur|madame|mr|mrs)\s+/,"").trim();}
   var NOTNAME=/^(le|la|les|un|une|des|du|de|demain|aujourd|ce|cette|mon|ma|mes|lui|elle|moi|toi|nous|vous|eux|il|on|chantier|client|cliente|devis|facture|rdv|the|my|o|a|el|ora|living|kitchen)$/i;
-  function findClient(raw,n){var k=findClient0(raw,n);if(!k||S.clients[k])return k;var e=sameName(k);if(e)return e;
+  /* « chez Léon Demain » : un mot de temps n'est pas une partie du nom */
+  var TEMPS=/\s+(?:demain|apres demain|aujourd hui|ce soir|ce matin|lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche|matin|soir|midi|prochain|prochaine|semaine|maintenant|tot|tard)$/;
+  function findClient(raw,n){var k=findClient0(raw,n);if(k)while(TEMPS.test(k))k=k.replace(TEMPS,"");if(!k||S.clients[k])return k;var e=sameName(k);if(e)return e;
     /* « u Nowaka », « dla Kowalskiego » : le nom est décliné après ces prépositions */
     if(/(?:^|\s)(?:u|dla|od|do|z|ze|o|у|для|от|до|к|ко|о|об|с|со|про)\s+\p{Lu}/u.test(raw)){var st=k.replace(/(owi|iego|ego|em|a|u|y|ie)$/,"");if(st.length>=3&&S.clients[st])return st;
       var ds=declined(k,false);for(var i=0;i<ds.length;i++){if(S.clients[ds[i]])return ds[i];var e2=sameName(ds[i]);if(e2)return e2;}}return k;}
@@ -1633,7 +1635,7 @@ function create(E,X,saved,opts){
       return {explain:"",says:[tr("{0}Qu’est-ce que tu voulais ?",[(wasMut?tr("D’accord, j’ai annulé. "):"")])],open:null};
     }
     if(pd){S.pending=null;
-      if(/^(non|annule|laisse|laisse tomber|plus tard|stop|rien)$/.test(c.n)&&pd.type!=="reformuler"&&pd.type!=="confirm")return {explain:"",says:[tr("D’accord, je laisse ça de côté.")],open:null};
+      if((/^(non|annule|laisse|laisse tomber|plus tard|stop|rien)$/.test(c.n)||PLUSTARD.test(c.n)||PLUSTARD.test(c.p))&&pd.type!=="reformuler"&&pd.type!=="confirm")return {explain:"",says:[tr("D’accord, je laisse ça de côté.")],open:null};
       if(pd.type==="prix"&&/^\d+(?:\.\d{1,2})?\s*(?:€|euros?|eur)?(?:\s*(?:ht|ttc))?(?:\s*(?:le|la|l|par|du|de l)\s*[\p{L}²]+)?$/u.test(c.n)){var v=money(c.n);if(v==null&&(m=c.n.match(/^(\d+(?:\.\d{1,2})?)\s*(?:euros?|€)?$/)))v=pnum(m[1]);
         if(v!=null){var L0=pd.lignes[0],sv=setService(L0.libelle,v,L0.unite).s,d=S.devis.filter(function(x){return x.id===pd.devis;})[0];
           if(d)d.lignes.forEach(function(l){if(hn(l.libelle)===hn(L0.libelle)&&l.prix==null)l.prix=v;});pd.lignes.shift();
@@ -1652,6 +1654,8 @@ function create(E,X,saved,opts){
       if(pd.type==="iadl"){if(YES.test(c.n)){S.iaLLM="oui";return {explain:"",says:[tr("Je télécharge mon modèle de langage. Je te réponds dès qu’il est prêt.")],open:null,ui:"iadl",raw:pd.raw};}
         if(/^(non|pas maintenant|plus tard|nan|no)(\s|$)/.test(c.n)){S.iaLLM="non";return guess(ctxOf(pd.raw));}}
       if(pd.type==="confirm"){if(YES.test(c.n)){var oc=ctxOf(pd.raw),ro2=run(pd.cmds,oc,"appris",null);remember(oc,pd.cmds,"guess");miniLearn(pd.raw,pd.cmds);if(pd.teach)miniLearn(pd.teach,pd.cmds);if(pd.teach)remember(ctxOf(pd.teach),pd.cmds,"user");return ro2;}
+        /* « pas pour l'instant », « plus tard » : la proposition était juste, mais pas maintenant */
+        if(PLUSTARD.test(c.n)||PLUSTARD.test(c.p)){S.pending=null;S.lastTurn=null;return {explain:"",says:[tr("D’accord.")],open:null};}
         if(/^(non|pas ca|faux|mauvais|pas du tout|nan|no|nie|hayir|нет|لا)(\s|$)/.test(c.n)){reject(pd.raw,pd.cmds);if(pd.mem)forgetLearned(pd.raw,pd.cmds,"memoire");var alt=(pd.alt||[]).filter(function(x){return !rejected(ctxOf(pd.raw),x);});
           if(alt.length)return propose(ctxOf(pd.raw),alt[0],pd.teach,"",alt.slice(1));
           S.pending={type:"reformuler",raw:pd.teach||pd.raw,at:Date.now()};return {explain:"",says:[tr("D’accord. Qu’est-ce que tu voulais ?")],open:null};}
@@ -1664,6 +1668,8 @@ function create(E,X,saved,opts){
       if(pd.type==="reformuler"){var rq=recall(c)||{cmds:localParse(c),via:"local"};if(rq.cmds&&B.isQuestion(pd.raw)&&!askSafe(rq.cmds))return exec(rq.cmds,c,"local");if(rq.cmds){var ro=exec(rq.cmds,c,"appris",null);learnFrom(pd.raw,c,rq.cmds,!!pd.prov||!fort,fort);return ro;}return unknown(c);}
     }
     var fu=followUp(c,false);if(fu)return fu;
+    /* « pas pour l'instant », « non merci » sans question en cours : rien à faire */
+    if(PLUSTARD.test(c.n)||PLUSTARD.test(c.p)||/^(non|non merci|laisse|laisse tomber|rien|tant pis)$/.test(c.n)){S.lastTurn=null;return {explain:"",says:[tr("D’accord.")],open:null,cmds:[C("sys","politesse",{})]};}
     var mem=recall(c);if(mem&&mem.prov&&!rejected(c,mem.cmds))return propose(c,mem.cmds,null,"",null,true);if(mem&&!mem.prov)return exec(mem.cmds,c,mem.via);
     var loc=localParse(c);if(loc)return exec(loc,c,"local");
     fu=followUp(c,true);if(fu)return fu;
@@ -1762,6 +1768,7 @@ function create(E,X,saved,opts){
     var v=verbe(o.p);return v>=0&&v===verbe(c.p)&&c.p.split(" ").length>=2;}
   /* juste après un « je n'ai pas compris », une vraie action (pas l'ouverture d'un écran) est sans doute la bonne formulation */
   function soonAction(pd,c,cmds){return !!(pd.at&&Date.now()-pd.at<2*60000&&c.p.split(" ").length>=2&&cmds&&cmds.length&&cmds.every(function(x){return x.m!=="sys"&&!/^(ouvrir|liste)$/.test(x.a);}));}
+  var PLUSTARD=/^(?:non\s+)?(?:pas (?:pour )?(?:l )?instant|pas maintenant|plus tard|pas tout de suite|pas encore|non merci|une autre fois|on verra|pas besoin|pas aujourd hui|not now|not yet|later|maybe later|no thanks|ahora no|mas tarde|todavia no|agora nao|mais tarde|ainda nao|non ora|piu tardi|non ancora|nu acum|mai tarziu|nie teraz|pozniej|jeszcze nie|simdi degil|sonra|daha sonra|не сейчас|потом|позже|ليس الان|لاحقا|بعدين)(?:\s|$)/;
   var LAISSE=/^(non|nan|no|nope|nah|nie|hayir|нет|لا|laisse|laisse tomber|rien|oublie|oublie ca|pas grave|stop|tant pis|c est pas grave|never mind|forget it)$/;
   /* apprendre la phrase incomprise à partir de sa reformulation */
   function learnFrom(origRaw,c,cmds,prov,fort){var oc=ctxOf(origRaw);if(fort)miniLearn(origRaw,cmds);var lw=align(origRaw,c.raw);if(lw.length)buildEqLex();

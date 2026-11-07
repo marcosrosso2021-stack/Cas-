@@ -55,15 +55,18 @@ function libelles(c){return (c||[]).filter(function(x){return x.m!=="sys"||x.a==
 function pris(c){var L=libelles(c);return L.length>0&&L.every(function(l){return PRIS.test(l);});}
 
 /* ---------- écrire dans casô ce que le chat a changé ---------- */
-function ecrire(avant){var S=P.B.S,u={q:JSON.stringify(q),qAdd:[],cAdd:[],cMod:[]},carte=null;
+/* « Léon » plutôt que « Leon » : le nom tel qu'il a été tapé */
+function nomTape(t,nom){var w=CasoBrain.hn(nom).split(" ").filter(Boolean),T=[];String(t||"").replace(/[\p{L}\p{N}'’-]+/gu,function(x,i){T.push({x:x,h:CasoBrain.hn(x),i:i});return x;});
+  for(var a=0;a+w.length<=T.length;a++){var ok=true;for(var b=0;b<w.length&&ok;b++)ok=T[a+b].h===w[b];if(ok){var z=T[a+w.length-1],o=String(t).slice(T[a].i,z.i+z.x.length);return o.charAt(0).toUpperCase()+o.slice(1);}}return nom;}
+function ecrire(avant,t){var S=P.B.S,u={q:JSON.stringify(q),qAdd:[],cAdd:[],cMod:[]},carte=null;
   Object.keys(S.clients).forEach(function(k){var c=S.clients[k],a=avant.clients[k],ex=(db.clients||[]).filter(function(x){return cle(x.nom)===k;})[0];
-    if(!ex){var n={id:uid(),nom:c.nom,tel:c.tel||"",email:c.email||"",adr:c.adresse||"",note:(c.notes||[]).join(" · ")};db.clients.push(n);u.cAdd.push(n.id);return;}
+    if(!ex){var n={id:uid(),nom:nomTape(t,c.nom),tel:c.tel||"",email:c.email||"",adr:c.adresse||"",note:(c.notes||[]).join(" · ")};db.clients.push(n);u.cAdd.push(n.id);return;}
     var ch={};if(c.tel&&c.tel!==ex.tel)ch.tel=c.tel;if(c.email&&c.email!==ex.email)ch.email=c.email;if(c.adresse&&c.adresse!==ex.adr)ch.adr=c.adresse;
     var nn=(c.notes||[]).length>(a?a.notes.length:0)?(c.notes||[]).slice(a?a.notes.length:0):[];if(nn.length)ch.note=[ex.note].concat(nn).filter(Boolean).join(" · ");
     if(Object.keys(ch).length){u.cMod.push(JSON.stringify(ex));Object.assign(ex,ch);}});
   S.devis.forEach(function(d){if(avant.devis.indexOf(d.id)>=0)return;
     var vide=q&&!q.lines.length&&!q.client,o=vide?q:newObj(),c=d.client&&S.clients[d.client];
-    o.client=c?c.nom:"";o.tel=o.tel||(c&&c.tel)||"";o.adr=o.adr||(c&&c.adresse)||"";o.modele=d.modele||"";
+    var cx=d.client?(db.clients||[]).filter(function(x){return cle(x.nom)===d.client;})[0]:null;o.client=cx?cx.nom:(c?c.nom:"");o.tel=o.tel||(c&&c.tel)||"";o.adr=o.adr||(c&&c.adresse)||"";o.modele=d.modele||"";
     o.lines=d.lignes.map(function(l){var p=(db.prices||[]).filter(function(x){return cle(x.nom)===cle(l.libelle);})[0];return {label:l.libelle,qty:l.quantite,unit:l.unite,pu:l.prix,tva:p&&p.tva!=null?p.tva:20};});
     q=o;if(typeof fillForm==="function")fillForm();storeQ(q);u.qAdd.push(q.id);carte=q.id;
     if(typeof CHAT!=="undefined")CHAT.qid=q.id;});
@@ -106,17 +109,19 @@ function html(r,id){var h="";if(r.explain)h+='<p class="mut" dir="auto">'+e(r.ex
 
 /* ---------- un message : le chat le prend s'il sait le faire, sinon casô continue comme avant ---------- */
 P.essaie=function(t){if(!P.ready||typeof db==="undefined"||typeof q==="undefined"||typeof CHAT==="undefined")return false;var B=P.B,r;
-  var avantPend=B.S.pending&&B.S.pending.type;
+  var avantPend=B.S.pending&&B.S.pending.type,attendait=P.attente;
   try{B.setLangue((typeof I18N!=="undefined"&&I18N.lang)||"fr");var avant=vue();r=P.corrige?B.corriger(t):B.handle(t);}catch(err){if(window.console)console.error(err);P.corrige=false;return false;}
   P.corrige=false;
   if(libelles(r.cmds).join()==="factures.impayes"){var dd=du(r.cmds[0].args||r.cmds[0].a||{});if(dd)r.says=[dd];}
   /* un rendez-vous compris directement reste au planning de casô (rappels, équipe, répétitions) ;
      le chat ne le prend que lorsqu'il a dû le deviner ou poser une question */
   var rdv=function(c){var L=libelles(c);return L.length>0&&L.every(function(l){return l==="planning.ajouter";});};
-  var pend=B.S.pending,ok=pris(r.cmds)||(rdv(r.cmds)&&(r.via!=="local"||!!avantPend))||
-    (pend&&pend.type==="confirm"&&(pris(pend.cmds)||rdv(pend.cmds))&&!(r.cmds||[]).length);
-  if(!ok){if(!(pend&&pend.type==="reformuler"))B.S.pending=null;garder();return false;}
-  var w=ecrire(avant);garder();
+  var pend=B.S.pending,ok=pris(r.cmds)||(rdv(r.cmds)&&(r.via==="devine"||r.via==="mini"||/^(confirm|rdv|complete)$/.test(avantPend||"")))||
+    (pend&&pend.type==="confirm"&&(pris(pend.cmds)||rdv(pend.cmds))&&!(r.cmds||[]).length)||
+    /* le chat venait de poser une question : sa réponse (« pas pour l'instant », « d'accord »…) reste dans le chat */
+    (attendait&&!(r.cmds||[]).length&&(r.says||[]).length>0);
+  if(!ok){if(!(pend&&pend.type==="reformuler"))B.S.pending=null;P.attente=false;garder();return false;}
+  var w=ecrire(avant,t);garder();P.attente=!!(B.S.pending&&B.S.pending.type!=="reformuler");
   if(CHAT.qid!==q.id)CHAT.qid=q.id;
   CHAT.m.push({who:"me",text:t});CHAT.m.push({who:"bot",html:html(r,w.carte),pUndo:(w.u.qAdd.length||w.u.cAdd.length||w.u.cMod.length||w.u.eAdd)?w.u:undefined});
   chatSave();chatRender(true);
