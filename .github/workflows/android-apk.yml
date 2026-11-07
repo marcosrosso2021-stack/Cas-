@@ -1,10 +1,10 @@
 name: APK Android
 
-# Se lance à chaque envoi sur la branche android-enveloppe, ou à la main (onglet Actions).
+# Se lance à chaque envoi sur une branche android-enveloppe*, ou à la main (onglet Actions).
 # Le fichier obtenu est un APK de test (non signé pour la boutique).
 on:
   push:
-    branches: [android-enveloppe]
+    branches: ['android-enveloppe*']
   workflow_dispatch:
 
 jobs:
