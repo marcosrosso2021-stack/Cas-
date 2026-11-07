@@ -291,6 +291,9 @@ function create(E,X,saved,opts){
     if(m6&&!E.isStop(m6[1])&&!vocab()[m6[1]]&&!NOTNAME.test(m6[1])&&!/^(je|j|il|elle|on|nous|vous|ils|elles|client|cliente|tout|qui|personne)$/.test(m6[1]))return m6[1];
     var m4=raw.match(/\b(?:numéro|numero|téléphone|telephone|tel|mail|e-mail|email|adresse)\s+(?:de|du|d')\s*(?:M\.\s*|Mme\s*)?([A-ZÀ-Ý][\p{L}'’-]+)/u);
     if(m4)return clientKey(m4[1]);
+    /* « c'est quoi le numéro de faure » : un nom tapé sans majuscule, en fin de phrase */
+    var m4b=raw.match(/\b(?:numéro|numero|téléphone|telephone|tel|portable|mail|e-mail|email|adresse)\s+(?:de|du|d')\s*(?:m\.?\s+|mme\s+)?(\p{Ll}[\p{L}'’-]{2,})\s*[?!.]?\s*$/u);
+    if(m4b&&!E.isStop(m4b[1])&&!vocab()[m4b[1]]&&!NOTNAME.test(m4b[1])&&!/^(moi|toi|lui|elle|eux|mon|ma|mes|ce|cet|cette|client|cliente|chantier|telephone|téléphone|portable|fixe)$/.test(m4b[1]))return clientKey(m4b[1].charAt(0).toUpperCase()+m4b[1].slice(1));
     /* « Martinowi », « Иванову » : client existant au datif, sans préposition */
     var bt=raw.match(/\p{Lu}[\p{L}'’-]+/gu)||[];for(var j=0;j<bt.length;j++){var ds=declined(clientKey(bt[j]),true);for(var q=0;q<ds.length;q++)if(S.clients[ds[q]])return ds[q];}
     return null;
@@ -401,7 +404,7 @@ function create(E,X,saved,opts){
   function parseSys(c){
     var n=c.p,raw=c.raw.trim(),m;
     if(/^(aide|help|\?|que sais tu faire|que peux tu faire|qu est ce que tu sais faire|tu sais faire quoi|comment ca marche)$/.test(n))return [C("bibliotheque","ouvrir",{})];
-    if(/^(merci|merci beaucoup|merci bien|super|parfait|top|ok|okay|d accord|daccord|ca marche|nickel|cool|(?:ok|okay|super|parfait|top|nickel|d accord) merci(?: beaucoup| bien)?|merci (?:ok|super|c est bon))$/.test(n))return [C("sys","politesse",{type:"merci",mot:n})];
+    if(/^(merci|merci beaucoup|merci bien|super|parfait|top|ok|okay|d accord|daccord|d acord|dacord|d acocrd|d accrod|d accord merci|ca marche|nickel|cool|(?:ok|okay|super|parfait|top|nickel|d accord) merci(?: beaucoup| bien)?|merci (?:ok|super|c est bon))$/.test(n))return [C("sys","politesse",{type:"merci",mot:n})];
     if(/^(bonjour|salut|bonsoir|coucou|hello|hey|hi|hola|ola|ciao|buongiorno|merhaba|czesc|buna)\b/.test(n)&&n.split(" ").length<=3)return [C("sys","politesse",{type:"bonjour"})];
     /* changer de mode par une phrase, dans les 10 langues : « mode bricolage », « modalità fai da te », « switch to DIY mode » */
     var on=hn(raw);
@@ -831,7 +834,7 @@ function create(E,X,saved,opts){
   X_["mot.apprendre"]=function(a){return R(learnWord(a.mot,a.sens));};
   /* système */
   X_["sys.aide"]=function(){return R(S.mode==="artisan"?tr("Parle-moi normalement : « devis pour Dupont, carrelage 14 m² », « rdv demain 14h chez Dupont », « Dupont a payé 500 € », « fais signer le client », « ajoute un canapé dans le séjour », « mes fournisseurs ». Dis « non » si je me trompe : je corrige et je retiens."):tr("Parle-moi normalement : « ajoute un canapé dans le séjour », « peins la chambre en vert sauge », « il me faut quoi pour carreler 12 m² », « ma liste de courses ». Dis « non » si je me trompe : je corrige et je retiens."));};
-  X_["sys.politesse"]=function(a){return R(a.type==="merci"?(/^(ok|okay|d accord|daccord|ca marche)$/.test(a.mot||"")?tr("D’accord."):tr("Avec plaisir.")):tr("Bonjour. Je t’écoute."));};
+  X_["sys.politesse"]=function(a){return R(a.type==="merci"?(/^(ok|okay|d accord|daccord|d acord|dacord|d acocrd|d accrod|ca marche)$/.test(a.mot||"")?tr("D’accord."):tr("Avec plaisir.")):tr("Bonjour. Je t’écoute."));};
   X_["sys.mode"]=function(a){S.mode=a.mode;return R(a.mode==="bricoleur"?tr("Mode Bricoleur du dimanche : maquette 3D, métré, liste de courses et budget, planning de tes travaux."):tr("Mode Artisan : devis, planning, clients, fournisseurs, signature, factures, pointage et maquette 3D."));};
   X_["sys.fermer"]=function(){return R("",{close:true});};
   X_["sys.ia"]=function(a){if(!a.on){S.iaLLM="non";return R(tr("Modèle de langage désactivé : je continue avec ma mémoire et mon modèle de sens."));}
@@ -1610,8 +1613,8 @@ function create(E,X,saved,opts){
       if(ok1&&al.length&&(!q||askSafe(al)))return al;}
     r=parseExtra(c);if(r&&(!q||askSafe(r)))return r;
     if(q)return askSafe(parseWork(c)||parseScene(c));
-    /* des quantités avec unités et un prix (ou le mot devis) : c'est un devis, pas la maquette 3D */
-    if(S.mode==="artisan"&&parts.length<=1&&qtys(stripTimes(c.p)).some(function(x){return x.u!=="u";})&&(money(c.p)!=null||hasDevis.test(c.p)))return parseWork(c)||parseDevisBuild(c)||parseScene(c);
+    /* des quantités avec unités et un prix (ou le mot devis, ou « ajoute » sans meuble) : c'est un devis, pas la maquette 3D */
+    if(S.mode==="artisan"&&parts.length<=1&&qtys(stripTimes(c.p)).some(function(x){return x.u!=="u";})&&(money(c.p)!=null||hasDevis.test(c.p)||RE.add.test(c.p)&&!findEquip(c.p).length))return parseWork(c)||parseDevisBuild(c)||parseScene(c);
     if(parts.length>1&&parts.every(function(x){return x.split(" ").length>=2;})){
       var all=[],okAll=true;parts.forEach(function(x,i){var cc=sub(x,i);var q=parseExtra(cc)||parseWork(cc)||parseScene(cc)||parseDevisBuild(cc);if(q)all=all.concat(q);else okAll=false;});
       var whole=parseWork(c)||parseScene(c)||parseDevisBuild(c);
@@ -1737,6 +1740,9 @@ function create(E,X,saved,opts){
     var fu=followUp(c,false);if(fu)return fu;
     /* « pas pour l'instant », « non merci » sans question en cours : rien à faire */
     if(PLUSTARD.test(c.n)||PLUSTARD.test(c.p)||/^(non|non merci|laisse|laisse tomber|rien|tant pis)$/.test(c.n)){S.lastTurn=null;return {explain:"",says:[tr("D’accord.")],open:null,cmds:[C("sys","politesse",{})]};}
+    /* « oui » ou un nombre seul sans question en cours */
+    if(/^(oui|ouais|ouai|oui oui|yes|yep|si|sim|da|tak|evet|exact|exactement|voila)$/.test(c.n)){S.lastTurn=null;return {explain:"",says:[tr("D’accord.")],open:null,cmds:[C("sys","politesse",{})]};}
+    if(/^\d{1,4}(?:[.,]\d{1,2})?$/.test(c.n)){S.lastTurn=null;return {explain:"",says:[tr("« {0} » : c’est pour quoi ? Dis par exemple « {0} m² de carrelage » ou « rdv le {0} à 9 h ».",[c.n])],open:null,cmds:[C("sys","politesse",{type:"nombre"})]};}
     var mem=recall(c);if(mem&&mem.prov&&!rejected(c,mem.cmds))return propose(c,mem.cmds,null,"",null,true);if(mem&&!mem.prov)return exec(mem.cmds,c,mem.via);
     var loc=localParse(c);if(loc)return exec(loc,c,"local");
     fu=followUp(c,true);if(fu)return fu;

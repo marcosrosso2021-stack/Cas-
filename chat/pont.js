@@ -133,6 +133,8 @@ P.pasUnNom=function(n){if(!P.ready)return false;var w=String(n||"").split(/[^\p{
 P.essaie=function(t,force){if(!P.ready||typeof db==="undefined"||typeof q==="undefined"||typeof CHAT==="undefined")return false;var B=P.B,r,avant,avantPend,attendait,g=P.garde;P.garde=null;
   if(force){if(!g||g.t!==t)return false;r=g.r;avant=g.avant;avantPend=g.avantPend;attendait=g.attendait;}
   else{if(g&&g.pend&&B.S.pending===g.pend)B.S.pending=null;
+    /* réponse gardée mais pas reprise : casô a fait la demande précédente, le chat n'a rien à annuler */
+    if(g)B.S.lastTurn=null;
     avantPend=B.S.pending&&B.S.pending.type;attendait=P.attente;
     try{B.setLangue((typeof I18N!=="undefined"&&I18N.lang)||"fr");avant=vue();r=P.corrige?B.corriger(t):B.handle(t);}catch(err){if(window.console)console.error(err);P.corrige=false;return false;}
     P.corrige=false;}
@@ -146,6 +148,8 @@ P.essaie=function(t,force){if(!P.ready||typeof db==="undefined"||typeof q==="und
   if(!ok){
     /* compris, mais casô a peut-être mieux : on garde la réponse pour le second passage */
     if(forcable(r.cmds)||(pend&&pend.type==="confirm"&&forcable(pend.cmds)&&!(r.cmds||[]).length)||(pend&&/^(rdv|complete|datechoix)$/.test(pend.type))){P.garde={t:t,r:r,avant:avant,avantPend:avantPend,attendait:attendait,pend:pend};P.attente=false;garder();return false;}
+    /* casô fait la demande lui-même : « non » juste après ne doit pas annoncer une annulation du chat */
+    B.S.lastTurn=null;
     if(!(pend&&pend.type==="reformuler"))B.S.pending=null;P.attente=false;garder();return false;}
   var lab0=libelles(r.cmds).join(),a0=(r.cmds&&r.cmds[0]&&(r.cmds[0].args||r.cmds[0].a))||{},apres=null,q0=JSON.stringify(q),qMod=false;
   if(lab0==="factures.impayes"||lab0==="factures.relance"){var dd=du(lab0==="factures.relance"?{client:a0.client}:a0);if(dd){r.says=[dd];r.explain="";}}
