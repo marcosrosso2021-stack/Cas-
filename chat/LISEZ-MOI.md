@@ -26,6 +26,9 @@ Ce que le chat fait lui-même :
 - **Rendez-vous devinés** : « ajoute un créneau » → « Tu veux : ajouter un rendez-vous ? » → jour, heure → planning de casô.
   Un rendez-vous compris directement reste au planning de casô (rappels, équipe, répétitions).
 - **Mémoire** : « retiens… », « oublie… », mots appris, modèles enregistrés.
+- **Sauvegarde, export, mode** : « fais une sauvegarde », « exporte mes clients » (CSV), « exporte mes prix »,
+  « mode bricoleur » : un bouton dans la bulle lance la fonction de casô (le partage du téléphone demande un geste).
+  Dans le module 3D, « mode artisan » (ou « pro mode », « modo profesional »…) ramène au mode Artisan.
 - **Fautes de frappe** : « poite », « factue », « ntoe », « dveis » sont corrigés vers les mots de commande
   (`data.json` → `cmdw`) ; les noms (majuscule, après « chez ») et les mots valides d'une des 10 langues ne sont jamais touchés.
 - **Base d'apprentissage** : le mini modèle est réentraîné avec les phrases abîmées (fautes, SMS, sans accents,
