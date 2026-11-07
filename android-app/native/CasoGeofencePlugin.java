@@ -2,8 +2,11 @@ package fr.caso.app;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Build;
+import android.provider.Settings;
 
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
@@ -68,6 +71,16 @@ public class CasoGeofencePlugin extends Plugin {
     @PluginMethod
     public void status(PluginCall call) {
         resolveStates(call);
+    }
+
+    /** Ouvre les réglages de casô, là où l'on choisit « Toujours autoriser ». */
+    @PluginMethod
+    public void openSettings(PluginCall call) {
+        Intent i = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                Uri.parse("package:" + getContext().getPackageName()));
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        getContext().startActivity(i);
+        call.resolve();
     }
 
     /** Demande la localisation, puis « toujours » (Android 10 et plus). */

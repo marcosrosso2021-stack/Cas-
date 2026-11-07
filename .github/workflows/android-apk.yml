@@ -22,9 +22,11 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      - name: Tests du moteur
+      - name: Tests du moteur et du pont
         working-directory: android-app
-        run: node test/pointage-auto.test.js
+        run: |
+          node test/pointage-auto.test.js
+          node test/caso-auto.test.js
 
       - name: Installer Capacitor
         working-directory: android-app
