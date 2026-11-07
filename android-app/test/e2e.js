@@ -69,6 +69,7 @@ async function seed(page) {
     return { now: now.getTime() };
   });
 }
+const has = (txt, x) => txt.toLowerCase().includes(x.toLowerCase()); // le petit titre est en majuscules
 const ptText = page => page.evaluate(() => { go('pt'); return document.getElementById('ptBody').innerText; });
 
 (async () => {
@@ -86,7 +87,7 @@ const ptText = page => page.evaluate(() => { go('pt'); return document.getElemen
     await seed(page);
     await page.evaluate(() => { db.chantiers = [{ id: 'w1', nom: 'Chantier web' }]; save(); });
     const txt = await ptText(page);
-    assert.ok(txt.includes('Pointer') && !txt.includes('Pointage automatique'));
+    assert.ok(txt.includes('Pointer') && !has(txt, 'Pointage automatique'));
     assert.ok(await page.evaluate(() => !!document.getElementById('ptC')));
     assert.deepStrictEqual(errors, []);
     await ctx.close();
@@ -104,7 +105,7 @@ const ptText = page => page.evaluate(() => { go('pt'); return document.getElemen
     assert.ok(await page.evaluate(() => CasoAuto.active()));
 
     let txt = await ptText(page);
-    assert.ok(txt.includes('Pointage automatique') && txt.includes('Prochain chantier'), txt.slice(0, 200));
+    assert.ok(has(txt, 'Pointage automatique') && txt.includes('Attendu sur place'), txt.slice(0, 200));
     assert.ok(!(await page.evaluate(() => !!document.getElementById('ptC'))), 'le pointage manuel doit être masqué');
     assert.ok(!txt.includes('Pointer ici'));
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'pointage-prochain.png') });
@@ -115,11 +116,14 @@ const ptText = page => page.evaluate(() => { go('pt'); return document.getElemen
     }, [now, cid]);
     await page.evaluate(() => CasoAuto.run());
     txt = await ptText(page);
-    assert.ok(txt.includes('Sur place'), txt.slice(0, 200));
+    assert.ok(txt.includes('Sur place') && txt.includes('depuis 08:02'), txt.slice(0, 200));
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'pointage-sur-place.png') });
 
     await page.evaluate(([n, c]) => { window.__q.push({ site: c, type: 'exit', ts: n - 12 * 60000 }); }, [now, cid]);
     await page.evaluate(() => CasoAuto.run());
+    txt = await ptText(page);
+    assert.ok(txt.includes('Terminé') && txt.includes('0 h 46'), txt.slice(0, 250));
+    if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'pointage-termine.png') });
     const pts = await page.evaluate(() => db.pts.map(p => [p.t, p.p, p.ts, p.note]));
     assert.deepStrictEqual(pts.map(p => p.slice(0, 2)), [['in', 'u1'], ['out', 'u1']]);
     assert.strictEqual(pts[0][2], now - 58 * 60000);
@@ -152,16 +156,16 @@ const ptText = page => page.evaluate(() => { go('pt'); return document.getElemen
     await ctx.close();
   });
 
-  for (const [loc, a, b] of [['en-US', 'Automatic clocking', 'Next job site'], ['ru-RU', 'Автоматический учёт времени', 'Следующий объект'], ['ar-MA', 'الحضور التلقائي', 'الورشة التالية']]) {
+  for (const [loc, a, b] of [['en-US', 'Automatic clocking', 'Expected on site'], ['ru-RU', 'Автоматический учёт времени', 'Ожидается на объекте'], ['ar-MA', 'الحضور التلقائي', 'في انتظاره بالورشة']]) {
     await check('langue ' + loc + ' : la carte est traduite, le nom du chantier ne l\'est pas', async () => {
       const { ctx, page, errors } = await open(browser, base, { native: true, locale: loc, perm: { location: 'granted', background: 'granted' } });
       await page.waitForFunction(() => !!window.CasoAuto);
       await seed(page);
       await page.evaluate(() => CasoAuto.run());
       const txt = await ptText(page);
-      assert.ok(txt.includes(a) && txt.includes(b), txt.slice(0, 300));
+      assert.ok(has(txt, a) && has(txt, b), txt.slice(0, 300));
       assert.ok(txt.includes('12 rue des Lilas, Paris'));
-      assert.ok(!txt.includes('Prochain chantier') && !txt.includes('Pointage automatique'));
+      assert.ok(!has(txt, 'Attendu sur place') && !has(txt, 'Pointage automatique'));
       if (SHOTS && loc === 'en-US') await page.screenshot({ path: path.join(SHOTS, 'pointage-en.png') });
       assert.deepStrictEqual(errors, []);
       await ctx.close();

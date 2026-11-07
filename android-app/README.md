@@ -38,7 +38,7 @@ Sinon il reste, avec l'état au-dessus. Les entrées et sorties sont écrites da
 
 ```
 cd android-app
-npm test            # moteur (18 tests) et pont (18 tests), sans dépendance
+npm test            # moteur (18 tests) et pont (23 tests), sans dépendance
 npm run test:e2e    # 6 tests : vrai casô dans un navigateur avec un faux Android (demande playwright)
 ```
 

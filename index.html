@@ -4690,7 +4690,7 @@ function agPtCard(){
   return `<div class="ag-pt"><div class="ag-pt-t"><b data-noi18n>${esc(e.a?agFmtR(e):i18nT('Toute la journée'))}</b><span data-noi18n dir="auto">${esc(e.title||i18nT('Rendez-vous'))}${cl?' · '+esc(cl.nom):''}</span>${tm?`<span class="mut"><svg class="i i-sm"><use href="#i-users"/></svg> <span data-noi18n>${esc(tm)}</span></span>`:''}</div>${window.CasoAuto&&CasoAuto.active()?'':`<button class="btn sm" onclick="agPtGo('${e.id}')"><svg class="i"><use href="#i-helmet"/></svg>Pointer ici</button>`}</div>`}).join(''):`<p class="mut">Rien de prévu aujourd'hui.</p>`)+`<button class="lnk" onclick="agOpen()">Voir dans Mon planning</button></div>`}
 function agChFor(e){
  ensurePt();if(e.ch&&db.chantiers.find(c=>c.id===e.ch))return e.ch;
- const cl=e.cid&&db.clients.find(c=>c.id===e.cid),nm=(cl?cl.nom:'')+(e.adr?' – '+e.adr:'')||e.title||i18nT('Rendez-vous');
+ const cl=e.cid&&db.clients.find(c=>c.id===e.cid),nm=[cl&&cl.nom,e.adr].filter(Boolean).join(' – ')||e.title||i18nT('Rendez-vous');
  let c=db.chantiers.find(x=>nameKey(x.nom)===nameKey(nm))||(cl&&db.chantiers.find(x=>nameKey(x.nom).includes(nameKey(cl.nom))));
  if(!c){c={id:uid().slice(-6),nom:nm};db.chantiers.push(c)}e.ch=c.id;save();return c.id}
 function agPtGo(id){
@@ -6253,9 +6253,9 @@ function renderPt(){
  const opt=(arr,sel)=>arr.map(x=>`<option value="${x.id}" ${x.id===sel?'selected':''}>${esc(x.nom)}</option>`).join('');
  const sm=summarize(ptPer),S=sessions();
  const keepC=($('ptC')&&$('ptC').value)||'',keepP=($('ptP')&&$('ptP').value)||'';
- let h=agPtCard();
- // pointer : tout seul quand l'appli Android le fait (window.CasoAuto), sinon à la main
  const AU=window.CasoAuto;
+ let h=AU&&AU.active()?'':agPtCard();
+ // pointer : tout seul quand l'appli Android le fait (window.CasoAuto), sinon à la main
  h+=AU&&AU.active()?AU.card():`<div class="card"><h2><span class="hi"><svg class="i"><use href="#i-helmet"/></svg></span>Pointer</h2>${AU?AU.line():''}
   ${(!db.chantiers.length||!db.people.length)?ptSetupHtml():`<label>Chantier</label><select id="ptC">${opt(db.chantiers,keepC)}</select>
   <label>Personne</label><select id="ptP">${opt(db.people,keepP)}</select>

@@ -36,6 +36,7 @@ function mk(o = {}) {
     lastEv: p => db.pts.filter(x => x.p === p).sort((a, b) => a.ts - b.ts).slice(-1)[0] || null,
     uid: () => 'x' + (++n), save: () => {}, esc,
     fmtT: t => new Date(t).toTimeString().slice(0, 5),
+    fmtH: ms => { const m = Math.round(ms / 60000); return Math.floor(m / 60) + ' h ' + String(m % 60).padStart(2, '0'); },
     fetch: async () => {
       calls.fetch++;
       if (o.geoFail) return { ok: false };
@@ -68,7 +69,8 @@ t('journée normale : zone inscrite, entrée et sortie aux heures du système', 
   assert.deepStrictEqual([a.t, a.ts, a.c, a.p, a.note], ['in', ts('07:58'), 'c1', 'u1', 'automatique (GPS)']);
   assert.deepStrictEqual([b.t, b.ts], ['out', ts('12:00')]);
   assert.ok(m.calls.change >= 1);
-  assert.strictEqual(m.A.status().k, 'none');
+  assert.deepStrictEqual([m.A.status().k, m.A.status().total], ['done', (4 * 60 + 2) * 60000]);
+  assert.ok(m.A.card().includes('Terminé') && m.A.card().includes('4 h 02'));
 });
 
 t('sur place : l\'état affiche le chantier et l\'heure d\'arrivée', async () => {
@@ -80,7 +82,7 @@ t('sur place : l\'état affiche le chantier et l\'heure d\'arrivée', async () =
   const s = m.A.status();
   assert.deepStrictEqual([s.k, s.site, s.since], ['onsite', '12 rue des Lilas, Paris', ts('07:58')]);
   const html = m.A.card();
-  assert.ok(html.includes('Sur place') && html.includes('07:58') && html.includes('Pointage automatique'));
+  assert.ok(html.includes('Sur place') && html.includes('depuis 07:58') && html.includes('Pointage automatique'));
 });
 
 t('la zone n\'est cherchée qu\'une fois et inscrite une seule fois par jour', async () => {
@@ -241,15 +243,17 @@ t('rendez-vous sans adresse ou sans heure : ignoré', async () => {
 
 t('traductions : chaque texte du code existe dans les 9 langues', async () => {
   const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'web', 'caso-native.js'), 'utf8');
-  const used = [...src.matchAll(/T\('([^']+)'\)/g)].map(m => m[1]);
-  assert.ok(used.length >= 10, 'textes trouvés : ' + used.length);
+  const used = [];
+  for (const call of src.matchAll(/\bT\(([^)]*)\)/g)) for (const q of call[1].matchAll(/'([^']+)'/g)) used.push(q[1]);
+  assert.ok(used.length >= 14, 'textes trouvés : ' + used.length);
   used.forEach(u => assert.ok(CasoAuto.K.includes(u), 'texte sans traduction : ' + u));
+  CasoAuto.K.forEach(k => assert.ok(used.includes(k), 'traduction inutilisée : ' + k));
   assert.deepStrictEqual(Object.keys(CasoAuto.TR).sort(), ['ar', 'en', 'es', 'it', 'pl', 'pt', 'ro', 'ru', 'tr']);
   Object.keys(CasoAuto.TR).forEach(l => {
     assert.strictEqual(CasoAuto.TR[l].length, CasoAuto.K.length, l);
     CasoAuto.TR[l].forEach((v, i) => {
       assert.ok(v && v.trim(), l + ' vide : ' + CasoAuto.K[i]);
-      if (CasoAuto.K[i] !== 'Zone') assert.notStrictEqual(v, CasoAuto.K[i], l + ' non traduit : ' + CasoAuto.K[i]);
+      if (!['Zone', 'Absent'].includes(CasoAuto.K[i])) assert.notStrictEqual(v, CasoAuto.K[i], l + ' non traduit : ' + CasoAuto.K[i]);
     });
   });
 });
@@ -261,6 +265,66 @@ t('traductions : une traduction déjà présente dans casô n\'est jamais écras
   assert.strictEqual(data.en['Sur place'], 'On site');
   assert.strictEqual(data.ru['Sur place'], 'На объекте');
   assert.strictEqual(Object.keys(data.xx).length, 0);
+});
+
+t('la journée en liste : fait, en cours, à venir', async () => {
+  const events = [
+    { id: 'e1', t: 'rdv', d: today, a: '08:00', b: '10:00', who: ['u1'], adr: 'Chantier A' },
+    { id: 'e2', t: 'rdv', d: today, a: '10:30', b: '12:00', who: ['u1'], adr: 'Chantier B' },
+    { id: 'e3', t: 'rdv', d: today, a: '14:00', b: '16:00', who: ['u1'], adr: 'Chantier C' }
+  ];
+  const m = mk({ events });
+  await m.A.run();
+  m.q.push(ev('enter', '07:58', 'c1'), ev('dwell', '07:59', 'c1'), ev('exit', '10:05', 'c1'),
+    ev('enter', '10:25', 'c2'), ev('dwell', '10:26', 'c2'));
+  m.clock.t = ts('11:00');
+  await m.A.run();
+  assert.deepStrictEqual(m.A.rows().map(r => [r.k, r.name]), [['done', 'Chantier A'], ['now', 'Chantier B'], ['todo', 'Chantier C']]);
+  const html = m.A.card();
+  assert.ok(html.includes('au-row done') && html.includes('au-row now') && html.includes('au-row todo'));
+  assert.ok(html.includes('07:58 – 10:05') && html.includes('14:00'));
+  assert.ok(html.includes('depuis 10:25'));
+});
+
+t('un seul rendez-vous en cours : pas de liste en double', async () => {
+  const m = mk();
+  await m.A.run();
+  assert.ok(!m.A.card().includes('au-list'));
+});
+
+t('un rendez-vous sans arrivée est « Absent » une fois dépassé', async () => {
+  const events = [
+    { id: 'e1', t: 'rdv', d: today, a: '08:00', b: '09:00', who: ['u1'], adr: 'Chantier A' },
+    { id: 'e2', t: 'rdv', d: today, a: '14:00', b: '16:00', who: ['u1'], adr: 'Chantier B' }
+  ];
+  const m = mk({ events });
+  m.clock.t = ts('11:00');
+  await m.A.run();
+  assert.deepStrictEqual(m.A.rows().map(r => r.k), ['absent', 'todo']);
+  assert.ok(m.A.card().includes('Absent'));
+});
+
+t('libellés : « Prochain chantier » avant l\'heure, « Attendu sur place » après, « Demain »', async () => {
+  const m = mk();
+  await m.A.run();
+  assert.ok(m.A.card().includes('Prochain chantier') && !m.A.card().includes('Attendu sur place'));
+  m.clock.t = ts('08:20');
+  await m.A.run();
+  assert.ok(m.A.card().includes('Attendu sur place'));
+  const tomorrow = '2026-11-10';
+  const m2 = mk({ events: [{ id: 'e1', t: 'rdv', d: tomorrow, a: '08:00', who: ['u1'], adr: 'Chantier A' }] });
+  await m2.A.run();
+  const s = m2.A.status();
+  assert.deepStrictEqual([s.k, s.tomorrow], ['next', true]);
+  assert.ok(m2.A.card().includes('Demain 08:00'));
+});
+
+t('mode sombre : la carte n\'utilise que les couleurs de casô', async () => {
+  const hex = CasoAuto.CSS.match(/#[0-9a-fA-F]{3,8}\b/g) || [];
+  // seules des teintes translucides (8 chiffres) ou des valeurs de secours dans var(--x,#...) sont permises
+  const bare = CasoAuto.CSS.replace(/var\(--[a-z-]+,[^)]*\)/g, '').match(/#[0-9a-fA-F]{3,8}\b/g) || [];
+  bare.forEach(h => assert.strictEqual(h.length, 9, 'couleur fixe opaque : ' + h));
+  assert.ok(hex.length > 0);
 });
 
 (async () => {
