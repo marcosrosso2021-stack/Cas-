@@ -7,7 +7,7 @@
 "use strict";
 var P={ready:false,B:null,E:null,corrige:false},LANGS=["en","es","pt","it","ro","pl","tr","ru","ar"],KEY="caso_ia";
 var SRC=(document.currentScript&&document.currentScript.src)||"";
-var APPRIS=["phrases","journal","unrec","neg","syn","roomw","colw","lex","modeles"];
+var APPRIS=["phrases","journal","unrec","neg","syn","roomw","colw","lex","modeles","courses"];
 window.casoPont=P;
 
 /* ---------- chargement : le chat démarre sans bloquer casô ---------- */
@@ -36,7 +36,8 @@ function nombre(v){if(v===""||v==null)return null;var x=+String(v).replace(",","
 function vue(){var S=P.B.S,idc={};S.mode="artisan";
   S.clients={};(db.clients||[]).forEach(function(c){var k=cle(c.nom);if(!k)return;idc[c.id]=k;S.clients[k]={nom:c.nom,tel:c.tel||"",email:c.email||"",adresse:c.adr||"",notes:c.note?[c.note]:[],created:0};});
   S.services=(db.prices||[]).map(function(p){return {nom:p.nom,unite:p.unit||"forfait",prix:nombre(p.prix)};});
-  var Q=(db.quotes||[]).slice();if(q&&!Q.some(function(x){return x.id===q.id;})&&(q.lines.length||q.client))Q.push(q);
+  /* le devis en cours (q) est toujours la version vivante, même vide */
+  var Q=(db.quotes||[]).map(function(x){return q&&x.id===q.id?q:x;});if(q&&!Q.some(function(x){return x.id===q.id;}))Q.push(q);
   S.devis=Q.map(function(x){return {id:x.id,num:x.num||"",client:x.client?cle(x.client):null,statut:STATUT[x.status]||"brouillon",sig:{},created:Date.parse(x.date)||0,
     lignes:(x.lines||[]).map(function(l){return {libelle:l.label,quantite:nombre(l.qty)||0,unite:l.unit||"u",prix:nombre(l.pu)};}),afaire:[],fournisseurs:[],remarques:[]};});
   S.cur=q?q.id:null;
@@ -48,22 +49,25 @@ function vue(){var S=P.B.S,idc={};S.mode="artisan";
   return {clients:JSON.parse(JSON.stringify(S.clients)),devis:S.devis.map(function(d){return d.id;}),rdv:S.rdv.map(function(r){return r.id;})};}
 
 /* ---------- ce que le chat fait lui-même (le reste reste aux modules de casô) ---------- */
-var PRIS=/^(factures\.impayes|stats\.ca|devis\.(preparer|modele|total|compte|ouvrir|liste)|clients\.(info|message|appeler|maj|note|ouvrir)|planning\.(prochain|dispo|ouvrir)|services\.(info|ouvrir)|fournisseurs\.ouvrir|factures\.ouvrir|pointage\.ouvrir|memoire\.[a-z]+|mot\.apprendre|sys\.politesse)$/;
+var PRIS=/^(planning\.libre|factures\.(impayes|creer)|stats\.ca|courses\.(ajouter|calcul|ouvrir|vider|retirer)|pointage\.(entree|sortie)|devis\.(remise|envoyer)|scene\.[a-z_]+|devis\.(preparer|modele|total|compte|ouvrir|liste)|clients\.(info|message|appeler|maj|note|ouvrir)|planning\.(prochain|dispo|ouvrir|date)|services\.(info|ouvrir)|fournisseurs\.ouvrir|factures\.ouvrir|pointage\.ouvrir|memoire\.[a-z]+|mot\.apprendre|sys\.politesse)$/;
 /* écrans du chat -> écrans de casô (le planning répond dans la conversation) */
-var ECRAN={devis:"edit","devis-liste":"mes",clients:"cli",client:"cli",services:"prix",fournisseurs:"fou",factures:"fact",pointage:"pt"};
+var ECRAN={courses:null,devis:"edit","devis-liste":"mes",clients:"cli",client:"cli",services:"prix",fournisseurs:"fou",factures:"fact",pointage:"pt"};
 function libelles(c){return (c||[]).filter(function(x){return x.m!=="sys"||x.a==="politesse";}).map(function(x){return x.m+"."+x.a;});}
 function pris(c){var L=libelles(c);return L.length>0&&L.every(function(l){return PRIS.test(l);});}
 
 /* ---------- écrire dans casô ce que le chat a changé ---------- */
-function ecrire(avant){var S=P.B.S,u={q:JSON.stringify(q),qAdd:[],cAdd:[],cMod:[]},carte=null;
+/* « Léon » plutôt que « Leon » : le nom tel qu'il a été tapé */
+function nomTape(t,nom){var w=CasoBrain.hn(nom).split(" ").filter(Boolean),T=[];String(t||"").replace(/[\p{L}\p{N}'’-]+/gu,function(x,i){T.push({x:x,h:CasoBrain.hn(x),i:i});return x;});
+  for(var a=0;a+w.length<=T.length;a++){var ok=true;for(var b=0;b<w.length&&ok;b++)ok=T[a+b].h===w[b];if(ok){var z=T[a+w.length-1],o=String(t).slice(T[a].i,z.i+z.x.length);if(typeof chatCasse==="function")o=chatCasse(o);return o.charAt(0).toUpperCase()+o.slice(1);}}return nom;}
+function ecrire(avant,t){var S=P.B.S,u={q:JSON.stringify(q),qAdd:[],cAdd:[],cMod:[]},carte=null;
   Object.keys(S.clients).forEach(function(k){var c=S.clients[k],a=avant.clients[k],ex=(db.clients||[]).filter(function(x){return cle(x.nom)===k;})[0];
-    if(!ex){var n={id:uid(),nom:c.nom,tel:c.tel||"",email:c.email||"",adr:c.adresse||"",note:(c.notes||[]).join(" · ")};db.clients.push(n);u.cAdd.push(n.id);return;}
+    if(!ex){var n={id:uid(),nom:nomTape(t,c.nom),tel:c.tel||"",email:c.email||"",adr:c.adresse||"",note:(c.notes||[]).join(" · ")};db.clients.push(n);u.cAdd.push(n.id);return;}
     var ch={};if(c.tel&&c.tel!==ex.tel)ch.tel=c.tel;if(c.email&&c.email!==ex.email)ch.email=c.email;if(c.adresse&&c.adresse!==ex.adr)ch.adr=c.adresse;
     var nn=(c.notes||[]).length>(a?a.notes.length:0)?(c.notes||[]).slice(a?a.notes.length:0):[];if(nn.length)ch.note=[ex.note].concat(nn).filter(Boolean).join(" · ");
     if(Object.keys(ch).length){u.cMod.push(JSON.stringify(ex));Object.assign(ex,ch);}});
   S.devis.forEach(function(d){if(avant.devis.indexOf(d.id)>=0)return;
     var vide=q&&!q.lines.length&&!q.client,o=vide?q:newObj(),c=d.client&&S.clients[d.client];
-    o.client=c?c.nom:"";o.tel=o.tel||(c&&c.tel)||"";o.adr=o.adr||(c&&c.adresse)||"";o.modele=d.modele||"";
+    var cx=d.client?(db.clients||[]).filter(function(x){return cle(x.nom)===d.client;})[0]:null;o.client=cx?cx.nom:(c?c.nom:"");o.tel=o.tel||(c&&c.tel)||"";o.adr=o.adr||(c&&c.adresse)||"";o.modele=d.modele||"";
     o.lines=d.lignes.map(function(l){var p=(db.prices||[]).filter(function(x){return cle(x.nom)===cle(l.libelle);})[0];return {label:l.libelle,qty:l.quantite,unit:l.unite,pu:l.prix,tva:p&&p.tva!=null?p.tva:20};});
     q=o;if(typeof fillForm==="function")fillForm();storeQ(q);u.qAdd.push(q.id);carte=q.id;
     if(typeof CHAT!=="undefined")CHAT.qid=q.id;});
@@ -76,7 +80,7 @@ function ecrire(avant){var S=P.B.S,u={q:JSON.stringify(q),qAdd:[],cAdd:[],cMod:[
   if(u.cAdd.length||u.cMod.length||u.eAdd)save();
   return {u:u,carte:carte};}
 P.annuler=function(u){if(!u)return;try{db.quotes=db.quotes.filter(function(x){return u.qAdd.indexOf(x.id)<0;});db.clients=db.clients.filter(function(x){return u.cAdd.indexOf(x.id)<0;});
-  if(u.eAdd)db.events=db.events.filter(function(x){return u.eAdd.indexOf(x.id)<0;});u.cMod.forEach(function(j){var c=JSON.parse(j),i=db.clients.findIndex(function(x){return x.id===c.id;});if(i>=0)db.clients[i]=c;});q=JSON.parse(u.q);if(typeof fillForm==="function")fillForm();if(typeof CHAT!=="undefined")CHAT.qid=q.id;save();}catch(e){}};
+  if(u.eAdd)db.events=db.events.filter(function(x){return u.eAdd.indexOf(x.id)<0;});u.cMod.forEach(function(j){var c=JSON.parse(j),i=db.clients.findIndex(function(x){return x.id===c.id;});if(i>=0)db.clients[i]=c;});q=JSON.parse(u.q);if(typeof fillForm==="function")fillForm();if(u.qMod&&typeof storeQ==="function")storeQ(q);if(typeof CHAT!=="undefined")CHAT.qid=q.id;save();}catch(e){}};
 
 /* ---------- affichage dans la conversation de casô ---------- */
 function e(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
@@ -104,27 +108,64 @@ function html(r,id){var h="";if(r.explain)h+='<p class="mut" dir="auto">'+e(r.ex
   if(r.ui==="appel"&&r.tel)h+=lien("tel:"+String(r.tel).replace(/\s/g,""),P.tr("Appeler"));
   return '<div data-noi18n>'+h+'</div>';}
 
-/* ---------- un message : le chat le prend s'il sait le faire, sinon casô continue comme avant ---------- */
-P.essaie=function(t){if(!P.ready||typeof db==="undefined"||typeof q==="undefined"||typeof CHAT==="undefined")return false;var B=P.B,r;
-  var avantPend=B.S.pending&&B.S.pending.type;
-  try{B.setLangue((typeof I18N!=="undefined"&&I18N.lang)||"fr");var avant=vue();r=P.corrige?B.corriger(t):B.handle(t);}catch(err){if(window.console)console.error(err);P.corrige=false;return false;}
-  P.corrige=false;
-  if(libelles(r.cmds).join()==="factures.impayes"){var dd=du(r.cmds[0].args||r.cmds[0].a||{});if(dd)r.says=[dd];}
+/* ce que le chat peut aussi faire quand les modules de casô n'ont rien reconnu (second passage) */
+var FORCE=/^(planning\.(ajouter|libre)|devis\.supprimer_ligne|factures\.relance|pointage\.total|fournisseurs\.commande|clients\.(ajouter|maj))$/;
+function forcable(c){var L=libelles(c);return L.length>0&&L.every(function(l){return PRIS.test(l)||FORCE.test(l);});}
+/* « Lui Dire », « Carreler », « L'instant » : des mots de la phrase, pas un nom de client */
+P.pasUnNom=function(n){if(!P.ready)return false;var w=String(n||"").split(/[^\p{L}]+/u).filter(function(x){return x.length>1;});if(!w.length)return true;
+  if(w.some(function(x){return /^(lui|leur|leurs|moi|toi|te|me|nous|vous|eux|elle|elles|ils)$/i.test(x);}))return true;
+  if((db.clients||[]).some(function(c){return cle(c.nom)===cle(n);}))return false;
+  return w.every(function(x){return P.B.motCmd(x);});};
+/* un message : le chat le prend s'il sait le faire, sinon casô continue comme avant ;
+   force : second passage, après les modules de casô (facture, prix, agenda) qui n'ont rien reconnu */
+P.essaie=function(t,force){if(!P.ready||typeof db==="undefined"||typeof q==="undefined"||typeof CHAT==="undefined")return false;var B=P.B,r,avant,avantPend,attendait,g=P.garde;P.garde=null;
+  if(force){if(!g||g.t!==t)return false;r=g.r;avant=g.avant;avantPend=g.avantPend;attendait=g.attendait;}
+  else{if(g&&g.pend&&B.S.pending===g.pend)B.S.pending=null;
+    avantPend=B.S.pending&&B.S.pending.type;attendait=P.attente;
+    try{B.setLangue((typeof I18N!=="undefined"&&I18N.lang)||"fr");avant=vue();r=P.corrige?B.corriger(t):B.handle(t);}catch(err){if(window.console)console.error(err);P.corrige=false;return false;}
+    P.corrige=false;}
   /* un rendez-vous compris directement reste au planning de casô (rappels, équipe, répétitions) ;
      le chat ne le prend que lorsqu'il a dû le deviner ou poser une question */
   var rdv=function(c){var L=libelles(c);return L.length>0&&L.every(function(l){return l==="planning.ajouter";});};
-  var pend=B.S.pending,ok=pris(r.cmds)||(rdv(r.cmds)&&(r.via!=="local"||!!avantPend))||
-    (pend&&pend.type==="confirm"&&(pris(pend.cmds)||rdv(pend.cmds))&&!(r.cmds||[]).length);
-  if(!ok){if(!(pend&&pend.type==="reformuler"))B.S.pending=null;garder();return false;}
-  var w=ecrire(avant);garder();
+  var pend=B.S.pending,ok=force||pris(r.cmds)||(rdv(r.cmds)&&(r.via==="devine"||r.via==="mini"||/^(confirm|rdv|complete|datechoix)$/.test(avantPend||"")))||
+    (pend&&pend.type==="confirm"&&(pris(pend.cmds)||rdv(pend.cmds))&&!(r.cmds||[]).length)||
+    /* le chat venait de poser une question : sa réponse (« pas pour l'instant », « d'accord »…) reste dans le chat */
+    (attendait&&!(r.cmds||[]).length&&(r.says||[]).length>0);
+  if(!ok){
+    /* compris, mais casô a peut-être mieux : on garde la réponse pour le second passage */
+    if(forcable(r.cmds)||(pend&&pend.type==="confirm"&&forcable(pend.cmds)&&!(r.cmds||[]).length)||(pend&&/^(rdv|complete|datechoix)$/.test(pend.type))){P.garde={t:t,r:r,avant:avant,avantPend:avantPend,attendait:attendait,pend:pend};P.attente=false;garder();return false;}
+    if(!(pend&&pend.type==="reformuler"))B.S.pending=null;P.attente=false;garder();return false;}
+  var lab0=libelles(r.cmds).join(),a0=(r.cmds&&r.cmds[0]&&(r.cmds[0].args||r.cmds[0].a))||{},apres=null,q0=JSON.stringify(q),qMod=false;
+  if(lab0==="factures.impayes"||lab0==="factures.relance"){var dd=du(lab0==="factures.relance"?{client:a0.client}:a0);if(dd){r.says=[dd];r.explain="";}}
+  /* remise : sur le devis de casô (pourcentage) */
+  if(lab0==="devis.remise"&&q){var br=(q.lines||[]).reduce(function(s2,l){return s2+(+l.qty||0)*(+l.pu||0);},0),pc=a0.pourcentage!=null?+a0.pourcentage:(a0.montant&&br?Math.round(a0.montant/br*10000)/100:0);
+    if(q.lines.length){q.remise=pc||0;storeQ(q);fillForm();qMod=true;r.explain="";r.says=[pc?P.tr("Remise de {0} % sur le devis",[pc])+" · "+P.B.eurFr(totals(q).ttc)+" TTC":P.tr("Remise enlevée. Total : {0} HT.",[P.B.eurFr(totals(q).ht)])];}}
+  /* enlever une ligne du devis ouvert */
+  if(lab0==="devis.supprimer_ligne"&&q){var kl=cle(a0.libelle||""),av=q.lines.length;
+    q.lines=q.lines.filter(function(l){var x=cle(l.label||"");return !(kl&&x&&(x===kl||x.indexOf(kl)===0||kl.indexOf(x)===0));});
+    r.explain="";if(q.lines.length<av){storeQ(q);fillForm();qMod=true;r.says=[P.tr("Ligne retirée. Total : {0} HT.",[P.B.eurFr(totals(q).ht)])];}else r.says=[P.tr("Je ne trouve pas « {0} » dans le devis.",[a0.libelle])];}
+  /* commande chez un fournisseur : le fournisseur et la commande sur sa fiche */
+  if(lab0==="fournisseurs.commande"&&a0.nom&&typeof upsert==="function"){try{var fx=upsert("suppliers",{nom:nomTape(t,a0.nom)}).x;
+    fx.cmd=(fx.cmd||[]).concat([{d:new Date().toISOString().slice(0,10),art:(a0.articles||[]).map(function(x){return (x.quantite?x.quantite+" ":"")+(x.unite?x.unite+" ":"")+x.nom;}).join(", ")}]);save();}catch(x){}}
+  /* envoyer le devis : même chemin que la flèche de la carte (signature, Face ID, lien casô) */
+  if(lab0==="devis.envoyer"){r.says=[];if(q&&q.lines.length){var qi=q.id;apres=function(){P.envoyer(qi);};}else r.says=[P.tr("Il n’y a pas de devis à envoyer.")];}
+  /* facture : le module Factures de casô, à partir du dernier devis du client */
+  if(lab0==="factures.creer"){var kc=cle(a0.client||""),dq=(db.quotes||[]).filter(function(x){return (!kc||cle(x.client)===kc)&&x.lines&&x.lines.length;}).sort(function(x,y){return (y.status==="accepte")-(x.status==="accepte")||String(y.date).localeCompare(String(x.date));})[0];
+    if(dq&&typeof faNew==="function"){r.says=[];apres=function(){faNew(dq.id);};}}
+  /* pointage : l'écran de pointage de casô (le pointage est automatique) */
+  if(/^pointage\.(entree|sortie|total)$/.test(lab0)){r.says=[];r.explain=P.B.describe([{m:"pointage",a:"ouvrir",args:{}}])||r.explain;r.open={screen:"pointage"};}
+  /* maquette 3D : le module 3D de casô reçoit la phrase */
+  if(/^scene\./.test(lab0)){r.says=[];r.explain=P.tr("Maquette 3D");apres=function(){vers3D(t);};}
+  var w=ecrire(avant,t);garder();P.attente=!!(B.S.pending&&B.S.pending.type!=="reformuler");
+  if(qMod){w.u.q=q0;w.u.qMod=true;}
   if(CHAT.qid!==q.id)CHAT.qid=q.id;
-  CHAT.m.push({who:"me",text:t});CHAT.m.push({who:"bot",html:html(r,w.carte),pUndo:(w.u.qAdd.length||w.u.cAdd.length||w.u.cMod.length||w.u.eAdd)?w.u:undefined});
-  chatSave();chatRender(true);
+  CHAT.m.push({who:"me",text:t});CHAT.m.push({who:"bot",html:html(r,w.carte),pUndo:(w.u.qAdd.length||w.u.cAdd.length||w.u.cMod.length||w.u.eAdd||w.u.qMod)?w.u:undefined});
+  chatSave();chatRender(true);if(apres)setTimeout(apres,200);
   var sc=r.open&&r.open.screen&&ECRAN[r.open.screen];if(sc&&typeof go==="function")setTimeout(function(){if(sc==="edit")fillForm();go(sc);},250);
   return true;};
 /* « qui me doit de l'argent ? », « combien me doit Dupont ? » : d'après les factures émises dans casô et leurs paiements */
 function du(a){if(typeof faDue!=="function")return null;var B=P.B,F=(db.invoices||[]).filter(function(f){return f.num&&f.kind!=="avoir";});
-  if(a.client){var k=cle(a.client),c=(db.clients||[]).filter(function(x){return cle(x.nom)===k;})[0],nom=c?c.nom:a.client,G=F.filter(function(f){return cle(f.client&&f.client.nom)===k;});
+  if(a.client){var k=cle(a.client),c=(db.clients||[]).filter(function(x){return cle(x.nom)===k;})[0],nom=c?c.nom:String(a.client).charAt(0).toUpperCase()+String(a.client).slice(1),G=F.filter(function(f){return cle(f.client&&f.client.nom)===k;});
     if(!G.length)return i18nT("Aucune facture à encaisser pour")+" "+nom+".";var tot=0,re=0,pd=0;G.forEach(function(f){tot+=faTot(f).net;re+=faDue(f);pd+=faPaid(f);});
     if(re<=0.009)return B.tr("{0} a tout payé ({1} TTC).",[nom,B.eur(tot)]);
     return B.tr("{0} te doit encore {1} sur {2} TTC{3}{4}.",[nom,B.eur(re),B.eur(tot),(pd>0.009?B.tr(" (déjà payé : {0})",[B.eur(pd)]):""),""]);}
@@ -132,6 +173,8 @@ function du(a){if(typeof faDue!=="function")return null;var B=P.B,F=(db.invoices
   var L=Object.keys(by).map(function(n){return [n,by[n]];}).sort(function(x,y){return y[1]-x[1];});if(!L.length)return B.tr("Personne ne te doit d’argent.");
   var t=L.reduce(function(s,x){return s+x[1];},0);
   return (L.length===1?B.tr("1 client te doit "):B.tr("{0} clients te doivent ",[L.length]))+B.eur(t)+" : "+L.map(function(x){return x[0]+" "+B.eur(x[1]);}).join(", ")+".";}
+function vers3D(t){if(typeof m3dOpen!=="function")return;try{m3dOpen();}catch(e){return;}var n=0;(function essai(){var f=document.querySelector("iframe");var d=null;try{d=f&&f.contentDocument;}catch(e){}
+  var i=d&&d.getElementById("chat-in"),g=d&&d.getElementById("chat-go");if(i&&g){i.value=t;g.click();return;}if(++n<40)setTimeout(essai,250);})();}
 P.incompris=function(){return P.tr("Je n’ai pas compris.");};
 P.voir=function(id){var o=devisDe(id);if(!o)return;if(q.id!==o.id){q=JSON.parse(JSON.stringify(o));CHAT.qid=q.id;}fillForm();go("edit");};
 

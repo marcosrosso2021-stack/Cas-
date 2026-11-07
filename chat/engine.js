@@ -353,6 +353,7 @@ function create(DATA){
     return true;
   };
   E.isKnown=function(w){return KNOWN.has(w);};
+  E.dl=dl;
   E.isStop=function(w){return STOP.has(w);};
   E.stats=function(){return {concepts:concepts.length,rows:rows.length,facts:facts.length,learned:U.learned.length,fb:Object.keys(U.fb).length,dim:DIM};};
   return E;

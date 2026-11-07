@@ -206,7 +206,27 @@ function create(E,X,saved,opts){
     return out.join(" ");
   }
   B.words2num=words2num;
-  B.translate=function(raw0){var raw=corrRaw(raw0),n=hn(raw),a=E.analyze(raw),L=detectLang(n,LANG!=="fr"&&(!a.lang||a.lang==="fr"||a.lang==="perso")?LANG:a.lang);n=expandAbbr(n,L);if(L==="fr")n=words2num(n);var p=toFr(n,L);p=vocabFr(p,a,L);p=applyLex(p);if(L!=="fr")p=words2num(p);return {n:n,p:p,lang:L,a:a};};
+  /* fautes de frappe sur les mots de commande (« poite » -> « pointe », « factue » -> « facture », « ntoe » -> « note ») ;
+     les noms (majuscule, après « chez ») et les mots connus ne sont jamais touchés */
+  var CMDW={},CMDS={},MOTSFR=new Set(String((X.cmdw||{}).frw||"").split(" "));Object.keys(X.cmdw||{}).forEach(function(l){if(l==="frw")return;CMDW[l]=String(X.cmdw[l]).split(" ").filter(Boolean);CMDS[l]=new Set(CMDW[l]);});var CMDALL=new Set();Object.keys(CMDW).forEach(function(l){CMDW[l].forEach(function(w){CMDALL.add(w);});});
+  function bgs(s){var m={},i;for(i=0;i+1<s.length;i++){var g=s.substr(i,2);m[g]=(m[g]||0)+1;}return m;}
+  function dice2(a,b){var A=bgs(a),Bb=bgs(b),x=0,g;for(g in A)if(Bb[g])x+=Math.min(A[g],Bb[g]);return 2*x/Math.max(1,a.length+b.length-2);}
+  /* mot mal tapé du bâtiment ou d'une commande (« carelage », « faïance ») : ce n'est pas un nom de client */
+  function nearFr(w){if(!E.dl||w.length<4)return false;var max=w.length>=8?2:1,ok=false;Object.keys(vocab()).concat(CMDW.fr||[]).forEach(function(v){if(!ok&&v.indexOf(" ")<0&&Math.abs(v.length-w.length)<=max&&E.dl(w,v,max)<=max)ok=true;});return ok;}
+  function cmdFix(n,raw,L,an){if(!E.dl||!CMDW.fr)return n;var vu={};((an&&an.mentions)||[]).forEach(function(m){if(m.how==="exact")return;var sp=String(m.span||"");if(sp.indexOf(" ")<0)vu[sp]=hn(m.alias||"");});var lists=[CMDW.fr];if(L&&L!=="fr"&&CMDW[L])lists.push(CMDW[L]);
+    var caps={};String(raw).replace(/[\p{L}'’-]+/gu,function(w){if(/^\p{Lu}/u.test(w)&&w!==w.toUpperCase())caps[hn(w)]=1;return w;});
+    var t=n.split(" ");
+    return t.map(function(w,i){if(w.length<4||!/^[a-z]+$/.test(w)||CMDALL.has(w)||caps[w]||/^(chez|client|cliente|clients|madame|monsieur|mme|mr|m)$/.test(t[i-1]||""))return w;
+      if(CMDS.fr.has(w)||(CMDS[L]&&CMDS[L].has(w))||knownWord(w)||S.clients[w]||NOMS_VUS[w])return w;
+      var max=w.length>=8?2:1,best=null,bd=99,bs=-1,tie=false;
+      lists.forEach(function(Ls){Ls.forEach(function(c){if(Math.abs(c.length-w.length)>max||c===best)return;var d=E.dl(w,c,max);if(d>max)return;var sc=dice2(w,c);
+        if(d<bd||(d===bd&&sc>bs)){bd=d;best=c;bs=sc;tie=false;}else if(d===bd&&sc===bs)tie=true;});});
+      if(!best||tie||(bd===2&&best.charAt(0)!==w.charAt(0))||w.indexOf(best)===0)return w;
+      /* le moteur a déjà reconnu ce mot (« carelage » -> carrelage) : on garde sa lecture si elle est aussi proche */
+      if(vu[w]){var da=E.dl(w,vu[w],2);if(da<bd||(da===bd&&dice2(w,vu[w])>=bs))return w;}
+      /* mots courts : seulement une lettre oubliée, en trop ou inversée (pas une lettre remplacée : « porte » n'est pas « poste ») */
+      if(w.length<=5&&best.length===w.length&&w.split("").sort().join("")!==best.split("").sort().join(""))return w;if(root.CMDFIX_LOG)root.CMDFIX_LOG.push(w+">"+best);return best;}).join(" ");}
+  B.translate=function(raw0){var raw=corrRaw(raw0),n=hn(raw),a=E.analyze(raw),L=detectLang(n,LANG!=="fr"&&(!a.lang||a.lang==="fr"||a.lang==="perso")?LANG:a.lang);n=expandAbbr(n,L);n=cmdFix(n,raw,L,a).replace(/\bq est ce\b/g,"qu est ce").replace(/\bja i\b/g,"j ai");if(L==="fr")n=words2num(n);var p=toFr(n,L);p=vocabFr(p,a,L);p=applyLex(p);if(L!=="fr")p=words2num(p);return {n:n,p:p,lang:L,a:a};};
 
   /* ---------- entités ---------- */
   var POSREF=/\b(pres d(?:u|e la|e l|es|e)|sous|devant|a cote d(?:u|e la|e l|es|e)|en face d(?:u|e la|e l|es|e)|contre)\s+(?:la |le |l |les )?([\p{L}]+(?: [\p{L}]+)?)/gu;
@@ -237,7 +257,12 @@ function create(E,X,saved,opts){
   function stripTimes(n){return n.replace(/\b(?:a|vers|des)\s*\d{1,2}\s*(?:h|heures?)(?:\s*\d{2})?(?:\s+(?:et\s+)?(?:demie?|quart)|\s+moins\s+(?:le\s+)?quart)?(?:\s+(?:du matin|de l apres midi|du soir))?\b/g," ").replace(/\b(?:a|vers)\s+(?:midi|minuit)(?:\s+(?:et\s+)?(?:demie?|quart))?\b/g," ").replace(/\b\d{1,2}h\d{2}\b/g," ").replace(/\b(?:de|entre)\s*\d{1,2}\s*h(?:\s*\d{2})?\s*(?:a|et)\s*\d{1,2}\s*h(?:\s*\d{2})?\b/g," ");}
   function clientKey(s){return hn(s).replace(/^(m|mme|mlle|monsieur|madame|mr|mrs)\s+/,"").trim();}
   var NOTNAME=/^(le|la|les|un|une|des|du|de|demain|aujourd|ce|cette|mon|ma|mes|lui|elle|moi|toi|nous|vous|eux|il|on|chantier|client|cliente|devis|facture|rdv|the|my|o|a|el|ora|living|kitchen)$/i;
-  function findClient(raw,n){var k=findClient0(raw,n);if(!k||S.clients[k])return k;var e=sameName(k);if(e)return e;
+  /* « chez Léon Demain » : un mot de temps n'est pas une partie du nom */
+  var TEMPS=/\s+(?:demain|apres demain|aujourd hui|ce soir|ce matin|lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche|matin|soir|midi|prochain|prochaine|semaine|maintenant|tot|tard)$/;
+  var NOMS_VUS={};function nomAff(x){var k=clientKey(x||"");return (S.clients[k]&&S.clients[k].nom)||NOMS_VUS[k]||cap(String(x||""));}
+  function findClient(raw,n){var k=findClient0(raw,n);if(k)while(TEMPS.test(k))k=k.replace(TEMPS,"");
+    if(!k){var lm=String(n||"").match(/\b(?:a|de|pour|chez|avec|sur)\s+([a-z\u00e0-\u00ff][\p{L}-]{2,})\b/u);if(lm&&!knownWord(lm[1])&&!nearFr(lm[1])&&!S.clients[lm[1]]&&!/^(lui|leur|eux|elle|moi|toi|nous|vous)$/.test(lm[1]))k=lm[1];}
+    if(k&&!S.clients[k]&&!NOMS_VUS[k]){var ov=origOf(raw,k);if(ov)NOMS_VUS[k]=ov.charAt(0).toUpperCase()+ov.slice(1);}if(!k||S.clients[k])return k;var e=sameName(k);if(e)return e;
     /* « u Nowaka », « dla Kowalskiego » : le nom est décliné après ces prépositions */
     if(/(?:^|\s)(?:u|dla|od|do|z|ze|o|у|для|от|до|к|ко|о|об|с|со|про)\s+\p{Lu}/u.test(raw)){var st=k.replace(/(owi|iego|ego|em|a|u|y|ie)$/,"");if(st.length>=3&&S.clients[st])return st;
       var ds=declined(k,false);for(var i=0;i<ds.length;i++){if(S.clients[ds[i]])return ds[i];var e2=sameName(ds[i]);if(e2)return e2;}}return k;}
@@ -270,7 +295,7 @@ function create(E,X,saved,opts){
     var bt=raw.match(/\p{Lu}[\p{L}'’-]+/gu)||[];for(var j=0;j<bt.length;j++){var ds=declined(clientKey(bt[j]),true);for(var q=0;q<ds.length;q++)if(S.clients[ds[q]])return ds[q];}
     return null;
   }
-  function clientName(k){var c=S.clients[k]||S.archives&&S.archives[k];return c?c.nom:tcase(k||"");}
+  function clientName(k){var c=S.clients[k]||S.archives&&S.archives[k];return c?c.nom:(NOMS_VUS[k]||tcase(k||""));}
   /* phrase d'une autre langue : la structure se lit sur la traduction (c.p) ; les noms et le texte libre gardent l'écriture d'origine */
   function horsFr(c){return !!(c&&c.lang&&c.lang!=="fr"&&c.lang!=="perso"&&c.p);}
   function rawToks(raw){var t=[];String(raw||"").replace(/[\p{L}\p{N}]+/gu,function(w,i){t.push({w:w,h:hn(w),i:i});return w;});return t;}
@@ -290,7 +315,16 @@ function create(E,X,saved,opts){
     if((m=raw.match(/\b(\d{5})\s+([A-ZÀ-Ý][\p{L}'-]+)/u)))o.adresse=(o.adresse?o.adresse+", ":"")+m[1]+" "+m[2];
     return o;
   }
-  function parseDate(p){
+  /* jour de la semaine tapé (même avec une faute : « smaedi ») qui ne correspond pas à la date écrite */
+  var MOISN=["janvier","fevrier","mars","avril","mai","juin","juillet","aout","septembre","octobre","novembre","decembre"];
+  function jourTape(p){var w=String(p).split(" ");for(var i=0;i<w.length;i++){var x=w[i];if(x.length<5)continue;for(var j=0;j<7;j++){var J=JOURS[j];
+      if(x===J||(x.length===J.length&&x.split("").sort().join("")===J.split("").sort().join("")))return j;}}return -1;}
+  function jourDate(p){var j=jourTape(p),m=String(p).match(/\b(\d{1,2})(?:er)?\s+(janvier|fevrier|mars|avril|mai|juin|juillet|aout|septembre|octobre|novembre|decembre)\b/);if(j<0||!m)return null;
+    var now=B.now(),mo=MOISN.indexOf(m[2]),y=now.getFullYear(),d=new Date(y,mo,+m[1]);if(d<sod(now))d=new Date(y+1,mo,+m[1]);if(d.getDay()===j)return null;
+    var o=new Date(d);for(var k=1;k<=6;k++){o=addDays(d,k);if(o.getDay()===j)break;}var b=new Date(d);for(var k2=1;k2<=6;k2++){b=addDays(d,-k2);if(b.getDay()===j)break;}
+    return {jour:j,date:d,autre:Math.abs(o-d)<=Math.abs(b-d)&&o>=sod(now)?o:(b>=sod(now)?b:o)};}
+  function joursFix(p){return String(p).split(" ").map(function(x){if(x.length<5||JOURS.indexOf(x)>=0)return x;for(var j=0;j<7;j++){var J=JOURS[j];if(x.length===J.length&&x.split("").sort().join("")===J.split("").sort().join(""))return J;}return x;}).join(" ");}
+  function parseDate(p){p=joursFix(p);
     var base=sod(B.now()),m;
     if(/\bapres demain\b/.test(p))return addDays(base,2);
     if(/\bdemain\b/.test(p))return addDays(base,1);
@@ -367,7 +401,7 @@ function create(E,X,saved,opts){
   function parseSys(c){
     var n=c.p,raw=c.raw.trim(),m;
     if(/^(aide|help|\?|que sais tu faire|que peux tu faire|qu est ce que tu sais faire|tu sais faire quoi|comment ca marche)$/.test(n))return [C("bibliotheque","ouvrir",{})];
-    if(/^(merci|merci beaucoup|super|parfait|top|ok|okay|d accord|daccord|ca marche|nickel|cool)$/.test(n))return [C("sys","politesse",{type:"merci",mot:n})];
+    if(/^(merci|merci beaucoup|merci bien|super|parfait|top|ok|okay|d accord|daccord|ca marche|nickel|cool|(?:ok|okay|super|parfait|top|nickel|d accord) merci(?: beaucoup| bien)?|merci (?:ok|super|c est bon))$/.test(n))return [C("sys","politesse",{type:"merci",mot:n})];
     if(/^(bonjour|salut|bonsoir|coucou|hello|hey|hi|hola|ola|ciao|buongiorno|merhaba|czesc|buna)\b/.test(n)&&n.split(" ").length<=3)return [C("sys","politesse",{type:"bonjour"})];
     if(/\b(mode bricoleur|bricoleur du dimanche|je suis (un )?bricoleur|je suis (un )?particulier|passe en bricoleur|version bricoleur|mode particulier)\b/.test(n))return [C("sys","mode",{mode:"bricoleur"})];
     if(/\b(mode artisan|mode pro|je suis (un )?artisan|passe en artisan|version artisan|version pro|je suis (un )?professionnel)\b/.test(n))return [C("sys","mode",{mode:"artisan"})];
@@ -395,7 +429,7 @@ function create(E,X,saved,opts){
       if(eq.length===2&&eq[0].trim()&&eq[1].trim()&&eq[0].trim().split(/\s+/).length<=4){var mo=hn(eq[0]).trim();return [C("mot","apprendre",{mot:mo,sens:bt.indexOf(mo+" ")===0?bt.slice(mo.length).trim():hn(eq[1]).trim()})];}
       return [C("memoire","retenir",{fait:rt})];}
     if(tm){var body=tm[1].trim(),pr=body.match(/^(.{2,48}?)\s*(?:=|\bsignifie\b|\bveut dire\b|\bc['’]est\b|:)\s*(.+)$/i);
-      if(pr&&pr[1].split(/\s+/).length<=4&&!/\b(je|mon|ma|mes|nous|notre)\b/i.test(pr[1]))return [C("mot","apprendre",{mot:pr[1].replace(/^(?:le|la|les|un|une|l['’])\s*/i,"").trim(),sens:pr[2].trim()})];
+      if(pr&&pr[1].split(/\s+/).length<=4&&!/\b(je|mon|ma|mes|nous|notre)\b/i.test(pr[1]))return [C("mot","apprendre",{mot:pr[1].replace(/^(?:(?:le|la|les|un|une)\s+|l['’]\s*)/i,"").trim(),sens:pr[2].trim()})];
       return [C("memoire","retenir",{fait:body})];}
     var pr2=raw.match(/^(.{2,30}?)\s*=\s*(.+)$/);if(pr2)return [C("mot","apprendre",{mot:pr2[1].trim(),sens:pr2[2].trim()})];
     if((m=n.match(/\btva\s*(?:a|de|en)?\s*(\d+(?:\.\d+)?)\s*%?\s*(?:sur|pour|de|du|des)\s+(?:la |le |les |l )?(.+?)(?:\s+(?:seulement|uniquement|aussi))?$/))&&!/^(tout|toute|tous|le devis|ce devis|devis)$/.test(m[2]))return [C("devis","tva",{taux:pnum(m[1]),libelle:cleanLabel(m[2])||m[2]})];
@@ -420,13 +454,14 @@ function create(E,X,saved,opts){
     if(/\b(signature|signer|signe|fais signer|faire signer|signez)\b/.test(n)&&!/\b(a signe)\b/.test(n))
       return [C("signature","ouvrir",{qui:/\b(client|fais signer|faire signer|qu il signe|qu elle signe)\b/.test(n)||(k&&!/\bje\b/.test(n))?"client":"artisan"})];
     /* devis : cycle */
-    if(/\b(envoie|envoyer|envoi|transmets|transmettre|expedie)\b/.test(n)&&hasDevis.test(n))return [C("devis","envoyer",{})];
+    if((/\b(envoie|envoyer|envoi|transmets|transmettre|expedie)\b/.test(n)||/\bfai(?:s|t|tes) (?:partir|parvenir)\b/.test(n))&&hasDevis.test(n))return [C("devis","envoyer",{})];
     if(hasDevis.test(n)&&/\b(refuse|decline|rejete|pas accepte)\b/.test(n))return [C("devis","refuser",{client:k})];
     if(hasDevis.test(n)&&/\b(accepte|valide|ok pour)\b/.test(n))return [C("devis","valider",{client:k})];
     if(/\bnouveau devis\b|\bcommence un devis\b|\bnouveau chantier\b/.test(n)&&!qn)return [C("devis","nouveau",{client:k})];
     if(/\b(mes devis|liste des devis|tous les devis|devis (?:accept|valide|refus|en cours)\w*)\b/.test(n)&&!qn)return [C("devis","liste",{filtre:/accept|valide/.test(n)?"validé":/refus/.test(n)?"refusé":null})];
     if(hasDevis.test(n)&&(verbOpen.test(n)||/^(le |mon )?devis( de \S+| pour \S+)?$/.test(n))&&!qn)return [C("devis","ouvrir",{client:k})];
     if((m=n.match(/\b(?:enleve|retire|supprime|efface)\s+(?:la ligne\s+)?(.+?)\s+du devis\b/)))return [C("devis","supprimer_ligne",{libelle:cleanLabel(m[1])})];
+    if((m=n.match(/^(?:enleve|enlever|retire|retirer|supprime|supprimer|efface|effacer|vire|virer|ote|oter)\s+(?:la |les )?lignes?\s+(?:de |du |des |d )?(?:la |le |les |l )?(.+?)$/))&&cleanLabel(m[1]))return [C("devis","supprimer_ligne",{libelle:cleanLabel(m[1])})];
     /* services / prix */
     if(/\b(mes services|mes prix|mes tarifs|liste des prix|grille tarifaire|tarifs)\b/.test(n)&&!mo)return [C(art?"services":"courses","ouvrir",{})];
     if(mo&&!qn){var pr=parsePrice(n);if(pr&&(S.clients[clientKey(pr.libelle)]||/^\p{Lu}/u.test(raw.trim())&&pr.libelle.split(" ").length===1&&!E.isKnown(pr.libelle)&&!findService(pr.libelle)))return null;if(pr&&/\bttc\b/.test(n)){pr.ttc=pr.prix;pr.prix=Math.round(pr.prix/(1+S.tva/100)*100)/100;}if(pr)return [art?C("services","definir",{nom:pr.libelle,prix:pr.prix,unite:pr.unite,ttc:pr.ttc||null}):C("courses","prix",{nom:pr.libelle,prix:pr.prix,unite:pr.unite})];}
@@ -445,6 +480,9 @@ function create(E,X,saved,opts){
     if((rdvw.test(n)&&(parseDate(n)||parseTime(n)||k||/\b(rdv|rendez vous)\b/.test(n))||(/\b(cale|prends|prendre|note|bloque|reserve|planifie|prevois|programme)\b/.test(n)&&(parseDate(n)||parseTime(n))))&&(!qn||rdvw.test(n)&&parseDate(n)&&parseTime(n))&&!/\bdevis\b/.test(n)&&(parseDate(n)||parseTime(n)||rdvw.test(n))){
       var d3=parseDate(n),t3=parseTime(n),du3=parseDur(n);if(du3&&du3.start&&!t3)t3=du3.start;
       var tit=(n.match(/\b(visite|intervention|reunion|livraison|pose|chantier|metre|devis)\b/)||[0,"rendez-vous"])[1];
+      /* « samedi 16 décembre » alors que le 16 est un mercredi : on demande au lieu de choisir */
+      var dj=jourDate(n);if(dj){var bq=(k?"rdv chez "+clientName(k):"rdv")+(t3?" a "+pad(t3.h)+"h"+(t3.m?pad(t3.m):""):"");
+        return [C("planning","date",{jour:dj.jour,date:iso(dj.date),autre:iso(dj.autre),client:k,heure:t3?pad(t3.h)+":"+pad(t3.m):null,titre:cap(tit)})];}
       /* « … pour sa salle de bain » : l'objet du rendez-vous devient son titre (le chat s'en sert pour préparer le devis) */
       if(tit==="rendez-vous"){var ob=(c.lang==="fr"?raw:n).match(/\bpour\s+(?:sa|son|ses|la|le|les|l['’ ]|une|un|refaire\s+(?:sa|son|ses|la|le|les))\s*([\p{L}'’ -]{3,40})/iu);
         if(ob){var obt=ob[1].split(/\s+(?:demain|apr[eè]s demain|aujourd|lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche|[àa]|vers|chez|avec|le|la)\b/i)[0].trim();if(obt.length>=3&&!E.isStop(hn(obt)))tit=obt;}}
@@ -471,6 +509,8 @@ function create(E,X,saved,opts){
       if((m=n.match(/\b(?:mon|nouveau) fournisseur\s*(?:c est|est|:)?\s*([\p{L}0-9 .-]+?)\s*$/u))&&(fo=origOf(raw,m[1])))return [C("fournisseurs","ajouter",{nom:fo,specialite:null})];}
     if(/\b(mes fournisseurs|liste des fournisseurs|fournisseurs)\b/.test(n)&&!qn&&!/\bcommande\b/.test(n))return [C("fournisseurs","ouvrir",{})];
     if((m=raw.match(/\bcommande[rs]?\s+(.+?)\s+(?:chez|a|à)\s+([A-ZÀ-Ý][\p{L}0-9'’ .-]+)$/u)))return orderCmd(m[1],m[2].trim());
+    /* « commnde 9 sacs de colle chez point p », « COMMANDE … CHEZ POINT P » : fautes, minuscules ou majuscules */
+    if(/^(?:commande|commander|commandes)\s/.test(n)&&(m=raw.match(/^\s*\S+\s+(.+?)\s+(?:chez|à|a)\s+([\p{L}][\p{L}0-9'’ .-]*)$/iu))&&/\d/.test(m[1])){var fnm=m[2].trim();if(fnm===fnm.toUpperCase()||fnm===fnm.toLowerCase())fnm=fnm.toLowerCase().replace(/(^|\s)(\p{L})/gu,function(x,a1,b1){return a1+b1.toUpperCase();});return orderCmd(m[1],fnm);}
     /* autre langue : le fournisseur est le premier nom écrit avec une majuscule (ou déjà connu) après « chez », « à », « de »… */
     if(horsFr(c)&&(m=n.match(/\bcommande[rs]?\s+(.+)$/))){var oc=orderSplit(raw,m[1]);if(oc)return orderCmd(oc.what,oc.nom);}
     /* bricoleur : courses, calculs de matériaux, demande de devis */
@@ -478,7 +518,7 @@ function create(E,X,saved,opts){
     var trav=n.match(/\b(carrel\w*|carrelage|peindre|peinture|parquet|stratifie|placo|enduit|tapisserie|papier peint|lino|vinyle|faience|beton|chape|ragreage)\b/);
     var sq=n.match(/(\d+(?:\.\d+)?)\s*(?:m2|m²|metres? carres?)/);
     if(trav){trav[1]=/^carrel/.test(trav[1])?"carrelage":/^(peindre|peinture)$/.test(trav[1])?"peinture":trav[1];}
-    if(trav&&sq&&(!art||/\b(combien|il me faut|il faut|quoi acheter|quantite|calcule|prevoir)\b/.test(n)))return [C("courses","calcul",{travail:trav[1],surface:pnum(sq[1])})];
+    if(trav&&sq&&(!art||/\b(combien|il me faut|il faut|quoi acheter|quantite|calcule|prevoir|liste de courses|liste des courses|courses|materiaux|materiel)\b/.test(n)))return [C("courses","calcul",{travail:trav[1],surface:pnum(sq[1])})];
     if(/\b(demande de devis|trouve(r)? un artisan|faire faire|je veux un devis|demander un devis)\b/.test(n)&&!art)return [C("projet","demande",{})];
     if(!art&&qn&&/\b(achete|acheter|il me faut|il faut|ajoute|prends|besoin|liste)\b/.test(n)){var arts2=qtys(nt).map(function(q,ix,all){var nxt=all[ix+1];var seg=nt.slice(q.i+q.len,nxt?nxt.i:nt.length);return {nom:cleanLabel(seg.split(/,|\bet\b/)[0])||"article",quantite:q.q,unite:q.u};});return [C("courses","ajouter",{articles:arts2})];}
     return null;
@@ -519,6 +559,8 @@ function create(E,X,saved,opts){
     empty:/\b(vide|vider|videz)\b|\b(supprime|enleve|efface|retire) tout\b|\btout supprimer\b/};
   function parseScene(c){
     var n=c.p,out=[],m;
+    /* une adresse (« 12 rue des Lilas », « avenue de la Gare ») n'est pas une demande de maquette */
+    if(/(?:^|\s)(?:\d+\s*(?:bis|ter)?\s+)?(?:rue|avenue|av|boulevard|bd|impasse|place|allee|quai|cours|chemin|route)\s+(?:de la |de l |des |du |de |d |la |le |les )?[a-z]{3,}(?:\s+\d+)?(?:\s|$)/.test(n)&&(/\d/.test(n)||/\b(adresse|habite|domicile)\b/.test(n))&&!/\b(ajoute|mets|fais|dessine|cree|enleve|supprime)\b/.test(n))return [];
     if(/^(comme au debut|recommence la maquette|reinitialise la maquette|remets tout comme avant|maquette a zero|efface la maquette)$/.test(n))return [C("scene","reinit")];
     if(/\bvue de dessus\b|\bvue du dessus\b|\bvue en plan\b|\ben plan\b/.test(n))return [C("scene","vue",{vue:"dessus"})];
     if(/\bvue interieure\b|\bvisite\b|\bvue de l interieur\b/.test(n)){var r0=findRoom(n);return [C("scene","vue",{vue:"interieure",piece:r0?r0.id:null})];}
@@ -556,7 +598,7 @@ function create(E,X,saved,opts){
     /* information */
     if(/\b(combien|nombre de)\b/.test(n)){var eqq=findEquip(n);if(eqq.length)return [C("scene","info",{quoi:"nombre",type:eqq[0].type})];}
     if(/\bsurface\b/.test(n)&&!/\bsurface de \d/.test(n)){var r1=findRoom(n);return [C("scene","info",{quoi:"surface",piece:r1?r1.id:null})];}
-    if(/\b(prix|cout|coute|budget|combien ca coute|tarif)\b/.test(n)&&!money(n))return [C("scene","info",{quoi:"prix"})];
+    if(/\b(prix|cout|coute|budget|combien ca coute|tarif)\b/.test(n)&&!money(n)&&!/\b(mon|mes|ton|tes) (prix|tarifs?)\b|\bje (facture|prends|compte|vends)\b/.test(n))return [C("scene","info",{quoi:"prix"})];
     var eq=findEquip(n),room=findRoom(n),color=findColor(n),mat=findMat(n),pos=findPos(n),all=/\b(partout|toute la maison|tous les murs|toutes les pieces|tous les sols|toute la surface)\b/.test(n);
     var lastT=S.last.type;
     if(RE.empty.test(n)&&!eq.length){return [C("scene","vider",{piece:room?room.id:(/\b(tout|maison)\b/.test(n)?"maison":S.last.room||"maison")})];}
@@ -600,7 +642,7 @@ function create(E,X,saved,opts){
     if(s){act="modifié";s.prix=prix;if(unite)s.unite=unite;}else{act="ajouté";s={nom:cap(nom),unite:unite||"forfait",prix:prix};S.services.push(s);}
     emit("services","definir",{nom:s.nom,prix:prix,unite:s.unite});return {s:s,act:act};}
   function ensureClient(nom,extra){if(!nom)return null;var k=clientKey(nom),c=S.clients[k];
-    if(!c){var nm0=String(nom).trim();c=S.clients[k]={nom:/\p{Lu}/u.test(nm0)?cap(nm0):tcase(nm0),tel:"",email:"",adresse:"",notes:[],created:Date.now()};emit("clients","creer",{client:c.nom});}
+    if(!c){var nm0=String(nom).trim();if(NOMS_VUS[k])nm0=NOMS_VUS[k];c=S.clients[k]={nom:/\p{Lu}/u.test(nm0)?cap(nm0):tcase(nm0),tel:"",email:"",adresse:"",notes:[],created:Date.now()};emit("clients","creer",{client:c.nom});}
     if(extra)["tel","email","adresse"].forEach(function(f){if(extra[f])c[f]=extra[f];});if(extra&&extra.note)c.notes.push(extra.note);
     S.last.client=k;return k;}
   function getCur(){return S.devis.filter(function(d){return d.id===S.cur;})[0]||null;}
@@ -868,13 +910,13 @@ function create(E,X,saved,opts){
 
   /* ---------- phrase précise de ce qui est compris ---------- */
   function D(c){var a=c.args||{},k=c.m+"."+c.a;
-    function cl(x){return x?tr(" de {0}",[cap(x)]):"";}
+    function cl(x){return x?tr(" de {0}",[nomAff(x)]):"";}
     switch(k){
       case "devis.client":return tr("Client du devis : {0}",[[a.nom,a.tel,a.email,a.adresse].filter(Boolean).join(", ")]);
       case "devis.lignes":return (a.op==="-"?tr("Retirer du devis"):tr("Ajouter au devis"))+cl(a.client)+" : "+(a.lignes||[]).map(function(l){return String(l.libelle).replace(/\bmain d oeuvre\b/i,"main d’œuvre")+" "+fnum(+l.quantite||1)+" "+trw(l.unite||"")+(l.prix!=null?tr(" à {0}",[eur(+l.prix)]):"");}).join(", ");
       case "devis.afaire":return tr("Noter sur le devis : {0}",[(a.taches||[]).join(", ")]);case "devis.fournisseur":return tr("Lier le fournisseur {0} au devis",[a.nom]);case "devis.remarque":return tr("Remarque sur le devis");
       case "devis.tva":return tr("Mettre la TVA à {0} %",[fnum(+a.taux)]);case "devis.supprimer_ligne":return tr("Retirer « {0} » du devis",[a.libelle]);case "devis.nouveau":return tr("Commencer un nouveau devis{0}",[(a.client?tr(" pour {0}",[a.client]):"")]);
-      case "devis.preparer":return tr("Préparer le devis{0}",[cl(a.client)]);case "devis.modele":return tr("Enregistrer le devis comme modèle");case "devis.ouvrir":return tr("Ouvrir le devis{0}",[cl(a.client)]);case "devis.liste":return tr("Ouvrir la liste des devis");case "devis.envoyer":return tr("Envoyer le devis au client");case "devis.valider":return tr("Le client a accepté le devis{0}",[cl(a.client)]);case "devis.refuser":return tr("Le client a refusé le devis{0}",[cl(a.client)]);
+      case "planning.date":return tr("Date du rendez-vous");case "devis.preparer":return tr("Préparer le devis{0}",[cl(a.client)]);case "devis.modele":return tr("Enregistrer le devis comme modèle");case "devis.ouvrir":return tr("Ouvrir le devis{0}",[cl(a.client)]);case "devis.liste":return tr("Ouvrir la liste des devis");case "devis.envoyer":return tr("Envoyer le devis au client");case "devis.valider":return tr("Le client a accepté le devis{0}",[cl(a.client)]);case "devis.refuser":return tr("Le client a refusé le devis{0}",[cl(a.client)]);
       case "signature.ouvrir":return a.qui==="client"?tr("Faire signer le devis par le client"):tr("Signer le devis");case "signature.signer":return tr("Signature");
       case "services.definir":return tr("Prix de « {0} » : {1}{2}",[a.nom,eur(+a.prix),(a.unite?" / "+trw(a.unite):"")]);case "services.ouvrir":return tr("Ouvrir mes services et prix");
       case "planning.ajouter":var d=fromIso(a.date);return tr("Rendez-vous{0}{1}{2}{3}",[(d?" "+fdate(d):""),(a.heure?tr(" à {0}",[ftime(+a.heure.slice(0,2),+a.heure.slice(3,5))]):""),(a.client?tr(" chez {0}",[cap(a.client)]):""),(a.titre&&a.titre!=="Rendez-vous"?" ("+a.titre.toLowerCase()+")":"")]);
@@ -980,6 +1022,8 @@ function create(E,X,saved,opts){
     if(/\b(relance|relancer|rappelle|rappeler)\b/.test(n)&&(k||/\b(impayes?|retard|tous|clients)\b/.test(n))&&!/\b(rdv|rendez vous|demain|lundi|mardi|mercredi|jeudi|vendredi|samedi)\b/.test(n))return [C("factures","relance",{client:k?clientName(k):null})];
     /* note sur un client */
     if(k&&(m=raw.match(/\b(?:note|retiens|remarque|info)\s+(?:sur|pour|à propos de|a propos de|concernant)\s+(?:M\.\s*|Mme\s*)?[\p{L}'’-]+\s*[:,-]?\s*(.+)$/iu)))return [C("clients","note",{nom:clientName(k),texte:m[1].trim()})];
+    /* note sur un client, même pas encore enregistré ou mal tapé : « note sur Silva : il a un chien », « ntoe sur fournier  code porte 1234 » */
+    if(/^(note|retiens|nota|notiz|notatka)\s+(sur|pour|concernant|sobre|su|on|about|o|despre|hakkinda)\s/.test(n)&&(m=raw.match(/^\s*\S+\s+\S+\s+(?:(?:M\.|Mme|Mr|Monsieur|Madame|monsieur|madame)\s*)?([\p{L}'’-]{2,})\s*[:,-]?\s*(.+)$/u))&&!E.isStop(hn(m[1]))&&!(CMDS.fr&&CMDS.fr.has(hn(m[1])))){var kn=clientKey(m[1]);return [C("clients","note",{nom:S.clients[kn]?clientName(kn):cap(m[1]),texte:m[2].trim()})];}
     if(k&&horsFr(c)&&(m=n.match(/\b(?:note|retiens|remarque|info)\s+(?:sur|pour|a propos de|concernant)\s+(?:m\s+|mme\s+)?[\p{L}'-]+\s*[:,-]?\s*(.+)$/u))){var ntx=origTail(raw,m[1]);if(ntx)return [C("clients","note",{nom:clientName(k),texte:ntx})];}
     /* prix chez un fournisseur */
     var fp=fournPrice(raw);
@@ -1238,8 +1282,9 @@ function create(E,X,saved,opts){
       return [C("clients","message",{nom:clientName(k0),canal:"sms",texte:msgText(body,c.lang)})];}
     if(/^(?:appelle|appeler|telephone a|telephoner a|rappelle|rappeler)\b/.test(n)&&PROCHE.test(n))return [C("sys","info",{texte:tr("Depuis casô, j’appelle seulement tes clients.")})];
     /* appeler un client */
-    if(/^(?:appelle|appeler|telephone a|telephoner a|passe un coup de fil a|passe un coup de telephone a|rappelle|rappeler|compose le numero de)\b(?! moi\b)/.test(n)&&!/\b(paiement|payer|paye|facture|impaye|argent|regler|relance|rdv|rendez vous)\b/.test(n)){
-      var k1=cliIn(raw)||(/\b(le|la|lui)\b/.test(n)?S.last.client:null);if(!k1&&!/^(?:appelle|appeler)\b/.test(n))return null;
+    if(/^(?:appelle|appele|apelle|appeller|appeler|telephone a|telephoner a|passe un coup de fil a|passe un coup de telephone a|rappelle|rappele|rappeler|compose le numero de)\b(?! moi\b)/.test(n)&&!/\b(paiement|payer|paye|facture|impaye|argent|regler|relance|rdv|rendez vous)\b/.test(n)){
+      var k1=cliIn(raw)||(/\b(le|la|lui)\b/.test(n)?S.last.client:null);if(!k1){var mx=raw.match(/^\s*\S+(?:\s+(?:à|a))?\s+(?:(?:M\.|Mme|Monsieur|Madame)\s*)?([\p{Lu}][\p{L}'’-]+)\s*$/u);if(mx&&!E.isStop(hn(mx[1])))return [C("clients","appeler",{nom:mx[1]})];}
+      if(!k1&&!/^(?:appelle|appele|apelle|appeler)\b/.test(n))return null;
       return [C("clients","appeler",{nom:k1?clientName(k1):null})];}
     var canal=/\b(mail|email|e mail|courriel)\b/.test(n)?"mail":/\bwhatsapp\b/.test(n)?"whatsapp":"sms";
     var hasCanal=/\b(sms|texto|message|whatsapp|mail|email|e mail|courriel)\b/.test(n),dire=/\b(previens|prevenir|avertis|avertir|informe|informer|fais savoir|fait savoir)\b|\b(?:dis|dire|ecris|ecrire|reponds|repondre)(?: a| au| lui| leur)\b/.test(n);
@@ -1389,7 +1434,7 @@ function create(E,X,saved,opts){
     "factures.impayes":function(a){return a.client?tr("Ce que me doit {0}",[a.client]):tr("Qui me doit de l’argent");},"stats.ca":function(a){return tr("Encaissements {0}",[rangeOf(a.periode||"mois").lab]);},
     "clients.info":function(a){return tr("{0} de {1}",[({tel:tr("Numéro"),email:tr("E-mail"),adresse:tr("Adresse"),notes:tr("Notes"),tout:tr("Coordonnées")}[a.champ]||tr("Fiche")),(a.nom||tr("client"))]);},
     "pointage.total":function(a){return tr("Heures travaillées {0}",[rangeOf(a.periode||"semaine").lab]);},"services.info":function(a){var sv=findService(a.nom||"");return tr("Mon prix pour « {0} »",[(sv?sv.nom.toLowerCase():a.nom)]);},
-    "clients.message":function(a){return tr("{0} à {1}",[(a.canal==="mail"?tr("E-mail"):a.canal==="whatsapp"?tr("WhatsApp"):tr("SMS")),(a.nom||tr("client"))]);},"clients.appeler":function(a){return tr("Appeler {0}",[(a.nom||tr("le client"))]);},
+    "clients.message":function(a){return tr("{0} à {1}",[(a.canal==="mail"?tr("E-mail"):a.canal==="whatsapp"?tr("WhatsApp"):tr("SMS")),(a.nom?nomAff(a.nom):tr("client"))]);},"clients.appeler":function(a){return tr("Appeler {0}",[(a.nom?nomAff(a.nom):tr("le client"))]);},
     "clients.supprimer":function(a){return tr("Supprimer la fiche de {0}",[(a.nom||tr("client"))]);},
     "memoire.desapprendre":function(a){return a.dernier?tr("Oublier la dernière phrase apprise"):tr("Oublier « {0} »",[a.texte]);},"sys.lire":function(){return "";},"sys.voix":function(){return "";},"sys.info":function(){return "";},"sys.confirmer":function(){return "";}};
   var _dx=B.describeExtra;B.describeExtra=function(c){var f=D3[c.m+"."+c.a];return f?f(c.args||{}):_dx(c);};
@@ -1444,7 +1489,7 @@ function create(E,X,saved,opts){
     S.modeles=(S.modeles||[]).filter(function(m){return hn(m.nom)!==hn(nom);});S.modeles.push({nom:nom,lignes:clone(d.lignes),n:0,at:Date.now()});d.modele=nom;emit("devis","modele",{nom:nom});
     return R(tr("Modèle « {0} » enregistré.",[nom]));};
   /* « fais un devis pour mon prochain travail », « prépare le devis de Mme Martin » (sans lignes : le chat choisit le modèle) */
-  function parsePreparer(c){var n=c.p;if(!/\bdevis\b/.test(n)||/\b(nouveau|nouvelle|envoie|envoyer|ouvre|montre|affiche|signe|valide|refuse|relance|supprime|duplique|dupliquer|copie|copier|lis|combien|total|mes devis)\b/.test(n))return null;
+  function parsePreparer(c){var n=c.p;if(!/\bdevis\b/.test(n)||/\b(nouveau|nouvelle|envoie|envoyer|ouvre|montre|affiche|signe|valide|refuse|relance|supprime|duplique|dupliquer|copie|copier|lis|combien|total|mes devis|partir|parvenir|expedie|transmets|transmettre)\b/.test(n))return null;
     if(qtys(stripTimes(n)).length||money(n)!=null)return null;
     var veut=/\b(fais|fait|faire|fais moi|prepare|preparer|prepare moi|etablis|redige|monte|cree|creer|sors|propose|je veux|il me faut)\b/.test(n),proch=/\bprochain(?:e)?s?\s+(?:travail|travaux|chantier|rdv|rendez vous|client|cliente|intervention|visite|job)\b/.test(n);
     if(!veut&&!proch)return null;var k=findClient(c.raw,c.n);if(!proch&&!k)return null;
@@ -1467,6 +1512,12 @@ function create(E,X,saved,opts){
     var c=S.clients[d.client]||{};emit("devis","envoyer",{id:d.id,client:clientName(d.client),lien:d.lien,mode:"lien",tel:c.tel||null,email:c.email||null,verifie:opts.verifie||null});
     log("envoi par lien "+d.num,[C("devis","envoyer",{id:d.id})],"carte");S.cur=d.id;
     return {ok:true,say:tr("Devis envoyé à {0} : il le signera dans casô.",[clientName(d.client)]),lien:d.lien};};
+  /* la date et le jour ne vont pas ensemble : « Le 16 décembre est un mercredi. Mercredi 16 ou samedi 19 ? » */
+  X_["planning.date"]=function(a){var d=new Date(a.date+"T12:00:00"),o=new Date(a.autre+"T12:00:00"),
+      jm=function(x){if(LANG==="fr")return x.getDate()+" "+MOISD[x.getMonth()];try{return new Intl.DateTimeFormat(LOC[LANG],{day:"numeric",month:"long"}).format(x);}catch(e){return x.getDate()+" "+MOISD[x.getMonth()];}},
+      jo=function(x){if(LANG==="fr")return JOURS[x.getDay()];try{return new Intl.DateTimeFormat(LOC[LANG],{weekday:"long"}).format(x);}catch(e){return JOURS[x.getDay()];}};
+    S.pending={type:"datechoix",dates:[a.date,a.autre],cmd:{client:a.client||null,heure:a.heure||null,titre:a.titre||"Rendez-vous",duree_min:60}};
+    return R(tr("Le {0} est un {1}. {2} ou {3} ?",[jm(d),jo(d),cap(fdate(d)),fdate(o)]));};
 
   /* ---------- apprentissage des mots ---------- */
   function learnWord(mot,sens){
@@ -1604,6 +1655,8 @@ function create(E,X,saved,opts){
   /* ---------- point d'entrée ---------- */
   var NON=/^(non|pas ca|c est pas ca|ce n est pas ca|c est faux|faux|mauvais|erreur|tu t es trompe|tu te trompes|pas du tout)\b\s*(?:non\s*)?(?:,\s*)?(?:je voulais (?:dire )?|je veux |plutot |mais )?/;
   B.handle=function(raw){
+    /* les noms tels qu'ils sont tapés (accents, majuscules) servent à l'affichage */
+    try{(String(raw||"").match(/\p{Lu}[\p{L}'’-]+/gu)||[]).forEach(function(w){var k=clientKey(w);if(k&&!NOMS_VUS[k])NOMS_VUS[k]=w;});}catch(e){}
     var c=ctxOf(raw),pd=S.pending,m;
     /* réponses aux questions de confirmation et aux demandes de précision */
     if(pd&&pd.type==="sure"){S.pending=null;
@@ -1621,26 +1674,33 @@ function create(E,X,saved,opts){
       S.pending=null;pd=null;}
     /* correction : « non … » juste après une action */
     if(NON.test(c.n)&&S.lastTurn&&S.lastTurn.cmds&&S.lastTurn.cmds.length&&!(pd&&pd.type==="prix")){
-      var orig=S.lastTurn.raw,wasMut=S.lastTurn.mut;if(wasMut)undo();if(/^memoire/.test(S.lastTurn.via||""))forgetLearned(orig,S.lastTurn.cmds,S.lastTurn.via);
+      var LT=S.lastTurn,orig=LT.raw,wasMut=LT.mut;if(wasMut)undo();if(/^memoire/.test(LT.via||""))forgetLearned(orig,LT.cmds,LT.via);
       var rest=c.raw.replace(/^\s*(non|pas ça|pas ca|c'est pas ça|c’est pas ça|ce n'est pas ça|c'est faux|faux|mauvais|erreur|tu t'es trompé|tu te trompes|pas du tout)\s*[,.!]*\s*(non\s*)?(je voulais (dire )?|je veux |plutôt |plutot |mais )?/i,"").trim();
       S.pending=null;
       if(rest){var rc=ctxOf(rest),cm=recall(rc)||{cmds:localParse(rc),via:"local"};
         if(!cm.cmds&&S.prev){var fx=retargetFU(S.prev.cmds,rc);if(fx){var of=exec(fx,null,"suite");of.says.unshift(wasMut?tr("Corrigé."):"");of.says=of.says.filter(Boolean);return of;}}
         if(cm.cmds){miniLearn(orig,cm.cmds);var o=run(cm.cmds,rc,"appris",ctxOf(orig));o.says.unshift(wasMut?tr("Corrigé."):"");o.says=o.says.filter(Boolean);return o;}
         return unknown(rc,orig,wasMut?"J’ai annulé.":"");}
-      forgetLearned(orig,S.lastTurn.cmds,S.lastTurn.via);
+      forgetLearned(orig,LT.cmds,LT.via);
       S.pending={type:"reformuler",raw:orig,at:Date.now()};S.lastTurn=null;
       return {explain:"",says:[tr("{0}Qu’est-ce que tu voulais ?",[(wasMut?tr("D’accord, j’ai annulé. "):"")])],open:null};
     }
     if(pd){S.pending=null;
-      if(/^(non|annule|laisse|laisse tomber|plus tard|stop|rien)$/.test(c.n)&&pd.type!=="reformuler"&&pd.type!=="confirm")return {explain:"",says:[tr("D’accord, je laisse ça de côté.")],open:null};
+      if((/^(non|annule|laisse|laisse tomber|plus tard|stop|rien)$/.test(c.n)||PLUSTARD.test(c.n)||PLUSTARD.test(c.p))&&pd.type!=="reformuler"&&pd.type!=="confirm")return {explain:"",says:[tr("D’accord, je laisse ça de côté.")],open:null};
       if(pd.type==="prix"&&/^\d+(?:\.\d{1,2})?\s*(?:€|euros?|eur)?(?:\s*(?:ht|ttc))?(?:\s*(?:le|la|l|par|du|de l)\s*[\p{L}²]+)?$/u.test(c.n)){var v=money(c.n);if(v==null&&(m=c.n.match(/^(\d+(?:\.\d{1,2})?)\s*(?:euros?|€)?$/)))v=pnum(m[1]);
         if(v!=null){var L0=pd.lignes[0],sv=setService(L0.libelle,v,L0.unite).s,d=S.devis.filter(function(x){return x.id===pd.devis;})[0];
           if(d)d.lignes.forEach(function(l){if(hn(l.libelle)===hn(L0.libelle)&&l.prix==null)l.prix=v;});pd.lignes.shift();
           var say=tr("Prix retenu : {0} à {1} / {2}.",[sv.nom,eur(v),L0.unite]);
           if(pd.lignes.length){S.pending=pd;say+=tr(" Et pour « {0} » (en € par {1}) ?",[pd.lignes[0].libelle,pd.lignes[0].unite]);}else if(d)say+=tr(" Devis : {0} HT.",[eur(totalHT(d))]);
           return {explain:"",says:[say],open:null};}}
-      if(pd.type==="rdv"){var a=clone(pd.cmd),dd=parseDate(c.p),tt=parseTime(c.p);if(dd&&!a.date)a.date=iso(dd);if(tt)a.heure=pad(tt.h)+":"+pad(tt.m);
+      /* réponse à « Mercredi 16 ou samedi 19 ? » : le jour, le numéro, ou « le premier / le deuxième » */
+      if(pd.type==="datechoix"){var D2=pd.dates.map(function(x){return new Date(x+"T12:00:00");}),jt=jourTape(c.n),nm=c.n.match(/\b(\d{1,2})\b/),ch=null;
+        D2.forEach(function(x,i){if(ch==null&&((nm&&+nm[1]===x.getDate())||(jt>=0&&jt===x.getDay()&&!(nm&&+nm[1]!==x.getDate()))))ch=i;});
+        if(ch==null&&/\b(premier|1er|le 1)\b/.test(c.n))ch=0;if(ch==null&&/\b(deuxieme|second|le 2|l autre)\b/.test(c.n))ch=1;
+        if(ch!=null){var ad=clone(pd.cmd);ad.date=pd.dates[ch];var th=parseTime(c.p);if(th)ad.heure=pad(th.h)+":"+pad(th.m);return run([C("planning","ajouter",ad)],null,"local");}}
+      if(pd.type==="rdv"){var a=clone(pd.cmd),dd=parseDate(c.p),tt=parseTime(c.p),nb=c.n.match(/^(\d{1,2})(?:[h:.](\d{2}))?$/);
+        /* « 16 » : une heure si le jour est déjà connu, sinon le jour du mois */
+        if(nb&&!dd&&!tt){if(a.date&&+nb[1]<24)tt={h:+nb[1],m:nb[2]?+nb[2]:0};else if(!a.date&&+nb[1]>=1&&+nb[1]<=31){var bd=sod(B.now()),dm=new Date(bd.getFullYear(),bd.getMonth(),+nb[1]);if(dm<bd)dm=new Date(bd.getFullYear(),bd.getMonth()+1,+nb[1]);dd=dm;}}if(dd&&!a.date)a.date=iso(dd);if(tt)a.heure=pad(tt.h)+":"+pad(tt.m);
         if((dd||tt)&&c.n.split(" ").length<=6)return run([C("planning","ajouter",a)],null,"local");}
       if(pd.type==="rdv-rec"){var tr2=parseTime(c.p);if(tr2&&c.n.split(" ").length<=5){var ac=clone(pd.cmd);ac.heure=pad(tr2.h)+":"+pad(tr2.m);return run([C("planning","recurrent",ac)],null,"local");}}
       if(pd.type==="acompte"){var am=money(c.n),pc=c.n.match(/(\d{1,2})\s*(?:%|pour ?cent)/),val=am!=null?am:pc?pd.total*+pc[1]/100:(c.n.match(/^(\d+(?:\.\d+)?)$/)?pnum(c.n):null);
@@ -1652,6 +1712,11 @@ function create(E,X,saved,opts){
       if(pd.type==="iadl"){if(YES.test(c.n)){S.iaLLM="oui";return {explain:"",says:[tr("Je télécharge mon modèle de langage. Je te réponds dès qu’il est prêt.")],open:null,ui:"iadl",raw:pd.raw};}
         if(/^(non|pas maintenant|plus tard|nan|no)(\s|$)/.test(c.n)){S.iaLLM="non";return guess(ctxOf(pd.raw));}}
       if(pd.type==="confirm"){if(YES.test(c.n)){var oc=ctxOf(pd.raw),ro2=run(pd.cmds,oc,"appris",null);remember(oc,pd.cmds,"guess");miniLearn(pd.raw,pd.cmds);if(pd.teach)miniLearn(pd.teach,pd.cmds);if(pd.teach)remember(ctxOf(pd.teach),pd.cmds,"user");return ro2;}
+        /* proposition de rendez-vous sans heure, et la réponse est une heure (« 16 », « 16h30 ») : c'est oui, à cette heure-là */
+        if(pd.cmds&&pd.cmds.length===1&&labelOf(pd.cmds)==="planning.ajouter"){var nt=c.n.match(/^(?:a\s+)?(\d{1,2})(?:\s*[h:.]\s*(\d{2})?)?$/),tq=parseTime(c.p);
+          if((nt&&+nt[1]<24)||(tq&&c.n.split(" ").length<=3)){var ap=clone(pd.cmds[0].args||{});ap.heure=tq?pad(tq.h)+":"+pad(tq.m):pad(+nt[1])+":"+(nt[2]||"00");var oc2=ctxOf(pd.raw);remember(oc2,pd.cmds,"guess");return run([C("planning","ajouter",ap)],oc2,"appris",null);}}
+        /* « pas pour l'instant », « plus tard » : la proposition était juste, mais pas maintenant */
+        if(PLUSTARD.test(c.n)||PLUSTARD.test(c.p)){S.pending=null;S.lastTurn=null;return {explain:"",says:[tr("D’accord.")],open:null};}
         if(/^(non|pas ca|faux|mauvais|pas du tout|nan|no|nie|hayir|нет|لا)(\s|$)/.test(c.n)){reject(pd.raw,pd.cmds);if(pd.mem)forgetLearned(pd.raw,pd.cmds,"memoire");var alt=(pd.alt||[]).filter(function(x){return !rejected(ctxOf(pd.raw),x);});
           if(alt.length)return propose(ctxOf(pd.raw),alt[0],pd.teach,"",alt.slice(1));
           S.pending={type:"reformuler",raw:pd.teach||pd.raw,at:Date.now()};return {explain:"",says:[tr("D’accord. Qu’est-ce que tu voulais ?")],open:null};}
@@ -1664,6 +1729,8 @@ function create(E,X,saved,opts){
       if(pd.type==="reformuler"){var rq=recall(c)||{cmds:localParse(c),via:"local"};if(rq.cmds&&B.isQuestion(pd.raw)&&!askSafe(rq.cmds))return exec(rq.cmds,c,"local");if(rq.cmds){var ro=exec(rq.cmds,c,"appris",null);learnFrom(pd.raw,c,rq.cmds,!!pd.prov||!fort,fort);return ro;}return unknown(c);}
     }
     var fu=followUp(c,false);if(fu)return fu;
+    /* « pas pour l'instant », « non merci » sans question en cours : rien à faire */
+    if(PLUSTARD.test(c.n)||PLUSTARD.test(c.p)||/^(non|non merci|laisse|laisse tomber|rien|tant pis)$/.test(c.n)){S.lastTurn=null;return {explain:"",says:[tr("D’accord.")],open:null,cmds:[C("sys","politesse",{})]};}
     var mem=recall(c);if(mem&&mem.prov&&!rejected(c,mem.cmds))return propose(c,mem.cmds,null,"",null,true);if(mem&&!mem.prov)return exec(mem.cmds,c,mem.via);
     var loc=localParse(c);if(loc)return exec(loc,c,"local");
     fu=followUp(c,true);if(fu)return fu;
@@ -1713,7 +1780,7 @@ function create(E,X,saved,opts){
      "chez pour client clients fournisseur fournisseurs commande signe signature envoie valide refuse planning agenda creneau libre vacances pointe chantier heures metre surface murs sol plafond facade toit etage jardin route "+
      "haie cloture terrain piscine terrasse style meuble vide combien prix tarif services liste courses budget memoire retiens oublie ferme montre ouvre carrelage peinture parquet placo main oeuvre deplacement fournitures").split(" ").forEach(function(w){set[w]=1;});
     return VOC=set;}
-  function knownWord(w){return vocab()[w]||E.isKnown(w)||E.isStop(w)||/^\d/.test(w)||S.lex[w];}
+  function knownWord(w){return vocab()[w]||E.isKnown(w)||E.isStop(w)||/^\d/.test(w)||S.lex[w]||MOTSFR.has(w)||(CMDS.fr&&CMDS.fr.has(w));}
   function repair(p,raw){var changed=false,V=vocab(),prot={};Object.keys(S.clients).forEach(function(k){k.split(" ").forEach(function(w){prot[w]=1;});});
     if(raw)String(raw).split(/\s+/).forEach(function(w,i){var x=w.replace(/[^\p{L}'’-]/gu,"");if(/^\p{Lu}\p{Ll}/u.test(x)&&(i>0||!V[hn(x)]))prot[hn(x)]=1;});
     var out=p.split(" ").map(function(w){if(w.length<3||V[w]||/^\d/.test(w)||E.isStop(w)||prot[w])return w;
@@ -1749,7 +1816,9 @@ function create(E,X,saved,opts){
   /* toutes les pistes pour une phrase incomprise, de la plus sûre à la moins sûre, sans celles déjà refusées */
   function pistes(c){var L=[],seen={},add=function(cm){if(!cm||!cm.length||cm.every(function(x){return x.m==="sys";}))return;var l=labelOf(cm);if(!l||seen[l]||rejected(c,cm))return;seen[l]=1;L.push(cm);};
     var rp=repair(c.p,c.raw);if(rp)add(parseAs(c,rp));add(synRescue(c));add(historyGuess(c));add(entityGuess(c));return L.slice(0,3);}
-  function propose(c,cmds,teach,prefix,alt,mem){S.pending={type:"confirm",cmds:cmds,raw:c.raw,teach:teach||null,alt:alt||[],mem:!!mem};S.lastTurn=null;
+  function propose(c,cmds,teach,prefix,alt,mem){
+    if(labelOf(cmds)==="planning.ajouter"){var dj=jourDate(c.p);if(dj){var a0=cmds[0].args||{};S.lastTurn=null;
+      return run([C("planning","date",{jour:dj.jour,date:iso(dj.date),autre:iso(dj.autre),client:a0.client||null,heure:a0.heure||null,titre:a0.titre||"Rendez-vous"})],null,"devine");}}S.pending={type:"confirm",cmds:cmds,raw:c.raw,teach:teach||null,alt:alt||[],mem:!!mem};S.lastTurn=null;
     var d=B.describe(cmds).replace(/^Maquette 3D : /,"").replace(/[.?!]+$/,"");if(labelOf(cmds)==="planning.ajouter"&&cmds.length===1){var rd=B.describe(cmds),r0=tr("Rendez-vous{0}{1}{2}{3}",["","","",""]);d=tr("Ajouter un rendez-vous{0}",[rd.indexOf(r0)===0?rd.slice(r0.length):""]);}
     return {explain:"",says:[tr("{0}Tu veux : {1}{2} ?",[(prefix?prefix+" ":""),d.charAt(0).toLowerCase(),d.slice(1)])],open:null,via:"devine"};}
   function rejected(c,cmds){var L=S.neg&&S.neg[mask(c).m];return !!(L&&cmds&&L.indexOf(labelOf(cmds))>=0);}
@@ -1762,6 +1831,7 @@ function create(E,X,saved,opts){
     var v=verbe(o.p);return v>=0&&v===verbe(c.p)&&c.p.split(" ").length>=2;}
   /* juste après un « je n'ai pas compris », une vraie action (pas l'ouverture d'un écran) est sans doute la bonne formulation */
   function soonAction(pd,c,cmds){return !!(pd.at&&Date.now()-pd.at<2*60000&&c.p.split(" ").length>=2&&cmds&&cmds.length&&cmds.every(function(x){return x.m!=="sys"&&!/^(ouvrir|liste)$/.test(x.a);}));}
+  var PLUSTARD=/^(?:non\s+)?(?:pas (?:pour )?(?:l )?instant|pas maintenant|plus tard|pas tout de suite|pas encore|non merci|une autre fois|on verra|pas besoin|pas aujourd hui|not now|not yet|later|maybe later|no thanks|ahora no|mas tarde|todavia no|agora nao|mais tarde|ainda nao|non ora|piu tardi|non ancora|nu acum|mai tarziu|nie teraz|pozniej|jeszcze nie|simdi degil|sonra|daha sonra|не сейчас|потом|позже|ليس الان|لاحقا|بعدين)(?:\s|$)/;
   var LAISSE=/^(non|nan|no|nope|nah|nie|hayir|нет|لا|laisse|laisse tomber|rien|oublie|oublie ca|pas grave|stop|tant pis|c est pas grave|never mind|forget it)$/;
   /* apprendre la phrase incomprise à partir de sa reformulation */
   function learnFrom(origRaw,c,cmds,prov,fort){var oc=ctxOf(origRaw);if(fort)miniLearn(origRaw,cmds);var lw=align(origRaw,c.raw);if(lw.length)buildEqLex();
@@ -1974,7 +2044,7 @@ function create(E,X,saved,opts){
     cmds=cmds.filter(function(x){return !(x.m==="scene"&&x.a==="ajouter"&&!(x.args.items||[]).length);});
     return cmds.length?cmds:null;};
   /* ---------- données pour les écrans ---------- */
-  B.qty=qty;B.TYPES=TYPES;B.roomLabel=roomLabel;B.totalHT=totalHT;B.totalTTC=totalTTC;B.tvaParTaux=tvaParTaux;B.getCur=getCur;B.clientName=clientName;B.paid=paid;B.devisOf=devisOf;B.budget=budget;B.fdate=fdate;B.ftime=ftime;B.fnum=fnum;B.eur=eur;B.matColor=matColor;B.colorHex=colorHex;B.level=level;B.fromIso=fromIso;B.iso=iso;B.sod=sod;B.addDays=addDays;B.undo=undo;
+  B.motConnu=function(w){w=hn(w);return !!(knownWord(w)||nearFr(w));};B.motCmd=function(w){w=hn(w);return !!((CMDS.fr&&CMDS.fr.has(w))||MOTSFR.has(w));};B.qty=qty;B.TYPES=TYPES;B.roomLabel=roomLabel;B.totalHT=totalHT;B.totalTTC=totalTTC;B.tvaParTaux=tvaParTaux;B.getCur=getCur;B.clientName=clientName;B.paid=paid;B.devisOf=devisOf;B.budget=budget;B.fdate=fdate;B.ftime=ftime;B.fnum=fnum;B.eur=eur;B.matColor=matColor;B.colorHex=colorHex;B.level=level;B.fromIso=fromIso;B.iso=iso;B.sod=sod;B.addDays=addDays;B.undo=undo;
   B.dump=function(){var s=clone(S);s.pending=null;s.lastTurn=null;return s;};
   /* l'historique d'annulation survit au rechargement de la page (10 dernières actions) */
   B.dumpHist=function(){return HIST.slice(-10);};B.loadHist=function(h){if(Array.isArray(h))HIST=h.filter(function(x){return x&&typeof x.s==="string";}).slice(-10);};

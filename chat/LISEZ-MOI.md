@@ -12,7 +12,10 @@ et n'utilise aucun service extérieur. Il travaille sur les données de casô (`
 
 ## Comment il s'insère dans casô
 `chatSend()` passe d'abord la phrase au chat. Il la garde s'il sait la faire lui-même, sinon les modules de casô
-continuent comme avant (planning, factures, prix, services, notes de devis).
+continuent comme avant (planning, factures, prix, services). Si aucun module de casô ne l'a reconnue, le chat la
+reprend avant les notes de devis (second passage : créneau à compléter, ligne à enlever, relance, commande fournisseur).
+Les noms de client sont contrôlés : « Lui Dire », « Carreler », « L'instant » ne deviennent pas des clients ; un nom
+tapé en majuscules est enregistré « Fontaine ».
 
 Ce que le chat fait lui-même :
 - **Devis prêt** : « fais un devis pour mon prochain travail », « prépare le devis de Mme Martin ». Il lit les prix, les
@@ -23,6 +26,10 @@ Ce que le chat fait lui-même :
 - **Rendez-vous devinés** : « ajoute un créneau » → « Tu veux : ajouter un rendez-vous ? » → jour, heure → planning de casô.
   Un rendez-vous compris directement reste au planning de casô (rappels, équipe, répétitions).
 - **Mémoire** : « retiens… », « oublie… », mots appris, modèles enregistrés.
+- **Fautes de frappe** : « poite », « factue », « ntoe », « dveis » sont corrigés vers les mots de commande
+  (`data.json` → `cmdw`) ; les noms (majuscule, après « chez ») et les mots valides d'une des 10 langues ne sont jamais touchés.
+- **Base d'apprentissage** : le mini modèle est réentraîné avec les phrases abîmées (fautes, SMS, sans accents,
+  majuscules) que la simulation de 100 utilisateurs n'a pas comprises, avec le sens de leur version propre.
 
 Chaque message a ses mini icônes : copier, renvoyer, modifier (la dernière demande modifiée annule ce qu'elle avait fait).
 Quand rien n'est compris : « Je n'ai pas compris. », sans phrase d'exemple ; la reformulation est apprise en silence.
