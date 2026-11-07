@@ -403,6 +403,12 @@ function create(E,X,saved,opts){
     if(/^(aide|help|\?|que sais tu faire|que peux tu faire|qu est ce que tu sais faire|tu sais faire quoi|comment ca marche)$/.test(n))return [C("bibliotheque","ouvrir",{})];
     if(/^(merci|merci beaucoup|merci bien|super|parfait|top|ok|okay|d accord|daccord|ca marche|nickel|cool|(?:ok|okay|super|parfait|top|nickel|d accord) merci(?: beaucoup| bien)?|merci (?:ok|super|c est bon))$/.test(n))return [C("sys","politesse",{type:"merci",mot:n})];
     if(/^(bonjour|salut|bonsoir|coucou|hello|hey|hi|hola|ola|ciao|buongiorno|merhaba|czesc|buna)\b/.test(n)&&n.split(" ").length<=3)return [C("sys","politesse",{type:"bonjour"})];
+    /* changer de mode par une phrase, dans les 10 langues : « mode bricolage », « modalità fai da te », « switch to DIY mode » */
+    var on=hn(raw);
+    if(/\b(mode bricol\w*|bricolage|bricolaje|bricolagem|bricolaj|fai da te|diy|do it yourself|majsterkowicz\w*|kendin yap)\b/.test(n+" "+on)||/сделаи сам|сделай сам|своими руками|الهواة/.test(on))return [C("sys","mode",{mode:"bricoleur"})];
+    if(/^(?:retour |reviens |repasse |passe )?(?:en )?mode (?:artisan|pro|professionnel)$|^(?:back to |switch to )?(?:pro|artisan|professional) mode$|^(?:modo|modalita|tryb|mod|режим) (?:profesional|professionale|profissional|artesao|artigiano|zawodowy|pro)/.test(n+"|"+on)||/^(?:modo|modalita|tryb|mod) (?:profesional|professionale|profissional|artesao|artigiano|zawodowy|pro)\b/.test(on))return [C("sys","mode",{mode:"artisan"})];
+    /* sauvegarde de toutes les données */
+    if(/^(?:fais |faire |lance |fais moi |je veux |je voudrais )?(?:une |la |ma )?(?:sauvegarde|sauvegarder|sauvegarde moi|backup|back up)\b(?! (?:du |le |ce )?(?:devis|modele|prix|client))/.test(n)||/^(?:back ?up|make a backup|copie de rezerva|kopia zapasowa|zrob kopie|fai (?:un )?backup|backup dei dati)\b/.test(on))return [C("sys","sauvegarde",{})];
     if(/\b(mode bricoleur|bricoleur du dimanche|je suis (un )?bricoleur|je suis (un )?particulier|passe en bricoleur|version bricoleur|mode particulier)\b/.test(n))return [C("sys","mode",{mode:"bricoleur"})];
     if(/\b(mode artisan|mode pro|je suis (un )?artisan|passe en artisan|version artisan|version pro|je suis (un )?professionnel)\b/.test(n))return [C("sys","mode",{mode:"artisan"})];
     if(/^(ferme|fermer|ferme l ecran|ferme le module|ferme ca|retour|retour au chat|cache|masque|reduis)$/.test(n))return [C("sys","fermer")];

@@ -49,10 +49,10 @@ function vue(){var S=P.B.S,idc={};S.mode="artisan";
   return {clients:JSON.parse(JSON.stringify(S.clients)),devis:S.devis.map(function(d){return d.id;}),rdv:S.rdv.map(function(r){return r.id;})};}
 
 /* ---------- ce que le chat fait lui-même (le reste reste aux modules de casô) ---------- */
-var PRIS=/^(planning\.libre|factures\.(impayes|creer)|stats\.ca|courses\.(ajouter|calcul|ouvrir|vider|retirer)|pointage\.(entree|sortie)|devis\.(remise|envoyer)|scene\.[a-z_]+|devis\.(preparer|modele|total|compte|ouvrir|liste)|clients\.(info|message|appeler|maj|note|ouvrir)|planning\.(prochain|dispo|ouvrir|date)|services\.(info|ouvrir)|fournisseurs\.ouvrir|factures\.ouvrir|pointage\.ouvrir|memoire\.[a-z]+|mot\.apprendre|sys\.politesse)$/;
+var PRIS=/^(sys\.(sauvegarde|mode)|fichiers\.exporter|planning\.libre|factures\.(impayes|creer)|stats\.ca|courses\.(ajouter|calcul|ouvrir|vider|retirer)|pointage\.(entree|sortie)|devis\.(remise|envoyer)|scene\.[a-z_]+|devis\.(preparer|modele|total|compte|ouvrir|liste)|clients\.(info|message|appeler|maj|note|ouvrir)|planning\.(prochain|dispo|ouvrir|date)|services\.(info|ouvrir)|fournisseurs\.ouvrir|factures\.ouvrir|pointage\.ouvrir|memoire\.[a-z]+|mot\.apprendre|sys\.politesse)$/;
 /* écrans du chat -> écrans de casô (le planning répond dans la conversation) */
 var ECRAN={courses:null,devis:"edit","devis-liste":"mes",clients:"cli",client:"cli",services:"prix",fournisseurs:"fou",factures:"fact",pointage:"pt"};
-function libelles(c){return (c||[]).filter(function(x){return x.m!=="sys"||x.a==="politesse";}).map(function(x){return x.m+"."+x.a;});}
+function libelles(c){return (c||[]).filter(function(x){return x.m!=="sys"||x.a==="politesse"||x.a==="sauvegarde"||x.a==="mode";}).map(function(x){return x.m+"."+x.a;});}
 function pris(c){var L=libelles(c);return L.length>0&&L.every(function(l){return PRIS.test(l);});}
 
 /* ---------- écrire dans casô ce que le chat a changé ---------- */
@@ -98,6 +98,8 @@ function carte(id){var o=devisDe(id);if(!o)return "";var t=totals(o),manque=o.li
   else h+='<button type="button" class="pc-ic pc-oeil" title="'+e(P.tr("Voir le devis"))+'" aria-label="'+e(P.tr("Voir le devis"))+'" onclick="casoPont.voir(\''+e(o.id)+'\')">'+IC.oeil+'</button><button type="button" class="pc-ic pc-env" title="'+e(P.tr("Envoyer au client"))+'" aria-label="'+e(P.tr("Envoyer au client"))+'"'+(manque?' disabled':'')+' onclick="casoPont.envoyer(\''+e(o.id)+'\')">'+IC.envoi+'</button>';
   return h+'</div></div>';}
 P.carte=carte;
+/* bouton d'action dans la bulle : le geste de l'usager lance l'action (le partage du téléphone l'exige) */
+function bouton(act,label){return '<div class="msg-act"><button class="btn sm" type="button" onclick="casoPont.action(\''+act+'\')">'+e(label)+'</button></div>';}
 function lien(href,label){return '<div class="msg-act"><a class="btn sm" href="'+e(href)+'" target="_top" rel="noopener">'+e(label)+'</a></div>';}
 function msgHref(m){var t=encodeURIComponent(m.texte||""),to=String(m.to||"");if(m.canal==="mail")return "mailto:"+encodeURIComponent(to)+"?body="+t;
   if(m.canal==="whatsapp")return "https://wa.me/"+to.replace(/\D/g,"").replace(/^0/,"33")+"?text="+t;return "sms:"+to.replace(/\s/g,"")+"?&body="+t;}
@@ -105,10 +107,20 @@ function html(r,id){var h="";if(r.explain)h+='<p class="mut" dir="auto">'+e(r.ex
   (r.says||[]).filter(Boolean).forEach(function(s){h+='<p dir="auto">'+e(s)+'</p>';});
   if(id)h+="<!--carte-->"+carte(id)+"<!--/carte-->";
   if(r.ui==="message"&&r.msg)h+=lien(msgHref(r.msg),r.msg.canal==="mail"?P.tr("Ouvrir l’e-mail"):r.msg.canal==="whatsapp"?P.tr("Ouvrir WhatsApp"):P.tr("Envoyer le SMS"));
+  if(r.bouton)h+=bouton(r.bouton.act,r.bouton.label);
   if(r.ui==="appel"&&r.tel)h+=lien("tel:"+String(r.tel).replace(/\s/g,""),P.tr("Appeler"));
   return '<div data-noi18n>'+h+'</div>';}
 
-/* ce que le chat peut aussi faire quand les modules de casô n'ont rien reconnu (second passage) */
+/* sauvegarde, export, changement de mode : les fonctions de casô, au toucher du bouton */
+function csv(v){v=String(v==null?"":v);return /[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
+P.action=function(a){try{
+  if(a==="sauvegarde"&&typeof backupNow==="function")return backupNow();
+  if(a==="prix"&&typeof exportCsv==="function")return exportCsv();
+  if(a==="clients"&&typeof dl==="function"){var L=["Nom;Téléphone;E-mail;Adresse;Note"].concat((db.clients||[]).map(function(c){return [c.nom,c.tel,c.email,c.adr||c.adresse,c.note].map(csv).join(";");}));return dl("mes-clients.csv","\ufeff"+L.join("\n"),"text/csv");}
+  if(a==="bricoleur"&&typeof modePick==="function"){if(typeof chatSave==="function")chatSave();return modePick("bricoleur");}
+ }catch(err){if(window.console)console.error(err);}};
+
+
 var FORCE=/^(planning\.(ajouter|libre)|devis\.supprimer_ligne|factures\.relance|pointage\.total|fournisseurs\.commande|clients\.(ajouter|maj))$/;
 function forcable(c){var L=libelles(c);return L.length>0&&L.every(function(l){return PRIS.test(l)||FORCE.test(l);});}
 /* « Lui Dire », « Carreler », « L'instant » : des mots de la phrase, pas un nom de client */
@@ -152,6 +164,10 @@ P.essaie=function(t,force){if(!P.ready||typeof db==="undefined"||typeof q==="und
   /* facture : le module Factures de casô, à partir du dernier devis du client */
   if(lab0==="factures.creer"){var kc=cle(a0.client||""),dq=(db.quotes||[]).filter(function(x){return (!kc||cle(x.client)===kc)&&x.lines&&x.lines.length;}).sort(function(x,y){return (y.status==="accepte")-(x.status==="accepte")||String(y.date).localeCompare(String(x.date));})[0];
     if(dq&&typeof faNew==="function"){r.says=[];apres=function(){faNew(dq.id);};}}
+  /* sauvegarde, export des clients ou des prix, passage en mode bricoleur : un bouton dans la bulle */
+  if(lab0==="sys.sauvegarde"){r.says=[];r.explain="";r.bouton={act:"sauvegarde",label:P.B.describe(r.cmds)};}
+  if(lab0==="fichiers.exporter"){var qx=a0.quoi==="clients"?"clients":a0.quoi==="prix"?"prix":"sauvegarde";r.says=[];r.explain="";r.bouton={act:qx,label:P.B.describe(qx==="sauvegarde"?[{m:"sys",a:"sauvegarde",args:{}}]:r.cmds)};}
+  if(lab0==="sys.mode"&&a0.mode==="bricoleur"){r.explain="";r.bouton={act:"bricoleur",label:P.B.describe(r.cmds)};}
   /* pointage : l'écran de pointage de casô (le pointage est automatique) */
   if(/^pointage\.(entree|sortie|total)$/.test(lab0)){r.says=[];r.explain=P.B.describe([{m:"pointage",a:"ouvrir",args:{}}])||r.explain;r.open={screen:"pointage"};}
   /* maquette 3D : le module 3D de casô reçoit la phrase */
