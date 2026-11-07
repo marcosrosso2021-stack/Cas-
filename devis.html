@@ -171,6 +171,7 @@ input.bad{border-color:var(--ko)}
 .cvd .cv-box{background:color-mix(in srgb,var(--cv-ac) 12%,#fff);border:1px solid color-mix(in srgb,var(--cv-ac) 45%,#fff);border-radius:8px;padding:10px 12px}
 .cvd .cv-sg{display:grid;grid-template-columns:1fr 1fr;gap:18px;break-inside:avoid}
 .cvd .cv-sz{height:74px;border:1px dashed #c9c9c9;border-radius:8px;margin-top:4px;display:grid;place-items:center;overflow:hidden}
+.cv-sq{display:flex;align-items:center;gap:8px;margin-top:6px}.cv-sq img{width:54px;height:54px}.cv-sq span{font-family:ui-monospace,Menlo,monospace;font-size:9px;color:#666;letter-spacing:.04em}
 .cvd .cv-sz img{max-height:70px;max-width:100%}
 .cvd .cv-ck{display:flex;gap:8px;align-items:flex-start;font-size:.85em;margin:4px 0}
 .cvd .cv-ck i{width:14px;height:14px;border:1.5px solid #888;border-radius:3px;flex:none;margin-top:2px}
@@ -586,7 +587,7 @@ const T={
 
 /* ---------- état ---------- */
 // clés alignées sur db.prof de casô (Mon entreprise) + compléments du module
-const DEF={nom:'',forme:'',capital:'',adr:'',tel:'',email:'',siret:'',rm:'',tvai:'',franchise:false,assur:'',zone:'',rcpro:'',mediateur:'',iban:'',bic:'',delai:'30',valid:'30',tauxH:'',depl:'',acomptePct:'30',acompteType:'Acompte',logo:'',couleur:'',couleurs:[],miseEnPage:'classique',sigArtisan:'',stylePart:'',stylePro:'',stylesPerso:[]};
+const DEF={nom:'',forme:'',capital:'',adr:'',tel:'',email:'',siret:'',rm:'',tvai:'',franchise:false,assur:'',zone:'',rcpro:'',mediateur:'',iban:'',bic:'',delai:'30',valid:'30',tauxH:'',depl:'',acomptePct:'30',acompteType:'Acompte',logo:'',couleur:'',couleurs:[],miseEnPage:'classique',sigArtisan:'',sigId:'',sigQr:'',stylePart:'',stylePro:'',stylesPerso:[]};
 const ANC={siege:'adr',immat:'rm',tva:'tvai',decennale:'assur',assurance:'rcpro',validite:'valid'};
 function migrer(o){o=Object.assign({},o||{});for(const k in ANC)if(k in o){if(!has(o[ANC[k]]))o[ANC[k]]=o[k];delete o[k]}if(o.miseEnPage)o.miseEnPage=ALIAS[o.miseEnPage]||o.miseEnPage;return o}
 const S={profil:Object.assign({},DEF,migrer(LS.get('profil',{}))),clients:LS.get('clients',[]),devis:LS.get('devis',[]),mesModeles:LS.get('modeles',[]),prix:LS.get('prix',{}),cur:null,tab:'list',cat:'tous'};
@@ -724,7 +725,7 @@ function renderDoc(d,o={}){
   const sigA=(d.sig&&d.sig.artisan&&d.sig.artisan.image)||p.sigArtisan;
   const sigC=d.sig&&d.sig.client&&d.sig.client.image;
   const cks=dist?`<div data-caso-slot="client-checks"><div class="cv-ck"><i></i><span>${E(T.ck1)}</span></div><div class="cv-ck"><i></i><span>${E(T.ck2)}</span></div></div>`:'<div data-caso-slot="client-checks"></div>';
-  const sig=`<div class="cvb" data-bloc="signatures" data-lock="1">${cks}<div class="cv-sg"><div><div class="cv-cap">L’entreprise</div><div class="cv-sz" data-caso-slot="signature-artisan">${sigA?`<img src="${E(sigA)}" alt="">`:''}</div></div><div><div class="cv-cap">Le client · Bon pour accord</div><div class="cv-sz" data-caso-slot="signature-client">${sigC?`<img src="${E(sigC)}" alt="">`:''}</div><div class="cv-lg">Date : ${d.sig&&d.sig.client&&d.sig.client.date?fd(d.sig.client.date):'……'}</div></div></div></div>`;
+  const sig=`<div class="cvb" data-bloc="signatures" data-lock="1">${cks}<div class="cv-sg"><div><div class="cv-cap">L’entreprise</div><div class="cv-sz" data-caso-slot="signature-artisan">${sigA?`<img src="${E(sigA)}" alt="">`:''}</div>${/^data:image\/svg\+xml;base64,/.test(p.sigQr||'')?`<div class="cv-sq"><img src="${E(p.sigQr)}" alt="QR"><span>${E(p.sigId)}</span></div>`:''}</div><div><div class="cv-cap">Le client · Bon pour accord</div><div class="cv-sz" data-caso-slot="signature-client">${sigC?`<img src="${E(sigC)}" alt="">`:''}</div><div class="cv-lg">Date : ${d.sig&&d.sig.client&&d.sig.client.date?fd(d.sig.client.date):'……'}</div></div></div></div>`;
   const ass=[];
   if(has(p.assur))ass.push('Assurance décennale : '+E(p.assur)+(has(p.zone)?' · zone couverte : '+E(p.zone):''));if(has(p.rcpro))ass.push('Responsabilité civile pro : '+E(p.rcpro));if(part&&has(p.mediateur))ass.push('Médiateur : '+E(p.mediateur));
   const foot=ass.length?`<div class="cvb" data-bloc="assurances" data-lock="1"><div class="cv-lg">${ass.join('<br>')}</div></div>`:'';
