@@ -48,7 +48,7 @@ function vue(){var S=P.B.S,idc={};S.mode="artisan";
   return {clients:JSON.parse(JSON.stringify(S.clients)),devis:S.devis.map(function(d){return d.id;}),rdv:S.rdv.map(function(r){return r.id;})};}
 
 /* ---------- ce que le chat fait lui-même (le reste reste aux modules de casô) ---------- */
-var PRIS=/^(factures\.impayes|stats\.ca|devis\.(preparer|modele|total|compte|ouvrir|liste)|clients\.(info|message|appeler|maj|note|ouvrir)|planning\.(prochain|dispo|ouvrir)|services\.(info|ouvrir)|fournisseurs\.ouvrir|factures\.ouvrir|pointage\.ouvrir|memoire\.[a-z]+|mot\.apprendre|sys\.politesse)$/;
+var PRIS=/^(factures\.impayes|stats\.ca|devis\.(preparer|modele|total|compte|ouvrir|liste)|clients\.(info|message|appeler|maj|note|ouvrir)|planning\.(prochain|dispo|ouvrir|date)|services\.(info|ouvrir)|fournisseurs\.ouvrir|factures\.ouvrir|pointage\.ouvrir|memoire\.[a-z]+|mot\.apprendre|sys\.politesse)$/;
 /* écrans du chat -> écrans de casô (le planning répond dans la conversation) */
 var ECRAN={devis:"edit","devis-liste":"mes",clients:"cli",client:"cli",services:"prix",fournisseurs:"fou",factures:"fact",pointage:"pt"};
 function libelles(c){return (c||[]).filter(function(x){return x.m!=="sys"||x.a==="politesse";}).map(function(x){return x.m+"."+x.a;});}
@@ -116,7 +116,7 @@ P.essaie=function(t){if(!P.ready||typeof db==="undefined"||typeof q==="undefined
   /* un rendez-vous compris directement reste au planning de casô (rappels, équipe, répétitions) ;
      le chat ne le prend que lorsqu'il a dû le deviner ou poser une question */
   var rdv=function(c){var L=libelles(c);return L.length>0&&L.every(function(l){return l==="planning.ajouter";});};
-  var pend=B.S.pending,ok=pris(r.cmds)||(rdv(r.cmds)&&(r.via==="devine"||r.via==="mini"||/^(confirm|rdv|complete)$/.test(avantPend||"")))||
+  var pend=B.S.pending,ok=pris(r.cmds)||(rdv(r.cmds)&&(r.via==="devine"||r.via==="mini"||/^(confirm|rdv|complete|datechoix)$/.test(avantPend||"")))||
     (pend&&pend.type==="confirm"&&(pris(pend.cmds)||rdv(pend.cmds))&&!(r.cmds||[]).length)||
     /* le chat venait de poser une question : sa réponse (« pas pour l'instant », « d'accord »…) reste dans le chat */
     (attendait&&!(r.cmds||[]).length&&(r.says||[]).length>0);

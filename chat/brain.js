@@ -292,6 +292,14 @@ function create(E,X,saved,opts){
     if((m=raw.match(/\b(\d{5})\s+([A-ZÀ-Ý][\p{L}'-]+)/u)))o.adresse=(o.adresse?o.adresse+", ":"")+m[1]+" "+m[2];
     return o;
   }
+  /* jour de la semaine tapé (même avec une faute : « smaedi ») qui ne correspond pas à la date écrite */
+  var MOISN=["janvier","fevrier","mars","avril","mai","juin","juillet","aout","septembre","octobre","novembre","decembre"];
+  function jourTape(p){var w=String(p).split(" ");for(var i=0;i<w.length;i++){var x=w[i];if(x.length<5)continue;for(var j=0;j<7;j++){var J=JOURS[j];
+      if(x===J||(x.length===J.length&&x.split("").sort().join("")===J.split("").sort().join("")))return j;}}return -1;}
+  function jourDate(p){var j=jourTape(p),m=String(p).match(/\b(\d{1,2})(?:er)?\s+(janvier|fevrier|mars|avril|mai|juin|juillet|aout|septembre|octobre|novembre|decembre)\b/);if(j<0||!m)return null;
+    var now=B.now(),mo=MOISN.indexOf(m[2]),y=now.getFullYear(),d=new Date(y,mo,+m[1]);if(d<sod(now))d=new Date(y+1,mo,+m[1]);if(d.getDay()===j)return null;
+    var o=new Date(d);for(var k=1;k<=6;k++){o=addDays(d,k);if(o.getDay()===j)break;}var b=new Date(d);for(var k2=1;k2<=6;k2++){b=addDays(d,-k2);if(b.getDay()===j)break;}
+    return {jour:j,date:d,autre:Math.abs(o-d)<=Math.abs(b-d)&&o>=sod(now)?o:(b>=sod(now)?b:o)};}
   function parseDate(p){
     var base=sod(B.now()),m;
     if(/\bapres demain\b/.test(p))return addDays(base,2);
@@ -447,6 +455,9 @@ function create(E,X,saved,opts){
     if((rdvw.test(n)&&(parseDate(n)||parseTime(n)||k||/\b(rdv|rendez vous)\b/.test(n))||(/\b(cale|prends|prendre|note|bloque|reserve|planifie|prevois|programme)\b/.test(n)&&(parseDate(n)||parseTime(n))))&&(!qn||rdvw.test(n)&&parseDate(n)&&parseTime(n))&&!/\bdevis\b/.test(n)&&(parseDate(n)||parseTime(n)||rdvw.test(n))){
       var d3=parseDate(n),t3=parseTime(n),du3=parseDur(n);if(du3&&du3.start&&!t3)t3=du3.start;
       var tit=(n.match(/\b(visite|intervention|reunion|livraison|pose|chantier|metre|devis)\b/)||[0,"rendez-vous"])[1];
+      /* « samedi 16 décembre » alors que le 16 est un mercredi : on demande au lieu de choisir */
+      var dj=jourDate(n);if(dj){var bq=(k?"rdv chez "+clientName(k):"rdv")+(t3?" a "+pad(t3.h)+"h"+(t3.m?pad(t3.m):""):"");
+        return [C("planning","date",{jour:dj.jour,date:iso(dj.date),autre:iso(dj.autre),client:k,heure:t3?pad(t3.h)+":"+pad(t3.m):null,titre:cap(tit)})];}
       /* « … pour sa salle de bain » : l'objet du rendez-vous devient son titre (le chat s'en sert pour préparer le devis) */
       if(tit==="rendez-vous"){var ob=(c.lang==="fr"?raw:n).match(/\bpour\s+(?:sa|son|ses|la|le|les|l['’ ]|une|un|refaire\s+(?:sa|son|ses|la|le|les))\s*([\p{L}'’ -]{3,40})/iu);
         if(ob){var obt=ob[1].split(/\s+(?:demain|apr[eè]s demain|aujourd|lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche|[àa]|vers|chez|avec|le|la)\b/i)[0].trim();if(obt.length>=3&&!E.isStop(hn(obt)))tit=obt;}}
@@ -876,7 +887,7 @@ function create(E,X,saved,opts){
       case "devis.lignes":return (a.op==="-"?tr("Retirer du devis"):tr("Ajouter au devis"))+cl(a.client)+" : "+(a.lignes||[]).map(function(l){return String(l.libelle).replace(/\bmain d oeuvre\b/i,"main d’œuvre")+" "+fnum(+l.quantite||1)+" "+trw(l.unite||"")+(l.prix!=null?tr(" à {0}",[eur(+l.prix)]):"");}).join(", ");
       case "devis.afaire":return tr("Noter sur le devis : {0}",[(a.taches||[]).join(", ")]);case "devis.fournisseur":return tr("Lier le fournisseur {0} au devis",[a.nom]);case "devis.remarque":return tr("Remarque sur le devis");
       case "devis.tva":return tr("Mettre la TVA à {0} %",[fnum(+a.taux)]);case "devis.supprimer_ligne":return tr("Retirer « {0} » du devis",[a.libelle]);case "devis.nouveau":return tr("Commencer un nouveau devis{0}",[(a.client?tr(" pour {0}",[a.client]):"")]);
-      case "devis.preparer":return tr("Préparer le devis{0}",[cl(a.client)]);case "devis.modele":return tr("Enregistrer le devis comme modèle");case "devis.ouvrir":return tr("Ouvrir le devis{0}",[cl(a.client)]);case "devis.liste":return tr("Ouvrir la liste des devis");case "devis.envoyer":return tr("Envoyer le devis au client");case "devis.valider":return tr("Le client a accepté le devis{0}",[cl(a.client)]);case "devis.refuser":return tr("Le client a refusé le devis{0}",[cl(a.client)]);
+      case "planning.date":return tr("Date du rendez-vous");case "devis.preparer":return tr("Préparer le devis{0}",[cl(a.client)]);case "devis.modele":return tr("Enregistrer le devis comme modèle");case "devis.ouvrir":return tr("Ouvrir le devis{0}",[cl(a.client)]);case "devis.liste":return tr("Ouvrir la liste des devis");case "devis.envoyer":return tr("Envoyer le devis au client");case "devis.valider":return tr("Le client a accepté le devis{0}",[cl(a.client)]);case "devis.refuser":return tr("Le client a refusé le devis{0}",[cl(a.client)]);
       case "signature.ouvrir":return a.qui==="client"?tr("Faire signer le devis par le client"):tr("Signer le devis");case "signature.signer":return tr("Signature");
       case "services.definir":return tr("Prix de « {0} » : {1}{2}",[a.nom,eur(+a.prix),(a.unite?" / "+trw(a.unite):"")]);case "services.ouvrir":return tr("Ouvrir mes services et prix");
       case "planning.ajouter":var d=fromIso(a.date);return tr("Rendez-vous{0}{1}{2}{3}",[(d?" "+fdate(d):""),(a.heure?tr(" à {0}",[ftime(+a.heure.slice(0,2),+a.heure.slice(3,5))]):""),(a.client?tr(" chez {0}",[cap(a.client)]):""),(a.titre&&a.titre!=="Rendez-vous"?" ("+a.titre.toLowerCase()+")":"")]);
@@ -1469,6 +1480,12 @@ function create(E,X,saved,opts){
     var c=S.clients[d.client]||{};emit("devis","envoyer",{id:d.id,client:clientName(d.client),lien:d.lien,mode:"lien",tel:c.tel||null,email:c.email||null,verifie:opts.verifie||null});
     log("envoi par lien "+d.num,[C("devis","envoyer",{id:d.id})],"carte");S.cur=d.id;
     return {ok:true,say:tr("Devis envoyé à {0} : il le signera dans casô.",[clientName(d.client)]),lien:d.lien};};
+  /* la date et le jour ne vont pas ensemble : « Le 16 décembre est un mercredi. Mercredi 16 ou samedi 19 ? » */
+  X_["planning.date"]=function(a){var d=new Date(a.date+"T12:00:00"),o=new Date(a.autre+"T12:00:00"),
+      jm=function(x){if(LANG==="fr")return x.getDate()+" "+MOISD[x.getMonth()];try{return new Intl.DateTimeFormat(LOC[LANG],{day:"numeric",month:"long"}).format(x);}catch(e){return x.getDate()+" "+MOISD[x.getMonth()];}},
+      jo=function(x){if(LANG==="fr")return JOURS[x.getDay()];try{return new Intl.DateTimeFormat(LOC[LANG],{weekday:"long"}).format(x);}catch(e){return JOURS[x.getDay()];}};
+    S.pending={type:"datechoix",dates:[a.date,a.autre],cmd:{client:a.client||null,heure:a.heure||null,titre:a.titre||"Rendez-vous",duree_min:60}};
+    return R(tr("Le {0} est un {1}. {2} ou {3} ?",[jm(d),jo(d),cap(fdate(d)),fdate(o)]));};
 
   /* ---------- apprentissage des mots ---------- */
   function learnWord(mot,sens){
@@ -1642,7 +1659,14 @@ function create(E,X,saved,opts){
           var say=tr("Prix retenu : {0} à {1} / {2}.",[sv.nom,eur(v),L0.unite]);
           if(pd.lignes.length){S.pending=pd;say+=tr(" Et pour « {0} » (en € par {1}) ?",[pd.lignes[0].libelle,pd.lignes[0].unite]);}else if(d)say+=tr(" Devis : {0} HT.",[eur(totalHT(d))]);
           return {explain:"",says:[say],open:null};}}
-      if(pd.type==="rdv"){var a=clone(pd.cmd),dd=parseDate(c.p),tt=parseTime(c.p);if(dd&&!a.date)a.date=iso(dd);if(tt)a.heure=pad(tt.h)+":"+pad(tt.m);
+      /* réponse à « Mercredi 16 ou samedi 19 ? » : le jour, le numéro, ou « le premier / le deuxième » */
+      if(pd.type==="datechoix"){var D2=pd.dates.map(function(x){return new Date(x+"T12:00:00");}),jt=jourTape(c.n),nm=c.n.match(/\b(\d{1,2})\b/),ch=null;
+        D2.forEach(function(x,i){if(ch==null&&((nm&&+nm[1]===x.getDate())||(jt>=0&&jt===x.getDay()&&!(nm&&+nm[1]!==x.getDate()))))ch=i;});
+        if(ch==null&&/\b(premier|1er|le 1)\b/.test(c.n))ch=0;if(ch==null&&/\b(deuxieme|second|le 2|l autre)\b/.test(c.n))ch=1;
+        if(ch!=null){var ad=clone(pd.cmd);ad.date=pd.dates[ch];var th=parseTime(c.p);if(th)ad.heure=pad(th.h)+":"+pad(th.m);return run([C("planning","ajouter",ad)],null,"local");}}
+      if(pd.type==="rdv"){var a=clone(pd.cmd),dd=parseDate(c.p),tt=parseTime(c.p),nb=c.n.match(/^(\d{1,2})(?:[h:.](\d{2}))?$/);
+        /* « 16 » : une heure si le jour est déjà connu, sinon le jour du mois */
+        if(nb&&!dd&&!tt){if(a.date&&+nb[1]<24)tt={h:+nb[1],m:nb[2]?+nb[2]:0};else if(!a.date&&+nb[1]>=1&&+nb[1]<=31){var bd=sod(B.now()),dm=new Date(bd.getFullYear(),bd.getMonth(),+nb[1]);if(dm<bd)dm=new Date(bd.getFullYear(),bd.getMonth()+1,+nb[1]);dd=dm;}}if(dd&&!a.date)a.date=iso(dd);if(tt)a.heure=pad(tt.h)+":"+pad(tt.m);
         if((dd||tt)&&c.n.split(" ").length<=6)return run([C("planning","ajouter",a)],null,"local");}
       if(pd.type==="rdv-rec"){var tr2=parseTime(c.p);if(tr2&&c.n.split(" ").length<=5){var ac=clone(pd.cmd);ac.heure=pad(tr2.h)+":"+pad(tr2.m);return run([C("planning","recurrent",ac)],null,"local");}}
       if(pd.type==="acompte"){var am=money(c.n),pc=c.n.match(/(\d{1,2})\s*(?:%|pour ?cent)/),val=am!=null?am:pc?pd.total*+pc[1]/100:(c.n.match(/^(\d+(?:\.\d+)?)$/)?pnum(c.n):null);
@@ -1654,6 +1678,9 @@ function create(E,X,saved,opts){
       if(pd.type==="iadl"){if(YES.test(c.n)){S.iaLLM="oui";return {explain:"",says:[tr("Je télécharge mon modèle de langage. Je te réponds dès qu’il est prêt.")],open:null,ui:"iadl",raw:pd.raw};}
         if(/^(non|pas maintenant|plus tard|nan|no)(\s|$)/.test(c.n)){S.iaLLM="non";return guess(ctxOf(pd.raw));}}
       if(pd.type==="confirm"){if(YES.test(c.n)){var oc=ctxOf(pd.raw),ro2=run(pd.cmds,oc,"appris",null);remember(oc,pd.cmds,"guess");miniLearn(pd.raw,pd.cmds);if(pd.teach)miniLearn(pd.teach,pd.cmds);if(pd.teach)remember(ctxOf(pd.teach),pd.cmds,"user");return ro2;}
+        /* proposition de rendez-vous sans heure, et la réponse est une heure (« 16 », « 16h30 ») : c'est oui, à cette heure-là */
+        if(pd.cmds&&pd.cmds.length===1&&labelOf(pd.cmds)==="planning.ajouter"){var nt=c.n.match(/^(?:a\s+)?(\d{1,2})(?:\s*[h:.]\s*(\d{2})?)?$/),tq=parseTime(c.p);
+          if((nt&&+nt[1]<24)||(tq&&c.n.split(" ").length<=3)){var ap=clone(pd.cmds[0].args||{});ap.heure=tq?pad(tq.h)+":"+pad(tq.m):pad(+nt[1])+":"+(nt[2]||"00");var oc2=ctxOf(pd.raw);remember(oc2,pd.cmds,"guess");return run([C("planning","ajouter",ap)],oc2,"appris",null);}}
         /* « pas pour l'instant », « plus tard » : la proposition était juste, mais pas maintenant */
         if(PLUSTARD.test(c.n)||PLUSTARD.test(c.p)){S.pending=null;S.lastTurn=null;return {explain:"",says:[tr("D’accord.")],open:null};}
         if(/^(non|pas ca|faux|mauvais|pas du tout|nan|no|nie|hayir|нет|لا)(\s|$)/.test(c.n)){reject(pd.raw,pd.cmds);if(pd.mem)forgetLearned(pd.raw,pd.cmds,"memoire");var alt=(pd.alt||[]).filter(function(x){return !rejected(ctxOf(pd.raw),x);});
@@ -1755,7 +1782,9 @@ function create(E,X,saved,opts){
   /* toutes les pistes pour une phrase incomprise, de la plus sûre à la moins sûre, sans celles déjà refusées */
   function pistes(c){var L=[],seen={},add=function(cm){if(!cm||!cm.length||cm.every(function(x){return x.m==="sys";}))return;var l=labelOf(cm);if(!l||seen[l]||rejected(c,cm))return;seen[l]=1;L.push(cm);};
     var rp=repair(c.p,c.raw);if(rp)add(parseAs(c,rp));add(synRescue(c));add(historyGuess(c));add(entityGuess(c));return L.slice(0,3);}
-  function propose(c,cmds,teach,prefix,alt,mem){S.pending={type:"confirm",cmds:cmds,raw:c.raw,teach:teach||null,alt:alt||[],mem:!!mem};S.lastTurn=null;
+  function propose(c,cmds,teach,prefix,alt,mem){
+    if(labelOf(cmds)==="planning.ajouter"){var dj=jourDate(c.p);if(dj){var a0=cmds[0].args||{};S.lastTurn=null;
+      return run([C("planning","date",{jour:dj.jour,date:iso(dj.date),autre:iso(dj.autre),client:a0.client||null,heure:a0.heure||null,titre:a0.titre||"Rendez-vous"})],null,"devine");}}S.pending={type:"confirm",cmds:cmds,raw:c.raw,teach:teach||null,alt:alt||[],mem:!!mem};S.lastTurn=null;
     var d=B.describe(cmds).replace(/^Maquette 3D : /,"").replace(/[.?!]+$/,"");if(labelOf(cmds)==="planning.ajouter"&&cmds.length===1){var rd=B.describe(cmds),r0=tr("Rendez-vous{0}{1}{2}{3}",["","","",""]);d=tr("Ajouter un rendez-vous{0}",[rd.indexOf(r0)===0?rd.slice(r0.length):""]);}
     return {explain:"",says:[tr("{0}Tu veux : {1}{2} ?",[(prefix?prefix+" ":""),d.charAt(0).toLowerCase(),d.slice(1)])],open:null,via:"devine"};}
   function rejected(c,cmds){var L=S.neg&&S.neg[mask(c).m];return !!(L&&cmds&&L.indexOf(labelOf(cmds))>=0);}

@@ -3178,7 +3178,9 @@ function chatAddAs(kind,btn){
  if(kind==='cli'){q.client=x.nom;if(!x.adr&&q.adr){x.adr=q.adr}if(!x.tel&&q.tel)x.tel=q.tel;if(!q.tel&&x.tel)q.tel=x.tel;if(!q.adr&&x.adr)q.adr=x.adr;fillForm();if(q.lines.length)store();else save()}else save();
  // retirer la proposition du message
  const last=[...CHAT.m].reverse().find(m=>m.who==='bot'&&m.html&&m.html.includes('<!--sg-->'));
- if(last)last.html=last.html.replace(/<!--sg-->[\s\S]*?<!--\/sg-->/,'');
+ if(last){last.html=last.html.replace(/<!--sg-->[\s\S]*?<!--\/sg-->/,'');
+  // la question était seule dans la bulle : pas de bulle vide
+  if(!last.html.replace(/<[^>]*>/g,'').trim())CHAT.m.splice(CHAT.m.indexOf(last),1)}
  CHAT.m.push({who:'bot',html:kind==='cli'
   ?`<p><svg class="i i-sm"><use href="#i-user"/></svg> <span>Client</span> : <b data-noi18n>${esc(x.nom)}</b> <span class="pill-s ${isNew?'new':''}">${isNew?'Nouveau, ajouté à tes clients':'Déjà dans tes clients'}</span></p>`
   :`<p><svg class="i i-sm"><use href="#i-truck"/></svg> <span>Fournisseur</span> : <b data-noi18n>${esc(x.nom)}</b> <span class="pill-s ${isNew?'new':''}">${isNew?'Nouveau, ajouté à tes fournisseurs':'Déjà dans tes fournisseurs'}</span></p>`});
