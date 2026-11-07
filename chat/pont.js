@@ -43,10 +43,12 @@ function vue(){var S=P.B.S,idc={};S.mode="artisan";
   S.rdv=(db.events||[]).filter(function(e){return e.t==="rdv"&&e.d;}).map(function(e){var a=String(e.a||"08:00").split(":"),d=String(e.d).split("-"),st=new Date(+d[0],+d[1]-1,+d[2],+a[0]||0,+a[1]||0).getTime(),b=e.b?String(e.b).split(":"):null;
     return {id:e.id,start:st,min:b?Math.max(15,(+b[0]*60+(+b[1]||0))-((+a[0]||0)*60+(+a[1]||0))):60,titre:e.title||"Rendez-vous",client:e.cid&&idc[e.cid]||null};}).sort(function(x,y){return x.start-y.start;});
   S.fournisseurs=(db.suppliers||[]).map(function(s){return {nom:s.nom};});
+  /* paiements : ceux des factures de casô */
+  S.paiements=[];(db.invoices||[]).forEach(function(f){if(f.kind==="avoir"||!f.num)return;(f.pays||[]).forEach(function(p){S.paiements.push({client:cle(f.client&&f.client.nom),montant:+p.amt||0,date:Date.parse(p.d)||0,mode:p.mode||""});});});
   return {clients:JSON.parse(JSON.stringify(S.clients)),devis:S.devis.map(function(d){return d.id;}),rdv:S.rdv.map(function(r){return r.id;})};}
 
 /* ---------- ce que le chat fait lui-même (le reste reste aux modules de casô) ---------- */
-var PRIS=/^(devis\.(preparer|modele|total|compte|ouvrir|liste)|clients\.(info|message|appeler|maj|note|ouvrir)|planning\.(prochain|dispo|ouvrir)|services\.(info|ouvrir)|fournisseurs\.ouvrir|factures\.ouvrir|pointage\.ouvrir|memoire\.[a-z]+|mot\.apprendre|sys\.politesse)$/;
+var PRIS=/^(factures\.impayes|stats\.ca|devis\.(preparer|modele|total|compte|ouvrir|liste)|clients\.(info|message|appeler|maj|note|ouvrir)|planning\.(prochain|dispo|ouvrir)|services\.(info|ouvrir)|fournisseurs\.ouvrir|factures\.ouvrir|pointage\.ouvrir|memoire\.[a-z]+|mot\.apprendre|sys\.politesse)$/;
 /* écrans du chat -> écrans de casô (le planning répond dans la conversation) */
 var ECRAN={devis:"edit","devis-liste":"mes",clients:"cli",client:"cli",services:"prix",fournisseurs:"fou",factures:"fact",pointage:"pt"};
 function libelles(c){return (c||[]).filter(function(x){return x.m!=="sys"||x.a==="politesse";}).map(function(x){return x.m+"."+x.a;});}
@@ -107,6 +109,7 @@ P.essaie=function(t){if(!P.ready||typeof db==="undefined"||typeof q==="undefined
   var avantPend=B.S.pending&&B.S.pending.type;
   try{B.setLangue((typeof I18N!=="undefined"&&I18N.lang)||"fr");var avant=vue();r=P.corrige?B.corriger(t):B.handle(t);}catch(err){if(window.console)console.error(err);P.corrige=false;return false;}
   P.corrige=false;
+  if(libelles(r.cmds).join()==="factures.impayes"){var dd=du(r.cmds[0].args||r.cmds[0].a||{});if(dd)r.says=[dd];}
   /* un rendez-vous compris directement reste au planning de casô (rappels, équipe, répétitions) ;
      le chat ne le prend que lorsqu'il a dû le deviner ou poser une question */
   var rdv=function(c){var L=libelles(c);return L.length>0&&L.every(function(l){return l==="planning.ajouter";});};
@@ -119,6 +122,16 @@ P.essaie=function(t){if(!P.ready||typeof db==="undefined"||typeof q==="undefined
   chatSave();chatRender(true);
   var sc=r.open&&r.open.screen&&ECRAN[r.open.screen];if(sc&&typeof go==="function")setTimeout(function(){if(sc==="edit")fillForm();go(sc);},250);
   return true;};
+/* « qui me doit de l'argent ? », « combien me doit Dupont ? » : d'après les factures émises dans casô et leurs paiements */
+function du(a){if(typeof faDue!=="function")return null;var B=P.B,F=(db.invoices||[]).filter(function(f){return f.num&&f.kind!=="avoir";});
+  if(a.client){var k=cle(a.client),c=(db.clients||[]).filter(function(x){return cle(x.nom)===k;})[0],nom=c?c.nom:a.client,G=F.filter(function(f){return cle(f.client&&f.client.nom)===k;});
+    if(!G.length)return i18nT("Aucune facture à encaisser pour")+" "+nom+".";var tot=0,re=0,pd=0;G.forEach(function(f){tot+=faTot(f).net;re+=faDue(f);pd+=faPaid(f);});
+    if(re<=0.009)return B.tr("{0} a tout payé ({1} TTC).",[nom,B.eur(tot)]);
+    return B.tr("{0} te doit encore {1} sur {2} TTC{3}{4}.",[nom,B.eur(re),B.eur(tot),(pd>0.009?B.tr(" (déjà payé : {0})",[B.eur(pd)]):""),""]);}
+  var by={};F.forEach(function(f){var x=faDue(f);if(x>0.009){var n=f.client&&f.client.nom||"?";by[n]=(by[n]||0)+x;}});
+  var L=Object.keys(by).map(function(n){return [n,by[n]];}).sort(function(x,y){return y[1]-x[1];});if(!L.length)return B.tr("Personne ne te doit d’argent.");
+  var t=L.reduce(function(s,x){return s+x[1];},0);
+  return (L.length===1?B.tr("1 client te doit "):B.tr("{0} clients te doivent ",[L.length]))+B.eur(t)+" : "+L.map(function(x){return x[0]+" "+B.eur(x[1]);}).join(", ")+".";}
 P.incompris=function(){return P.tr("Je n’ai pas compris.");};
 P.voir=function(id){var o=devisDe(id);if(!o)return;if(q.id!==o.id){q=JSON.parse(JSON.stringify(o));CHAT.qid=q.id;}fillForm();go("edit");};
 
@@ -156,6 +169,7 @@ function verifier(nom){var vu=vueFace(),p;
     p=p.then(function(){return "ok";});}catch(x){p=Promise.reject(x);}
   return p.catch(function(x){if(x&&(x.indispo||x.name==="SecurityError"||x.name==="NotSupportedError"||/feature|policy|origin|not enabled/i.test(x.message||"")))return confirmer(nom);return "refus";})
     .then(function(v){vu.fin(v==="ok");return v;});}
+P.verifier=verifier;
 function confirmer(nom){return new Promise(function(res){var f=document.createElement("div"),b=document.createElement("div"),t=document.createElement("p"),k=document.createElement("button");
   f.className="pc-sheet";b.className="pc-box";t.textContent=P.tr("Envoyer le devis à {0} ?",[nom||""]);t.setAttribute("data-noi18n","");k.type="button";k.className="pc-ic pc-env";k.innerHTML=IC.envoi;k.setAttribute("aria-label",P.tr("Envoyer au client"));
   var fin=function(v){f.remove();res(v);};k.addEventListener("click",function(ev){ev.stopPropagation();fin("ok");});f.addEventListener("click",function(ev){if(ev.target===f)fin("refus");});
