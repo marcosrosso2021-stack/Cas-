@@ -48,6 +48,26 @@ Ce que le chat fait lui-même :
   chat dit d'ajouter d'abord le plan (bouton « Plan 3D »). Dans le module 3D, une demande pour le chat Pro (devis,
   client, rendez-vous…) repart dans la conversation de casô.
 
+**Toutes les fonctions de l'appli par le chat** (10 langues, fautes et tournures libres ; moteur : `brain/p8app.js`,
+intentions `app.*` ; exécution : `pont.js` → `appFaire` / `autreFaire`) :
+- Compte et réglages : langue de l'appli (« mets l'appli en anglais »), mon compte, code de secours, déconnexion
+  (bouton dans la bulle), notifications, restaurer une sauvegarde, améliorer la traduction.
+- Mon entreprise : ouvrir la fiche, ou changer un champ en une phrase (« mon IBAN c'est … », « mon taux horaire est
+  de 45 € », SIRET, TVA intracommunautaire, assurance décennale, validité des devis, délai de paiement…). Annulable.
+- Équipe : « mon équipe », « invite un ouvrier » ; « ma signature » ouvre la signature de l'artisan.
+- Devis : nouveau, dupliquer, section, option, avenant (module Devis), devis payant, acompte %, sans TVA,
+  autoliquidation, début et durée des travaux, valider, lien, modèle (dépannage, diagnostic…), PDF (après signature).
+- Factures : avoir (sur la dernière facture du client), export des encaissements, historique.
+- Clients et fournisseurs : nouveau client, client depuis les contacts, supprimer un client (avec confirmation),
+  nouveau fournisseur, import d'une facture ou d'un ticket (photo), supprimer un service, importer mes prix.
+- Planning : vue semaine ou jour, créneaux de travail, agenda de l'iPhone, annuler un rendez-vous.
+- Pointage : « je commence ma journée » / « fin de journée » pointent si la personne et le chantier sont connus
+  (sinon l'écran de pointage s'ouvre), présents, journal, oubli, chantiers et NFC.
+- Plan d'une pièce (photo, laser), maquette 3D, dictée, « qu'est-ce que tu sais faire ».
+- « non » juste après annule l'action (fiche entreprise, client supprimé, service, rendez-vous, pointage…).
+- Base d'apprentissage : `mini/app-phrases.json` (phrases de chaque fonction dans les 10 langues) est ajouté au
+  générateur ; le mini modèle est réentraîné avec leurs versions abîmées (fautes, majuscules, sans accents).
+
 Module 3D du mode bricoleur (même conversation, 10 langues) :
 - « envoie à mon artisan » ouvre l'envoi des changements (la personne valide avant l'envoi).
 - « agrandis le salon », « la pièce fait 4 m sur 5 m » : les murs sont modifiés par l'artisan ; la demande part au prochain envoi.
