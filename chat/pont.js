@@ -222,6 +222,7 @@ function appFaire(a,o,r,t){var x={says:[],explain:r.explain};var cur=devisCouran
     case "entreprise":
       if(o.champ&&o.v){var k=CHAMPS_ENT[o.champ]||o.champ,v=o.v;if(/^(tauxH|depl|capital|valid)$/.test(k))v=nb(v);if(/^(iban|bic)$/.test(k))v=String(o.v).toUpperCase().replace(/[^A-Z0-9 ]/g,"").trim();
         if(!v){x.says=[P.tr("Je n’ai pas compris la valeur.")];break;}
+        if(k==="iban"&&window.VAULT&&VAULT.on&&typeof ibanSet==="function"){ibanSet(v);x.says=[P.tr("Confirme avec ton mot de passe.")];break;}
         x.u={prof:JSON.stringify(db.prof||{})};db.prof=Object.assign({},db.prof||{});db.prof[k]=v;db.profAt=Date.now();save();x.says=[P.tr("C’est enregistré : {0}.",[v])];}
       else ecran("cpt",o.champ?"#e"+({tauxH:"TauxH",depl:"Depl",iban:"Iban",bic:"Bic",siret:"Siret",capital:"Capital",tvai:"Tvai",assur:"Assur",rcpro:"Rcpro",valid:"Valid",delai:"Delai",med:"Med",rm:"Rm",forme:"Forme",nomEnt:"Nom",telEnt:"Tel",mailEnt:"Mail",adrEnt:"Adr"}[o.champ]||"Nom"):"#eNom");break;
     case "notifs":if(o.on&&typeof enableNotif==="function"){x.bouton={act:"notifs",label:r.explain};x.explain="";}else ecran("cpt","#notifCard");break;

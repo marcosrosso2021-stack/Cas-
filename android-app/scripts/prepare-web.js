@@ -17,14 +17,21 @@ const files = fs.readdirSync(root).filter(f =>
   /\.(html|webmanifest|png|ico|svg|json)$/.test(f) || f === 'sw.js');
 files.forEach(f => fs.copyFileSync(path.join(root, f), path.join(www, f)));
 
+// bibliothèques hébergées (lib/) et moteur du chat (chat/) : copiés tels quels
+['lib', 'chat'].forEach(d => {
+  if (fs.existsSync(path.join(root, d))) fs.cpSync(path.join(root, d), path.join(www, d), { recursive: true });
+});
+
 ['pointage-auto.js', 'caso-native.js'].forEach(f =>
   fs.copyFileSync(path.join(app, 'web', f), path.join(www, f)));
 
 const idx = path.join(www, 'index.html');
 let html = fs.readFileSync(idx, 'utf8');
 if (html.indexOf('caso-native.js') === -1) {
-  const tag = '<script src="pointage-auto.js"></script>\n<script src="caso-native.js"></script>\n';
-  const i = html.lastIndexOf('</body>');
+  // lancés par le coffre, après l'appli (type text/x-caso), juste avant le script de démarrage
+  const tag = '<script type="text/x-caso" data-src="pointage-auto.js"></script>\n<script type="text/x-caso" data-src="caso-native.js"></script>\n';
+  const b = html.indexOf('<script>/* démarrage : le coffre');
+  const i = b !== -1 ? b : html.lastIndexOf('</body>');
   if (i === -1) throw new Error('index.html : balise </body> introuvable');
   html = html.slice(0, i) + tag + html.slice(i);
   fs.writeFileSync(idx, html);
