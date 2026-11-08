@@ -48,6 +48,19 @@ Ce que le chat fait lui-même :
   chat dit d'ajouter d'abord le plan (bouton « Plan 3D »). Dans le module 3D, une demande pour le chat Pro (devis,
   client, rendez-vous…) repart dans la conversation de casô.
 
+**Enchaînements (une question, une réponse)** — trombone du chat, image collée ou glissée dans la conversation
+(`index.html` : `chatFile`, `chKind`, `chReponse`) :
+- **Plan ou croquis** → envoyé directement à la maquette 3D (écran de recadrage du module 3D).
+- **Facture, devis, ticket ou bon de livraison d'un fournisseur** → « Facture · Point P · 2 lignes · 848,52 € TTC —
+  J'enregistre ce fournisseur et j'ajoute les matériaux à tes prix ? » [Oui] [Au devis]. Le fournisseur est créé
+  (tél., e-mail, adresse, SIRET), l'achat rangé, les matériaux ajoutés aux prix avec la marge de l'import. Sans nom de
+  fournisseur lisible, le chat le demande. « non » annule tout.
+- **Carte de visite** → « c'est un client ou un fournisseur ? ».
+- **Adresse tapée** (sans chantier à cette adresse) → « Nouveau chantier à cette adresse pour Martin ? » ; sans client
+  en cours, le chat demande le client, le crée et rattache le chantier.
+- Lecture impossible → « C'est un plan ou un document fournisseur ? ».
+On répond en tapant (« oui », « au devis », « client », un nom, dans les 10 langues) ou d'un seul bouton.
+
 **Toutes les fonctions de l'appli par le chat** (10 langues, fautes et tournures libres ; moteur : `brain/p8app.js`,
 intentions `app.*` ; exécution : `pont.js` → `appFaire` / `autreFaire`) :
 - Compte et réglages : langue de l'appli (« mets l'appli en anglais »), mon compte, code de secours, déconnexion

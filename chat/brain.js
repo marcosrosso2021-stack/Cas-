@@ -1985,6 +1985,7 @@ function create(E,X,saved,opts){
     if(labelOf(cmds)==="planning.ajouter"){var dj=jourDate(c.p);if(dj){var a0=cmds[0].args||{};S.lastTurn=null;
       return run([C("planning","date",{jour:dj.jour,date:iso(dj.date),autre:iso(dj.autre),client:a0.client||null,heure:a0.heure||null,titre:a0.titre||"Rendez-vous"})],null,"devine");}}S.pending={type:"confirm",cmds:cmds,raw:c.raw,teach:teach||null,alt:alt||[],mem:!!mem};S.lastTurn=null;
     var d=B.describe(cmds).replace(/^Maquette 3D : /,"").replace(/[.?!]+$/,"");if(labelOf(cmds)==="planning.ajouter"&&cmds.length===1){var rd=B.describe(cmds),r0=tr("Rendez-vous{0}{1}{2}{3}",["","","",""]);d=tr("Ajouter un rendez-vous{0}",[rd.indexOf(r0)===0?rd.slice(r0.length):""]);}
+    if(!d.trim()){S.pending=null;return B.notUnderstood({c:c,teach:teach});}
     return {explain:"",says:[tr("{0}Tu veux : {1}{2} ?",[(prefix?prefix+" ":""),d.charAt(0).toLowerCase(),d.slice(1)])],open:null,via:"devine"};}
   function rejected(c,cmds){var L=S.neg&&S.neg[mask(c).m];return !!(L&&cmds&&L.indexOf(labelOf(cmds))>=0);}
   function reject(raw,cmds){var k=mask(ctxOf(raw)).m,l=labelOf(cmds);if(!k||!l)return;S.neg=S.neg||{};var L=S.neg[k]=S.neg[k]||[];if(L.indexOf(l)<0)L.push(l);var ks=Object.keys(S.neg);if(ks.length>400)delete S.neg[ks[0]];}
@@ -2167,7 +2168,7 @@ function create(E,X,saved,opts){
   B.fillFor=function(t,raw){var c=ctxOf(raw),cm=fill(t,c,mask(c));return cm?retarget(cm,c):null;};
   B.confirmFor=function(r,cmds,compris){if(!cmds||!cmds.length)return guess(r.c,r.teach,r.prefix);S.pending={type:"confirm",cmds:cmds,raw:r.c.raw,teach:r.teach||null};S.lastTurn=null;
     /* « compris » du modèle de langage est en français : hors français, on décrit nous-mêmes les commandes */
-    var d=(LANG==="fr"&&compris)||B.describe(cmds).replace(/^Maquette 3D : /,"");return {explain:"",says:[tr("{0}Tu veux : {1}{2} ?",[(r.prefix?r.prefix+" ":""),d.charAt(0).toLowerCase(),d.slice(1).replace(/[.?!]+$/,"")])],open:null,via:"modele"};};
+    var d=(LANG==="fr"&&compris)||B.describe(cmds).replace(/^Maquette 3D : /,"");if(!String(d).trim()){S.pending=null;return guess(r.c,r.teach,r.prefix);}return {explain:"",says:[tr("{0}Tu veux : {1}{2} ?",[(r.prefix?r.prefix+" ":""),d.charAt(0).toLowerCase(),d.slice(1).replace(/[.?!]+$/,"")])],open:null,via:"modele"};};
   B.execFor=function(r,cmds,via){var o=exec(cmds,r.c,"appris",r.teach&&sameClients(r.teach,cmds)?ctxOf(r.teach):null);remember(r.c,cmds,via||"sens");if(r.prefix)o.says.unshift(r.prefix);return o;};
   B.ctx=function(raw){return ctxOf(raw);};
   /* demande modifiée dans le chat (la dernière) : l'action précédente est annulée, la nouvelle phrase est traitée ;
