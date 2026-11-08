@@ -115,6 +115,7 @@ function html(r,id){var h="";if(r.explain)h+='<p class="mut" dir="auto">'+e(r.ex
 function csv(v){v=String(v==null?"":v);return /[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
 P.action=function(a){try{
   if(a==="sauvegarde"&&typeof backupNow==="function")return backupNow();
+  if(a==="3d"&&typeof m3dOpen==="function")return m3dOpen();
   if(a==="prix"&&typeof exportCsv==="function")return exportCsv();
   if(a==="clients"&&typeof dl==="function"){var L=["Nom;Téléphone;E-mail;Adresse;Note"].concat((db.clients||[]).map(function(c){return [c.nom,c.tel,c.email,c.adr||c.adresse,c.note].map(csv).join(";");}));return dl("mes-clients.csv","\ufeff"+L.join("\n"),"text/csv");}
   if(a==="bricoleur"&&typeof modePick==="function"){if(typeof chatSave==="function")chatSave();return modePick("bricoleur");}
@@ -175,7 +176,8 @@ P.essaie=function(t,force){if(!P.ready||typeof db==="undefined"||typeof q==="und
   /* pointage : l'écran de pointage de casô (le pointage est automatique) */
   if(/^pointage\.(entree|sortie|total)$/.test(lab0)){r.says=[];r.explain=P.B.describe([{m:"pointage",a:"ouvrir",args:{}}])||r.explain;r.open={screen:"pointage"};}
   /* maquette 3D : le module 3D de casô reçoit la phrase */
-  if(/^scene\./.test(lab0)){r.says=[];r.explain=P.tr("Maquette 3D");apres=function(){vers3D(t);};}
+  /* sans maquette enregistrée, le module 3D s'ouvrirait vide et la phrase serait perdue : on le dit, avec le bouton du plan */
+  if(/^scene\./.test(lab0)){var mq=dernMaq();r.says=[];if(mq){r.explain=P.tr("Maquette 3D");apres=function(){vers3D(t,mq);};}else{r.explain="";r.says=[P.tr("Pour la maquette 3D, ajoute d’abord le plan.")];r.bouton={act:"3d",label:P.tr("Plan 3D")};}}
   var w=ecrire(avant,t);garder();P.attente=!!(B.S.pending&&B.S.pending.type!=="reformuler");
   if(qMod){w.u.q=q0;w.u.qMod=true;}
   if(CHAT.qid!==q.id)CHAT.qid=q.id;
@@ -193,8 +195,13 @@ function du(a){if(typeof faDue!=="function")return null;var B=P.B,F=(db.invoices
   var L=Object.keys(by).map(function(n){return [n,by[n]];}).sort(function(x,y){return y[1]-x[1];});if(!L.length)return B.tr("Personne ne te doit d’argent.");
   var t=L.reduce(function(s,x){return s+x[1];},0);
   return (L.length===1?B.tr("1 client te doit "):B.tr("{0} clients te doivent ",[L.length]))+B.eur(t)+" : "+L.map(function(x){return x[0]+" "+B.eur(x[1]);}).join(", ")+".";}
-function vers3D(t){if(typeof m3dOpen!=="function")return;try{m3dOpen();}catch(e){return;}var n=0;(function essai(){var f=document.querySelector("iframe");var d=null;try{d=f&&f.contentDocument;}catch(e){}
-  var i=d&&d.getElementById("chat-in"),g=d&&d.getElementById("chat-go");if(i&&g){i.value=t;g.click();return;}if(++n<40)setTimeout(essai,250);})();}
+/* dernière maquette 3D enregistrée dans casô (bouton « enregistrer » du module 3D) */
+function dernMaq(){var L=(typeof db!=="undefined"&&db.maq3d||[]).filter(function(x){return x&&x.d&&x.d.projet&&x.d.projet.walls;});L.sort(function(a,b){return (b.at||0)-(a.at||0);});return L.length?L[0].d.projet:null;}
+function vers3D(t,mq){if(typeof m3dOpen!=="function")return;try{m3dOpen();}catch(e){return;}var n=0,charge=!mq;(function essai(){var f=document.querySelector("#m3d iframe");var d=null,w=null;try{d=f&&f.contentDocument;w=f&&f.contentWindow;}catch(e){}
+  if(!charge&&w&&w.casoModule){try{charge=w.casoModule.load(JSON.parse(JSON.stringify(mq)))!==false;}catch(e){charge=true;}}
+  var i=d&&d.getElementById("chat-in"),g=d&&d.getElementById("chat-go");if(charge&&i&&g){i.value=t;g.click();return;}if(++n<40)setTimeout(essai,250);})();}
+/* phrase du chat 3D non comprise là-bas : est-ce une demande pour le chat Pro (autre chose que la maquette) ? */
+P.pourPro=function(t){if(!P.ready)return false;try{P.B.setLangue((typeof I18N!=="undefined"&&I18N.lang)||"fr");var c=P.B.parse(t);return libelles(c).some(function(l){return !/^scene\.|^metre\.|^bibliotheque\.|^sys\.politesse$/.test(l);});}catch(e){return false;}};
 P.incompris=function(){return P.tr("Je n’ai pas compris.");};
 P.voir=function(id){var o=devisDe(id);if(!o)return;if(q.id!==o.id){q=JSON.parse(JSON.stringify(o));CHAT.qid=q.id;}fillForm();go("edit");};
 

@@ -1257,7 +1257,7 @@ function create(E,X,saved,opts){
     if(k&&/\b(ou habite|habite ou|ou est le chantier|le chantier est ou|ou se trouve|c est ou)\b/.test(n))return [C("clients","info",{nom:nom,champ:"adresse"})];
     /* mon prix pour un service */
     if((m=n.match(/\b(?:quel est mon (?:prix|tarif)|c est quoi mon (?:prix|tarif)|mon (?:prix|tarif)|combien je (?:facture|prends|compte|fais payer|mets|vends)|je (?:facture|prends|compte|vends) combien|a combien je (?:facture|fais|vends|mets))\s+(?:pour |de |du |des |de la |de l |le |la |les |l )?(.+?)$/))&&!qn&&!/\b\d/.test(n)){var lab=cleanLabel(m[1]);if(lab)return [C("services","info",{nom:lab})];}
-    if(q&&(m=n.match(/^(?:c est )?combien (?:coute |coutent |c est |pour |est |sont )?(?:le |la |les |l |un |une |mon |ma |mes )?(.+?)$/))&&!qn&&!hasDevis.test(n)&&!findEquip(n).length){var lab2=cleanLabel(m[1]);if(lab2&&findService(lab2))return [C("services","info",{nom:lab2})];}
+    if(q&&(m=n.match(/^(?:c est )?combien (?:coute |coutent |c est |pour |est |sont )?(?:le |la |les |l |un |une |mon |ma |mes )?(.+?)$/))&&!qn&&!hasDevis.test(n)&&!findEquip(n).length){var lab2=cleanLabel(m[1]);if(lab2&&(findService(lab2)||S.mode==="artisan"&&findMat(lab2)&&!findRoom(n)))return [C("services","info",{nom:lab2})];}
     return null;}
 
   /* ---------- messages, appels ---------- */
@@ -1613,8 +1613,8 @@ function create(E,X,saved,opts){
       if(ok1&&al.length&&(!q||askSafe(al)))return al;}
     r=parseExtra(c);if(r&&(!q||askSafe(r)))return r;
     if(q)return askSafe(parseWork(c)||parseScene(c));
-    /* des quantités avec unités et un prix (ou le mot devis, ou « ajoute » sans meuble) : c'est un devis, pas la maquette 3D */
-    if(S.mode==="artisan"&&parts.length<=1&&qtys(stripTimes(c.p)).some(function(x){return x.u!=="u";})&&(money(c.p)!=null||hasDevis.test(c.p)||RE.add.test(c.p)&&!findEquip(c.p).length))return parseWork(c)||parseDevisBuild(c)||parseScene(c);
+    /* des quantités avec unités et un prix (ou le mot devis, ou sans meuble ni dimensions de pièce : « 20 m² de carrelage ») : c'est un devis, pas la maquette 3D */
+    if(S.mode==="artisan"&&parts.length<=1&&qtys(stripTimes(c.p)).some(function(x){return x.u!=="u";})&&(money(c.p)!=null||hasDevis.test(c.p)||!findEquip(c.p).length&&!/\d\s*(m|metres?|cm)?\s*(x|sur|par)\s*\d|\b(terrain|jardin|parcelle)\b/.test(c.p)))return parseWork(c)||parseDevisBuild(c)||parseScene(c);
     if(parts.length>1&&parts.every(function(x){return x.split(" ").length>=2;})){
       var all=[],okAll=true;parts.forEach(function(x,i){var cc=sub(x,i);var q=parseExtra(cc)||parseWork(cc)||parseScene(cc)||parseDevisBuild(cc);if(q)all=all.concat(q);else okAll=false;});
       var whole=parseWork(c)||parseScene(c)||parseDevisBuild(c);
