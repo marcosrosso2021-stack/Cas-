@@ -19,7 +19,10 @@ const CBK={open(){return new Promise((ok,ko)=>{try{const q=indexedDB.open('caso_
   try{for(const k in b.ls)localStorage.setItem(k,b.ls[k]);localStorage.setItem('caso_ts',String(b.ts))}catch(e){}
   location.reload()}).catch(()=>{})}catch(e){}})();
 </script>
-<style>html.vv body{visibility:hidden}</style>
+<style>html.vv body{visibility:hidden}
+.pwask{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px}
+.pwask form{width:100%;max-width:380px;margin:0}.pwask .r{display:flex;gap:8px;margin-top:12px}.pwask .r .btn{flex:1;margin:0}
+.vnote{margin-top:12px;padding:10px 12px;border-radius:8px;background:var(--soft,#f0f0ed);font-weight:700;font-size:15px}</style>
 <script>/* ---------- Coffre casô ----------
    Les données du téléphone sont chiffrées (AES-256-GCM, une clé de données tirée au hasard).
    Cette clé ne reste qu'en mémoire ; sur le téléphone elle est enveloppée par le mot de passe (PBKDF2 600 000 tours),
@@ -31,7 +34,7 @@ window.VAULT=(()=>{
   keys:()=>{const o=[];try{for(let i=0;i<LS.length;i++)o.push(LS.key(i))}catch(e){}return o}};
  const PX='caso_x_',META='caso_vault',ITER=600000;
  // restent lisibles : réglages sans donnée client, verrou, compte (e-mail + empreintes du mot de passe, nécessaires pour se connecter)
- const PUB=new Set(['caso_account','caso_lk','caso_locked','caso_lang','caso_ts','caso_test','caso_notif','caso_notif_asked','caso_remshown','caso_seen_sig','caso_tourcal','caso_camh','caso_laser',META]);
+ const PUB=new Set(['caso_account','caso_lk','caso_locked','caso_pq','caso_lang','caso_ts','caso_test','caso_notif','caso_notif_asked','caso_remshown','caso_seen_sig','caso_tourcal','caso_camh','caso_laser',META]);
  const prot=k=>typeof k==='string'&&!k.startsWith(PX)&&!PUB.has(k)&&!/^caso_(bk|essai_v|test)/.test(k);
  const C=window.crypto&&crypto.subtle,te=new TextEncoder(),td=new TextDecoder();
  const rnd=n=>crypto.getRandomValues(new Uint8Array(n));
@@ -52,6 +55,8 @@ window.VAULT=(()=>{
  async function wrap(slot,kek,extra){const iv=rnd(12);
   return Object.assign({iv:b64(iv),w:b64(new Uint8Array(await C.wrapKey('raw',V.dk,kek,Object.assign({name:'AES-GCM',iv},ad('caso-vault-'+slot)))))},extra)}
  const unwrap=(slot,kek,o)=>C.unwrapKey('raw',unb64(o.w),kek,Object.assign({name:'AES-GCM',iv:unb64(o.iv)},ad('caso-vault-'+slot)),{name:'AES-GCM'},true,['encrypt','decrypt']);
+ async function fileKey(pw,s,i){const k=await C.importKey('raw',te.encode(pw),'PBKDF2',false,['deriveKey']);
+  return C.deriveKey({name:'PBKDF2',hash:'SHA-256',salt:s,iterations:i},k,{name:'AES-GCM',length:256},false,['encrypt','decrypt'])}
  async function slotPw(slot,secret){const s=rnd(16);return wrap(slot,await kekPw(secret,s,ITER),{s:b64(s),i:ITER})}
  // une valeur : 'v1.' + base64( drapeau compression | iv | chiffré ), liée à son nom (données associées)
  async function enc(k,v){let p=te.encode(v),f=0;
@@ -100,6 +105,17 @@ window.VAULT=(()=>{
   async wrapPass(pw){if(!V.on)return;const m=getMeta();m.p=await slotPw('p',pw);putMeta(m)},
   async wrapCode(code){if(!V.on)return;const m=getMeta();m.r=await slotPw('r',code);putMeta(m)},
   encStr:(k,v)=>enc(k,v),decStr:(k,v)=>dec(k,v),
+  async checkPw(pw){const m=getMeta();if(!m||!m.p)return false;try{await unwrap('p',await kekPw(pw,unb64(m.p.s),m.p.i),m.p);return true}catch(e){return false}},
+  // fichier « Télécharger mes données » : chiffré avec le mot de passe (PBKDF2 → AES-256-GCM)
+  async seal(text,pw){const s=rnd(16),iv=rnd(12),k=await fileKey(pw,s,ITER);let p=te.encode(text),z=0;
+   if(window.CompressionStream){try{p=await flate(p,CompressionStream);z=1}catch(e){}}
+   const c=new Uint8Array(await C.encrypt(Object.assign({name:'AES-GCM',iv},ad('caso-sauvegarde')),k,p));
+   return JSON.stringify({caso:'sauvegarde-chiffree',v:1,s:b64(s),i:ITER,iv:b64(iv),z,d:b64(c)})},
+  async unseal(o,pw){if(!C||!o||!(o.i>=1e5&&o.i<=5e6))throw new Error('fichier');const k=await fileKey(pw,unb64(o.s),o.i);
+   let p=new Uint8Array(await C.decrypt(Object.assign({name:'AES-GCM',iv:unb64(o.iv)},ad('caso-sauvegarde')),k,unb64(o.d)));
+   if(o.z===1)p=await flate(p,DecompressionStream);return td.decode(p)},
+  // membre d'équipe sans compte : il choisit un mot de passe pour ce téléphone
+  setup(){return new Promise(res=>{if(!C||V.on||getMeta())return res(false);ui('setup',null,null,()=>res(true))})},
   async bioOk(){try{return !!(C&&window.PublicKeyCredential&&await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable())}catch(e){return false}},
   async bioPrf(id,salt){const a=await navigator.credentials.get({publicKey:{challenge:rnd(32),allowCredentials:[{type:'public-key',id}],userVerification:'required',timeout:60000,extensions:{prf:{eval:{first:salt}}}}});
    const x=a.getClientExtensionResults(),f=x&&x.prf&&x.prf.results&&x.prf.results.first;if(!f)throw new Error('prf');return new Uint8Array(f)},
@@ -136,11 +152,19 @@ window.VAULT=(()=>{
   start(run){
    let ran=false;const go=()=>{if(ran)return;ran=true;try{run()}catch(e){console.error(e)}};
    if(!C||raw.get('caso_test')){go();return}
-   const m=getMeta();let acc=null;try{acc=JSON.parse(raw.get('caso_account'))}catch(e){}
-   if(!m&&!(acc&&acc.hash&&acc.salt)){go();return}
-   ui(m?'unlock':'migrate',acc,m,go)}};
+   const m=getMeta();let acc=null,sy=null;try{acc=JSON.parse(raw.get('caso_account'))}catch(e){}
+   // pointage (lien ?p=) pendant que le coffre est fermé : noté avec son heure, appliqué à l'ouverture
+   let noted=0;if(m)try{const u=new URLSearchParams(location.search),p=u.get('p');
+    if(p&&/^[\w.-]{1,64}$/.test(p)){let q=[];try{q=JSON.parse(raw.get('caso_pq'))||[]}catch(e){}noted=Date.now();
+     q.push({p,n:(u.get('n')||'').slice(0,80),u:(u.get('u')||'').slice(0,60),t:noted});raw.set('caso_pq',JSON.stringify(q.slice(-20)));
+     history.replaceState(null,'',location.pathname)}}catch(e){}
+   if(!m&&!(acc&&acc.hash&&acc.salt)){
+    try{sy=JSON.parse(raw.get('devis_sync'))}catch(e){}
+    if(!acc&&sy&&sy.token){ui('setup',null,null,go);return}
+    go();return}
+   ui(m?'unlock':'migrate',acc,m,go,noted)}};
 
- function ui(mode,acc,m,go){
+ function ui(mode,acc,m,go,noted){
   const $=id=>document.getElementById(id),B=document.body,st=$('s-start');
   if(!st||!$('lgForm')){go();return}
   const on0=[...document.querySelectorAll('section.on')];on0.forEach(s=>s.classList.remove('on'));
@@ -148,7 +172,14 @@ window.VAULT=(()=>{
   const hideEls=[...st.querySelectorAll('.st-alt,.st-lang,#acForm')],hid0=hideEls.map(e=>e.hidden);hideEls.forEach(e=>e.hidden=true);
   $('lgForm').hidden=false;$('fgForm').hidden=true;
   if(acc&&acc.email)$('lgMail').value=acc.email;
-  $('lgForgot').hidden=!(mode==='unlock'?(m&&m.r):(acc&&acc.rhash));
+  const mailEls=[$('lgMail'),st.querySelector('label[for="lgMail"]')].filter(Boolean),mail0=mailEls.map(e=>e.hidden);
+  if(!(acc&&acc.email))mailEls.forEach(e=>e.hidden=true);
+  $('lgForgot').hidden=mode==='setup'?true:!(mode==='unlock'||(acc&&acc.rhash));
+  const go0=$('lgGo').textContent,pa0=$('lgPass').getAttribute('autocomplete');
+  if(mode==='setup'){$('lgGo').textContent='Valider';$('lgPass').setAttribute('autocomplete','new-password')}
+  let nt=null;if(noted){nt=document.createElement('div');nt.className='vnote';nt.setAttribute('role','status');
+   const d=new Date(noted);nt.textContent='Pointage noté à '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+'.';
+   $('lgGo').before(nt)}
   const bioB=$('lgBio');
   if(bioB){bioB.lastChild.textContent=/iPhone|iPad|Macintosh/.test(navigator.userAgent)?'Face ID':'Empreinte';bioB.hidden=!(mode==='unlock'&&m&&m.b)}
   let busy=false;
@@ -164,7 +195,8 @@ window.VAULT=(()=>{
    if(fini)return;fini=true;
    ['click','submit','input'].forEach(t=>document.removeEventListener(t,H[t],true));
    st.classList.remove('on');B.classList.remove('starting');on0.forEach(s=>s.classList.add('on'));
-   hideEls.forEach((e,i)=>e.hidden=hid0[i]);if(bioB)bioB.hidden=true;
+   hideEls.forEach((e,i)=>e.hidden=hid0[i]);if(bioB)bioB.hidden=true;mailEls.forEach((e,i)=>e.hidden=mail0[i]);
+   $('lgGo').textContent=go0;if(pa0)$('lgPass').setAttribute('autocomplete',pa0);if(nt)nt.remove();
    ['lgPass','fgPass','fgCode'].forEach(id=>{if($(id))$(id).value=''});['lgErr','fgErr'].forEach(id=>err(id,''));
    raw.del('caso_locked');raw.del('caso_lk');
    const sp=$('splash');if(sp)sp.dataset.done='1';
@@ -172,6 +204,9 @@ window.VAULT=(()=>{
   async function login(){
    if(busy)return;const w=lkWait();if(w)return err('lgErr',lkMsg(w));
    const mail=$('lgMail').value.trim().toLowerCase(),pw=$('lgPass').value,btn=$('lgGo');
+   if(mode==='setup'){if(pw.length<8)return err('lgErr','8 caractères minimum.');
+    busy=true;wait(btn,true);try{await V.create(pw)}catch(e){}wait(btn,false);busy=false;
+    if(!V.on)return err('lgErr','Impossible de protéger les données sur ce téléphone.');return done()}
    const bad=()=>{lkFail();const w2=lkWait();err('lgErr',w2?lkMsg(w2):'E-mail ou mot de passe incorrect.')};
    if(acc&&acc.email&&mail!==acc.email)return bad();
    if(fini)return;busy=true;wait(btn,true);
@@ -204,7 +239,7 @@ window.VAULT=(()=>{
    click(e){const t=e.target.closest&&e.target.closest('button');if(!t||!st.contains(t)||t.type==='submit')return;
     const oc=t.getAttribute('onclick')||'';
     if(t.classList.contains('pw-eye')){const i=t.parentNode.querySelector('input'),o=i.type==='password';i.type=o?'text':'password';t.setAttribute('aria-pressed',o)}
-    else if(t.id==='lgForgot'){$('lgForm').hidden=true;$('fgForm').hidden=false;err('fgErr','')}
+    else if(t.id==='lgForgot'){if(mode==='unlock'&&!(m&&m.r))wipe();else{$('lgForm').hidden=true;$('fgForm').hidden=false;err('fgErr','')}}
     else if(/forgotBack/.test(oc)){$('fgForm').hidden=true;$('lgForm').hidden=false}
     else if(/forgotWipe/.test(oc))wipe();
     else if(t===bioB)bio(true);
@@ -1899,7 +1934,7 @@ body.tr-on{overflow:hidden}
   <label>Responsabilité civile pro</label><input id="eRcpro" oninput="saveProfSoon()" onchange="saveProf()" placeholder="Assureur · n° contrat">
   <label>Médiateur de la consommation</label><input id="eMed" oninput="saveProfSoon()" onchange="saveProf()" placeholder="Nom · site">
   <div class="row">
-   <div><label>IBAN</label><input id="eIban" oninput="saveProfSoon()" onchange="saveProf()" autocapitalize="characters" data-noi18n></div>
+   <div><label>IBAN</label><input id="eIban" oninput="saveProfSoon()" onchange="saveProf()" onfocus="ibanOpen(this)" onblur="ibanShow()" autocapitalize="characters" data-noi18n></div>
    <div><label>BIC</label><input id="eBic" oninput="saveProfSoon()" onchange="saveProf()" autocapitalize="characters" data-noi18n></div>
   </div>
   <label for="eDelai">Délai de paiement des factures</label><select id="eDelai" onchange="saveProf()"><option value="0">À réception</option><option value="15">15 jours</option><option value="30">30 jours</option><option value="45">45 jours</option></select>
@@ -5902,10 +5937,24 @@ function importCsv(inp){
   save();renderPrices();renderQuick();alert(n+' prix importés. Vérifie-les avant usage.')};
  r.readAsText(f);inp.value='';
 }
-function exportAll(){dl('devis-btp-sauvegarde.json',JSON.stringify(db),'application/json')}
+/* mot de passe demandé dans une petite fenêtre (champ masqué) */
+function askPw(title){return new Promise(res=>{const w=document.createElement('div');w.className='pwask';
+ w.innerHTML='<form class="card" novalidate><label>'+esc(title)+'</label><div class="pw"><input type="password" autocomplete="current-password" enterkeyhint="done"></div><div class="r"><button type="button" class="btn sec">'+esc(i18nT('Annuler'))+'</button><button class="btn" type="submit">OK</button></div></form>';
+ const fin=v=>{w.remove();res(v)},i=w.querySelector('input');
+ w.querySelector('form').onsubmit=e=>{e.preventDefault();fin(i.value)};w.querySelector('button[type=button]').onclick=()=>fin(null);
+ document.body.appendChild(w);setTimeout(()=>i.focus(),50)})}
+/* « Télécharger mes données » : fichier chiffré avec le mot de passe quand le coffre est actif */
+async function exportAll(){const j=JSON.stringify(db);
+ if(window.VAULT&&VAULT.on){const pw=await askPw(i18nT('Mot de passe'));if(pw==null)return;
+  if(!(await VAULT.checkPw(pw))){toast(i18nT('Mot de passe incorrect.'));return}
+  dl('devis-btp-sauvegarde.json',await VAULT.seal(j,pw),'application/json');return}
+ dl('devis-btp-sauvegarde.json',j,'application/json')}
 function importAll(inp){
  const f=inp.files[0];if(!f)return;const r=new FileReader();
- r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.prices||!d.quotes)throw 0;
+ r.onload=async()=>{try{let d=JSON.parse(r.result);
+  if(d&&d.caso==='sauvegarde-chiffree'){const pw=await askPw(i18nT('Mot de passe'));if(pw==null)return;
+   try{d=JSON.parse(await VAULT.unseal(d,pw))}catch(e){alert(i18nT('Mot de passe incorrect.'));return}}
+  if(!d.prices||!d.quotes)throw 0;
   if(!confirm('Remplacer toutes les données actuelles ?'))return;
   const now=Date.now();['prices','quotes','hist','chantiers','people','pts','clients','suppliers','projects','plans','events','invoices','cvTpl'].forEach(k=>{if(!Array.isArray(d[k]))d[k]=[];d[k]=d[k].filter(x=>x&&typeof x==='object'&&(x.id==null||okId(x.id)));d[k].forEach(x=>{if(x.id)x.updatedAt=now})});
   ['prices','quotes','pts','plans','events','invoices'].forEach(k=>{d[k]=d[k].map(x=>recClean(k,x)).filter(Boolean)});
@@ -5915,7 +5964,17 @@ function importAll(inp){
 }
 let profT=0;function saveProfSoon(){clearTimeout(profT);profT=setTimeout(saveProf,500)}
 addEventListener('pagehide',()=>{if(profT){clearTimeout(profT);saveProf()}});
-function saveProf(){clearTimeout(profT);profT=0;db.prof=Object.assign({},db.prof||{},{nom:$('eNom').value,adr:$('eAdr').value,siret:$('eSiret').value,tel:$('eTel').value,assur:$('eAssur').value,valid:$('eValid').value,forme:$('eForme').value,rm:$('eRm').value,tvai:$('eTvai').value,email:$('eMail').value,zone:$('eZone').value,iban:$('eIban').value,bic:$('eBic').value,delai:$('eDelai').value,capital:$('eCapital').value,franchise:$('eFranch').checked,rcpro:$('eRcpro').value,mediateur:$('eMed').value,tauxH:$('eTauxH').value,depl:$('eDepl').value,acompteType:$('eAccT').value,acomptePct:$('eAccP').value});if(typeof entExtra==='function')entExtra();db.profAt=Date.now();save()}
+/* IBAN : affiché masqué ; le voir ou le changer demande le mot de passe (un IBAN modifié détourne les virements) */
+const ibanMask=v=>{v=String(v||'').replace(/\s+/g,'');return v.length>8?v.slice(0,4)+' •••• •••• '+v.slice(-4):v};
+function ibanShow(){const e=$('eIban');if(!e)return;e.dataset.open='';e.value=ibanMask((db.prof||{}).iban)}
+async function ibanOpen(e){if(e.dataset.open==='1'||e.dataset.ask)return;
+ if(window.VAULT&&VAULT.on){e.dataset.ask='1';e.blur();const pw=await askPw(i18nT('Mot de passe'));delete e.dataset.ask;
+  if(pw==null)return;if(!(await VAULT.checkPw(pw))){toast(i18nT('Mot de passe incorrect.'));return}}
+ e.dataset.open='1';e.value=(db.prof||{}).iban||'';e.focus()}
+async function ibanSet(v){const pw=await askPw(i18nT('Mot de passe'));if(pw==null)return;
+ if(!(await VAULT.checkPw(pw))){toast(i18nT('Mot de passe incorrect.'));return}
+ db.prof=Object.assign({},db.prof||{},{iban:v});db.profAt=Date.now();save();ibanShow();toast(i18nT('Enregistré.'))}
+function saveProf(){clearTimeout(profT);profT=0;db.prof=Object.assign({},db.prof||{},{nom:$('eNom').value,adr:$('eAdr').value,siret:$('eSiret').value,tel:$('eTel').value,assur:$('eAssur').value,valid:$('eValid').value,forme:$('eForme').value,rm:$('eRm').value,tvai:$('eTvai').value,email:$('eMail').value,zone:$('eZone').value,iban:$('eIban').dataset.open==='1'?$('eIban').value:((db.prof||{}).iban||''),bic:$('eBic').value,delai:$('eDelai').value,capital:$('eCapital').value,franchise:$('eFranch').checked,rcpro:$('eRcpro').value,mediateur:$('eMed').value,tauxH:$('eTauxH').value,depl:$('eDepl').value,acompteType:$('eAccT').value,acomptePct:$('eAccP').value});if(typeof entExtra==='function')entExtra();db.profAt=Date.now();save()}
 
 /* ---------- Historique ---------- */
 const ST={brouillon:'Brouillon',envoye:'En cours de signature',accepte:'Validé',paye:'Payé',refuse:'Refusé',expire:'Expiré'};
@@ -6432,12 +6491,12 @@ function summarize(per){
 }
 
 /* --- lecture du lien du tag --- */
-function handleScan(){
+function handleScan(q){ // q : pointage noté pendant que le coffre était fermé ({p,n,u,t})
  ensurePt();
- const u=new URLSearchParams(location.search),cid=u.get('p');
+ const u=q?new URLSearchParams({p:q.p||'',n:q.n||'',u:q.u||''}):new URLSearchParams(location.search),cid=u.get('p'),ts=q&&q.t>0?q.t:0;
  if(!cid)return;
- if(!okId(cid)){history.replaceState(null,'',location.pathname);toast(i18nT('Lien de pointage invalide.'));return}
- history.replaceState(null,'',location.pathname); // évite de repointer si on rafraîchit la page
+ if(!okId(cid)){if(!q)history.replaceState(null,'',location.pathname);toast(i18nT('Lien de pointage invalide.'));return}
+ if(!q)history.replaceState(null,'',location.pathname); // évite de repointer si on rafraîchit la page
  let ch=db.chantiers.find(c=>c.id===cid);
  if(!ch){ch={id:cid,nom:u.get('n')||('Chantier '+cid)};db.chantiers.push(ch);save()}
  go('pt');
@@ -6445,24 +6504,27 @@ function handleScan(){
  if(un){
   let p=db.people.find(x=>x.nom.toLowerCase()===un.toLowerCase());
   if(!p){p={id:uid(),nom:un};db.people.push(p);save()}
-  doPunch(cid,p.id);return}
- if(db.people.length===1){doPunch(cid,db.people[0].id);return}
- pend=cid;
+  doPunch(cid,p.id,ts);return}
+ if(db.people.length===1){doPunch(cid,db.people[0].id,ts);return}
+ pend=cid;pendTs=ts;
  if(db.people.length===0){
   flash('<div style="font-size:20px;font-weight:700">Chantier : '+esc(ch.nom)+'</div><div style="margin:10px 0">Quel est ton prénom ?</div><input id="ptNew" placeholder="Prénom"><button class="btn sec" onclick="pickNew()">Valider</button>','#1a73e8');
  }else{
   flash('<div style="font-size:20px;font-weight:700">Chantier : '+esc(ch.nom)+'</div><div style="margin:10px 0">Qui es-tu ?</div>'+db.people.map(p=>`<button class="btn sec" onclick="pickP('${p.id}')">${esc(p.nom)}</button>`).join(''),'#1a73e8');
  }
 }
-function pickP(pid){doPunch(pend,pid);pend=null}
+let pendTs=0;
+function pickP(pid){doPunch(pend,pid,pendTs);pend=null;pendTs=0}
 function pickNew(){
  const n=($('ptNew').value||'').trim();if(!n)return;
- const p={id:uid(),nom:n};db.people.push(p);save();doPunch(pend,p.id);pend=null}
+ const p={id:uid(),nom:n};db.people.push(p);save();doPunch(pend,p.id,pendTs);pend=null;pendTs=0}
+function ptQueue(){let q=[];try{q=JSON.parse(localStorage.getItem('caso_pq'))||[]}catch(e){}
+ try{localStorage.removeItem('caso_pq')}catch(e){}if(Array.isArray(q))q.filter(x=>x&&typeof x.p==='string').forEach(x=>handleScan(x))}
 function flash(html,color){
  $('ptFlash').innerHTML=`<div class="card" style="background:${color};color:#fff;text-align:center;padding:24px">${html}</div>`;
  window.scrollTo(0,0)}
-function doPunch(cid,pid){
- const r=punch(cid,pid);
+function doPunch(cid,pid,ts){
+ const r=punch(cid,pid,ts||undefined);
  if(r.dup){flash('<div style="font-size:24px;font-weight:800">Déjà pris en compte</div><div>à '+fmtT(r.ev.ts)+'</div>','#6b7585');renderPt();return}
  lastIds=r.evs.map(e=>e.id);
  const e=r.ev;let extra='';
@@ -6940,7 +7002,7 @@ function fillProf(){
  const p=db.prof||{};
  $('eNom').value=p.nom||'';$('eAdr').value=p.adr||'';$('eSiret').value=p.siret||'';
  $('eTel').value=p.tel||'';$('eAssur').value=p.assur||'';$('eValid').value=p.valid||30;
- $('eForme').value=p.forme||'';$('eRm').value=p.rm||'';$('eTvai').value=p.tvai||'';$('eMail').value=p.email||'';$('eZone').value=p.zone||'';$('eIban').value=p.iban||'';$('eBic').value=p.bic||'';$('eDelai').value=p.delai==null||p.delai===''?'30':p.delai;
+ $('eForme').value=p.forme||'';$('eRm').value=p.rm||'';$('eTvai').value=p.tvai||'';$('eMail').value=p.email||'';$('eZone').value=p.zone||'';ibanShow();$('eBic').value=p.bic||'';$('eDelai').value=p.delai==null||p.delai===''?'30':p.delai;
  $('eCapital').value=p.capital||'';$('eFranch').checked=!!p.franchise;$('eRcpro').value=p.rcpro||'';$('eMed').value=p.mediateur||'';$('eTauxH').value=p.tauxH||'';$('eDepl').value=p.depl||'';$('eAccT').value=p.acompteType||'Acompte';$('eAccP').value=p.acomptePct==null||p.acomptePct===''?'30':p.acomptePct;if(typeof entExtra==='function')entExtra()}
 function refreshViews(){
  renderQuick();renderPrices();fillProf();fillSup();
@@ -6984,7 +7046,7 @@ async function firstSetup(){
   const j=await r.json().catch(()=>({}));
   if(!r.ok)throw new Error(j.error||'Erreur.');
   setSync({url:location.origin,token:j.token,user:j.name,role:j.role,rev:0,lastPush:0});
-  srvInfo.needsSetup=false;$('fsPass').value='';renderSync();syncNow();
+  srvInfo.needsSetup=false;$('fsPass').value='';renderSync();syncNow();vaultSetup();
   setSyncMsg('C\'est prêt. Invite ton équipe ci-dessous.');
  }catch(e){setSyncMsg(e instanceof TypeError?'Entreprise introuvable. Vérifie que le poste est allumé et le Wi-Fi.':String(e.message||e))}}
 /* adresse du serveur saisie à la main : https obligatoire (http seulement en local) ; un domaine nouveau doit être confirmé avant d'y envoyer le mot de passe */
@@ -7004,8 +7066,10 @@ async function syncLogin(){
   const j=await r.json().catch(()=>({}));
   if(!r.ok)throw new Error(j.error||'Connexion refusée.');
   setSync({url,token:j.token,user:j.name,role:j.role,rev:0,lastPush:0});
-  $('syPass').value='';renderSync();syncNow();
+  $('syPass').value='';renderSync();syncNow();vaultSetup();
  }catch(e){setSyncMsg(e instanceof TypeError?'Entreprise introuvable. Vérifie l\'adresse, que le poste est allumé et que tu es sur le même Wi-Fi.':String(e.message||e))}}
+/* membre d'équipe sans compte : mot de passe de ce téléphone, pour le coffre */
+function vaultSetup(){try{if(window.VAULT&&!VAULT.on&&!accountGet()&&getSync().token)setTimeout(()=>VAULT.setup(),300)}catch(e){}}
 function syncLogout(){const c=getSync();setSync({url:c.url});renderSync();setSyncMsg('')}
 /* --- équipe : invitation par QR code --- */
 let teamCache=[],inviteLink='';
@@ -7071,7 +7135,7 @@ async function handleJoin(){
   renderSync();go(j.role==='ouvrier'?'pt':'cpt');
   setSyncMsg('Bienvenue '+j.name+' ! Ce téléphone est connecté.');
   alert('Bienvenue '+j.name+' ! Ce téléphone est connecté à l\'entreprise.');
-  syncNow();
+  syncNow();vaultSetup();
  }catch(e){go('cpt');setSyncMsg(e instanceof TypeError?'Entreprise introuvable. Vérifie le Wi-Fi.':String(e.message||e))}}
 
 window.addEventListener('online',()=>syncNow());
@@ -7087,7 +7151,7 @@ function init(){
  renderQuick();renderPrices();fillForm();
 }
 init();
-handleScan();
+handleScan();ptQueue();
 vnInit();sigInit();chatLoad();renderAcct();
 try{if(localStorage.getItem('caso_locked')==='1'&&accountGet())setTimeout(showLogin,0);else{const a=accountGet();if(a&&a.mode==='bricoleur')setTimeout(modeEnter,0)}}catch(e){}
 setTimeout(()=>{if($('s-chat').classList.contains('on'))chatRender(false)},0);
