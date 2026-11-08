@@ -1,0 +1,7 @@
+{
+  "name": "caso",
+  "private": true,
+  "description": "casô : l'appli et son serveur (synchronisation, signature, notifications)",
+  "scripts": { "start": "node serveur/server.js" },
+  "engines": { "node": ">=18" }
+}
