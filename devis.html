@@ -408,6 +408,7 @@ body:not(.embed) .ent-h{display:none}
 <div id="toast" role="status"></div>
 
 <script>
+try{if(parent!==window&&parent.VAULT&&parent.VAULT.on)parent.VAULT.shim(window)}catch(e){}
 (function(){
 'use strict';
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
