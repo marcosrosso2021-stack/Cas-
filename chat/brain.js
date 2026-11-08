@@ -291,6 +291,9 @@ function create(E,X,saved,opts){
     if(m6&&!E.isStop(m6[1])&&!vocab()[m6[1]]&&!NOTNAME.test(m6[1])&&!/^(je|j|il|elle|on|nous|vous|ils|elles|client|cliente|tout|qui|personne)$/.test(m6[1]))return m6[1];
     var m4=raw.match(/\b(?:numéro|numero|téléphone|telephone|tel|mail|e-mail|email|adresse)\s+(?:de|du|d')\s*(?:M\.\s*|Mme\s*)?([A-ZÀ-Ý][\p{L}'’-]+)/u);
     if(m4)return clientKey(m4[1]);
+    /* « c'est quoi le numéro de faure » : un nom tapé sans majuscule, en fin de phrase */
+    var m4b=raw.match(/\b(?:numéro|numero|téléphone|telephone|tel|portable|mail|e-mail|email|adresse)\s+(?:de|du|d')\s*(?:m\.?\s+|mme\s+)?(\p{Ll}[\p{L}'’-]{2,})\s*[?!.]?\s*$/u);
+    if(m4b&&!E.isStop(m4b[1])&&!vocab()[m4b[1]]&&!NOTNAME.test(m4b[1])&&!/^(moi|toi|lui|elle|eux|mon|ma|mes|ce|cet|cette|client|cliente|chantier|telephone|téléphone|portable|fixe)$/.test(m4b[1]))return clientKey(m4b[1].charAt(0).toUpperCase()+m4b[1].slice(1));
     /* « Martinowi », « Иванову » : client existant au datif, sans préposition */
     var bt=raw.match(/\p{Lu}[\p{L}'’-]+/gu)||[];for(var j=0;j<bt.length;j++){var ds=declined(clientKey(bt[j]),true);for(var q=0;q<ds.length;q++)if(S.clients[ds[q]])return ds[q];}
     return null;
@@ -401,7 +404,7 @@ function create(E,X,saved,opts){
   function parseSys(c){
     var n=c.p,raw=c.raw.trim(),m;
     if(/^(aide|help|\?|que sais tu faire|que peux tu faire|qu est ce que tu sais faire|tu sais faire quoi|comment ca marche)$/.test(n))return [C("bibliotheque","ouvrir",{})];
-    if(/^(merci|merci beaucoup|merci bien|super|parfait|top|ok|okay|d accord|daccord|ca marche|nickel|cool|(?:ok|okay|super|parfait|top|nickel|d accord) merci(?: beaucoup| bien)?|merci (?:ok|super|c est bon))$/.test(n))return [C("sys","politesse",{type:"merci",mot:n})];
+    if(/^(merci|merci beaucoup|merci bien|super|parfait|top|ok|okay|d accord|daccord|d acord|dacord|d acocrd|d accrod|d accord merci|ca marche|nickel|cool|(?:ok|okay|super|parfait|top|nickel|d accord) merci(?: beaucoup| bien)?|merci (?:ok|super|c est bon))$/.test(n))return [C("sys","politesse",{type:"merci",mot:n})];
     if(/^(bonjour|salut|bonsoir|coucou|hello|hey|hi|hola|ola|ciao|buongiorno|merhaba|czesc|buna)\b/.test(n)&&n.split(" ").length<=3)return [C("sys","politesse",{type:"bonjour"})];
     /* changer de mode par une phrase, dans les 10 langues : « mode bricolage », « modalità fai da te », « switch to DIY mode » */
     var on=hn(raw);
@@ -831,7 +834,7 @@ function create(E,X,saved,opts){
   X_["mot.apprendre"]=function(a){return R(learnWord(a.mot,a.sens));};
   /* système */
   X_["sys.aide"]=function(){return R(S.mode==="artisan"?tr("Parle-moi normalement : « devis pour Dupont, carrelage 14 m² », « rdv demain 14h chez Dupont », « Dupont a payé 500 € », « fais signer le client », « ajoute un canapé dans le séjour », « mes fournisseurs ». Dis « non » si je me trompe : je corrige et je retiens."):tr("Parle-moi normalement : « ajoute un canapé dans le séjour », « peins la chambre en vert sauge », « il me faut quoi pour carreler 12 m² », « ma liste de courses ». Dis « non » si je me trompe : je corrige et je retiens."));};
-  X_["sys.politesse"]=function(a){return R(a.type==="merci"?(/^(ok|okay|d accord|daccord|ca marche)$/.test(a.mot||"")?tr("D’accord."):tr("Avec plaisir.")):tr("Bonjour. Je t’écoute."));};
+  X_["sys.politesse"]=function(a){return R(a.type==="merci"?(/^(ok|okay|d accord|daccord|d acord|dacord|d acocrd|d accrod|ca marche)$/.test(a.mot||"")?tr("D’accord."):tr("Avec plaisir.")):tr("Bonjour. Je t’écoute."));};
   X_["sys.mode"]=function(a){S.mode=a.mode;return R(a.mode==="bricoleur"?tr("Mode Bricoleur du dimanche : maquette 3D, métré, liste de courses et budget, planning de tes travaux."):tr("Mode Artisan : devis, planning, clients, fournisseurs, signature, factures, pointage et maquette 3D."));};
   X_["sys.fermer"]=function(){return R("",{close:true});};
   X_["sys.ia"]=function(a){if(!a.on){S.iaLLM="non";return R(tr("Modèle de langage désactivé : je continue avec ma mémoire et mon modèle de sens."));}
@@ -1254,7 +1257,7 @@ function create(E,X,saved,opts){
     if(k&&/\b(ou habite|habite ou|ou est le chantier|le chantier est ou|ou se trouve|c est ou)\b/.test(n))return [C("clients","info",{nom:nom,champ:"adresse"})];
     /* mon prix pour un service */
     if((m=n.match(/\b(?:quel est mon (?:prix|tarif)|c est quoi mon (?:prix|tarif)|mon (?:prix|tarif)|combien je (?:facture|prends|compte|fais payer|mets|vends)|je (?:facture|prends|compte|vends) combien|a combien je (?:facture|fais|vends|mets))\s+(?:pour |de |du |des |de la |de l |le |la |les |l )?(.+?)$/))&&!qn&&!/\b\d/.test(n)){var lab=cleanLabel(m[1]);if(lab)return [C("services","info",{nom:lab})];}
-    if(q&&(m=n.match(/^(?:c est )?combien (?:coute |coutent |c est |pour |est |sont )?(?:le |la |les |l |un |une |mon |ma |mes )?(.+?)$/))&&!qn&&!hasDevis.test(n)&&!findEquip(n).length){var lab2=cleanLabel(m[1]);if(lab2&&findService(lab2))return [C("services","info",{nom:lab2})];}
+    if(q&&(m=n.match(/^(?:c est )?combien (?:coute |coutent |c est |pour |est |sont )?(?:le |la |les |l |un |une |mon |ma |mes )?(.+?)$/))&&!qn&&!hasDevis.test(n)&&!findEquip(n).length){var lab2=cleanLabel(m[1]);if(lab2&&(findService(lab2)||S.mode==="artisan"&&findMat(lab2)&&!findRoom(n)))return [C("services","info",{nom:lab2})];}
     return null;}
 
   /* ---------- messages, appels ---------- */
@@ -1525,6 +1528,158 @@ function create(E,X,saved,opts){
     S.pending={type:"datechoix",dates:[a.date,a.autre],cmd:{client:a.client||null,heure:a.heure||null,titre:a.titre||"Rendez-vous",duree_min:60}};
     return R(tr("Le {0} est un {1}. {2} ou {3} ?",[jm(d),jo(d),cap(fdate(d)),fdate(o)]));};
 
+  /* =====================================================================
+     Fonctions de l'appli casô par le chat (app.*) : réglages, compte, équipe, devis (module), factures,
+     encaissements, clients, import, planning, pointage, plan, maquette 3D, aide.
+     Le texte arrive normalisé et traduit en français (c.p) ; les fautes sur ces mots sont corrigées
+     par les mots de commande (build-cmdw lit les \b(…)\b de ce fichier) et par le mini modèle.
+     ===================================================================== */
+  var APP_LANGS=[["fr","francais|french|frances|francese|franceza|francuski|fransizca|франц\\S*|فرنس\\S*"],
+    ["en","anglais|english|ingles|inglese|engleza|angielski|ingilizce\\S*|англ\\S*|انجليز\\S*|انكليز\\S*"],
+    ["es","espagnol|spanish|espanol|spagnolo|spaniola|hiszpanski|ispanyolca|испан\\S*|اسبان\\S*|espanhol"],
+    ["pt","portugais|portuguese|portugues|portoghese|portugheza|portugalski|portekizce|португ\\S*|برتغال\\S*"],
+    ["it","italien|italian|italiano|italiana|wloski|italyanca|итальян\\S*|ايطال\\S*"],
+    ["ro","roumain|romanian|rumano|romeno|rumeno|romana|rumunski|romence|румын\\S*|رومان\\S*"],
+    ["pl","polonais|polish|polaco|polacco|poloneza|polski|polskim|lehce|польск\\S*|بولند\\S*"],
+    ["tr","turc|turkish|turco|turca|turceasca|turecki|turkce|турец\\S*|ترك\\S*"],
+    ["ru","russe|russian|ruso|russo|rusa|rosyjski|rusca|русск\\S*|روس\\S*"],
+    ["ar","arabe|arabic|arabo|araba|arabski|arapca|араб\\S*|عرب\\S*"]];
+  function appLang(n){for(var i=0;i<APP_LANGS.length;i++)if(new RegExp("(?:^|\\s)(?:"+APP_LANGS[i][1]+")(?=\\s|$)").test(n))return APP_LANGS[i][0];return null;}
+  /* champs de « Mon entreprise » (fiche de casô) */
+  var APP_CHAMPS=[["iban","iban"],["bic","bic|swift"],["tauxH","taux horaire|tarif horaire|prix de l heure|prix horaire|heure ht|taux de l heure"],
+    ["depl","frais de deplacement|deplacement par defaut|prix du deplacement|forfait deplacement"],["capital","capital social|capital"],
+    ["rcpro","responsabilite civile|rc pro"],["delai","delai de paiement|delais de paiement"],
+    ["med","mediateur"],["rm","rcs|numero rm|rne|repertoire des metiers"],["forme","forme juridique|statut juridique"],
+    ];
+  function appChamp(n){for(var i=0;i<APP_CHAMPS.length;i++){var re=new RegExp("\\b(?:mon|ma|mes|notre|nos|le|la|l|les)\\s+(?:"+APP_CHAMPS[i][1]+")\\b(?:\\s+(?:c est|est|sera|devient|passe a|=|:|de|a|au|en))*\\s*(.*)$"),m=re.exec(n);
+      if(m)return {champ:APP_CHAMPS[i][0],v:m[1].replace(/\b(euros?|eur|ht|stp|merci)\b/g," ").replace(/\s+/g," ").trim()};}return null;}
+  function appModele(n){var m=/\b(depannage|diagnostic|dpgf|dqe|bordereau|travaux|libre)\b/.exec(n);return m?m[1]:null;}
+  function appDuree(n){var m=/\b(\d+)\s*(jours?|semaines?|mois)\b/.exec(n);return m?{n:+m[1],u:/^s/.test(m[2])?"semaine":/^m/.test(m[2])?"mois":"jour"}:null;}
+  var APP_SCENE=/\b(canape|lit|table|chaise|armoire|meuble|meubles|cuisine|salon|chambre|douche|baignoire|mur|murs|sol|parquet|carrelage|peins|peindre|couleur|toit|etage|fenetre|porte|piece|pieces)\b/;
+  function parseApp(c){
+    var n=c.p,raw=c.raw||"",m,cl=function(){var k=findClient(raw,c.n);return k?(S.clients[k]?clientName(k):cap(k)):null;};
+    var A=function(a,args){return [C("app",a,args||{})];};
+    if(!n||n.length<3)return null;
+    /* compte */
+    if(/\b(deconnecte|deconnecter|deconnexion|deconnectes|deconnectez|log out|logout|sign out|se deconnecter)\b/.test(n)||/\b(quitter|quitte|sortir|sors|sortie)\b (?:de )?(?:mon |du |le )?compte\b/.test(n))return A("deconnexion");
+    if(/\b(supprime|supprimer|efface|effacer|ferme|fermer|resilie|resilier|detruis|detruire|clore|cloturer)\b.*\b(mon|le|ce) compte\b|\bsuppression (?:de |du )?(?:mon )?compte\b/.test(n))return A("compte",{suppr:true});
+    if(/\bcode (?:de )?(?:secours|recuperation)\b/.test(n))return A("secours");
+    if(/^(?:ouvre |voir |affiche |montre |va dans )?(?:mon compte|mes reglages|les reglages|reglages|parametres|mes parametres|preferences|mes preferences)$/.test(n)||/\b(reglages|parametres|preferences)\b/.test(n)&&!/\b(porte|fenetre|chaudiere|radiateur|mur)\b/.test(n))return A("compte");
+    /* langue de l'appli */
+    {var lg=appLang(n);
+      if(lg&&!/\b(devis|facture|factures|sms|message|mail)\b/.test(n)&&(/\b(langue|language|appli|application|app|interface|caso|uygulama\w*|dili|dil|aplicacao|aplicacion|aplikacj\w*|aplicatia)\b/.test(n)||/\b(mets|met|mettre|passe|passer|change|changer|bascule|basculer|traduis|traduire|parle|parler|switch|set|convertis|convertir|veux|voudrais)\b/.test(n)||/^en \S+$/.test(n)))return A("langue",{l:lg});
+      if(/\b(langue|language)\b/.test(n)&&/\b(change|changer|choisis|choisir|modifie|modifier|autre|quelle|mets|passe)\b|^(?:la )?langue(?: de l appli)?$/.test(n))return A("langue",{});}
+    /* notifications, sauvegarde, traduction */
+    if(/\bnotif\w*\b/.test(n))return A("notifs",{on:/\b(active|activer|allume|allumer|autorise|autoriser|mets|met|recevoir|veux|reactive|reactiver)\b/.test(n)});
+    if(/\b(restaure|restaurer|recupere|recuperer|recharge|recharger|reimporte|reimporter)\b.*\bsauvegarde\b|\brestauration\b/.test(n))return A("restaurer");
+    if(/\btraduction\b/.test(n)&&(/\b(ameliore|ameliorer|corrige|corriger|correction|corrections|erreur|erreurs|fausse|mauvaise|propose)\b/.test(n)||/^(?:ouvre |)(?:la )?traduction$/.test(n)))return A("traduction");
+    /* équipe */
+    if(!/\b(pointage|pointer|pointe)\b/.test(n)&&(/\b(invite|inviter|invitation|ajoute|ajouter|rajoute|integre|integrer)\b.*\b(ouvrier|ouvriers|salarie|salaries|employe|employes|collegue|collegues|associe|apprenti|chef d equipe|quelqu un|membre)\b/.test(n)||/\b(ouvrier|salarie|employe|collegue|apprenti)\w*\b.*\binvit\w*/.test(n)||/\binvit\w*\b/.test(n)&&!/\b(rdv|rendez|reunion|client)\b/.test(n)||/\binvit\w*\b.*\bequipe\b|\bequipe\b.*\binvit\w*/.test(n)))return A("inviter");
+    if(/\b(?:mon|ma|mes|l|notre|nos|dans l|de l)\s+equipe\b|^(?:l )?equipe$|\bmes (?:ouvriers|salaries|employes|collegues)\b|\b(?:montre|affiche|voir|ouvre)(?: moi)? (?:l|la|mon|ma) equipe\b/.test(n))return A("equipe");
+    /* « Mon entreprise » : ouvrir ou changer un champ */
+    {var ch=appChamp(n);if(ch&&(ch.v||/^(?:ouvre |voir |affiche |montre |change |modifie )/.test(n)))return A("entreprise",ch.v?ch:{champ:ch.champ});}
+    if(/\b(mon entreprise|ma societe|mentions legales|mon logo|mes coordonnees pro|infos de l entreprise|informations de l entreprise|fiche entreprise)\b/.test(n)&&!/\b(c est|est|:|=)\b/.test(n.replace(/^(?:ouvre|montre|affiche|voir)\s+/,"")))return A("entreprise",{});
+    /* signature de l'artisan */
+    if(/\bma signature\b|\bsignature (?:de l artisan|de l entreprise|pro)\b/.test(n)||(/\b(refais|refaire|change|changer|modifie|modifier|enregistre|enregistrer|nouvelle)\b.*\bsignature\b/.test(n)&&!/\b(client|devis)\b/.test(n)))return A("signature");
+    /* dictée */
+    if(/\b(dicte|dicter|dictee|dictees|note vocale|notes vocales|enregistrement vocal|mode dictee)\b/.test(n))return A("dictee");
+    /* devis : module Devis */
+    if(/\bavenants?\b/.test(n))return A("devis_module",{quoi:"avenant",client:cl()});
+    if(/\b(?:ajoute|ajouter|rajoute|cree|creer|nouvelle|mets|met|fais)\b.*\bsections?\b|\bsections?\b.*\bdevis\b/.test(n))return A("devis_module",{quoi:"section"});
+    if(/\b(?:ajoute|ajouter|rajoute|mets|met|propose|fais)\b.*\b(?:option|options|en option|optionnel|optionnelle)\b|\b(?:option|options)\b.*\bdevis\b/.test(n))return A("devis_module",{quoi:"option"});
+    if(/\bdevis (?:payant|gratuit)\b|\b(payant|gratuit)\b.*\bdevis\b|\bdevis\b.*\b(payant|gratuit)\b|\bdiagnostic payant\b|\bfaire payer le devis\b/.test(n))return A("payant",{on:!/\bgratuit\b/.test(n),montant:money(c.n)});
+    if(!/\bfacture\w*\b/.test(n)&&((m=/\b(\d+(?:\.\d+)?)\s*%\s*(?:d )?acompte\b/.exec(n))||(m=/\bacompte\b(?:\s+\S+){0,3}?\s+(\d+(?:\.\d+)?)\s*(?:%|pour ?cent)/.exec(n))))return A("acompte",{pct:+m[1]});
+    if(/\bauto ?liquidation\b|\bautoliquid\w*/.test(n))return A("autoliq",{on:!/\b(enleve|retire|sans|pas d|supprime)\b/.test(n)});
+    if(/^(?:mets |mettre |passe |passer |fais |faire )?(?:le |ce |mon )?(?:devis )?sans (?:la )?tva$|\bfranchise (?:de |en base(?: de)? )?tva\b|\bfranchise en base\b|\bpas de tva\b|\btva non applicable\b|\bsans (?:la )?tva\b|\b(?:ne|n)\b.*\b(?:facture|mets|applique|compte|ajoute|prends|demande)\w*\b.*\b(?:pas|plus)\b.*\btva\b|\b(?:ne|n)\b.*\b(?:pas|plus)\b.*\b(?:facture|mets|applique|compte|ajoute)\w*\b.*\btva\b|\b(?:enleve|retire|supprime)\w* (?:la )?tva\b/.test(n))return A("sanstva",{on:true});
+    if(/\b(?:avec (?:la )?tva|remets? la tva|remettre la tva)\b/.test(n)&&n.split(" ").length<=6)return A("sanstva",{on:false});
+    if(!/\b(dis|dire|previens|prevenir|informe|informer|ecris|ecrire|sms|message|mail|appelle|rappelle)\b|\bque (?:le|les) (?:chantier|travaux)\b/.test(n)&&/\b(?:debut|commencement|demarrage|date de debut) (?:des |du )?(?:travaux|chantier)\b|\b(?:travaux|chantier) (?:commencent|demarrent|debutent|commence|demarre|debute)\b|\bduree (?:des |du )?(?:travaux|chantier)\b/.test(n)){var dt0=parseDate(n);return A("debut",{date:dt0?iso(dt0):null,duree:appDuree(n)});}
+    if((/^(?:je )?(?:valide|valider)(?: le| ce| mon| ton)? devis\b|^(?:valide|valider)\b(?: \S+)? devis$|\bvalidation du devis\b|^valide$/.test(n)||/\bdevis\b/.test(n)&&/\b(?:valide|valider)\b/.test(n)&&/\b(pret|termine|fini|ok|bon)\b/.test(n))&&!/\b(client|a valide|a accepte|signe)\b/.test(n))return A("valider");
+    if(/\blien\b.*\b(devis|signature)\b|\bdevis\b.*\blien\b/.test(n))return A("lien");
+    if(/\b(envoie|envoyer|envoi|transmets|transmettre|expedie|expedier|partage|partager|fais partir)\b.*\bdevis\b/.test(n)&&!/\bfournisseur\b/.test(n))return [C("devis","envoyer",{client:cl(),canal:/\bwhats ?app\b/.test(n)?"whatsapp":/\b(mail|email|e mail|courriel)\b/.test(n)?"mail":/\b(sms|texto|message)\b/.test(n)?"sms":null})];
+    if(/\bpdf\b/.test(n))return [C(/\b(facture|factures|avoir)\b/.test(n)?"factures":"devis","pdf",{client:cl()})];
+    if(/\bdevis (?:de |d |du |pour (?:un |une )?|type |modele )?(depannage|diagnostic|dpgf|dqe|bordereau|libre)\b|\bmodele (?:de devis )?(depannage|diagnostic|bordereau|dpgf|dqe|travaux|libre)\b/.test(n))return A("modele",{m:appModele(n)});
+    if(/^(?:mes |les )?modeles(?: de devis)?$/.test(n))return A("modele",{});
+    /* factures */
+    if(/\b(?:un|l|cet|nouvel|mon|faire un|fais un|fait un|cree un|creer un|etablis un|etablir un|emets un|emettre un|edite un|editer un|prepare un)\s+avoir\b(?!\s+(?:un|une|le|la|les|des|du|besoin|rdv|rendez|acces|le temps))|^avoirs?(?:\s|$)|\bfacture d avoir\b/.test(n))return A("avoir",{client:cl()});
+    if(/\b(exporte|exporter|export|telecharge|telecharger|sors|extrais|extraire)\b.*\b(encaissements?|paiements recus|recettes|livre des recettes)\b|\bcsv\b.*\bencaiss\w*|\bencaiss\w*\b.*\b(excel|csv|tableur)\b|\b(excel|csv|tableur)\b.*\b(encaiss\w*|paiements|recettes)\b/.test(n))return A("enc_export");
+    if(/^(?:ouvre |voir |affiche |montre )?(?:l |mon |le )?(?:ecran des )?encaissements$|^(?:ouvre|voir|affiche|montre) (?:mes |les )encaissements$/.test(n))return A("encaissements");
+    if(/\bhistorique\b/.test(n)&&!/\b(client|fournisseur)\b/.test(n))return A("histo");
+    /* clients */
+    if(/^(?:(?:cree|creer|ajoute|ajouter|rajoute|nouveau|nouvelle|fais|faire|enregistre|enregistrer|ouvre)\s+)?(?:un |une |une nouvelle |un nouveau )?(?:nouveau |nouvelle )?(?:client|cliente|fiche client|fiche de client)$/.test(n)||/\b(?:cree|creer|ajoute|ajouter|enregistre|enregistrer|nouveau|nouvelle)\b.*\b(?:nouveau |nouvelle )?(?:client|cliente|fiche client)$/.test(n)&&!/\d/.test(n)&&!capName(raw))return A("client_nouveau");
+    if(/\b(contacts?|repertoire|carnet d adresses)\b/.test(n)&&/\b(client|clients|importe|importer|ajoute|ajouter|depuis|de mes|prends|prendre)\b/.test(n))return A("contacts");
+    /* import d'un document fournisseur */
+    if(/\b(photo|photographie|photographier|scanne|scanner|scan)\b.*\b(ticket|tickets|facture|factures|bon de livraison|bons de livraison|devis fournisseur|document fournisseur)\b|\b(importe|importer|charge|charger|ajoute)\b.*\b(ticket|tickets|ticket de caisse|bon de livraison|bons de livraison|document fournisseur)\b|\bticket de caisse\b/.test(n))return A("importer",{photo:/\b(photo|photographie|photographier|scanne|scanner|scan)\b/.test(n)});
+    /* planning */
+    if(/\b(agenda|calendrier)\b.*\b(iphone|ios|apple|icloud|google|android|telephone)\b|\b(iphone|icloud|google agenda|google calendar)\b.*\b(agenda|calendrier|planning)\b|\bsynchronis\w*\b.*\b(agenda|calendrier|planning)\b|\bics\b/.test(n))return A("ics");
+    if((m=/\bvue (semaine|jour|journee|hebdo\w*)\b|\b(?:planning|agenda) (?:de la |par |du |a la )?(semaine|jour|journee)\b|\bma (semaine)\b|\bvue (?:du |de la )?(jour|journee|journaliere|semaine|hebdomadaire)\b/.exec(n))&&!/\d/.test(n))return A("planning",{vue:/^(jour|journee)$/.test(m[1]||m[2]||m[3])?"jour":"sem"});
+    if(/\b(creneaux de travail|horaires de travail|heures de travail|mes horaires|jours travailles|jours de travail|mes creneaux)\b/.test(n)&&!/\d/.test(n))return A("planning",{vue:"set"});
+    /* pointage */
+    if(/\bqui est (?:present|presente|la|sur (?:le|les) chantiers?|au travail|sur place)\b|^(?:les )?presents$|\bqui (?:travaille|bosse) (?:aujourd hui|maintenant|en ce moment)\b/.test(n))return A("presents");
+    if(/\boubli\w*\b.*\bpoint\w*|\bpoint\w*\b.*\boubli\w*|\bajoute un oubli\b|\b(?:pas|jamais) point\w*|\bai pas point\w*/.test(n))return A("oubli");
+    if(/\bjournal\b/.test(n)&&(/\bpoint\w*|heures|entrees|sorties/.test(n)||/^(?:ouvre |voir |affiche |montre |le |mon )*journal$/.test(n)))return A("journal");
+    if(/\b(?:etiquettes?|badges?|puces?) nfc\b|\bchantiers?\b.*\bnfc\b|^(?:\S+ )?chantiers$|\bmes chantiers\b/.test(n)&&!/\b(associe|associer|lie|lier|programme)\b/.test(n))return A("chantiers");
+    var HEURE=/\b\d{1,2}\s*h|\d{1,2}:\d{2}|\bheures?\b/.test(n);
+    if(!HEURE&&/\bje (?:commence|demarre|debute|attaque|embauche)\b(?! (?:le |la |les |un |une |a ))|\bje suis (?:arrive|arrivee|sur (?:le chantier|place|site))\b|\bdebut de (?:ma )?journee\b|\bje prends (?:mon|le) poste\b/.test(n))return [C("pointage","entree",{})];
+    if(!HEURE&&/\bje (?:termine|finis|debauche|m en vais|quitte le chantier)\b(?! (?:le |la |les |un |une |de ))|\bfin de (?:ma )?journee\b|\bj ai fini (?:ma journee|pour aujourd hui)\b/.test(n))return [C("pointage","sortie",{})];
+    /* plan d'une pièce (photo, laser) et maquette 3D */
+    if(!/\b(planning|maquette|3d)\b/.test(n)&&(/\b(?:plan|metre) (?:de la |d une |de ma |de |du )?(?:piece|pieces|salle|chambre|cuisine|sejour|salon)\b|\b(?:fais|faire|nouveau|cree|creer|dessine|dessiner|prends|prendre)\b.*\bplan\b(?! de (?:travail|paiement|financement))|\bplan (?:photo|depuis (?:une|la) photo|a partir d une photo)\b|\b(?:calibr\w*|telemetre|laser)\b/.test(n)))return A("plan",{laser:/\b(calibr\w*|telemetre|laser)\b/.test(n)});
+    if(/\b(maquette|3d|croquis)\b/.test(n)&&(/\b(ouvre|ouvrir|affiche|afficher|montre|montrer|lance|lancer|nouveau|nouvelle|cree|creer|demarre|demarrer|va|voir|vue)\b/.test(n)||/^(?:la |ma )?(?:maquette(?: 3d)?|3d|croquis)$/.test(n))&&!findEquip(n).length&&!cl()&&!(APP_SCENE.test(n.replace(/\b(maquette|3d|croquis|nouveau|nouvelle|projet|ouvre|ouvrir|lance|la|le|ma|mon|une|un|en)\b/g,""))))return A("m3d",{nouveau:/\b(nouveau|nouvelle|cree|creer)\b/.test(n)});
+    /* aide */
+    if(/\b(tout ce que tu (?:sais|peux) faire|ce que tu (?:sais|peux) faire|qu est ce que tu (?:sais|peux) faire|que sais tu faire|que peux tu faire|tu sais faire quoi|tu peux faire quoi|tu fais quoi|liste des fonctions|tes fonctions|les fonctions de caso|toutes les fonctions|comment ca marche|comment tu marches|aide moi|mode d emploi)\b/.test(n))return A("aide");
+    return null;}
+  B.parseApp=parseApp;
+  /* le mini modèle donne l'intention : les éléments sont relus dans la phrase */
+  function appCmds(l,c){var a=l.split(".")[1],n=c.p,k=findClient(c.raw||"",c.n),cl=k?(S.clients[k]?clientName(k):cap(k)):null;
+    var r=parseApp(c);if(r&&r[0].m==="app"&&r[0].a===a)return r;
+    /* garde-fous : intentions qui exigent un mot clé dans la phrase (le mini modèle se trompe sinon sur des phrases voisines) */
+    var G={payant:/\d|payant|gratuit|paid|free|pago|pagamento|pagamento|platn|darmow|ucret|платн|бесплат|مدفوع|مجاني|cu plata|gratuit|gratis|a pagamento/};
+    if(G[a]&&!G[a].test(n+" "+hn(c.raw||"")))return null;
+    var args={};
+    if(a==="langue")args={l:appLang(n)};else if(a==="notifs")args={on:/\b(active|activer|allume|autorise|mets|recevoir)\b/.test(n)};
+    else if(a==="devis_module")args={quoi:/avenant/.test(n)?"avenant":/section/.test(n)?"section":"option",client:cl};
+    else if(a==="payant")args={on:!/gratuit/.test(n),montant:money(c.n)};
+    else if(a==="acompte"){var m=/(\d+(?:\.\d+)?)/.exec(n);if(!m)return null;args={pct:+m[1]};}
+    else if(a==="sanstva"||a==="autoliq")args={on:!/\b(avec|remets|enleve|retire)\b/.test(n)};
+    else if(a==="debut"){var d=parseDate(n);args={date:d?iso(d):null,duree:appDuree(n)};}
+    else if(a==="pdf")args={doc:/factur|avoir/.test(n)?"facture":"devis",client:cl};
+    else if(a==="modele")args={m:appModele(n)};else if(a==="avoir")args={client:cl};
+    else if(a==="importer")args={photo:/photo|scan/.test(n)};else if(a==="planning")args={vue:/jour/.test(n)?"jour":/horaire|creneau/.test(n)?"set":"sem"};
+    else if(a==="plan")args={laser:/laser|calibr|telemetre/.test(n)};else if(a==="m3d")args={nouveau:/nouveau|nouvelle/.test(n)};
+    else if(a==="entreprise"){var ch=appChamp(n);args=ch||{};}else if(a==="compte")args={suppr:/supprim|efface|ferme|resili/.test(n)};
+    return [C("app",a,args)];}
+  B.appCmds=appCmds;
+  /* rien à faire dans le moteur : c'est casô qui exécute (chat/pont.js) */
+  ["langue","compte","secours","deconnexion","entreprise","notifs","restaurer","traduction","equipe","inviter","signature","dictee","devis_module","payant","acompte","autoliq","sanstva","debut","valider","lien","pdf","modele",
+   "avoir","enc_export","encaissements","histo","client_nouveau","contacts","importer","ics","planning","presents","oubli","journal","chantiers","plan","m3d","aide"].forEach(function(k){X_["app."+k]=function(){return {say:"",ui:"app"};};});
+  var LANGN={fr:"français",en:"anglais",es:"espagnol",pt:"portugais",it:"italien",ro:"roumain",pl:"polonais",tr:"turc",ru:"russe",ar:"arabe"};
+  var CHN={iban:"IBAN",bic:"BIC",siret:"SIRET",tauxH:"taux horaire",depl:"frais de déplacement",capital:"capital",tvai:"TVA intracommunautaire",assur:"assurance décennale",rcpro:"responsabilité civile pro",valid:"validité des devis",delai:"délai de paiement",med:"médiateur",rm:"RCS / RM",forme:"forme juridique",nomEnt:"nom de l’entreprise",telEnt:"téléphone de l’entreprise",mailEnt:"e-mail de l’entreprise",adrEnt:"adresse de l’entreprise"};
+  var MODN={depannage:"dépannage",diagnostic:"diagnostic",dpgf:"décomposition du prix global",dqe:"détail quantitatif estimatif",bordereau:"bordereau des prix",travaux:"devis travaux",libre:"devis libre"};
+  var D4={
+    "app.langue":function(a){return a.l?tr("Langue de l’appli : {0}",[trw(LANGN[a.l])]):tr("Langue de l’appli");},
+    "app.compte":function(a){return a.suppr?tr("Supprimer mon compte"):tr("Mon compte");},"app.secours":function(){return tr("Nouveau code de secours");},
+    "app.deconnexion":function(){return tr("Se déconnecter");},
+    "app.entreprise":function(a){return a.champ?tr("Mon entreprise : {0}",[trw(CHN[a.champ]||a.champ)]):tr("Mon entreprise");},
+    "app.notifs":function(a){return a.on?tr("Activer les notifications"):tr("Notifications");},"app.restaurer":function(){return tr("Restaurer une sauvegarde");},
+    "app.traduction":function(){return tr("Améliorer la traduction");},"app.equipe":function(){return tr("Mon équipe");},"app.inviter":function(){return tr("Inviter quelqu’un");},
+    "app.signature":function(){return tr("Ma signature");},"app.dictee":function(){return tr("Dicter une note");},
+    "app.devis_module":function(a){return a.quoi==="avenant"?tr("Faire un avenant"):a.quoi==="section"?tr("Ajouter une section au devis"):tr("Ajouter une option au devis");},
+    "app.payant":function(a){return a.on===false?tr("Devis gratuit"):a.montant?tr("Devis payant : {0}",[eur(+a.montant)]):tr("Devis payant");},
+    "app.acompte":function(a){return tr("Acompte de {0} %",[fnum(+a.pct)]);},"app.autoliq":function(a){return a.on===false?tr("Sans autoliquidation"):tr("Autoliquidation de la TVA");},
+    "app.sanstva":function(a){return a.on===false?tr("Devis avec TVA"):tr("Devis sans TVA (franchise en base)");},
+    "app.debut":function(a){return tr("Début des travaux{0}{1}",[a.date?" : "+fdate(new Date(a.date+"T12:00:00")):"",a.duree?" · "+tr(a.duree.u==="semaine"?"{0} semaine(s)":a.duree.u==="mois"?"{0} mois":"{0} jour(s)",[a.duree.n]):""]);},
+    "app.valider":function(){return tr("Valider le devis");},"app.lien":function(){return tr("Lien du devis");},
+    "app.pdf":function(a){return a.doc==="facture"?tr("Facture PDF"):tr("PDF du devis");},
+    "app.modele":function(a){return a.m?tr("Modèle de devis : {0}",[trw(MODN[a.m]||a.m)]):tr("Modèles de devis");},
+    "app.avoir":function(a){return a.client?tr("Faire un avoir pour {0}",[a.client]):tr("Faire un avoir");},
+    "app.enc_export":function(){return tr("Exporter les encaissements");},"app.encaissements":function(){return tr("Mes encaissements");},"app.histo":function(){return tr("Historique des devis et factures");},
+    "app.client_nouveau":function(){return tr("Nouveau client");},"app.contacts":function(){return tr("Client depuis mes contacts");},
+    "app.importer":function(a){return a.photo?tr("Photo d’un document fournisseur"):tr("Importer un document fournisseur");},
+    "app.ics":function(){return tr("Agenda de l’iPhone");},"app.planning":function(a){return a.vue==="set"?tr("Créneaux de travail"):a.vue==="jour"?tr("Planning du jour"):tr("Planning de la semaine");},
+    "app.presents":function(){return tr("Qui est présent");},"app.oubli":function(){return tr("Ajouter un oubli de pointage");},"app.journal":function(){return tr("Journal de pointage");},
+    "app.chantiers":function(){return tr("Chantiers et NFC");},"app.plan":function(a){return a.laser?tr("Plan calibré au laser"):tr("Plan d’une pièce");},
+    "app.m3d":function(a){return a.nouveau?tr("Nouveau projet 3D"):tr("Maquette 3D");},"app.aide":function(){return tr("Ce que je sais faire");}};
+  var _dx4=B.describeExtra;B.describeExtra=function(c){var f=D4[c.m+"."+c.a];return f?f(c.args||{}):_dx4(c);};
+
   /* ---------- apprentissage des mots ---------- */
   function learnWord(mot,sens){
     var w=hn(mot),sn=hn(sens);if(!w||!sn)return tr("Il me faut le mot et son sens.");
@@ -1599,19 +1754,20 @@ function create(E,X,saved,opts){
   var SPLITR=new RegExp(SPLIT.source.replace(/[aeiouc]/g,function(ch){return {a:"[aàâ]",e:"[eéèêë]",i:"[iîï]",o:"[oôö]",u:"[uùûü]",c:"[cç]"}[ch];}).replace(/\\s\+et\\s\+/,"[\\s-]+et\\s+").replace(/\\b\(\?:/g,"\\b(?:"),"iu");
   function rawParts(raw,n){var r=String(raw).split(new RegExp(SPLITR.source,"giu")).filter(function(x){return x&&x.trim();});return r.length===n?r:null;}
   function localParse(c){
-    var r=parseSys(c);if(r)return r;var q=isQ(c);
-    var parts=c.p.split(SPLIT).filter(function(x){return x&&x.trim();}),rp=parts.length>1?rawParts(c.raw,parts.length):null;
+    var parts=c.p.split(SPLIT).filter(function(x){return x&&x.trim();});
+    var r=(parts.length<2?parseApp(c):null)||parseSys(c);if(r)return r;var q=isQ(c);
+    var rp=parts.length>1?rawParts(c.raw,parts.length):null;
     var sub=function(x,i){return Object.assign({},c,{p:x,n:x,raw:rp?rp[i]:c.raw});};
     /* plusieurs demandes dans la même phrase : chacune doit être comprise */
     if(parts.length>1&&parts.every(function(x){return x.split(" ").length>=2;})){var al=[],ok1=true,lk=S.last.client;
       /* « … chez Dupont et envoie-lui un SMS » : « lui » = le client nommé juste avant */
-      parts.forEach(function(x,i){var cc=sub(x,i),q1=parseExtra(cc)||parseWork(cc)||parseScene(cc)||parseDevisBuild(cc);if(q1){al=al.concat(q1);var kc=q1.map(function(y){var a=y.args||{};return y.m!=="fournisseurs"&&(a.client||(y.m==="clients"||y.m==="devis")&&a.nom);}).filter(function(v){return typeof v==="string"&&v;})[0];if(kc)S.last.client=clientKey(kc);}else ok1=false;});
+      parts.forEach(function(x,i){var cc=sub(x,i),q1=parseApp(cc)||parseExtra(cc)||parseWork(cc)||parseScene(cc)||parseDevisBuild(cc);if(q1){al=al.concat(q1);var kc=q1.map(function(y){var a=y.args||{};return y.m!=="fournisseurs"&&(a.client||(y.m==="clients"||y.m==="devis")&&a.nom);}).filter(function(v){return typeof v==="string"&&v;})[0];if(kc)S.last.client=clientKey(kc);}else ok1=false;});
       S.last.client=lk;
       if(ok1&&al.length&&(!q||askSafe(al)))return al;}
     r=parseExtra(c);if(r&&(!q||askSafe(r)))return r;
     if(q)return askSafe(parseWork(c)||parseScene(c));
-    /* des quantités avec unités et un prix (ou le mot devis) : c'est un devis, pas la maquette 3D */
-    if(S.mode==="artisan"&&parts.length<=1&&qtys(stripTimes(c.p)).some(function(x){return x.u!=="u";})&&(money(c.p)!=null||hasDevis.test(c.p)))return parseWork(c)||parseDevisBuild(c)||parseScene(c);
+    /* des quantités avec unités et un prix (ou le mot devis, ou sans meuble ni dimensions de pièce : « 20 m² de carrelage ») : c'est un devis, pas la maquette 3D */
+    if(S.mode==="artisan"&&parts.length<=1&&qtys(stripTimes(c.p)).some(function(x){return x.u!=="u";})&&(money(c.p)!=null||hasDevis.test(c.p)||!findEquip(c.p).length&&!/\d\s*(m|metres?|cm)?\s*(x|sur|par)\s*\d|\b(terrain|jardin|parcelle)\b/.test(c.p)))return parseWork(c)||parseDevisBuild(c)||parseScene(c);
     if(parts.length>1&&parts.every(function(x){return x.split(" ").length>=2;})){
       var all=[],okAll=true;parts.forEach(function(x,i){var cc=sub(x,i);var q=parseExtra(cc)||parseWork(cc)||parseScene(cc)||parseDevisBuild(cc);if(q)all=all.concat(q);else okAll=false;});
       var whole=parseWork(c)||parseScene(c)||parseDevisBuild(c);
@@ -1737,6 +1893,9 @@ function create(E,X,saved,opts){
     var fu=followUp(c,false);if(fu)return fu;
     /* « pas pour l'instant », « non merci » sans question en cours : rien à faire */
     if(PLUSTARD.test(c.n)||PLUSTARD.test(c.p)||/^(non|non merci|laisse|laisse tomber|rien|tant pis)$/.test(c.n)){S.lastTurn=null;return {explain:"",says:[tr("D’accord.")],open:null,cmds:[C("sys","politesse",{})]};}
+    /* « oui » ou un nombre seul sans question en cours */
+    if(/^(oui|ouais|ouai|oui oui|yes|yep|si|sim|da|tak|evet|exact|exactement|voila)$/.test(c.n)){S.lastTurn=null;return {explain:"",says:[tr("D’accord.")],open:null,cmds:[C("sys","politesse",{})]};}
+    if(/^\d{1,4}(?:[.,]\d{1,2})?$/.test(c.n)){S.lastTurn=null;return {explain:"",says:[tr("« {0} » : c’est pour quoi ? Dis par exemple « {0} m² de carrelage » ou « rdv le {0} à 9 h ».",[c.n])],open:null,cmds:[C("sys","politesse",{type:"nombre"})]};}
     var mem=recall(c);if(mem&&mem.prov&&!rejected(c,mem.cmds))return propose(c,mem.cmds,null,"",null,true);if(mem&&!mem.prov)return exec(mem.cmds,c,mem.via);
     var loc=localParse(c);if(loc)return exec(loc,c,"local");
     fu=followUp(c,true);if(fu)return fu;
@@ -1881,6 +2040,7 @@ function create(E,X,saved,opts){
     var nbw=tx("NB")[0],nb=nbw?(num(nbw)||NUMW[hn(fr(nbw))]||1):1;
     var lastT=S.last.type,T0=eqs.length?eqs[0].type:lastT;
     function need(x){return x==null||x===""?null:x;}
+    if(/^app\./.test(r.intent))return appCmds(r.intent,c);
     switch(r.intent){
       case "scene.ajouter":if(!eqs.length)return null;return [C("scene","ajouter",{items:eqs.map(function(e,i){return {type:e.type,nombre:i===0?nb:1,piece:rmT,couleur:eqs.length===1?colT:null,position:eqs.length===1?findPos(p):null};})})];
       case "scene.enlever":return T0?[C("scene","enlever",{type:T0,piece:rmT,tous:/\b(tous|toutes|les)\b/.test(p)})]:null;
