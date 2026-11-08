@@ -21,6 +21,12 @@ console.log('Java copié dans', javaDir);
 
 const manifestPath = path.join(android, 'app', 'src', 'main', 'AndroidManifest.xml');
 let m = fs.readFileSync(manifestPath, 'utf8');
+// les données de l'appli (devis, clients, jeton) ne doivent pas partir dans une sauvegarde adb ou cloud
+if (/android:allowBackup="true"/.test(m)) {
+  m = m.replace(/android:allowBackup="true"/, 'android:allowBackup="false"');
+  fs.writeFileSync(manifestPath, m);
+  console.log('allowBackup désactivé');
+}
 if (m.indexOf('caso-geo') === -1) {
   const perms =
     '    <!-- caso-geo -->\n' +

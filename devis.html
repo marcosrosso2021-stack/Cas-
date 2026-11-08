@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#f2f2ef">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>casô · Devis</title>
 <style>
 :root{--bg:#f2f2ef;--card:#fbfbfa;--soft:#f0f0ed;--ink:#18181a;--mut:#6b6b70;--line:#e2e2de;--acc:#ffc21a;--ok:#16854a;--ko:#c62828;--warn:#b45309;--mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;--lift:0 0 0 1px #0000000a,0 1px 1px -.5px #0000000d,0 3px 3px -1.5px #0000000d,0 8px 8px -4px #0000000a;color-scheme:light}
@@ -410,8 +411,24 @@ body:not(.embed) .ent-h{display:none}
 (function(){
 'use strict';
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
-const E=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const E=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const clone=o=>o==null?o:JSON.parse(JSON.stringify(o));
+/* HTML d'un devis déjà envoyé (snapshot) : remis à plat avant affichage, car il peut venir d'une synchronisation ou d'une sauvegarde importée.
+   Seules les balises et attributs que renderDoc produit sont gardés ; rien ne s'exécute (document inerte). */
+const cvClean=(()=>{
+ const T=/^(aside|b|br|div|i|img|main|p|span|table|tbody|td|th|thead|tfoot|tr|colgroup|col|caption|strong|em|sup|sub|small|hr|ul|li|h1|h2|h3|h4|section|header|footer|figure|figcaption)$/i;
+ const A=/^(class|colspan|rowspan|alt|src|style|data-[a-z-]+)$/i;
+ const IMG=/^data:image\/(png|jpe?g|webp|gif|svg\+xml);base64,[A-Za-z0-9+\/=]+$/;
+ const P=/^(--[\w-]+|color|background(-color)?|font(-size|-weight|-style|-family)?|line-height|letter-spacing|text-(align|transform)|width|height|min-(width|height)|max-(width|height)|margin(-[a-z]+)?|padding(-[a-z]+)?|border(-[a-z]+)*|display|flex(-[a-z]+)?|gap|grid(-[a-z]+)*|opacity|vertical-align|white-space)$/i;
+ const style=v=>String(v).split(';').map(s=>s.trim()).filter(s=>{const i=s.indexOf(':');if(i<1)return false;const k=s.slice(0,i).trim(),x=s.slice(i+1);
+  return P.test(k)&&!/url\s*\(|expression|@import|javascript:|[\\<>]/i.test(x)}).join(';');
+ return html=>{const doc=new DOMParser().parseFromString('<body>'+String(html==null?'':html),'text/html');
+  [...doc.body.querySelectorAll('*')].forEach(n=>{
+   if(!T.test(n.tagName)){n.remove();return}
+   [...n.attributes].forEach(a=>{const k=a.name;
+    if(!A.test(k)||(k==='src'&&!(n.tagName==='IMG'&&IMG.test(a.value))))return n.removeAttribute(k);
+    if(k==='style'){const s=style(a.value);if(s)n.setAttribute('style',s);else n.removeAttribute('style')}})});
+  return doc.body.innerHTML}})();
 const mem={};
 const LS={get(k,d){try{const v=localStorage.getItem('caso_dv_'+k);return v==null?(k in mem?clone(mem[k]):d):JSON.parse(v)}catch(e){return k in mem?clone(mem[k]):d}},set(k,v){mem[k]=clone(v);try{localStorage.setItem('caso_dv_'+k,JSON.stringify(v))}catch(e){}}};
 const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();
@@ -1092,7 +1109,7 @@ function envoyer(){const d=getD(S.cur);if(!d)return;const c=controle(d);
   fin();
 }
 function ouvrirApercu(){const d=getD(S.cur);if(!d)return;const pv=$('#pv');pv.hidden=false;
-  const draw=()=>{const dd=getD(S.cur);pv.querySelector('.pg').innerHTML=dd.statut!=='brouillon'&&dd.snapshot?dd.snapshot:renderDoc(dd)};
+  const draw=()=>{const dd=getD(S.cur);pv.querySelector('.pg').innerHTML=dd.statut!=='brouillon'&&dd.snapshot?cvClean(dd.snapshot):renderDoc(dd)};
   pv.innerHTML=`<div class="bar"><button class="ib" id="pBack" aria-label="Retour">${ico('back')}</button><div class="seg" style="flex:1" id="pSeg">${STYLES.concat(persos()).map(l=>`<button data-l="${l.id}" class="${styleDe(d)===l.id?'on':''}">${E(l.nom)}</button>`).join('')}</div></div><div class="stage"><div class="pg"></div></div>`;
   draw();$('#pBack').onclick=()=>{pv.hidden=true;pv.innerHTML=''};
   $$('#pSeg button').forEach(b=>b.onclick=()=>{getD(S.cur).layout=b.dataset.l;saveD();$$('#pSeg button').forEach(x=>x.classList.toggle('on',x===b));draw()});
@@ -1102,7 +1119,7 @@ function refresh(){
   if(S.tab==='list')rList();if(S.tab==='mod')rMod();if(S.tab==='prof')rProf();
   paintIcons();
   if(!$('#ed').hidden&&S.cur&&getD(S.cur))eHead();
-  if(!$('#pv').hidden&&S.cur&&getD(S.cur)){const dd=getD(S.cur);$('#pv .pg').innerHTML=dd.statut!=='brouillon'&&dd.snapshot?dd.snapshot:renderDoc(dd)}
+  if(!$('#pv').hidden&&S.cur&&getD(S.cur)){const dd=getD(S.cur);$('#pv .pg').innerHTML=dd.statut!=='brouillon'&&dd.snapshot?cvClean(dd.snapshot):renderDoc(dd)}
 }
 $('#hdLogo').onclick=()=>{emit('accueil',{});if(hooks.accueil)try{hooks.accueil()}catch(e){}};
 paintIcons();cmpIco();rList();rMod();rProf();
