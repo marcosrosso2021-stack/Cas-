@@ -463,6 +463,31 @@ body.starting #hd{display:none}
 .ent-lgb{margin:0!important;font:inherit!important;font-size:15px!important;letter-spacing:0!important;text-transform:none!important;color:var(--ink)!important}
 .ent-tg{display:flex!important;align-items:center;gap:10px;margin:14px 0 4px!important;font:inherit!important;font-size:16px!important;letter-spacing:0!important;text-transform:none!important;color:var(--ink)!important}
 .ent-tg input{width:22px;height:22px;min-height:0;margin:0;accent-color:var(--ink)}
+/* Mon entreprise : sections groupées, champs alignés */
+.en .card{margin:0;padding:2px 16px 18px}
+.en-h{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin:26px 6px 8px}
+.en label{margin:16px 0 6px}
+.en .r{display:flex;gap:12px}
+.en .r>*{flex:1 1 0;min-width:0;display:flex;flex-direction:column;justify-content:flex-end}
+.en .r>[hidden],.en [hidden]{display:none!important}
+.en-top{display:flex;align-items:flex-end;gap:14px;padding:16px!important}
+.en-top .en-n{flex:1;min-width:0}
+.en-top .en-n label{margin-top:0}
+.en-top #eNom{font-size:19px;font-weight:600}
+.en-lg{position:relative;flex:none;width:76px;height:76px;margin:0!important;cursor:pointer;border-radius:18px}
+.en-lg .ent-lgv{width:100%;height:100%;border-radius:18px;border:1px solid var(--line);padding:6px}
+.en-lg .ent-lgv:empty{background:var(--soft);border-style:dashed}
+.en-lgp{position:absolute;inset:0;display:grid;place-items:center;color:var(--mut);pointer-events:none}
+.ent-lgv:not(:empty)+.en-lgp{display:none}
+.en-sw{display:flex!important;align-items:center;justify-content:space-between;gap:12px;margin:18px 0 0!important;font:inherit!important;font-size:16px!important;letter-spacing:0!important;text-transform:none!important;color:var(--ink)!important;cursor:pointer}
+.en-sw input{-webkit-appearance:none;appearance:none;flex:none;position:relative;width:51px;height:31px;min-height:0;padding:0;margin:0;border:0;border-radius:999px;background:var(--line);transition:background .2s}
+.en-sw input::after{content:"";position:absolute;top:2px;inset-inline-start:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 4px #00000033;transition:transform .2s}
+.en-sw input:checked{background:var(--acc)}
+.en-sw input:checked::after{transform:translateX(20px)}
+[dir=rtl] .en-sw input:checked::after{transform:translateX(-20px)}
+.en-sig{padding:16px!important}
+.en-sig .sg-ro{margin:0}
+.en-sig .sg-meta{gap:8px}.en-sig .sg-meta b{white-space:nowrap}.en-sig .sg-meta span{text-align:end}
 #m3d iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:var(--bg)}
 .imp-go{display:flex;gap:8px;margin-top:12px}
 .imp-go .btn{flex:1;margin:0}
@@ -1677,42 +1702,52 @@ body.tr-on{overflow:hidden}
   <button class="btn sec" style="margin-top:10px" onclick="rcNew()"><svg class="i"><use href="#i-shield"/></svg>Nouveau code de secours</button>
   <button class="lnk ac-del" type="button" onclick="delOpen()">Supprimer mon compte</button>
  </div>
- <div class="card" data-cp="ent">
-  <h2><span class="hi"><svg class="i"><use href="#i-building"/></svg></span>Mon entreprise</h2>
-  <div class="ent-lg"><span class="ent-lgv" id="eLogoV"></span><label class="btn sec sm ent-lgb"><svg class="i"><use href="#i-plus"/></svg><span>Logo</span><input type="file" accept="image/*" hidden onchange="entLogo(this)"></label></div>
-  <label>Nom</label><input id="eNom" oninput="saveProfSoon()" onchange="saveProf()">
-  <label>Adresse</label><input id="eAdr" oninput="saveProfSoon()" onchange="saveProf()">
-  <div class="row">
-   <div><label>SIRET</label><input id="eSiret" oninput="saveProfSoon()" onchange="saveProf()"></div>
-   <div><label>Téléphone</label><input id="eTel" oninput="saveProfSoon()" onchange="saveProf()"></div>
+ <div class="en" data-cp="ent">
+  <div class="card en-top">
+   <label class="en-lg" aria-label="Logo"><span class="ent-lgv" id="eLogoV"></span><span class="en-lgp" aria-hidden="true"><svg class="i"><use href="#i-plus"/></svg></span><input type="file" accept="image/*" hidden onchange="entLogo(this)"></label>
+   <div class="en-n"><label for="eNom">Nom</label><input id="eNom" autocomplete="organization" oninput="saveProfSoon()" onchange="saveProf()"></div>
   </div>
-  <label for="eForme">Forme juridique</label><select id="eForme" onchange="saveProf()"><option value="">—</option><option value="EI">Entrepreneur individuel (EI)</option><option value="micro">Micro-entrepreneur (EI)</option><option value="EURL">EURL</option><option value="SARL">SARL</option><option value="SAS">SAS</option><option value="SASU">SASU</option></select>
-  <div id="eCapW"><label>Capital (€)</label><input id="eCapital" inputmode="numeric" oninput="saveProfSoon()" onchange="saveProf()"></div>
-  <label>N° RM / RNE / RCS</label><input id="eRm" oninput="saveProfSoon()" onchange="saveProf()" placeholder="RM 123 456 789 – Marseille" data-noi18n>
-  <div class="row">
-   <div><label>N° TVA intracommunautaire</label><input id="eTvai" oninput="saveProfSoon()" onchange="saveProf()" placeholder="FR12345678901" data-noi18n></div>
-   <div><label>E-mail</label><input id="eMail" type="email" inputmode="email" autocapitalize="off" oninput="saveProfSoon()" onchange="saveProf()" data-noi18n></div>
+
+  <h3 class="en-h">Entreprise</h3>
+  <div class="card">
+   <div class="r"><div><label for="eForme">Forme juridique</label><select id="eForme" onchange="saveProf()"><option value="">—</option><option value="EI">Entrepreneur individuel (EI)</option><option value="micro">Micro-entrepreneur (EI)</option><option value="EURL">EURL</option><option value="SARL">SARL</option><option value="SAS">SAS</option><option value="SASU">SASU</option></select></div><div id="eCapW"><label for="eCapital">Capital (€)</label><input id="eCapital" inputmode="numeric" oninput="saveProfSoon()" onchange="saveProf()"></div></div>
+   <div class="r"><div style="flex-grow:.72"><label for="eSiren">SIREN</label><input id="eSiren" inputmode="numeric" maxlength="11" oninput="sirSync(this,'eSiret');saveProfSoon()" onchange="saveProf()" data-noi18n></div><div><label for="eSiret">SIRET</label><input id="eSiret" inputmode="numeric" oninput="sirSync(this,'eSiren');saveProfSoon()" onchange="saveProf()" data-noi18n></div></div>
+   <label for="eRm">N° RM / RNE / RCS</label><input id="eRm" oninput="saveProfSoon()" onchange="saveProf()" placeholder="RM 123 456 789 – Marseille" data-noi18n>
+   <div id="eTvaW"><label for="eTvai">N° TVA intracommunautaire</label><input id="eTvai" oninput="saveProfSoon()" onchange="saveProf()" placeholder="FR12345678901" autocapitalize="characters" data-noi18n></div>
+   <label class="en-sw" for="eFranch"><span>Franchise de TVA</span><input type="checkbox" role="switch" id="eFranch" onchange="saveProf()"></label>
   </div>
-  <label class="ent-tg"><input type="checkbox" id="eFranch" onchange="saveProf()"> Franchise de TVA</label>
-  <label>Assurance décennale (assureur, n°)</label><input id="eAssur" oninput="saveProfSoon()" onchange="saveProf()">
-  <label>Zone couverte par l'assurance</label><input id="eZone" oninput="saveProfSoon()" onchange="saveProf()" placeholder="France métropolitaine" data-noi18n>
-  <label>Responsabilité civile pro</label><input id="eRcpro" oninput="saveProfSoon()" onchange="saveProf()" placeholder="Assureur · n° contrat">
-  <label>Médiateur de la consommation</label><input id="eMed" oninput="saveProfSoon()" onchange="saveProf()" placeholder="Nom · site">
-  <div class="row">
-   <div><label>IBAN</label><input id="eIban" oninput="saveProfSoon()" onchange="saveProf()" autocapitalize="characters" data-noi18n></div>
-   <div><label>BIC</label><input id="eBic" oninput="saveProfSoon()" onchange="saveProf()" autocapitalize="characters" data-noi18n></div>
+
+  <h3 class="en-h">Contact</h3>
+  <div class="card">
+   <label for="eAdr">Adresse</label><input id="eAdr" autocomplete="street-address" oninput="saveProfSoon()" onchange="saveProf()">
+   <div class="r"><div><label for="eTel">Téléphone</label><input id="eTel" type="tel" inputmode="tel" autocomplete="tel" oninput="saveProfSoon()" onchange="saveProf()"></div><div><label for="eMail">E-mail</label><input id="eMail" type="email" inputmode="email" autocapitalize="off" autocomplete="email" oninput="saveProfSoon()" onchange="saveProf()" data-noi18n></div></div>
   </div>
-  <label for="eDelai">Délai de paiement des factures</label><select id="eDelai" onchange="saveProf()"><option value="0">À réception</option><option value="15">15 jours</option><option value="30">30 jours</option><option value="45">45 jours</option></select>
-  <label>Validité du devis (jours)</label><input id="eValid" type="number" value="30" oninput="saveProfSoon()" onchange="saveProf()">
-  <div class="row">
-   <div><label>Heure HT (€)</label><input id="eTauxH" inputmode="decimal" oninput="saveProfSoon()" onchange="saveProf()"></div>
-   <div><label>Déplacement HT (€)</label><input id="eDepl" inputmode="decimal" oninput="saveProfSoon()" onchange="saveProf()"></div>
+
+  <h3 class="en-h">Assurances</h3>
+  <div class="card">
+   <label for="eAssur">Assurance décennale (assureur, n°)</label><input id="eAssur" oninput="saveProfSoon()" onchange="saveProf()">
+   <label for="eZone">Zone couverte par l'assurance</label><input id="eZone" oninput="saveProfSoon()" onchange="saveProf()" placeholder="France métropolitaine" data-noi18n>
+   <label for="eRcpro">Responsabilité civile pro</label><input id="eRcpro" oninput="saveProfSoon()" onchange="saveProf()" placeholder="Assureur · n° contrat">
+   <label for="eMed">Médiateur de la consommation</label><input id="eMed" oninput="saveProfSoon()" onchange="saveProf()" placeholder="Nom · site">
   </div>
-  <div class="row">
-   <div><label for="eAccT">Versement à la commande</label><select id="eAccT" onchange="saveProf()"><option value="Acompte">Acompte</option><option value="Arrhes">Arrhes</option><option value="Aucun">Aucun</option></select></div>
-   <div><label>Versement (%)</label><input id="eAccP" inputmode="numeric" oninput="saveProfSoon()" onchange="saveProf()"></div>
+
+  <h3 class="en-h">Paiement</h3>
+  <div class="card">
+   <label for="eIban">IBAN</label><input id="eIban" oninput="saveProfSoon()" onchange="saveProf()" autocapitalize="characters" autocomplete="off" data-noi18n>
+   <div class="r"><div style="flex-grow:.72"><label for="eBic">BIC</label><input id="eBic" oninput="saveProfSoon()" onchange="saveProf()" autocapitalize="characters" autocomplete="off" data-noi18n></div><div><label for="eDelai">Délai de paiement des factures</label><select id="eDelai" onchange="saveProf()"><option value="0">À réception</option><option value="15">15 jours</option><option value="30">30 jours</option><option value="45">45 jours</option></select></div></div>
   </div>
-  <div id="entSig"></div>
+
+  <h3 class="en-h">Devis</h3>
+  <div class="card">
+   <div class="r"><div><label for="eTauxH">Heure HT (€)</label><input id="eTauxH" inputmode="decimal" oninput="saveProfSoon()" onchange="saveProf()"></div><div><label for="eDepl">Déplacement HT (€)</label><input id="eDepl" inputmode="decimal" oninput="saveProfSoon()" onchange="saveProf()"></div></div>
+   <div class="r"><div><label for="eAccT">Versement à la commande</label><select id="eAccT" onchange="saveProf()"><option value="Acompte">Acompte</option><option value="Arrhes">Arrhes</option><option value="Aucun">Aucun</option></select></div><div><label for="eAccP">Versement (%)</label><input id="eAccP" inputmode="numeric" oninput="saveProfSoon()" onchange="saveProf()"></div></div>
+   <label for="eValid">Validité du devis (jours)</label><input id="eValid" type="number" inputmode="numeric" value="30" oninput="saveProfSoon()" onchange="saveProf()">
+  </div>
+
+  <div id="entSigW" hidden>
+   <h3 class="en-h">Signature</h3>
+   <div class="card en-sig"><div id="entSig"></div></div>
+  </div>
  </div>
  <div class="card" data-cp="team">
   <h2><span class="hi"><svg class="i"><use href="#i-users"/></svg></span>Mon équipe</h2>
@@ -3474,8 +3509,9 @@ async function spSave(){
  spRender.redo=false;toast(i18nT('Signature enregistrée.'));spRender()}
 function spDelete(){try{localStorage.removeItem('caso_sig');localStorage.removeItem('caso_sig_reg')}catch(e){}spRender()}
 function entSigRender(){const el=$('entSig');if(!el)return;const r=sgOk();
+ const w=$('entSigW');if(w)w.hidden=!r;
  if(!r){el.innerHTML='';return}
- el.innerHTML=`<label>${i18nT('Signature')}</label><div class="sg-ro" aria-readonly="true"><img src="${esc(sgSigImg())}" alt=""><div class="sg-qr">${qrSvg(sgVerify()+r.id,4)}</div><div class="sg-meta"><b data-noi18n>${esc(r.id)}</b><span data-noi18n>${esc(r.email||'')}${r.email?' · ':''}${sgDate(r.at)}<svg class="i sg-lk"><use href="#i-lock"/></svg></span></div></div>`}
+ el.innerHTML=`<div class="sg-ro" aria-readonly="true"><img src="${esc(sgSigImg())}" alt=""><div class="sg-qr">${qrSvg(sgVerify()+r.id,4)}</div><div class="sg-meta"><b data-noi18n>${esc(r.id)}</b><span data-noi18n>${esc(r.email||'')}${r.email?' · ':''}${sgDate(r.at)}<svg class="i sg-lk"><use href="#i-lock"/></svg></span></div></div>`}
 
 /* ---------- Plan à partir d'une photo ----------
    Tout se fait sur le téléphone : la photo n'est envoyée nulle part.
@@ -5715,7 +5751,7 @@ function importAll(inp){
 }
 let profT=0;function saveProfSoon(){clearTimeout(profT);profT=setTimeout(saveProf,500)}
 addEventListener('pagehide',()=>{if(profT){clearTimeout(profT);saveProf()}});
-function saveProf(){clearTimeout(profT);profT=0;db.prof=Object.assign({},db.prof||{},{nom:$('eNom').value,adr:$('eAdr').value,siret:$('eSiret').value,tel:$('eTel').value,assur:$('eAssur').value,valid:$('eValid').value,forme:$('eForme').value,rm:$('eRm').value,tvai:$('eTvai').value,email:$('eMail').value,zone:$('eZone').value,iban:$('eIban').value,bic:$('eBic').value,delai:$('eDelai').value,capital:$('eCapital').value,franchise:$('eFranch').checked,rcpro:$('eRcpro').value,mediateur:$('eMed').value,tauxH:$('eTauxH').value,depl:$('eDepl').value,acompteType:$('eAccT').value,acomptePct:$('eAccP').value});if(typeof entExtra==='function')entExtra();db.profAt=Date.now();save()}
+function saveProf(){clearTimeout(profT);profT=0;db.prof=Object.assign({},db.prof||{},{nom:$('eNom').value,adr:$('eAdr').value,siret:$('eSiret').value,siren:$('eSiren').value.replace(/\D/g,'')||$('eSiret').value.replace(/\D/g,'').slice(0,9),tel:$('eTel').value,assur:$('eAssur').value,valid:$('eValid').value,forme:$('eForme').value,rm:$('eRm').value,tvai:$('eTvai').value,email:$('eMail').value,zone:$('eZone').value,iban:$('eIban').value,bic:$('eBic').value,delai:$('eDelai').value,capital:$('eCapital').value,franchise:$('eFranch').checked,rcpro:$('eRcpro').value,mediateur:$('eMed').value,tauxH:$('eTauxH').value,depl:$('eDepl').value,acompteType:$('eAccT').value,acomptePct:$('eAccP').value});if(typeof entExtra==='function')entExtra();db.profAt=Date.now();save()}
 
 /* ---------- Historique ---------- */
 const ST={brouillon:'Brouillon',envoye:'En cours de signature',accepte:'Validé',paye:'Payé',refuse:'Refusé',expire:'Expiré'};
@@ -6716,7 +6752,7 @@ async function syncNow(){
 function setSyncMsg(t){const e=document.getElementById('syMsg');if(e)e.textContent=t}
 function fillProf(){
  const p=db.prof||{};
- $('eNom').value=p.nom||'';$('eAdr').value=p.adr||'';$('eSiret').value=p.siret||'';
+ $('eNom').value=p.nom||'';$('eAdr').value=p.adr||'';$('eSiret').value=p.siret||'';$('eSiren').value=p.siren||String(p.siret||'').replace(/\D/g,'').slice(0,9);
  $('eTel').value=p.tel||'';$('eAssur').value=p.assur||'';$('eValid').value=p.valid||30;
  $('eForme').value=p.forme||'';$('eRm').value=p.rm||'';$('eTvai').value=p.tvai||'';$('eMail').value=p.email||'';$('eZone').value=p.zone||'';$('eIban').value=p.iban||'';$('eBic').value=p.bic||'';$('eDelai').value=p.delai==null||p.delai===''?'30':p.delai;
  $('eCapital').value=p.capital||'';$('eFranch').checked=!!p.franchise;$('eRcpro').value=p.rcpro||'';$('eMed').value=p.mediateur||'';$('eTauxH').value=p.tauxH||'';$('eDepl').value=p.depl||'';$('eAccT').value=p.acompteType||'Acompte';$('eAccP').value=p.acomptePct==null||p.acomptePct===''?'30':p.acomptePct;if(typeof entExtra==='function')entExtra()}
@@ -6852,7 +6888,7 @@ try{if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)&&!local
 
 function init(){
  fillSup();supHint();renderSync();bkRefresh();
- $('eNom').value=db.prof.nom||'';$('eAdr').value=db.prof.adr||'';$('eSiret').value=db.prof.siret||'';
+ $('eNom').value=db.prof.nom||'';$('eAdr').value=db.prof.adr||'';$('eSiret').value=db.prof.siret||'';$('eSiren').value=db.prof.siren||String(db.prof.siret||'').replace(/\D/g,'').slice(0,9);
  $('eTel').value=db.prof.tel||'';$('eAssur').value=db.prof.assur||'';$('eValid').value=db.prof.valid||30;
  renderQuick();renderPrices();fillForm();
 }
@@ -7196,7 +7232,7 @@ function dvRecevoir(L){let ch=false;const ids=new Set();
  DV_IDS.forEach(id=>{if(!ids.has(id)){const o=db.quotes.find(y=>y.id===id);if(o&&!(o.sign&&o.sign.st==='signed')){db.quotes=db.quotes.filter(y=>y.id!==id);ch=true}delete DV_LAST[id]}});
  DV_IDS=ids;if(ch){save();DV_SIG.q=JSON.stringify(db.quotes||[])}}
 function dvProfil(){let sg='';try{sg=localStorage.getItem('caso_sig')||''}catch(e){}const r=sgOk();return Object.assign({},db.prof||{},{sigArtisan:sg,sigId:r?r.id:'',sigQr:r?sgQrImg(r):''})}
-const DV_CHAMP={nom:'eNom',adr:'eAdr',siret:'eSiret',tel:'eTel',forme:'eForme',rm:'eRm',tvai:'eTvai',email:'eMail',assur:'eAssur',zone:'eZone',rcpro:'eRcpro',mediateur:'eMed',capital:'eCapital',valid:'eValid'};
+const DV_CHAMP={nom:'eNom',adr:'eAdr',siret:'eSiret',siren:'eSiren',tel:'eTel',forme:'eForme',rm:'eRm',tvai:'eTvai',email:'eMail',assur:'eAssur',zone:'eZone',rcpro:'eRcpro',mediateur:'eMed',capital:'eCapital',valid:'eValid'};
 function dvBrancher(){const w=DVF.contentWindow,A=w&&w.CasoDevis;if(!A)return;DVA=A;const h=A.hooks;
  h.saveDevis=L=>dvRecevoir(L);
  h.saveProfil=p=>{const c=Object.assign({},p);delete c.sigArtisan;delete c.sigId;delete c.sigQr;db.prof=Object.assign({},db.prof||{},c);db.profAt=Date.now();save();DV_SIG.p=JSON.stringify(dvProfil())};
@@ -7227,7 +7263,7 @@ function dvOpen(id){drawerClose(true);const box=$('dvx');box.hidden=false;docume
 function dvClose(rester){$('dvx').hidden=true;document.body.classList.remove('dv-on');if(!rester)go('chat')}
 function entLogo(inp){const f=inp.files[0];inp.value='';if(!f)return;const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const k=Math.min(1,480/Math.max(i.naturalWidth,i.naturalHeight)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(i.naturalWidth*k));c.height=Math.max(1,Math.round(i.naturalHeight*k));c.getContext('2d').drawImage(i,0,0,c.width,c.height);
   db.prof=Object.assign({},db.prof||{},{logo:c.toDataURL('image/png'),couleurs:[],couleur:'',logoCle:''});db.profAt=Date.now();save();entExtra();toast(i18nT('Enregistré.'))};i.src=r.result};r.readAsDataURL(f)}
-function entExtra(){const p=db.prof||{},v=$('eLogoV');if(v)v.innerHTML=p.logo?`<img src="${p.logo}" alt="">`:'';const cw=$('eCapW');if(cw)cw.hidden=!p.forme||/^(EI|micro)$/i.test(p.forme)}
+function entExtra(){const p=db.prof||{},v=$('eLogoV');if(v)v.innerHTML=p.logo?`<img src="${p.logo}" alt="">`:'';const cw=$('eCapW');if(cw)cw.hidden=!p.forme||/^(EI|micro)$/i.test(p.forme);const tw=$('eTvaW');if(tw)tw.hidden=!!p.franchise}
 </script>
 <script src="chat/engine.js" defer></script>
 <script src="chat/brain.js" defer></script>
