@@ -34,6 +34,31 @@ Ce que le chat fait lui-même :
 - **Base d'apprentissage** : le mini modèle est réentraîné avec les phrases abîmées (fautes, SMS, sans accents,
   majuscules) que la simulation de 100 utilisateurs n'a pas comprises, avec le sens de leur version propre.
 
+- **Lignes de devis sans prix** : « ajoute 10 m² de carrelage » va au devis (avant : sol de la maquette 3D).
+  Un meuble (« ajoute un canapé de 2 m ») reste une demande de maquette.
+- **Dictée** : « casô note » et « casô fin » tapés ou dictés dans la phrase sont retirés (commandes de la dictée).
+- **Réponse seule** : « oui » sans question en cours → « D'accord. » ; un nombre seul (« 16 ») → le chat demande à quoi il sert.
+- **Nom sans majuscule** : « c'est quoi le numéro de faure » cherche le client Faure.
+- « non » après une demande faite par casô lui-même : « D'accord. » (le chat n'annonce plus une annulation qu'il n'a pas faite).
+- **Notes du devis** : « il faut commander la colle », « attention humidité » (dans les 10 langues) sont gardés sur le devis,
+  dans la carte « Notes » (à faire, remarques). Elles ne partent jamais au client.
+- « 20 m² de carrelage » seul va au devis (avant : sol de la maquette 3D). « quanto faccio pagare le piastrelle »,
+  « cuánto cobro por el azulejo », « combien coûte le parquet » : le prix de l'artisan.
+- Phrase de maquette 3D dans le chat Pro : la dernière maquette enregistrée s'ouvre avec la demande ; sans maquette, le
+  chat dit d'ajouter d'abord le plan (bouton « Plan 3D »). Dans le module 3D, une demande pour le chat Pro (devis,
+  client, rendez-vous…) repart dans la conversation de casô.
+
+Module 3D du mode bricoleur (même conversation, 10 langues) :
+- « envoie à mon artisan » ouvre l'envoi des changements (la personne valide avant l'envoi).
+- « agrandis le salon », « la pièce fait 4 m sur 5 m » : les murs sont modifiés par l'artisan ; la demande part au prochain envoi.
+- « la chambre » seule montre la chambre ; elle n'y déplace le dernier meuble que s'il vient d'être ajouté ou déplacé.
+- « agrandis le meuble » quand il n'y en a pas : le chat le dit au lieu d'en ajouter un.
+- Après « De quoi s'agit-il ? » ou « Quelle couleur ? », une nouvelle demande complète n'est pas prise pour la réponse.
+- Fautes de frappe corrigées aussi dans les 9 autres langues, sur le vocabulaire de la langue détectée ; formes
+  déclinées ajoutées (« patul », « yatağı », « canapeaua », « łazience », « دشا »…), prix, fenêtres et portes traduits.
+- « tourne le lit de 180° » est annoncé comme un demi-tour.
+- Tourner un meuble qui obligerait à en déplacer un autre : le chat demande d'abord (« oui » / « non », 10 langues).
+
 Chaque message a ses mini icônes : copier, renvoyer, modifier (la dernière demande modifiée annule ce qu'elle avait fait).
 Quand rien n'est compris : « Je n'ai pas compris. », sans phrase d'exemple ; la reformulation est apprise en silence.
 
