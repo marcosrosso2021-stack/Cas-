@@ -1318,7 +1318,8 @@ body.tr-on{overflow:hidden}
   <div id="acCo" class="ac-co" hidden>
    <label for="acCoNom">Entreprise</label><input id="acCoNom" autocapitalize="words">
    <label for="acCoAdr">Adresse</label><input id="acCoAdr" autocomplete="street-address">
-   <div class="row"><div><label for="acCoSiret">SIRET</label><input id="acCoSiret" inputmode="numeric" data-noi18n></div><div><label for="acCoForme">Forme juridique</label><select id="acCoForme"><option value="">—</option><option value="EI">Entrepreneur individuel (EI)</option><option value="micro">Micro-entrepreneur (EI)</option><option value="EURL">EURL</option><option value="SARL">SARL</option><option value="SAS">SAS</option><option value="SASU">SASU</option></select></div></div>
+   <div class="row"><div style="flex:.7"><label for="acCoSiren">SIREN</label><input id="acCoSiren" inputmode="numeric" maxlength="11" data-noi18n oninput="sirSync(this,'acCoSiret')"></div><div><label for="acCoSiret">SIRET</label><input id="acCoSiret" inputmode="numeric" data-noi18n oninput="sirSync(this,'acCoSiren')"></div></div>
+   <label for="acCoForme">Forme juridique</label><select id="acCoForme"><option value="">—</option><option value="EI">Entrepreneur individuel (EI)</option><option value="micro">Micro-entrepreneur (EI)</option><option value="EURL">EURL</option><option value="SARL">SARL</option><option value="SAS">SAS</option><option value="SASU">SASU</option></select>
    <label for="acCoTva">N° TVA intracommunautaire</label><input id="acCoTva" autocapitalize="characters" data-noi18n>
   </div>
   <label for="acMail">E-mail</label><input id="acMail" type="email" inputmode="email" autocomplete="email" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="next">
@@ -1344,7 +1345,7 @@ body.tr-on{overflow:hidden}
   <div class="md-ic md-big"><svg class="i"><use href="#i-user"/></svg></div>
   <h1 class="h1">Tu utilises casô pour…</h1>
   <button class="md-c" id="mdArt" type="button" onclick="modePick('artisan')"><span class="md-ic"><svg class="i"><use href="#i-helmet"/></svg></span><span class="md-t"><b>Artisan</b><span>Devis, factures, chantiers</span></span></button>
-  <div id="mdSir" class="md-sir" hidden><label for="mdSiret">SIRET</label><input id="mdSiret" inputmode="numeric" autocomplete="off" enterkeyhint="go" data-noi18n onkeydown="if(event.key==='Enter')mdSirOk()"><div id="mdErr" class="err" hidden role="alert"></div><button class="btn" type="button" id="mdSirGo" onclick="mdSirOk()">Continuer</button></div>
+  <div id="mdSir" class="md-sir" hidden><div class="row"><div style="flex:.7"><label for="mdSiren">SIREN</label><input id="mdSiren" inputmode="numeric" autocomplete="off" maxlength="11" data-noi18n oninput="sirSync(this,'mdSiret')"></div><div><label for="mdSiret">SIRET</label><input id="mdSiret" inputmode="numeric" autocomplete="off" enterkeyhint="go" data-noi18n oninput="sirSync(this,'mdSiren')" onkeydown="if(event.key==='Enter')mdSirOk()"></div></div><div id="mdErr" class="err" hidden role="alert"></div><button class="btn" type="button" id="mdSirGo" onclick="mdSirOk()">Continuer</button></div>
   <button class="md-c" id="mdBri" type="button" onclick="modePick('bricoleur')"><span class="md-ic"><svg class="i"><use href="#i-home"/></svg></span><span class="md-t"><b>Bricoleur du dimanche</b><span>Mes travaux à la maison</span></span></button>
  </div>
 </section>
@@ -2971,12 +2972,17 @@ async function loginSubmit(){
    a.mode : 'artisan' ou 'bricoleur' (gardé dans le compte du téléphone) */
 const ONB={code:null,change:false};
 function stScreen(id){document.body.classList.add('starting');drawerClose&&drawerClose(true);document.querySelectorAll('section').forEach(x=>x.classList.remove('on'));$(id).classList.add('on');window.scrollTo(0,0)}
-function modeOpen(){ONB.change=false;['mdArt','mdBri'].forEach(k=>$(k).classList.remove('on'));$('mdSir').hidden=true;$('mdErr').hidden=true;
+function modeOpen(){ONB.change=false;['mdArt','mdBri'].forEach(k=>$(k).classList.remove('on'));$('mdSir').hidden=true;{const p=db.prof||{};$('mdSiret').value=p.siret||'';$('mdSiren').value=p.siren||(p.siret||'').slice(0,9)}$('mdErr').hidden=true;
  stScreen('s-mode')}
+function sirenOk(n){n=String(n||'').replace(/\D/g,'');return /^\d{9}$/.test(n)&&(n==='356000000'||luhnOk(n))}
+/* SIREN = 9 premiers chiffres du SIRET : on tient les deux champs d'accord */
+function sirSync(e,o){const d=e.value.replace(/\D/g,''),t=$(o),td=t.value.replace(/\D/g,'');
+ if(/Siret$/.test(e.id)){if(d.length>=9)t.value=d.slice(0,9)}
+ else if(d.length===9&&td.slice(0,9)!==d)t.value=d+td.slice(9)}
 function sirOk(n){n=String(n||'').replace(/\s/g,'');return /^\d{14}$/.test(n)&&(/^356000000/.test(n)||(luhnOk(n.slice(0,9))&&luhnOk(n)))}
-async function mdSirOk(){const n=$('mdSiret').value.replace(/\D/g,''),e=$('mdErr'),b=$('mdSirGo'),bad=t=>{e.textContent=i18nT(t);e.hidden=false;$('mdSiret').setAttribute('aria-invalid','true');$('mdSiret').focus()};
+async function mdSirOk(){const n=$('mdSiret').value.replace(/\D/g,''),sr=$('mdSiren').value.replace(/\D/g,''),e=$('mdErr'),b=$('mdSirGo'),bad=t=>{e.textContent=i18nT(t);e.hidden=false;$('mdSiret').setAttribute('aria-invalid','true');$('mdSiret').focus()};
  e.hidden=true;$('mdSiret').removeAttribute('aria-invalid');
- if(!sirOk(n))return bad('Ce numéro ne semble pas valide : vérifie-le.');
+ if(!sirOk(n)||(sr&&sr!==n.slice(0,9)))return bad('Ce numéro ne semble pas valide : vérifie-le.');
  b.disabled=true;let co=null,net=true;
  try{const ctl=window.AbortController?new AbortController():null,tm=setTimeout(()=>ctl&&ctl.abort(),7000);
   const q=await fetch('https://recherche-entreprises.api.gouv.fr/search?q='+n+'&page=1&per_page=1',ctl?{signal:ctl.signal}:{});clearTimeout(tm);
@@ -2984,7 +2990,7 @@ async function mdSirOk(){const n=$('mdSiret').value.replace(/\D/g,''),e=$('mdErr
  b.disabled=false;
  if(net&&!co)return bad('Ce numéro ne semble pas valide : vérifie-le.');
  if(co&&co.etat_administratif==='C')return bad('Attention : cette entreprise est indiquée comme fermée. Vérifie le numéro.');
- const P=db.prof=Object.assign({},db.prof||{});P.siret=n;
+ const P=db.prof=Object.assign({},db.prof||{});P.siret=n;P.siren=n.slice(0,9);
  if(co){const et=(co.matching_etablissements||[]).find(m=>m.siret===n)||co.siege||{};
   if(!P.adr)P.adr=acCap(et.adresse||'');if(!P.forme)P.forme=acForme(co.nature_juridique);if(!P.tvai)P.tvai=(co.tva&&co.tva[0])||acTva(n.slice(0,9))}
  db.profAt=Date.now();save();try{fillProf()}catch(x){}
@@ -6462,10 +6468,10 @@ async function acFind(n){const seq=++acLook.seq,siren=n.slice(0,9);let co=null,f
  if(co){const et=(co.matching_etablissements||[]).find(m=>m.siret===n)||co.siege||{};
   const pp=(co.dirigeants||[]).find(x=>x.type_dirigeant==='personne physique'&&x.prenoms);
   acLook.co=co;acLook.dir=pp?acCap(String(pp.prenoms).split(/[\s,]+/)[0]):'';
-  f('acCoNom',acCap(co.nom_complet||co.nom_raison_sociale||''));f('acCoAdr',acCap(et.adresse||''));f('acCoSiret',et.siret||(co.siege&&co.siege.siret)||(n.length===14?n:''));
+  f('acCoSiren',co.siren||siren);f('acCoNom',acCap(co.nom_complet||co.nom_raison_sociale||''));f('acCoAdr',acCap(et.adresse||''));f('acCoSiret',et.siret||(co.siege&&co.siege.siret)||(n.length===14?n:''));
   f('acCoForme',acForme(co.nature_juridique));f('acCoTva',(co.tva&&co.tva[0])||acTva(siren));
   acSt(co.etat_administratif==='C'?'Attention : cette entreprise est indiquée comme fermée. Vérifie le numéro.':'Entreprise trouvée : vérifie les informations.',co.etat_administratif==='C'?'ko':'ok')}
- else{f('acCoNom','');f('acCoAdr','');f('acCoSiret',n.length===14?n:'');f('acCoForme','');f('acCoTva',acTva(siren));
+ else{f('acCoSiren',siren);f('acCoNom','');f('acCoAdr','');f('acCoSiret',n.length===14?n:'');f('acCoForme','');f('acCoTva',acTva(siren));
   acSt(fail?'Pas de connexion : remplis les informations de ton entreprise.':'Numéro introuvable : remplis les informations de ton entreprise.','ko')}
  $('acCo').hidden=false}
 function acCheck(d){
@@ -6473,6 +6479,7 @@ function acCheck(d){
  if(d.num&&!d.co)return['acNom','Recherche de ton entreprise en cours, patiente une seconde.'];
  if(!d.co&&d.prenom.length<2)return['acNom','Écris ton nom ou ton numéro SIRET.'];
  if(d.co&&d.ent.length<2)return['acCoNom',"Écris le nom de ton entreprise."];
+ if(d.co&&d.siren&&(!sirenOk(d.siren)||(d.siret&&d.siret.slice(0,9)!==d.siren)))return['acCoSiren','Ce numéro ne semble pas valide : vérifie-le.'];
  if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(d.email))return['acMail','E-mail invalide.'];
  if(d.pass.length<8)return['acPass','8 caractères minimum.'];
  return null}
@@ -6492,12 +6499,12 @@ async function acSubmit(){
  if(acBusy)return;
  const v=$('acNom').value.trim(),num=v.replace(/\D/g,'').length>=9,co=!$('acCo').hidden;
  const ent=co?$('acCoNom').value.trim():v;
- const d={prenom:co?(acLook.dir||ent):v,ent,email:$('acMail').value.trim(),pass:$('acPass').value,num,co};
+ const d={prenom:co?(acLook.dir||ent):v,ent,email:$('acMail').value.trim(),pass:$('acPass').value,num,co,siren:co?$('acCoSiren').value.replace(/\D/g,''):'',siret:co?$('acCoSiret').value.replace(/\D/g,''):''};
  document.querySelectorAll('#acForm input').forEach(i=>i.removeAttribute('aria-invalid'));
  const bad=acCheck(d);
  if(bad){$('acErr').textContent=bad[1];$('acErr').hidden=false;const f=$(bad[0]);f.setAttribute('aria-invalid','true');f.focus();return}
  acBusy=true;const btn=$('acGo');btn.disabled=true;btn.textContent='…';
- try{await accountCreate(d);if(co){db.prof=Object.assign({},db.prof||{},{adr:$('acCoAdr').value.trim(),siret:$('acCoSiret').value.replace(/\s/g,''),forme:$('acCoForme').value,tvai:$('acCoTva').value.replace(/\s/g,'').toUpperCase()});db.profAt=Date.now();save()}}
+ try{await accountCreate(d);if(co){db.prof=Object.assign({},db.prof||{},{adr:$('acCoAdr').value.trim(),siren:d.siren||d.siret.slice(0,9),siret:$('acCoSiret').value.replace(/\s/g,''),forme:$('acCoForme').value,tvai:$('acCoTva').value.replace(/\s/g,'').toUpperCase()});db.profAt=Date.now();save()}}
  catch(e){$('acErr').textContent="Impossible d'enregistrer sur ce téléphone.";$('acErr').hidden=false;acBusy=false;btn.disabled=false;btn.textContent='Créer mon compte';return}
  $('acPass').value='';fillProf();renderAcct();bkSet('devis_welcomed',1);
  try{ONB.code=await rcSet()}catch(e){ONB.code=null}
