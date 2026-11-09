@@ -1,6 +1,6 @@
 # lib/caso-photo.js — rendu photoréaliste du module 3D
 
-`lib/caso-photo.js` est un seul fichier, chargé seulement quand on touche « Rendu photo ». Il regroupe trois bibliothèques MIT :
+`lib/caso-photo.js` est un seul fichier, chargé par une simple balise `<script>` seulement quand on touche « Rendu photo ». Il expose `window.CasoPhoto`. Il regroupe trois bibliothèques MIT :
 
 - three.js r187
 - three-mesh-bvh 0.9.18
@@ -24,6 +24,6 @@ Placer les sources dans un dossier de travail, sous `node_modules/` :
 
 Puis lancer :
 
-    bun build ./entry.js --format esm --minify --target browser --outfile ./caso-photo.js
+    bun build ./entry.js --format iife --minify --target browser --outfile ./caso-photo.js
 
 Les licences sont dans `lib/caso-photo.LICENSE`.

@@ -148,3 +148,6 @@ export async function casoPhoto( o ) {
 	if ( o.dispose !== false ) { dq.material.dispose(); pt.dispose(); renderer.dispose(); scene.traverse( x => { if ( x.geometry ) x.geometry.dispose(); } ); if ( env ) env.dispose(); }
 	return out;
 }
+
+// chargement par simple balise <script> (sans module) : utilisable partout
+if ( typeof window !== "undefined" ) window.CasoPhoto = { casoPhoto, stop };
