@@ -83,6 +83,37 @@ function convScene( src, opts ) {
 	return out;
 }
 
+// ciel HDR : on vérifie d'abord que le fichier en est bien un (certains serveurs renvoient une page à la place d'un fichier absent)
+async function loadHDR( url ) {
+	const r = await fetch( url );
+	if ( ! r.ok ) throw new Error( 'hdr' );
+	const b = await r.arrayBuffer();
+	const head = new TextDecoder().decode( new Uint8Array( b, 0, Math.min( 10, b.byteLength ) ) );
+	if ( ! head.startsWith( '#?' ) ) throw new Error( 'hdr' );
+	const d = new HDRLoader().setDataType( THREE.HalfFloatType ).parse( b );
+	if ( ! d || ! d.data || ! d.width ) throw new Error( 'hdr' );
+	const t = new THREE.DataTexture( d.data, d.width, d.height, THREE.RGBAFormat, d.type );
+	t.colorSpace = THREE.LinearSRGBColorSpace; t.minFilter = THREE.LinearFilter; t.magFilter = THREE.LinearFilter; t.generateMipmaps = false; t.flipY = true; t.needsUpdate = true;
+	return t;
+}
+
+// ciel en JPG : converti en données linéaires (le lancer de rayons échantillonne le ciel à partir de ses pixels)
+async function loadSkyJpg( url ) {
+	const img = await new Promise( ( ok, ko ) => { const i = new Image(); i.onload = () => ok( i ); i.onerror = ko; i.src = url; } );
+	const w = Math.min( 1024, img.naturalWidth ), h = Math.round( w * img.naturalHeight / img.naturalWidth );
+	const c = document.createElement( 'canvas' ); c.width = w; c.height = h;
+	const x = c.getContext( '2d' ); x.drawImage( img, 0, 0, w, h );
+	const p = x.getImageData( 0, 0, w, h ).data, out = new Uint16Array( w * h * 4 ), lin = v => { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow( ( v + 0.055 ) / 1.055, 2.4 ); };
+	for ( let yy = 0; yy < h; yy ++ ) for ( let xx = 0; xx < w; xx ++ ) {
+		const i = ( yy * w + xx ) * 4, j = i; // même orientation qu'un ciel HDR (lignes de haut en bas, flipY)
+		for ( let k = 0; k < 3; k ++ ) out[ j + k ] = THREE.DataUtils.toHalfFloat( lin( p[ i + k ] ) * 1.35 ); // un JPG plafonne la lumière : on la remonte un peu
+		out[ j + 3 ] = THREE.DataUtils.toHalfFloat( 1 );
+	}
+	const t = new THREE.DataTexture( out, w, h, THREE.RGBAFormat, THREE.HalfFloatType );
+	t.colorSpace = THREE.LinearSRGBColorSpace; t.minFilter = THREE.LinearFilter; t.magFilter = THREE.LinearFilter; t.generateMipmaps = false; t.flipY = true; t.needsUpdate = true;
+	return t;
+}
+
 let job = null;
 export function stop() { if ( job ) job.stop = true; }
 export async function casoPhoto( o ) {
@@ -103,8 +134,8 @@ export async function casoPhoto( o ) {
 	cam.quaternion.fromArray( o.cam.q );
 	cam.updateMatrixWorld();
 	let env = null;
-	try { env = await new HDRLoader().setDataType( THREE.HalfFloatType ).loadAsync( o.env + '.hdr' ); } catch ( e ) { env = null; }
-	if ( ! env ) { try { env = await new THREE.TextureLoader().loadAsync( o.env + '.jpg' ); env.colorSpace = THREE.SRGBColorSpace; } catch ( e ) { env = null; } }
+	try { env = await loadHDR( o.env + '.hdr' ); } catch ( e ) { env = null; }
+	if ( ! env ) { try { env = await loadSkyJpg( o.env + '.jpg' ); } catch ( e ) { env = null; } }
 	if ( env ) { env.mapping = THREE.EquirectangularReflectionMapping; scene.environment = env; scene.background = env; scene.environmentIntensity = o.envIntensity || 1; scene.backgroundIntensity = o.envIntensity || 1; }
 	if ( o.envRotation ) { scene.environmentRotation.y = o.envRotation; scene.backgroundRotation.y = o.envRotation; }
 	// éclairage d'intérieur : panneaux doux au plafond de chaque pièce (comme un photographe d'architecture)
