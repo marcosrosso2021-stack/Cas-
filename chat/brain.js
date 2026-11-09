@@ -1885,7 +1885,7 @@ function create(E,X,saved,opts){
         var corr=/^(non |pas |plutot |je voulais |je veux dire |en fait |c est |je parlais |je disais )/.test(c.n),own=recall(c)||localParse(c);
         /* une autre phrase sur le même sujet au lieu de « oui » : c'est la bonne formulation, la piste proposée était fausse */
         if(related(pd,c)&&(corr||!own||!sameAction(own,pd.cmds))){if(own&&!sameAction(own,pd.cmds))reject(pd.raw,pd.cmds);pd={type:"reformuler",raw:pd.raw};}else pd={type:"aucun"};}
-      if(pd.type==="reformuler"&&(LAISSE.test(c.n)||LAISSE.test(c.p)))return {explain:"",says:[tr("D’accord.")],open:null};
+      if(pd.type==="reformuler"&&(LAISSE.test(c.n)||LAISSE.test(c.p)||/^(non|nan|no|non merci)$/.test(c.n)))return {explain:"",says:[tr("D’accord.")],open:null};
       var fort=pd.type==="reformuler"&&related(pd,c);
       if(pd.type==="reformuler"&&!fort){var rq0=recall(c),cm0=rq0&&!rq0.prov?rq0.cmds:localParse(c);if(!soonAction(pd,c,cm0))pd={type:"aucun"};}
       if(pd.type==="reformuler"){var rq=recall(c)||{cmds:localParse(c),via:"local"};if(rq.cmds&&B.isQuestion(pd.raw)&&!askSafe(rq.cmds))return exec(rq.cmds,c,"local");if(rq.cmds){var ro=exec(rq.cmds,c,"appris",null);learnFrom(pd.raw,c,rq.cmds,!!pd.prov||!fort,fort);return ro;}return unknown(c);}

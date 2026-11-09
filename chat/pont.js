@@ -23,9 +23,12 @@ function charger(){
   .catch(function(e){if(window.console)console.error("chat casô",e);});
 }
 /* le mini modèle (5 Mo) se charge après coup, quand le téléphone a le temps */
-function chargerMini(base){if(!window.CasoMini||!P.B||P.B.mini)return;
-  fetch(base+"caso-mini-model.json").then(function(r){return r.json();}).then(function(m){P.B.mini=CasoMini.create(m);
-    try{var h=localStorage.getItem("caso_ia_mini");if(h)P.B.mini.loadHead(JSON.parse(h));}catch(e){}}).catch(function(){});}
+function chargerMini(base){if(P.miniP)return P.miniP;if(!window.CasoMini||!P.B||P.B.mini){P.miniOk=true;return Promise.resolve();}
+  P.miniP=fetch(base+"caso-mini-model.json").then(function(r){return r.json();}).then(function(m){P.B.mini=CasoMini.create(m);
+    try{var h=localStorage.getItem("caso_ia_mini");if(h)P.B.mini.loadHead(JSON.parse(h));}catch(e){}}).catch(function(){}).then(function(){P.miniOk=true;});return P.miniP;}
+/* le mini modèle se charge dès qu'on touche la barre d'écriture (sinon 5 s après l'ouverture) ; le premier message l'attend au plus 4 s */
+P.miniPret=function(){if(P.miniOk||!P.ready)return Promise.resolve();return Promise.race([chargerMini(P.base),new Promise(function(r){setTimeout(r,4000);})]).then(function(){P.miniOk=true;});};
+document.addEventListener("focusin",function(e){if(P.ready&&e.target&&e.target.id==="chatIn")chargerMini(P.base);});
 function garder(){if(!P.B)return;try{var s=P.B.dump(),b={};APPRIS.forEach(function(k){if(s[k]!=null)b[k]=s[k];});localStorage.setItem(KEY,JSON.stringify({e:P.E.dump(),b:b}));}catch(e){}
   try{if(P.B.mini&&P.B.miniDirty){localStorage.setItem("caso_ia_mini",JSON.stringify(P.B.mini.dumpHead()));P.B.miniDirty=false;}}catch(e){}}
 
