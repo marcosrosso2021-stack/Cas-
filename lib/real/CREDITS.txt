@@ -1,0 +1,5 @@
+Ressources du rendu photo du module 3D casô
+- park.hdr (Rooitou Park) et apartment.hdr (Lebombo) : Poly Haven, licence CC0 — https://polyhaven.com (copies du dépôt pmndrs/assets).
+- wood.jpg, wood_b.jpg, brick.jpg, water_n.jpg : textures d'exemple de three.js (dépôt mrdoob/three.js, r128, licence MIT).
+- grass.jpg : « grasslight-big » de three.js, d'après opengameart.org (Dark Grass), licence CC BY 3.0 — http://opengameart.org/content/dark-grass
+- three-extra.js : three.js r128, RGBELoader (licence MIT).
