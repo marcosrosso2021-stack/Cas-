@@ -14,6 +14,21 @@
 - tirage aléatoire PCG, car l'échantillonnage « stratifié » ne converge pas ;
 - léger débruitage.
 
+## Vitesse
+
+- Le shader n'est compilé qu'une fois. Ses options sont fixées avant la préparation de la scène (PCG, pas de flou de mise au point, pas de brouillard, ciel en fond). Sans cela, la bibliothèque le recompilait quatre fois.
+- La scène n'est pas dessinée en rendu classique pendant la compilation (`rasterizeScene = false`). Elle obligerait à compiler d'autres shaders.
+- Le moteur, le shader et le ciel restent en mémoire d'un rendu à l'autre.
+- La vue 3D habituelle est affichée tout de suite, puis remplacée par l'image calculée.
+- La cadence suit la carte graphique : un repère `fenceSync` indique quand le travail envoyé est fini. Le moteur en envoie alors davantage par image, tant que la carte suit.
+- Le débruitage est dessiné au plus 4 fois par seconde.
+- Le calcul s'arrête à l'objectif de passes ou au bout du temps donné (`budget`), selon ce qui arrive en premier. Le module 3D règle ces valeurs ainsi :
+
+| | Pixels | Rebonds | Objectif de passes | Durée maximale |
+|---|---|---|---|---|
+| Téléphone | 0,4 million au plus | 3 dehors, 4 dedans | 120 dehors, 200 dedans | 25 s |
+| Ordinateur | 1,2 million au plus | 4 dehors, 5 dedans | 400 dehors, 600 dedans | 40 s |
+
 ## Reconstruire
 
 Placer les sources dans un dossier de travail, sous `node_modules/` :

@@ -114,29 +114,79 @@ async function loadSkyJpg( url ) {
 	return t;
 }
 
-let job = null;
+let job = null, eng = null;
 export function stop() { if ( job ) job.stop = true; }
+// moteur gardé d'un rendu à l'autre : le shader (long à compiler sur téléphone) ne l'est qu'une fois
+function engine( canvas, o ) {
+	if ( eng && ( eng.canvas !== canvas || eng.renderer.getContext().isContextLost() ) ) { try { eng.dq.material.dispose(); eng.pt.dispose(); eng.renderer.dispose(); } catch ( e ) {} eng = null; }
+	if ( eng ) return eng;
+	const renderer = new THREE.WebGLRenderer( { canvas, antialias: false, preserveDrawingBuffer: true, powerPreference: 'high-performance' } );
+	renderer.setPixelRatio( 1 );
+	renderer.toneMapping = THREE.ACESFilmicToneMapping;
+	renderer.outputColorSpace = THREE.SRGBColorSpace;
+	const pt = new WebGLPathTracer( renderer );
+	// réglages du shader fixés d'avance (tirage PCG, sans flou de mise au point ni brouillard, ciel en fond) : une seule compilation au lieu de quatre
+	Object.assign( pt._pathTracer.material.defines, { RANDOM_TYPE: 0, FEATURE_DOF: 0, FEATURE_FOG: 0, FEATURE_BACKGROUND_MAP: 1 } );
+	pt.filterGlossyFactor = 0.5;
+	pt.minSamples = 1;
+	pt.renderScale = 1;
+	pt.renderDelay = 0;
+	pt.fadeDuration = 0;
+	pt.rasterizeScene = false; // pas d'image intermédiaire en rendu classique (elle compilerait d'autres shaders)
+	const n = o.mobile ? 512 : 1024;
+	pt.textureSize.set( n, n );
+	// débruitage doux (filtre qui respecte les arêtes), de moins en moins fort à mesure que l'image converge ; dessiné au plus 4 fois par seconde
+	const dq = new FullScreenQuad( new DenoiseMaterial( { map: null, blending: THREE.NoBlending, premultipliedAlpha: renderer.getContextAttributes().premultipliedAlpha } ) );
+	eng = { canvas, renderer, pt, dq, draw: false, env: null, envUrl: '', scene: null, compiled: false };
+	pt.renderToCanvasCallback = ( target, r, quad ) => {
+		if ( ! eng.draw ) return;
+		eng.draw = false;
+		const m = dq.material, s = pt.samples;
+		m.map = quad.material.map; m.sigma = Math.max( 1.2, 5.5 - s / 40 ); m.threshold = Math.min( 0.2, Math.max( 0.035, 0.3 / Math.sqrt( s ) ) ); m.kSigma = 1;
+		const ac = r.autoClear; r.autoClear = false; dq.render( r ); r.autoClear = ac;
+	};
+	return eng;
+}
+function freeScene( sc ) { if ( sc ) sc.traverse( x => { if ( x.geometry ) x.geometry.dispose(); } ); }
+async function sky( E, url ) {
+	if ( E.env && E.envUrl === url ) return E.env;
+	let env = null;
+	try { env = await loadHDR( url + '.hdr' ); } catch ( e ) { env = null; }
+	if ( ! env ) { try { env = await loadSkyJpg( url + '.jpg' ); } catch ( e ) { env = null; } }
+	if ( env ) { env.mapping = THREE.EquirectangularReflectionMapping; if ( E.env ) E.env.dispose(); E.env = env; E.envUrl = url; }
+	return env;
+}
+/* o : scene (three r128), canvas, w, h, cam, env (adresse du ciel sans extension), exposure, lights, bounces, tBounces,
+   samples (objectif), budget (ms de calcul au plus après la première passe), mobile, preview (image affichée pendant la préparation), onProgress(n, objectif, ms, part), onStage(étape, ms) pour mesurer */
 export async function casoPhoto( o ) {
 	stop();
 	const me = { stop: false };
 	job = me;
 	OPT = o; texCache.clear(); matCache.clear(); geoCache.clear();
-	const { canvas, w, h } = o;
-	const renderer = new THREE.WebGLRenderer( { canvas, antialias: false, preserveDrawingBuffer: true, powerPreference: 'high-performance' } );
-	renderer.setPixelRatio( 1 );
+	const { canvas, w, h } = o, st = o.onStage || ( () => {} ), t00 = performance.now();
+	const E = engine( canvas, o ), { renderer, pt } = E;
+	st( 'engine', performance.now() - t00 );
 	renderer.setSize( w, h, false );
-	renderer.toneMapping = THREE.ACESFilmicToneMapping;
 	renderer.toneMappingExposure = o.exposure || 1;
-	renderer.outputColorSpace = THREE.SRGBColorSpace;
+	// aperçu immédiat : la vue 3D habituelle, remplacée par l'image calculée dès qu'elle est prête
+	if ( o.preview ) {
+		try {
+			const tx = new THREE.CanvasTexture( o.preview ); tx.colorSpace = THREE.SRGBColorSpace;
+			const q = new FullScreenQuad( new THREE.MeshBasicMaterial( { map: tx, toneMapped: false } ) );
+			const ac = renderer.autoClear; renderer.setRenderTarget( null ); renderer.autoClear = false; q.render( renderer ); renderer.autoClear = ac;
+			q.material.dispose(); q.dispose(); tx.dispose();
+		} catch ( e ) {}
+	}
+	st( 'preview', performance.now() - t00 );
 	const scene = convScene( o.scene, o );
+	st( 'conv ' + texCache.size + ' tex ' + matCache.size + ' mat', performance.now() - t00 );
 	const cam = new THREE.PerspectiveCamera( o.cam.fov, w / h, o.cam.near, o.cam.far );
 	cam.position.fromArray( o.cam.p );
 	cam.quaternion.fromArray( o.cam.q );
 	cam.updateMatrixWorld();
-	let env = null;
-	try { env = await loadHDR( o.env + '.hdr' ); } catch ( e ) { env = null; }
-	if ( ! env ) { try { env = await loadSkyJpg( o.env + '.jpg' ); } catch ( e ) { env = null; } }
-	if ( env ) { env.mapping = THREE.EquirectangularReflectionMapping; scene.environment = env; scene.background = env; scene.environmentIntensity = o.envIntensity || 1; scene.backgroundIntensity = o.envIntensity || 1; }
+	const env = await sky( E, o.env );
+	if ( me.stop ) { freeScene( scene ); return { samples: 0, url: null }; }
+	if ( env ) { scene.environment = env; scene.background = env; scene.environmentIntensity = o.envIntensity || 1; scene.backgroundIntensity = o.envIntensity || 1; }
 	if ( o.envRotation ) { scene.environmentRotation.y = o.envRotation; scene.backgroundRotation.y = o.envRotation; }
 	// éclairage d'intérieur : panneaux doux au plafond de chaque pièce (comme un photographe d'architecture)
 	for ( const l of o.lights || [] ) {
@@ -146,37 +196,43 @@ export async function casoPhoto( o ) {
 		a.updateMatrixWorld();
 		scene.add( a );
 	}
-	const pt = new WebGLPathTracer( renderer );
-	pt.bounces = o.bounces || 6;
-	pt.transmissiveBounces = 6;
-	pt.filterGlossyFactor = 0.5;
-	pt.minSamples = 1;
-	pt.renderScale = 1;
-	pt.tiles.set( o.tiles || 2, o.tiles || 2 );
-	pt.renderDelay = 0;
-	pt.fadeDuration = 0;
-	// débruitage doux (filtre qui respecte les arêtes), de moins en moins fort à mesure que l'image converge
-	const dq = new FullScreenQuad( new DenoiseMaterial( { map: null, blending: THREE.NoBlending, premultipliedAlpha: renderer.getContextAttributes().premultipliedAlpha } ) );
-	if ( ! o.noDenoise ) pt.renderToCanvasCallback = ( target, r, quad ) => {
-		const m = dq.material, n = pt.samples;
-		m.map = quad.material.map; m.sigma = Math.max( 1.2, 5.5 - n / 40 ); m.threshold = n < 30 ? 0.08 : 0.04; m.kSigma = 1;
-		const ac = r.autoClear; r.autoClear = false; dq.render( r ); r.autoClear = ac;
-	};
+	pt.bounces = o.bounces || 4;
+	pt.transmissiveBounces = o.tBounces || 4;
+	const tl = o.tiles || ( o.mobile ? 2 : 1 );
+	pt.tiles.set( tl, tl );
+	const mm = pt._pathTracer.material;
 	pt.setScene( scene, cam );
-	if ( o.pcg !== false ) { const mm = pt._pathTracer.material; if ( mm.setDefine ) mm.setDefine( 'RANDOM_TYPE', 0 ); else { mm.defines.RANDOM_TYPE = 0; mm.needsUpdate = true; } }
-	const max = o.samples || 300, t0 = performance.now();
+	freeScene( E.scene ); E.scene = scene;
+	for ( const t of texCache.values() ) t.dispose(); // déjà recopiées dans la texture du lancer de rayons
+	st( 'setScene', performance.now() - t00 );
+	if ( ! E.compiled ) { E.compiled = true; mm.defines.FEATURE_BACKGROUND_MAP = env ? 1 : 0; mm.needsUpdate = true; } // compilation unique, en tâche de fond quand le navigateur le permet
+	else mm.setDefine( 'FEATURE_BACKGROUND_MAP', env ? 1 : 0 );
+	const max = o.samples || 200, budget = o.budget || 30000, per0 = tl * tl;
+	// cadence réglée sur l'appareil : plus de calcul par image tant que les images restent rapides (moins de 20 ms d'écart),
+	// moins dès qu'elles ralentissent. L'interface reste fluide et le travail ne s'accumule pas sur la carte graphique.
+	const cap = ( o.mobile ? 2 : 8 ) * per0;
+	let tF = 0, per = 1, lastDraw = 0, tPrev = 0;
 	await new Promise( res => {
-		const loop = () => {
-			if ( me.stop ) return res();
-			pt.renderSample();
-			if ( o.onProgress ) o.onProgress( Math.floor( pt.samples ), max, performance.now() - t0 );
-			if ( pt.samples >= max ) return res();
+		const end = () => { if ( job === me && tF ) { E.draw = true; pt.pausePathTracing = true; try { pt.renderSample(); } catch ( e ) {} pt.pausePathTracing = false; E.draw = false; } res(); };
+		const loop = now => {
+			if ( me.stop ) return end();
+			if ( tF && tPrev ) { const dt = now - tPrev; if ( dt > 80 ) per = Math.max( 1, per >> 1 ); else if ( dt > 40 ) per = Math.max( 1, per - 1 ); else if ( dt < 20 ) per = Math.min( cap, per + 1 ); }
+			tPrev = now;
+			for ( let i = 0; i < per; i ++ ) {
+				const s0 = pt.samples;
+				if ( ! tF && Math.floor( s0 ) >= 1 ) { tF = performance.now(); st( 'firstSample', tF - t00 ); }
+				if ( i === per - 1 && tF && performance.now() - lastDraw > 250 && Math.floor( s0 ) >= 2 ) { E.draw = true; lastDraw = performance.now(); }
+				pt.renderSample();
+				E.draw = false;
+			}
+			const n = Math.floor( pt.samples ), ms = tF ? performance.now() - tF : 0;
+			if ( o.onProgress ) o.onProgress( n, max, ms, Math.min( 1, Math.max( n / max, ms / budget ) ) );
+			if ( n >= max || tF && ms >= budget ) { st( 'end ' + n + ' per ' + per, performance.now() - t00 ); return end(); }
 			requestAnimationFrame( loop );
 		};
-		loop();
+		requestAnimationFrame( loop );
 	} );
 	const out = { samples: pt.samples, url: me.stop && ! o.keepOnStop ? null : canvas.toDataURL( 'image/jpeg', 0.92 ) };
-	if ( o.dispose !== false ) { dq.material.dispose(); pt.dispose(); renderer.dispose(); scene.traverse( x => { if ( x.geometry ) x.geometry.dispose(); } ); if ( env ) env.dispose(); }
 	return out;
 }
 
