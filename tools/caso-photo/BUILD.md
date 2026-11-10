@@ -20,8 +20,8 @@
 - La scène n'est pas dessinée en rendu classique pendant la compilation (`rasterizeScene = false`). Elle obligerait à compiler d'autres shaders.
 - Le moteur, le shader et le ciel restent en mémoire d'un rendu à l'autre.
 - La vue 3D habituelle est affichée tout de suite, puis remplacée par l'image calculée.
-- La cadence suit la carte graphique : un repère `fenceSync` indique quand le travail envoyé est fini. Le moteur en envoie alors davantage par image, tant que la carte suit.
-- Le débruitage est dessiné au plus 4 fois par seconde.
+- La cadence suit l'appareil : tant que les images s'enchaînent en moins de 20 ms, le moteur calcule davantage par image ; au-delà de 40 ms, il en calcule moins. (Les repères `fenceSync` ont été essayés : `getSyncParameter` ne se met pas à jour dans Chrome et `clientWaitSync` y bloque la page.)
+- Le débruitage est dessiné au plus 4 fois par seconde. Il est plus fort dans les vues intérieures (`denoise` : rayon et seuil les plus bas atteints), où le plafond n'est éclairé qu'indirectement et reste granuleux plus longtemps.
 - Le calcul s'arrête à l'objectif de passes ou au bout du temps donné (`budget`), selon ce qui arrive en premier. Le module 3D règle ces valeurs ainsi :
 
 | | Pixels | Rebonds | Objectif de passes | Durée maximale |

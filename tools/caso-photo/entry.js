@@ -137,12 +137,12 @@ function engine( canvas, o ) {
 	pt.textureSize.set( n, n );
 	// débruitage doux (filtre qui respecte les arêtes), de moins en moins fort à mesure que l'image converge ; dessiné au plus 4 fois par seconde
 	const dq = new FullScreenQuad( new DenoiseMaterial( { map: null, blending: THREE.NoBlending, premultipliedAlpha: renderer.getContextAttributes().premultipliedAlpha } ) );
-	eng = { canvas, renderer, pt, dq, draw: false, env: null, envUrl: '', scene: null, compiled: false };
+	eng = { canvas, renderer, pt, dq, dn: [ 1.2, 0.035 ], draw: false, env: null, envUrl: '', scene: null, compiled: false };
 	pt.renderToCanvasCallback = ( target, r, quad ) => {
 		if ( ! eng.draw ) return;
 		eng.draw = false;
 		const m = dq.material, s = pt.samples;
-		m.map = quad.material.map; m.sigma = Math.max( 1.2, 5.5 - s / 40 ); m.threshold = Math.min( 0.2, Math.max( 0.035, 0.3 / Math.sqrt( s ) ) ); m.kSigma = 1;
+		m.map = quad.material.map; m.sigma = Math.max( eng.dn[ 0 ], 5.5 - s / 40 ); m.threshold = Math.min( 0.2, Math.max( eng.dn[ 1 ], 0.3 / Math.sqrt( s ) ) ); m.kSigma = 1;
 		const ac = r.autoClear; r.autoClear = false; dq.render( r ); r.autoClear = ac;
 	};
 	return eng;
@@ -168,6 +168,7 @@ export async function casoPhoto( o ) {
 	st( 'engine', performance.now() - t00 );
 	renderer.setSize( w, h, false );
 	renderer.toneMappingExposure = o.exposure || 1;
+	E.dn = o.denoise || [ 1.2, 0.035 ]; // débruitage le plus faible atteint en fin de calcul (rayon, seuil)
 	// aperçu immédiat : la vue 3D habituelle, remplacée par l'image calculée dès qu'elle est prête
 	if ( o.preview ) {
 		try {
@@ -236,5 +237,8 @@ export async function casoPhoto( o ) {
 	return out;
 }
 
+// redessine la dernière image avec un autre débruitage (réglages)
+export function redraw( dn ) { if ( ! eng ) return null; eng.dn = dn; eng.draw = true; eng.pt.pausePathTracing = true; eng.pt.renderSample(); eng.pt.pausePathTracing = false; eng.draw = false; return eng.canvas.toDataURL( 'image/jpeg', 0.92 ); }
+
 // chargement par simple balise <script> (sans module) : utilisable partout
-if ( typeof window !== "undefined" ) window.CasoPhoto = { casoPhoto, stop };
+if ( typeof window !== "undefined" ) window.CasoPhoto = { casoPhoto, stop, redraw };
