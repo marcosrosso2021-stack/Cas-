@@ -290,6 +290,7 @@ export async function casoPhoto( o ) {
 	if ( me.stop ) { freeScene( scene ); return { samples: 0, url: null }; }
 	if ( env ) { scene.environment = env; scene.background = env; scene.environmentIntensity = o.envIntensity || 1; scene.backgroundIntensity = o.envIntensity || 1; }
 	if ( o.envRotation ) { scene.environmentRotation.y = o.envRotation; scene.backgroundRotation.y = o.envRotation; }
+	if ( o.bg ) scene.background = new THREE.Color( o.bg[ 0 ], o.bg[ 1 ], o.bg[ 2 ] ); // pièce seule : fond uni (la lumière reste celle du ciel)
 	// éclairage d'intérieur : panneaux doux au plafond de chaque pièce (comme un photographe d'architecture)
 	for ( const l of o.lights || [] ) {
 		const a = new THREE.RectAreaLight( 0xfff0dc, l.i, l.w, l.d );
