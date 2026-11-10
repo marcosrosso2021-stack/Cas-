@@ -22,7 +22,18 @@ function convTex( t ) {
 	return o;
 }
 const matCache = new Map();
-function convMat( m ) {
+// matières « photo » : vernis des parquets et laques, émail des sanitaires, feuilles cirées (le velours a été essayé : il scintille aux faibles nombres de passes) (selon le nom donné par le module 3D)
+const FABRIC = /^(fabric|linen|duvet|uph|towel|accent)$/, SATIN = /^(lacq|front|doorInt|doorPan|trim|plinth)$/;
+function enrich( o, name, hint ) {
+	if ( FABRIC.test( name ) ) { o.roughness = 1; }
+	else if ( SATIN.test( name ) ) { o.clearcoat = 0.35; o.clearcoatRoughness = 0.22; }
+	else if ( name === 'cer' || name === 'screen' ) { o.clearcoat = 1; o.clearcoatRoughness = 0.04; }
+	else if ( name === 'top' ) { o.clearcoat = 0.6; o.clearcoatRoughness = 0.15; }
+	else if ( name === 'wood' || name === 'woodD' ) { o.clearcoat = 0.18; o.clearcoatRoughness = 0.35; }
+	else if ( name === 'leaf' || name === 'leaf2' ) { o.roughness = 0.55; }
+	else if ( hint && hint.floor && o.roughness <= 0.62 ) { o.clearcoat = 0.4; o.clearcoatRoughness = 0.16; } // parquet vitrifié, carrelage : les fenêtres s'y reflètent
+}
+function convMat( m, hint ) {
 	let o = matCache.get( m.uuid );
 	if ( o ) return o;
 	const c = x => new THREE.Color( x.r, x.g, x.b );
@@ -35,6 +46,7 @@ function convMat( m ) {
 		transparent: !! m.transparent, opacity: m.opacity !== undefined ? m.opacity : 1, side: m.side === 2 ? THREE.DoubleSide : m.side === 1 ? THREE.BackSide : THREE.FrontSide,
 	} );
 	if ( m.normalScale ) o.normalScale.set( m.normalScale.x, m.normalScale.y );
+	if ( ! OPT.plain ) enrich( o, m.name || '', hint );
 	// verre : vraie transmission plutôt qu'une simple transparence
 	if ( m.transparent && m.opacity < 0.35 && m.roughness < 0.2 ) { o.transparent = false; o.opacity = 1; o.transmission = 1; o.ior = 1.5; o.thickness = 0.01; o.roughness = 0.02; o.color.setRGB( 1, 1, 1 ); }
 	// eau
@@ -73,7 +85,7 @@ function convScene( src, opts ) {
 		const mats = Array.isArray( o.material ) ? o.material : [ o.material ];
 		if ( mats.some( m => ! m || m.isMeshBasicMaterial && ( m.transparent || m.color && m.color.r + m.color.g + m.color.b < 0.05 ) ) ) return; // ombres et occlusions peintes
 		if ( mats.some( m => m.isMeshBasicMaterial && opts.skipBasic ) ) return;
-		const conv = mats.map( m => m.isMeshBasicMaterial ? new THREE.MeshBasicMaterial( { color: new THREE.Color( m.color.r, m.color.g, m.color.b ) } ) : convMat( m ) );
+		const conv = mats.map( m => m.isMeshBasicMaterial ? new THREE.MeshBasicMaterial( { color: new THREE.Color( m.color.r, m.color.g, m.color.b ) } ) : convMat( m, o.userData ) );
 		const mesh = new THREE.Mesh( convGeo( o.geometry ), Array.isArray( o.material ) ? conv : conv[ 0 ] );
 		mesh.matrixAutoUpdate = false;
 		mesh.matrix.fromArray( o.matrixWorld.elements );
@@ -81,6 +93,19 @@ function convScene( src, opts ) {
 		out.add( mesh );
 	} );
 	return out;
+}
+
+// sous l'horizon, le ciel fourni montre une mer qui reflète le soleil : cette lumière venue d'en bas éclairait les plafonds
+// à travers les fenêtres. On la remplace par un sol uni, éclairé par le ciel (données en demi-flottants, lignes de haut en bas).
+function groundHalf( data, w, h ) {
+	const H = THREE.DataUtils, half = h >> 1, fade = Math.max( 2, h >> 6 );
+	let r = 0, g = 0, b = 0, n = 0;
+	for ( let y = 0; y < half; y += 2 ) { const wgt = Math.sin( ( y + 0.5 ) / h * Math.PI ); for ( let x = 0; x < w; x += 2 ) { const i = ( y * w + x ) * 4; r += H.fromHalfFloat( data[ i ] ) * wgt; g += H.fromHalfFloat( data[ i + 1 ] ) * wgt; b += H.fromHalfFloat( data[ i + 2 ] ) * wgt; n += wgt; } }
+	const k = 0.22 / n, gr = [ r * k * 0.95, g * k, b * k * 0.8 ].map( v => H.toHalfFloat( v ) ); // sol clair (albédo ~0,22), légèrement chaud
+	for ( let y = half; y < h; y ++ ) {
+		const t = Math.min( 1, ( y - half + 1 ) / fade );
+		for ( let x = 0; x < w; x ++ ) { const i = ( y * w + x ) * 4; for ( let c = 0; c < 3; c ++ ) data[ i + c ] = t >= 1 ? gr[ c ] : H.toHalfFloat( H.fromHalfFloat( data[ i + c ] ) * ( 1 - t ) + H.fromHalfFloat( gr[ c ] ) * t ); }
+	}
 }
 
 // ciel HDR : on vérifie d'abord que le fichier en est bien un (certains serveurs renvoient une page à la place d'un fichier absent)
@@ -92,6 +117,7 @@ async function loadHDR( url ) {
 	if ( ! head.startsWith( '#?' ) ) throw new Error( 'hdr' );
 	const d = new HDRLoader().setDataType( THREE.HalfFloatType ).parse( b );
 	if ( ! d || ! d.data || ! d.width ) throw new Error( 'hdr' );
+	groundHalf( d.data, d.width, d.height );
 	const t = new THREE.DataTexture( d.data, d.width, d.height, THREE.RGBAFormat, d.type );
 	t.colorSpace = THREE.LinearSRGBColorSpace; t.minFilter = THREE.LinearFilter; t.magFilter = THREE.LinearFilter; t.generateMipmaps = false; t.flipY = true; t.needsUpdate = true;
 	return t;
@@ -109,12 +135,38 @@ async function loadSkyJpg( url ) {
 		for ( let k = 0; k < 3; k ++ ) out[ j + k ] = THREE.DataUtils.toHalfFloat( lin( p[ i + k ] ) * 1.35 ); // un JPG plafonne la lumière : on la remonte un peu
 		out[ j + 3 ] = THREE.DataUtils.toHalfFloat( 1 );
 	}
+	groundHalf( out, w, h );
 	const t = new THREE.DataTexture( out, w, h, THREE.RGBAFormat, THREE.HalfFloatType );
 	t.colorSpace = THREE.LinearSRGBColorSpace; t.minFilter = THREE.LinearFilter; t.magFilter = THREE.LinearFilter; t.generateMipmaps = false; t.flipY = true; t.needsUpdate = true;
 	return t;
 }
 
 let job = null, eng = null;
+// développement « photo » de l'image calculée : halo autour des zones très claires (fenêtres, lampes), balance des blancs,
+// courbe de tons, léger vignetage et grain fin, comme un appareil photo
+const POST = {
+	uniforms: { map: { value: null }, px: { value: new THREE.Vector2() }, bloom: { value: 0.3 }, thr: { value: 1 }, vig: { value: 0.22 }, grain: { value: 0.016 }, wb: { value: new THREE.Vector3( 1, 1, 1 ) } },
+	vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4( position.xy, 0.0, 1.0 ); }',
+	fragmentShader: `
+		uniform sampler2D map; uniform vec2 px; uniform float bloom, thr, vig, grain; uniform vec3 wb; varying vec2 vUv;
+		vec3 hi( vec2 uv ) { vec3 c = texture2D( map, clamp( uv, 0.0, 1.0 ) ).rgb; float l = max( max( c.r, c.g ), c.b ); return c * max( l - thr, 0.0 ) / max( l, 1e-4 ); }
+		float hash( vec2 p ) { return fract( sin( dot( p, vec2( 12.9898, 78.233 ) ) ) * 43758.5453 ); }
+		void main() {
+			vec3 c = texture2D( map, vUv ).rgb, b = vec3( 0.0 );
+			for ( int i = 0; i < 12; i ++ ) {
+				float a = float( i ) * 0.5236 + 0.26; vec2 d = vec2( cos( a ), sin( a ) );
+				b += hi( vUv + d * px * 5.0 ) * 0.5 + hi( vUv + d * px * 16.0 ) * 0.3 + hi( vUv + d * px * 42.0 ) * 0.2;
+			}
+			c = ( c + b / 12.0 * bloom ) * wb;
+			gl_FragColor = vec4( c, 1.0 );
+			#include <tonemapping_fragment>
+			#include <colorspace_fragment>
+			vec2 q = vUv - 0.5;
+			gl_FragColor.rgb *= 1.0 - vig * smoothstep( 0.1, 0.75, dot( q, q ) * 2.0 );
+			gl_FragColor.rgb += ( hash( floor( vUv / px ) ) - 0.5 ) * grain;
+		}`,
+};
+const TM = { aces: THREE.ACESFilmicToneMapping, agx: THREE.AgXToneMapping, neutral: THREE.NeutralToneMapping };
 export function stop() { if ( job ) job.stop = true; }
 // moteur gardé d'un rendu à l'autre : le shader (long à compiler sur téléphone) ne l'est qu'une fois
 function engine( canvas, o ) {
@@ -137,16 +189,28 @@ function engine( canvas, o ) {
 	pt.textureSize.set( n, n );
 	// débruitage doux (filtre qui respecte les arêtes), de moins en moins fort à mesure que l'image converge ; dessiné au plus 4 fois par seconde
 	const dq = new FullScreenQuad( new DenoiseMaterial( { map: null, blending: THREE.NoBlending, premultipliedAlpha: renderer.getContextAttributes().premultipliedAlpha } ) );
-	eng = { canvas, renderer, pt, dq, dn: [ 1.2, 0.035 ], draw: false, env: null, envUrl: '', scene: null, compiled: false };
+	const rt = new THREE.WebGLRenderTarget( 1, 1, { type: THREE.HalfFloatType, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, depthBuffer: false } );
+	const pq = new FullScreenQuad( new THREE.ShaderMaterial( { ...POST, uniforms: THREE.UniformsUtils.clone( POST.uniforms ), depthTest: false, depthWrite: false } ) );
+	eng = { canvas, renderer, pt, dq, rt, pq, dn: [ 1.2, 0.035 ], look: {}, draw: false, env: null, envUrl: '', scene: null, compiled: false };
 	pt.renderToCanvasCallback = ( target, r, quad ) => {
 		if ( ! eng.draw ) return;
 		eng.draw = false;
 		const m = dq.material, s = pt.samples;
 		m.map = quad.material.map; m.sigma = Math.max( eng.dn[ 0 ], 5.5 - s / 40 ); m.threshold = Math.min( 0.2, Math.max( eng.dn[ 1 ], 0.3 / Math.sqrt( s ) ) ); m.kSigma = 1;
-		const ac = r.autoClear; r.autoClear = false; dq.render( r ); r.autoClear = ac;
+		const ac = r.autoClear, prev = r.getRenderTarget(), L = eng.look, u = pq.material.uniforms;
+		if ( L.off ) { r.autoClear = false; dq.render( r ); r.autoClear = ac; return; }
+		r.setRenderTarget( rt ); dq.render( r ); r.setRenderTarget( prev );
+		u.map.value = rt.texture; u.px.value.set( 1 / rt.width, 1 / rt.height );
+		u.bloom.value = L.bloom ?? 0.3; u.thr.value = ( L.thr ?? 0.9 ) / r.toneMappingExposure; u.vig.value = L.vig ?? 0.22; u.grain.value = L.grain ?? 0.016;
+		u.wb.value.fromArray( L.wb || [ 1, 1, 1 ] );
+		r.autoClear = false; pq.render( r ); r.autoClear = ac;
 	};
 	return eng;
 }
+function setTone( E ) { const t = TM[ E.look.tm ] || THREE.ACESFilmicToneMapping; if ( E.renderer.toneMapping !== t ) { E.renderer.toneMapping = t; E.pq.material.needsUpdate = true; E.dq.material.needsUpdate = true; } }
+// « toucher » la toile à chaque image (effacement d'une zone vide) : le navigateur doit alors l'afficher et attend que la carte
+// graphique ait fini le travail en cours avant l'image suivante. Sans cela, les calculs hors écran s'empilent sans freiner la boucle.
+function present( r ) { const p = r.getRenderTarget(); r.setRenderTarget( null ); r.setScissorTest( true ); r.setScissor( 0, 0, 0, 0 ); r.clear( true, false, false ); r.setScissorTest( false ); r.setRenderTarget( p ); }
 function freeScene( sc ) { if ( sc ) sc.traverse( x => { if ( x.geometry ) x.geometry.dispose(); } ); }
 async function sky( E, url ) {
 	if ( E.env && E.envUrl === url ) return E.env;
@@ -169,11 +233,13 @@ export async function casoPhoto( o ) {
 	renderer.setSize( w, h, false );
 	renderer.toneMappingExposure = o.exposure || 1;
 	E.dn = o.denoise || [ 1.2, 0.035 ]; // débruitage le plus faible atteint en fin de calcul (rayon, seuil)
-	// aperçu immédiat : la vue 3D habituelle, remplacée par l'image calculée dès qu'elle est prête
+	E.look = o.look || {}; // développement : bloom, thr, vig, grain, wb [r, v, b], tm ('aces', 'agx', 'neutral'), off
+	setTone( E );
+	E.rt.setSize( w, h );	// aperçu immédiat : la vue 3D habituelle, floue et assombrie (pour ne pas la prendre pour le résultat), remplacée par l'image calculée dès qu'elle est prête
 	if ( o.preview ) {
 		try {
 			const tx = new THREE.CanvasTexture( o.preview ); tx.colorSpace = THREE.SRGBColorSpace;
-			const q = new FullScreenQuad( new THREE.MeshBasicMaterial( { map: tx, toneMapped: false } ) );
+			const q = new FullScreenQuad( new THREE.MeshBasicMaterial( { map: tx, toneMapped: false, color: new THREE.Color( 0.4, 0.4, 0.4 ) } ) );
 			const ac = renderer.autoClear; renderer.setRenderTarget( null ); renderer.autoClear = false; q.render( renderer ); renderer.autoClear = ac;
 			q.material.dispose(); q.dispose(); tx.dispose();
 		} catch ( e ) {}
@@ -226,6 +292,7 @@ export async function casoPhoto( o ) {
 				pt.renderSample();
 				E.draw = false;
 			}
+			present( renderer );
 			const n = Math.floor( pt.samples ), ms = tF ? performance.now() - tF : 0;
 			if ( o.onProgress ) o.onProgress( n, max, ms, Math.min( 1, Math.max( n / max, ms / budget ) ) );
 			if ( n >= max || tF && ms >= budget ) { st( 'end ' + n + ' per ' + per, performance.now() - t00 ); return end(); }
@@ -238,7 +305,7 @@ export async function casoPhoto( o ) {
 }
 
 // redessine la dernière image avec un autre débruitage (réglages)
-export function redraw( dn ) { if ( ! eng ) return null; eng.dn = dn; eng.draw = true; eng.pt.pausePathTracing = true; eng.pt.renderSample(); eng.pt.pausePathTracing = false; eng.draw = false; return eng.canvas.toDataURL( 'image/jpeg', 0.92 ); }
+export function redraw( dn, look, exposure ) { if ( ! eng ) return null; if ( dn ) eng.dn = dn; if ( look ) { eng.look = look; setTone( eng ); } if ( exposure ) eng.renderer.toneMappingExposure = exposure; eng.draw = true; eng.pt.pausePathTracing = true; eng.pt.renderSample(); eng.pt.pausePathTracing = false; eng.draw = false; return eng.canvas.toDataURL( 'image/jpeg', 0.92 ); }
 
 // chargement par simple balise <script> (sans module) : utilisable partout
 if ( typeof window !== "undefined" ) window.CasoPhoto = { casoPhoto, stop, redraw };
