@@ -5,3 +5,7 @@ Ressources du rendu photo du module 3D casô
 - grass.jpg : « grasslight-big » de three.js, d'après opengameart.org (Dark Grass), licence CC BY 3.0 — http://opengameart.org/content/dark-grass
 - three-extra.js : three.js r128, RGBELoader (licence MIT).
 - ../caso-photo.js : rendu photoréaliste, assemblage de three.js r187 (MIT), three-mesh-bvh 0.9.18 (MIT) et three-gpu-pathtracer 0.0.28 (MIT, Garrett Johnson).
+
+Reconnaissance sur les photos (Rénovation : prises, lumières, eau, radiateurs, sanitaires)
+- Modèle D-FINE M entraîné sur Objects365 : D-FINE, Peng et al., licence Apache 2.0 — https://github.com/Peterande/D-FINE ; base d'images Objects365, licence CC BY 4.0 — https://www.objects365.org ; export ONNX : onnx-community/dfine_m_obj365-ONNX (Hugging Face). Téléchargé par l'appareil au premier usage, puis gardé en cache.
+- ONNX Runtime Web 1.20.1 (Microsoft, licence MIT), chargé depuis cdnjs.
