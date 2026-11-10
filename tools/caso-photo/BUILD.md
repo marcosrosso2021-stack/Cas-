@@ -20,6 +20,7 @@
   - sanitaires et écrans : émaillés ;
   - plans de travail et bois : légèrement vernis.
   Le velours des tissus (`sheen`) a été essayé puis écarté : il scintille aux faibles nombres de passes.
+- plans de coupe (`clippingPlanes`, plafonds en pente des pièces en rénovation) : le lancer de rayons ne les connaît pas. Les triangles concernés sont découpés à la conversion, en coordonnées du monde (`clipGeo`).
 - développement « appareil photo » après le débruitage (`look`) :
   - halo autour des zones très claires (fenêtres, lampes) ;
   - balance des blancs ;

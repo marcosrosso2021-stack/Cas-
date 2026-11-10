@@ -68,6 +68,39 @@ function convGeo( g ) {
 	geoCache.set( g.uuid, o );
 	return o;
 }
+// plans de coupe (plafonds en pente) : le lancer de rayons ne les connaît pas, les triangles sont découpés ici, en coordonnées du monde
+function clipGeo( g, mw, planes ) {
+	const P = g.attributes.position, N = g.attributes.normal, U = g.attributes.uv, idx = g.index ? g.index.array : null;
+	const m = new THREE.Matrix4().fromArray( mw.elements ), nm = new THREE.Matrix3().getNormalMatrix( m ), v = new THREE.Vector3(), n = new THREE.Vector3();
+	const pl = planes.map( p => [ p.normal.x, p.normal.y, p.normal.z, p.constant ] );
+	const groups = g.groups && g.groups.length ? g.groups : [ { start: 0, count: idx ? idx.length : P.count, materialIndex: 0 } ];
+	const op = [], on = [], ou = [], og = [];
+	const vert = i => { v.fromBufferAttribute( P, i ).applyMatrix4( m ); const o = { p: [ v.x, v.y, v.z ] }; if ( N ) { n.fromBufferAttribute( N, i ).applyMatrix3( nm ).normalize(); o.n = [ n.x, n.y, n.z ]; } if ( U ) o.u = [ U.getX( i ), U.getY( i ) ]; return o; };
+	const mix = ( a, b, t ) => { const o = { p: a.p.map( ( x, k ) => x + ( b.p[ k ] - x ) * t ) }; if ( a.n ) o.n = a.n.map( ( x, k ) => x + ( b.n[ k ] - x ) * t ); if ( a.u ) o.u = a.u.map( ( x, k ) => x + ( b.u[ k ] - x ) * t ); return o; };
+	for ( const gr of groups ) {
+		const s0 = op.length / 3, end = Math.min( gr.start + gr.count, idx ? idx.length : P.count );
+		for ( let t = gr.start; t + 2 < end; t += 3 ) {
+			let poly = [ 0, 1, 2 ].map( k => vert( idx ? idx[ t + k ] : t + k ) );
+			for ( const q of pl ) {
+				const d = poly.map( x => q[ 0 ] * x.p[ 0 ] + q[ 1 ] * x.p[ 1 ] + q[ 2 ] * x.p[ 2 ] + q[ 3 ] );
+				if ( d.every( x => x >= 0 ) ) continue;
+				if ( d.every( x => x < 0 ) ) { poly = []; break; }
+				const out = [];
+				for ( let i = 0; i < poly.length; i ++ ) { const j = ( i + 1 ) % poly.length; if ( d[ i ] >= 0 ) out.push( poly[ i ] ); if ( ( d[ i ] >= 0 ) !== ( d[ j ] >= 0 ) ) out.push( mix( poly[ i ], poly[ j ], d[ i ] / ( d[ i ] - d[ j ] ) ) ); }
+				poly = out;
+				if ( poly.length < 3 ) { poly = []; break; }
+			}
+			for ( let i = 1; i + 1 < poly.length; i ++ ) for ( const x of [ poly[ 0 ], poly[ i ], poly[ i + 1 ] ] ) { op.push( ...x.p ); if ( N ) on.push( ...x.n ); if ( U ) ou.push( ...x.u ); }
+		}
+		og.push( { start: s0, count: op.length / 3 - s0, materialIndex: gr.materialIndex } );
+	}
+	const o = new THREE.BufferGeometry();
+	o.setAttribute( 'position', new THREE.Float32BufferAttribute( op, 3 ) );
+	if ( N ) o.setAttribute( 'normal', new THREE.Float32BufferAttribute( on, 3 ) );
+	if ( U ) o.setAttribute( 'uv', new THREE.Float32BufferAttribute( ou, 2 ) );
+	if ( g.groups && g.groups.length ) for ( const x of og ) o.addGroup( x.start, x.count, x.materialIndex );
+	return o;
+}
 // scène r128 → scène r187 : maillages visibles seulement, sans les ombres peintes (le lancer de rayons les calcule)
 function convScene( src, opts ) {
 	const out = new THREE.Scene();
@@ -86,9 +119,11 @@ function convScene( src, opts ) {
 		if ( mats.some( m => ! m || m.isMeshBasicMaterial && ( m.transparent || m.color && m.color.r + m.color.g + m.color.b < 0.05 ) ) ) return; // ombres et occlusions peintes
 		if ( mats.some( m => m.isMeshBasicMaterial && opts.skipBasic ) ) return;
 		const conv = mats.map( m => m.isMeshBasicMaterial ? new THREE.MeshBasicMaterial( { color: new THREE.Color( m.color.r, m.color.g, m.color.b ) } ) : convMat( m, o.userData ) );
-		const mesh = new THREE.Mesh( convGeo( o.geometry ), Array.isArray( o.material ) ? conv : conv[ 0 ] );
+		const cp = mats.find( m => m.clippingPlanes && m.clippingPlanes.length ), geo = cp ? clipGeo( o.geometry, o.matrixWorld, cp.clippingPlanes ) : convGeo( o.geometry );
+		if ( ! geo.attributes.position.count ) return;
+		const mesh = new THREE.Mesh( geo, Array.isArray( o.material ) ? conv : conv[ 0 ] );
 		mesh.matrixAutoUpdate = false;
-		mesh.matrix.fromArray( o.matrixWorld.elements );
+		if ( ! cp ) mesh.matrix.fromArray( o.matrixWorld.elements );
 		mesh.matrixWorld.copy( mesh.matrix );
 		out.add( mesh );
 	} );
