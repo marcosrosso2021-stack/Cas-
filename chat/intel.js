@@ -273,3 +273,57 @@ P.partagerMaintenant=function(){envoyer();};
   window.go=function(sc){try{if(INC&&Date.now()-INC.at<120000&&ECR[sc]&&P.ready&&incompris()){if(B().geste(INC.t,ECR[sc]))garder();INC=null;}}catch(x){}return g.apply(this,arguments);};
   return true;}
  (function essai(n){if(!brancher()&&n<60)setTimeout(function(){essai(n+1);},500);})(0);})();
+
+/* ---------- enchaînements (feuille de route, étape 2) ---------- */
+(function(){var P=window.casoPont;if(!P)return;function B(){return P.B;}
+ function hn(x){return CasoBrain.hn(String(x||""));}function e(x){return String(x==null?"":x).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+ function T(t,a){return P.tr(t,a);}function E(x){return P.B.eurFr(Math.round(x*100)/100);}
+ function langue(){try{B().setLangue((typeof I18N!=="undefined"&&I18N.lang)||"fr");}catch(x){}}
+ function ymd(d){return d.getFullYear()+"-"+(d.getMonth()<9?"0":"")+(d.getMonth()+1)+"-"+(d.getDate()<10?"0":"")+d.getDate();}
+ function bot(h,o){CHAT.m.push(Object.assign({who:"bot",html:'<div data-noi18n>'+h+'</div>'},o||{}));chatSave();chatRender(true);}
+ function bouton(lab,fn){return '<div class="msg-act"><button class="btn sm" onclick="casoPont.'+fn+'()">'+e(lab)+'</button></div>';}
+ var ATT=null;/* une seule question en attente : {quoi, faire()} */
+ var OUI=/^(oui|ok|d accord|vas y|go|yes|yep|si|sí|sim|tak|evet|да|نعم|da)\b/;
+ P.oui=function(t){if(!ATT)return false;var a=ATT,k=hn(t);if(Date.now()-a.at>10*60000){ATT=null;return false;}
+  if(OUI.test(k)){ATT=null;CHAT.m.push({who:"me",text:t});a.faire();return true;}
+  if(/^(non|no|nao|nie|hayir|нет|لا|nu)\b/.test(k)){ATT=null;CHAT.m.push({who:"me",text:t});langue();bot('<p>'+e(T("D’accord."))+'</p>');return true;}
+  ATT=null;return false;};
+ P.ouiBouton=function(){if(!ATT)return;var a=ATT;ATT=null;a.faire();};
+ function demander(h,faire){ATT={at:Date.now(),faire:faire};bot(h+bouton(T("Oui"),"ouiBouton"));}
+
+ /* message d'un client collé dans le chat → rendez-vous proposé */
+ var JOURS="lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche|demain|apres demain";
+ P.messageClient=function(t){if(!P.ready||typeof db==="undefined")return false;var raw=String(t||"");if(raw.length<50)return false;
+  var c=B().translate(raw),s=" "+c.p+" ";if(!/\b(bonjour|bonsoir|salut|cordialement|merci|bonne journee|bien a vous)\b/.test(s))return false;
+  var j=s.match(new RegExp("\\b("+JOURS+")\\b")),h=s.match(/\b(\d{1,2})\s*(?:h|heures?|:)\s*(\d{2})?\b/);if(!j||!h||+h[1]>21||+h[1]<6)return false;
+  var nom=P.clientDans(raw);if(!nom){var sg=raw.match(/(?:cordialement|bien à vous|merci)[\s,.!]*\n?\s*((?:M\.|Mme|Mr|Madame|Monsieur)?\s*\p{Lu}[\p{L}'-]+(?:\s+\p{Lu}[\p{L}'-]+)?)\s*$/iu);if(sg)nom=sg[1].trim();}
+  var quand=j[1].replace("apres demain","après-demain")+" "+(+h[1])+"h"+(h[2]||"");langue();
+  CHAT.m.push({who:"me",text:raw});
+  demander('<p>'+e(nom?T("Rendez-vous {0} avec {1} ?",[quand,nom]):T("Rendez-vous {0} ?",[quand]))+'</p>',function(){var x="rendez-vous "+quand+(nom?" avec "+nom:"");chatSend(x);for(var i=CHAT.m.length-1;i>=0;i--){if(CHAT.m[i].who==="me"&&CHAT.m[i].text===x){CHAT.m.splice(i,1);break;}}chatSave();chatRender(false);});
+  var inp=document.getElementById("chatIn");if(inp){inp.value="";try{chatGrow(inp);qkUpdate();}catch(x){}}return true;};
+
+ /* devis signé → facture d'acompte et jours de chantier au planning */
+ function joursLibres(n){if(typeof agGaps!=="function"||typeof agToday!=="function")return null;var d=agToday(),run=[],dp=typeof agHours==="function"&&agHours();
+  for(var i=1;i<=45&&run.length<n;i++){var jj=agAdd(d,i),wd=new Date(jj+"T12:00:00").getDay();if(!dp&&(wd===0||wd===6)){run=[];continue;}var g=agGaps(jj,60),lib=g.reduce(function(a,x){return a+(x[1]-x[0]);},0);if(lib>=360)run.push(jj);else run=[];}
+  return run.length===n?run:null;}
+ function signes(){var lim=Date.now()-30*864e5;return (db.quotes||[]).filter(function(o){return o&&o.status==="accepte"&&!o.ench&&o.lines&&o.lines.length&&o.sign&&+o.sign.signedAt>lim;});}
+ function proposerSigne(o){var h=(o.lines||[]).filter(function(l){return l.unit==="h";}).reduce(function(a,l){return a+(+l.qty||0);},0),n=Math.max(1,Math.min(10,Math.ceil((h||7)/7))),L=joursLibres(n),pc=o.acompte>0?o.acompte:30;
+  o.ench=1;try{storeQ(o);}catch(x){save();}langue();
+  var txt=L?T("Devis {0} de {1} signé : facture d’acompte de {2} % et {3} j de chantier au planning à partir du {4} ?",[o.num||"",o.client||"",pc,n,P.B.fdate(new Date(L[0]+"T12:00:00"))]):T("Devis {0} de {1} signé : facture d’acompte de {2} % ?",[o.num||"",o.client||"",pc]);
+  demander('<p>'+e(txt)+'</p>',function(){var c=(db.clients||[]).filter(function(x){return hn(x.nom)===hn(o.client);})[0];
+   (L||[]).forEach(function(d){db.events.push({id:uid(),src:"main",t:"rdv",d:d,a:"08:00",b:"17:00",title:T("Chantier")+" "+(o.client||""),cid:c?c.id:undefined,adr:o.adr||"",at:Date.now()});});save();
+   bot('<p>'+e(T("C’est fait."))+'</p>');if(typeof faNew==="function")setTimeout(function(){faNew(o.id,"acompte");},400);});}
+
+ /* à l'ouverture (une fois par jour) : une ligne de rappel, puis les devis signés */
+ function rappels(){var out=[],auj=ymd(new Date()),now=Date.now();
+  var R=(db.events||[]).filter(function(x){return x.t==="rdv"&&x.d===auj&&x.a;}).sort(function(a,b){return String(a.a).localeCompare(String(b.a));}).map(function(x){var c=x.cid&&(db.clients||[]).filter(function(y){return y.id===x.cid;})[0];return String(x.a).replace(/^0/,"").replace(":00","h").replace(":","h")+" "+(c?c.nom:x.title||"");});
+  if(R.length)out.push(T("Rendez-vous aujourd’hui : {0}.",[R.join(", ")]));
+  var Q=(db.quotes||[]).filter(function(o){var d=o.sign&&+o.sign.sentAt||Date.parse(o.date);return o.status==="envoye"&&d&&now-d>=7*864e5;}).map(function(o){return o.client||o.num;}).filter(Boolean);
+  if(Q.length)out.push(T("À relancer : {0}.",[Q.slice(0,4).join(", ")]));
+  var F=(db.invoices||[]).filter(function(f){if(!f.num||f.kind==="avoir"||!f.due||f.due>=auj)return false;var t=0;try{t=faTot(f).ttc;}catch(x){}var p=(f.pays||[]).reduce(function(a,y){return a+(+y.amt||0);},0);f._reste=t-p;return f._reste>0.5;}).map(function(f){return f.num+" "+E(f._reste);});
+  if(F.length)out.push(T("Factures en retard : {0}.",[F.slice(0,3).join(", ")]));return out;}
+ function ouverture(){try{if(!P.ready||typeof db==="undefined")return;langue();var k="caso_rappel_jour",auj=ymd(new Date()),v=null;try{v=localStorage.getItem(k);}catch(x){}
+  if(v!==auj){var L=rappels();try{localStorage.setItem(k,auj);}catch(x){}if(L.length)bot(L.map(function(x){return '<p dir="auto">'+e(x)+'</p>';}).join(""));}
+  if(!ATT){var S=signes();if(S.length)proposerSigne(S[0]);}}catch(x){}}
+ (function attendre(n){if(P.ready&&typeof CHAT!=="undefined"&&typeof chatRender==="function"){setTimeout(ouverture,1500);setInterval(function(){if(!ATT&&signes().length)ouverture();},10*60000);document.addEventListener("visibilitychange",function(){if(!document.hidden)setTimeout(ouverture,800);});return;}if(n<120)setTimeout(function(){attendre(n+1);},500);})(0);
+})();

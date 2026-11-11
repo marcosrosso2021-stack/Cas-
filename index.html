@@ -3591,14 +3591,18 @@ function chDoc(dest){const a=CH_ASK;if(!a||a.k!=='doc'||!a.four)return;CH_ASK=nu
  const M=a.meta,sel=a.rows,before=JSON.stringify({p:db.prices,s:db.suppliers,ql:q.lines,a:db.achats||[],h:db.hist.length});
  const {x,isNew}=upsert('suppliers',{nom:a.four,tel:M.tel||'',email:M.email||'',adr:M.adr||'',siret:M.siret||''});
  IMP_DOC=M;impDocShow();if(sel.length)learnFrom(x.nom,sel);achSave(x.nom,sel);IMP_DOC=null;impDocShow();
- const m=parseFloat(($('impMarge')||{}).value)||0,pareils=[];
- sel.forEach(r=>{const vente=Math.round(r.pu*(1+m/100)*100)/100;logPrice(r.label,x.nom,r.pu,r.unit);
+ const m=parseFloat(($('impMarge')||{}).value)||0,pareils=[],hausses=[];
+ sel.forEach(r=>{const vente=Math.round(r.pu*(1+m/100)*100)/100;
+  /* hausse chez ce fournisseur : dernier prix payé pour le même article, +5 % ou plus */
+  {const k=vnNorm(r.label),pv=(db.hist||[]).filter(h=>h.four&&vnNorm(h.four)===vnNorm(x.nom)&&vnNorm(h.nom)===k&&+h.prix>0).sort((a,b)=>String(b.date).localeCompare(String(a.date)))[0];
+   if(pv&&r.pu>=pv.prix*1.05)hausses.push(`${r.label} : +${Math.round((r.pu/pv.prix-1)*100)} % (${eur(pv.prix)} → ${eur(r.pu)})`)}
+  logPrice(r.label,x.nom,r.pu,r.unit);
   if(dest==='prix'){let ex=db.prices.find(p=>p.nom.toLowerCase()===r.label.toLowerCase());if(!ex){ex=prixPareil(r.label,r.unit);if(ex)pareils.push([r.label,ex.nom])}
    if(ex){ex.prix=vente;ex.unit=r.unit;ex.tva=r.tva;ex.four=x.nom}else db.prices.push({id:uid(),nom:r.label,unit:r.unit,prix:vente,tva:r.tva,four:x.nom})}
   else q.lines.push({label:r.label,qty:r.qty,unit:r.unit,pu:vente,tva:r.tva})});
  if(dest==='devis'&&sel.length){fillForm();store()}else save();try{renderPrices();renderQuick()}catch(e){}
  chBot(`<p><svg class="i i-sm"><use href="#i-truck"/></svg> <span>Fournisseur</span> : <b data-noi18n>${esc(x.nom)}</b> <span class="pill-s ${isNew?'new':''}">${isNew?'Nouveau, ajouté à tes fournisseurs':'Déjà dans tes fournisseurs'}</span></p>`+
-  (sel.length?`<p><b data-noi18n>${sel.length}</b> <span>${dest==='prix'?(sel.length>1?'matériaux ajoutés à tes prix':'matériau ajouté à tes prix'):(sel.length>1?'lignes ajoutées au devis':'ligne ajoutée au devis')}</span>${m?` <span class="mut" data-noi18n>(+${m} %)</span>`:''}</p>`+pareils.map(([a,b])=>`<p class="mut" data-noi18n>${esc(a)} → ${esc(b)}</p>`).join(''):`<p><span>Document enregistré.</span></p>`),{chUndo:{back:before,sNew:isNew?x.id:null}})}
+  (sel.length?`<p><b data-noi18n>${sel.length}</b> <span>${dest==='prix'?(sel.length>1?'matériaux ajoutés à tes prix':'matériau ajouté à tes prix'):(sel.length>1?'lignes ajoutées au devis':'ligne ajoutée au devis')}</span>${m?` <span class="mut" data-noi18n>(+${m} %)</span>`:''}</p>`+pareils.map(([a,b])=>`<p class="mut" data-noi18n>${esc(a)} → ${esc(b)}</p>`).join('')+hausses.map(h=>`<p class="vn-w" data-noi18n>↑ ${esc(h)}</p>`).join(''):`<p><span>Document enregistré.</span></p>`),{chUndo:{back:before,sNew:isNew?x.id:null}})}
 /* « PLAQUE BA13 STD 2500x1200 » sur la facture = « Placo BA13 » de tes prix : même référence (BA13), ou tous les mots de ton
    libellé, pour un prix qui vient déjà d'un fournisseur (jamais un prix de pose) ; même unité */
 function prixPareil(label,unit){const SYN={placo:'plaque',placoplatre:'plaque',platre:'plaque'},w=s=>vnNorm(s).split(/[^\p{L}\d]+/u).filter(x=>x.length>=3||/\d/.test(x)).map(x=>SYN[x]||x),A=w(label),code=x=>/\d/.test(x)&&/\p{L}/u.test(x)&&x.length>=3&&!/^\d+x\d+(x\d+)?$/.test(x),CA=A.filter(code);let best=null,bs=0;
@@ -3739,7 +3743,7 @@ function chatSend(text){
   /* plusieurs demandes dans la même phrase */
   if(casoPont.decoupe&&!chatSend.multi){const parts=casoPont.decoupe(t0);if(parts){chatMulti(t0,parts);return}}
   /* questions sur l'activité, durée d'un travail, devis depuis une description */
-  if(casoPont.question&&(casoPont.renoDevis(t0)||casoPont.marge(t0)||casoPont.question(t0)||casoPont.duree(t0)||casoPont.decrire(t0))){inp.value='';chatGrow(inp);qkUpdate();return}}
+  if(casoPont.question&&(casoPont.oui(t0)||casoPont.messageClient(t0)||casoPont.renoDevis(t0)||casoPont.marge(t0)||casoPont.question(t0)||casoPont.duree(t0)||casoPont.decrire(t0))){inp.value='';chatGrow(inp);qkUpdate();return}}
  if(!adrSeule&&window.casoPont&&casoPont.essaie(t0)){inp.value='';chatGrow(inp);qkUpdate();return}
  let t=t0;try{let lg=VN.lang||'fr';const dt=vlDetect(t0);if(dt&&dt.score>=3)lg=dt.l;t=chatFix(t0,lg)}catch(e){t=t0}
  if(t!==t0)setTimeout(()=>{for(let i=CHAT.m.length-1;i>=0;i--){const m=CHAT.m[i];if(m.who==='me'){if(m.text===t&&!m.orig){m.orig=t0;chatSave();chatRender(false)}break}}},0);
