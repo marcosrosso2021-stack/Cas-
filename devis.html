@@ -166,7 +166,6 @@ input.bad{border-color:var(--ko)}
 .cvd .cvt tr{break-inside:avoid}
 .cvd .cv-sub{font-size:.85em;color:#666}
 .cvd .cv-tot{display:flex;justify-content:flex-end}
-.cvd .cv-tb{min-width:58%}
 .cvd .cv-tr{display:flex;justify-content:space-between;gap:14px;padding:3px 0}
 .cvd .cv-tr.sm{font-size:.9em;color:#555}
 .cvd .cv-tr.big{font-size:1.22em;border-top:2px solid var(--cv-al);margin-top:5px;padding-top:8px}
@@ -179,6 +178,17 @@ input.bad{border-color:var(--ko)}
 .cvd .cv-ck{display:flex;gap:8px;align-items:flex-start;font-size:.85em;margin:4px 0}
 .cvd .cv-ck i{width:14px;height:14px;border:1.5px solid #888;border-radius:3px;flex:none;margin-top:2px}
 .cvd .cv-ph{opacity:.55}
+.cvd .cvt{table-layout:fixed}
+.cvd .cvt .c-q{width:13%}.cvd .cvt .c-u{width:13%}.cvd .cvt .c-pu{width:15%}.cvd .cvt .c-tv{width:9%}.cvd .cvt .c-t{width:16%}
+.cvd .cvt td:first-child{overflow-wrap:anywhere}
+.cvd .cv-tb{width:40%;min-width:230px}
+.cvd .cv-tr{padding-left:6px;padding-right:6px}
+.cvd .cv-lg+.cv-lg{margin-top:2px}
+.cvd p.cv-lg{margin:0 0 4px}
+.cvd .cv-ck:last-of-type{margin-bottom:12px}
+.cvd .cv-sg>div{display:flex;flex-direction:column}
+.cvd .cv-dt{margin-top:6px}
+.cvd .cv-cli{gap:18px}
 .cvd .cvt .cv-sec td{font-weight:700;padding-top:12px;color:var(--cv-al);border-bottom:1px solid var(--cv-al);background:none!important}
 .cvd .cvt .cv-st td{font-size:.9em;color:#555;text-align:right;background:none!important}
 .cvd .cvt .cv-opt td{color:#666}
@@ -242,9 +252,31 @@ input.bad{border-color:var(--ko)}
 .cvd.d-coin{position:relative;overflow:hidden}
 .cvd.d-coin::before{content:'';position:absolute;top:0;right:0;width:84px;height:84px;background:linear-gradient(225deg,var(--cv-ac) 0 50%,transparent 50%)}
 .cvd.d-coin::after{content:'';position:absolute;top:0;right:0;width:42px;height:42px;background:linear-gradient(225deg,var(--cv-al) 0 50%,transparent 50%)}
-.cvd.d-coin .cv-head{padding-right:34px}
+.cvd.d-coin .cv-head{padding-right:64px}
 .cvd.d-cadre{box-shadow:inset 0 0 0 7px var(--cv-pp),inset 0 0 0 8px var(--cv-al)}
 .cvd.d-pied{border-bottom:12px solid var(--cv-ac)}
+
+@container (max-width:470px){.cvd.d-coin .cv-head{padding-right:30px}.cvd.d-coin::before{width:56px;height:56px}.cvd.d-coin::after{width:28px;height:28px}}
+/* téléphone : chaque ligne du devis sur deux niveaux (désignation, puis quantité × prix · TVA · total) */
+@container (max-width:470px){
+ .cvd .cvt,.cvd .cvt tbody{display:block;width:100%}
+ .cvd .cvt thead,.cvd .cvt colgroup{display:none}
+ .cvd .cvt tr{display:grid;grid-template-columns:1fr auto auto auto;align-items:baseline;column-gap:12px;padding:9px 4px;border-bottom:1px solid #e4e4e0}
+ .cvd .cvt.t-brut tr,.cvd .cvt.t-grille tr,.cvd .cvt.t-cadre tr{border-bottom-color:#9a9a96}
+ .cvd .cvt td{display:block;border:0!important;padding:0!important;background:none!important}
+ .cvd .cvt td:first-child{grid-column:1/-1;margin-bottom:4px}
+ .cvd .cvt td:nth-child(2){text-align:left;color:#555}
+ .cvd .cvt td:nth-child(3)::before{content:'× ';color:#888}
+ .cvd .cvt td:last-child{font-weight:700}
+ .cvd .cvt.t-raye tbody tr:nth-child(even),.cvd .cvt.t-calme tbody tr:nth-child(even),.cvd .cvt.t-creatif tbody tr:nth-child(odd){background:#0000000a}
+ .cvd .cvt.t-cartes tbody tr,.cvd .cvt.t-arrondi tbody tr{background:color-mix(in srgb,var(--cv-ac) 9%,#fff);border-radius:var(--cv-r);margin-bottom:4px;border-bottom:0}
+ .cvd .cvt.t-creatif,.cvd .cvt.t-tech,.cvd .cvt.t-sombre,.cvd .cvt.t-raye,.cvd .cvt.t-arrondi,.cvd .cvt.t-teinte{border-top:3px solid var(--cv-al)}
+ .cvd .cvt .cv-sec{display:block;padding:10px 4px 4px;border-bottom:1px solid var(--cv-al)}
+ .cvd .cvt .cv-sec td{margin:0;color:var(--cv-al)}
+ .cvd .cvt .cv-st{grid-template-columns:1fr auto;border-bottom:0;padding-top:4px}
+ .cvd .cvt .cv-st td:first-child{grid-column:auto;margin:0}
+ .cvd .cvt .cv-st td:last-child{font-weight:600}
+}
 /* ---- mises en page inspirées des logiciels de devis ---- */
 .cvd .pz-chr{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:14px}
 .cvd .pz-chi{text-align:right}.cvd .pz-chi .pz-tt{font-size:1.6em}
@@ -291,7 +323,8 @@ input.bad{border-color:var(--ko)}
 .cvd{--pt:22px;--px:24px}
 .cvd.L-side{padding:0!important}
 .cvd .pz-side{display:grid;grid-template-columns:31% 1fr}
-@container (max-width:620px){.cvd .pz-keys{grid-template-columns:1fr 1fr}.cvd .pz-keys>div:nth-child(2){border-right:0}.cvd .pz-keys>div{border-bottom:1px solid #e4e4e0}}
+@container (max-width:620px){.cvd .pz-keys.pz-keys{grid-template-columns:1fr 1fr}.cvd .pz-keys.pz-keys>div:nth-child(2){border-right:0}.cvd .pz-keys.pz-keys>div{border-bottom:1px solid #e4e4e0}}
+@container (max-width:620px){.cvd .pz-m .cvt{table-layout:auto}.cvd .pz-m .cvt col{width:auto}.cvd .pz-m .cv-tb{width:100%;min-width:0}}
 @container (max-width:620px){.cvd .pz-m{padding:24px 14px}.cvd .pz-m .cvt{font-size:.8em}.cvd .pz-m .cvt th,.cvd .pz-m .cvt td{padding-left:3px;padding-right:3px}.cvd .pz-a{padding:24px 12px}.cvd .pz-a .cv-lg{font-size:.72em}}
 .cvd .pz-a{background:var(--cv-ac);color:var(--cv-ink);padding:28px 16px}
 .cvd .pz-a .cv-lg,.cvd .pz-a .cv-cap{color:inherit;opacity:.85}
@@ -334,8 +367,9 @@ input.bad{border-color:var(--ko)}
 .cvd .pz-ph .pz-tt{font:700 .9em ui-monospace,Menlo,monospace;letter-spacing:.3em;background:var(--cv-ac);color:var(--cv-ink);padding:5px 9px}
 .cvd .pz-ph .pz-no{font-size:1.6em;color:#141414;font-weight:700;margin:0}
 .cvd.L-plan .cvt th,.cvd.L-plan .cvt td{background-color:#fff}
+.cvd.L-plan .cv-cli>div:first-child>.cv-cap{display:none}
 @container (max-width:470px){.cvd .pz-side{grid-template-columns:1fr}.cvd .pz-keys{grid-template-columns:1fr 1fr}.cvd .pz-keys>div:nth-child(2){border-right:0}.cvd .pz-keys>div{border-bottom:1px solid #e4e4e0}.cvd .pz-hero .pz-tt{font-size:2.6em}.cvd .pz-dest{width:auto}}
-@container (max-width:470px){.cvd .cv-head:not(.al-c) .cv-ti{text-align:left;flex-basis:100%}.cvd .cvt{font-size:.84em}.cvd .cvt th,.cvd .cvt td{padding-left:4px;padding-right:4px}.cvd .cv-logo{max-width:110px;max-height:52px}}
+@container (max-width:470px){.cvd .cv-head:not(.al-c) .cv-ti{text-align:left;flex-basis:100%}.cvd .cvt{table-layout:auto}.cvd .cvt col{width:auto}.cvd .cv-tb{width:100%;min-width:0}.cvd .cv-tr{padding-left:4px;padding-right:4px}.cvd .cvt{font-size:.84em}.cvd .cvt th,.cvd .cvt td{padding-left:4px;padding-right:4px}.cvd .cv-logo{max-width:110px;max-height:52px}}
 .row>div>label:first-child{margin-top:12px}
 .lgo label.btn{font-family:inherit;font-size:16px;letter-spacing:0;text-transform:none;color:var(--ink)}
 body:not(.embed) .ent-h{display:none}
@@ -734,9 +768,9 @@ function renderDoc(d,o={}){
       :`<tr class="${l.opt?'cv-opt':''}"><td>${des}</td><td class="r">${has(l.qte)?fq(l.qte)+' '+E(l.unite):'—'}</td><td class="r">${has(l.pu)?eur(cents(l.pu)):'—'}</td><td class="r">${sx?'—':fq(l.tva)+' %'}</td><td class="r">${vide?'—':eur(ligneHT(l))}</td></tr>`)});
   if(aSec)fin();
   const rows=out.join('');
-  const lignes=`<div class="cvb" data-bloc="lignes" data-lock="1"><table class="cvt ${th}"><thead><tr><th>Désignation</th>${bpu?'<th class="r">Unité</th>':'<th class="r">Qté</th>'}<th class="r">PU HT</th><th class="r">TVA</th>${bpu?'':'<th class="r">Total HT</th>'}</tr></thead><tbody>${rows}</tbody></table></div>`;
+  const lignes=`<div class="cvb" data-bloc="lignes" data-lock="1"><table class="cvt ${th}">${bpu?'<colgroup><col><col class="c-u"><col class="c-pu"><col class="c-tv"></colgroup>':'<colgroup><col><col class="c-q"><col class="c-pu"><col class="c-tv"><col class="c-t"></colgroup>'}<thead><tr><th>Désignation</th>${bpu?'<th class="r">Unité</th>':'<th class="r">Qté</th>'}<th class="r">PU HT</th><th class="r">TVA</th>${bpu?'':'<th class="r">Total HT</th>'}</tr></thead><tbody>${rows}</tbody></table></div>`;
   const tot=`<div class="cvb" data-bloc="totaux" data-lock="1"><div class="cv-tot"><div class="cv-tb"><div class="cv-tr"><span>Total HT</span><b>${eur(t.ht)}</b></div>${t.franchise?`<div class="cv-tr sm"><span>${E(T.franchise)}</span></div>`:t.autoliq?`<div class="cv-tr sm"><span>${E(T.autoliq)}</span></div>`:t.detail.map(x=>`<div class="cv-tr sm"><span>TVA ${fq(x.taux)} %</span><b>${eur(x.tva)}</b></div>`).join('')}<div class="cv-tr big"><span>${t.autoliq||t.franchise?'Total':'Total TTC'}</span><b>${eur(t.ttc)}</b></div>${t.options?`<div class="cv-tr sm"><span>${E(T.options)}</span><b>${eur(t.options)} HT</b></div>`:''}</div></div></div>`;
-  const trav=`<div class="cvb" data-bloc="travaux" data-lock="1"><div class="cv-h">Travaux</div><p>Début : ${has(d.debut)?fd(d.debut):'—'} · Durée : ${E(d.duree)||'—'}</p></div>`;
+  const trav=`<div class="cvb" data-bloc="travaux" data-lock="1"><div class="cv-h">Travaux</div><p class="cv-lg">Début : ${has(d.debut)?fd(d.debut):'—'} · Durée : ${E(d.duree)||'—'}</p></div>`;
   const cond=`<div class="cvb" data-bloc="conditions" data-lock="1"><div class="cv-h">Conditions</div>${conditions(d).map(x=>`<p class="cv-lg">${E(x)}</p>`).join('')}</div>`;
   let decl='';
   if(red.r10||red.r55){const nm=has(cl.nom)?E(cl.nom):'……';decl=`<div class="cvb" data-bloc="tvareduite" data-lock="1"><div class="cv-box"><div class="cv-cap">TVA réduite · déclaration du client</div><p class="cv-lg">${E(T.decl10).replace('{nom}',nm)}${red.r55?' '+E(T.decl55):''}</p></div></div>`}
@@ -745,7 +779,7 @@ function renderDoc(d,o={}){
   const sigA=(d.sig&&d.sig.artisan&&d.sig.artisan.image)||p.sigArtisan;
   const sigC=d.sig&&d.sig.client&&d.sig.client.image;
   const cks=dist?`<div data-caso-slot="client-checks"><div class="cv-ck"><i></i><span>${E(T.ck1)}</span></div><div class="cv-ck"><i></i><span>${E(T.ck2)}</span></div></div>`:'<div data-caso-slot="client-checks"></div>';
-  const sig=`<div class="cvb" data-bloc="signatures" data-lock="1">${cks}<div class="cv-sg"><div><div class="cv-cap">L’entreprise</div><div class="cv-sz" data-caso-slot="signature-artisan">${sigA?`<img src="${E(sigA)}" alt="">`:''}</div>${/^data:image\/svg\+xml;base64,/.test(p.sigQr||'')?`<div class="cv-sq"><img src="${E(p.sigQr)}" alt="QR"><span>${E(p.sigId)}</span></div>`:''}</div><div><div class="cv-cap">Le client · Bon pour accord</div><div class="cv-sz" data-caso-slot="signature-client">${sigC?`<img src="${E(sigC)}" alt="">`:''}</div><div class="cv-lg">Date : ${d.sig&&d.sig.client&&d.sig.client.date?fd(d.sig.client.date):'……'}</div></div></div></div>`;
+  const sig=`<div class="cvb" data-bloc="signatures" data-lock="1">${cks}<div class="cv-sg"><div><div class="cv-cap">L’entreprise</div><div class="cv-sz" data-caso-slot="signature-artisan">${sigA?`<img src="${E(sigA)}" alt="">`:''}</div>${/^data:image\/svg\+xml;base64,/.test(p.sigQr||'')?`<div class="cv-sq"><img src="${E(p.sigQr)}" alt="QR"><span>${E(p.sigId)}</span></div>`:''}<div class="cv-lg cv-dt">Date : ${d.sig&&d.sig.artisan&&d.sig.artisan.date?fd(d.sig.artisan.date):'……'}</div></div><div><div class="cv-cap">Le client · Bon pour accord</div><div class="cv-sz" data-caso-slot="signature-client">${sigC?`<img src="${E(sigC)}" alt="">`:''}</div><div class="cv-lg cv-dt">Date : ${d.sig&&d.sig.client&&d.sig.client.date?fd(d.sig.client.date):'……'}</div></div></div></div>`;
   const ass=[];
   if(has(p.assur))ass.push('Assurance décennale : '+E(p.assur)+(has(p.zone)?' · zone couverte : '+E(p.zone):''));if(has(p.rcpro))ass.push('Responsabilité civile pro : '+E(p.rcpro));if(part&&has(p.mediateur))ass.push('Médiateur : '+E(p.mediateur));
   const foot=ass.length?`<div class="cvb" data-bloc="assurances" data-lock="1"><div class="cv-lg">${ass.join('<br>')}</div></div>`:'';

@@ -1,0 +1,39 @@
+name: Contrôle du chat
+
+# Chaque lundi matin (et à la main, onglet Actions) : les phrases de contrôle du chat, les exemples dans les 10 langues,
+# puis un essai dans l'appli (navigateur). Si quelque chose a changé, le contrôle échoue et GitHub prévient par e-mail ;
+# le détail est dans le résumé du contrôle.
+on:
+  schedule:
+    - cron: '17 5 * * 1'
+  workflow_dispatch:
+  pull_request:
+    paths: ['chat/**', 'index.html', 'outils/chat/**']
+
+permissions:
+  contents: read
+
+jobs:
+  chat:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 22
+
+      - name: Phrases de contrôle et exemples traduits
+        run: node outils/chat/controle.js
+
+      - name: Navigateur pour l'essai dans l'appli
+        run: |
+          npm install --no-save playwright@1.63.0
+          npx playwright install --with-deps chromium
+
+      - name: Essai du chat dans l'appli
+        run: |
+          python3 -m http.server 8767 >/dev/null 2>&1 &
+          sleep 2
+          node outils/chat/essai-appli.js http://localhost:8767/index.html

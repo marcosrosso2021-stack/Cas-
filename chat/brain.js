@@ -509,7 +509,9 @@ function create(E,X,saved,opts){
     var ct=contact(raw);
     if(k&&Object.keys(ct).length&&!qn&&!hasDevis.test(n))return [C("clients","maj",Object.assign({nom:clientName(k)},ct))];
     if(k&&/\b(fiche|infos?|coordonnees|numero|telephone|adresse|mail)\b/.test(n)&&!qn&&!hasDevis.test(n))return [C("clients","ouvrir",{nom:clientName(k)})];
-    if((m=raw.match(/\b(?:nouveau client|nouvelle cliente|ajoute (?:le |la )?client(?:e)?)\s*:?\s*([A-ZÀ-Ý][\p{L}'’-]+(?:\s+[A-ZÀ-Ý][\p{L}'’-]+)?)/u)))return [C("clients","maj",Object.assign({nom:m[1]},ct))];
+    if((m=raw.match(/\b(?:nouveau client|nouvelle cliente|(?:ajoute|rajoute|cr[ée]e|cr[ée]er|enregistre)(?: un| une| le| la| l[’'])?(?: nouveau| nouvelle)? client(?:e)?)\s*:?\s*([A-ZÀ-Ý][\p{L}'’-]+(?:\s+[A-ZÀ-Ý][\p{L}'’-]+)?)/u)))return [C("clients","maj",Object.assign({nom:m[1]},ct))];
+    /* « create client Smith », « crea el cliente Pérez », « создай клиента Иванов » : la phrase traduite dit « nouveau client », le nom est celui tapé */
+    if(/^(?:nouveau client|nouvelle cliente|cree (?:le |un |une |la )?(?:nouveau |nouvelle )?client(?:e)?)\b/.test(n)&&(m=raw.match(/(\p{Lu}[\p{L}'’-]+(?:\s+\p{Lu}[\p{L}'’-]+)?)\s*[.!]*$/u))&&!NOTNAME.test(m[1]))return [C("clients","maj",Object.assign({nom:m[1]},ct))];
     /* fournisseurs */
     if((m=raw.match(/\bfournisseur(?:s)?\s+(?:de|d'|pour (?:le |la |les )?)\s*([\p{L}' ]+?)\s*(?:c'est|c’est|est|:|=)\s*([\p{L}0-9'’ .-]+?)\s*$/iu)))return [C("fournisseurs","ajouter",{nom:m[2].trim(),specialite:m[1].trim()})];
     if((m=raw.match(/\b(?:mon|nouveau) fournisseur\s*(?:c'est|c’est|est|:)?\s*([\p{L}0-9'’ .-]+?)\s*$/iu)))return [C("fournisseurs","ajouter",{nom:m[1].trim(),specialite:null})];
@@ -1501,7 +1503,14 @@ function create(E,X,saved,opts){
   function parsePreparer(c){var n=c.p;if(!/\bdevis\b/.test(n)||/\b(nouveau|nouvelle|envoie|envoyer|ouvre|montre|affiche|signe|valide|refuse|relance|supprime|duplique|dupliquer|copie|copier|lis|combien|total|mes devis|partir|parvenir|expedie|transmets|transmettre)\b/.test(n))return null;
     if(qtys(stripTimes(n)).length||money(n)!=null)return null;
     var veut=/\b(fais|fait|faire|fais moi|prepare|preparer|prepare moi|etablis|redige|monte|cree|creer|sors|propose|je veux|il me faut)\b/.test(n),proch=/\bprochain(?:e)?s?\s+(?:travail|travaux|chantier|rdv|rendez vous|client|cliente|intervention|visite|job)\b/.test(n);
-    if(!veut&&!proch)return null;var k=findClient(c.raw,c.n);if(!proch&&!k)return null;
+    if(!veut&&!proch)return null;
+    /* « fais le même devis que Martin pour Dupont » : copie du devis de Martin */
+    var md=String(c.raw).match(/(?:m[êe]me|pareil)\s+(?:devis\s+)?qu[e'’]\s*(?:chez\s+|pour\s+|de\s+|celui\s+de\s+)?(.+?)(?:\s+(?:pour|chez|à|a)\s+(.+?))?\s*[.!?]*$/i);
+    if(md){var ks=clientKey(md[1]),kd=md[2]?clientKey(md[2]):null;return [C("devis","dupliquer",{source:S.clients[ks]?clientName(ks):cap(md[1].trim()),client:kd?(S.clients[kd]?clientName(kd):cap(md[2].trim())):null})];}
+    var k=findClient(c.raw,c.n);
+    /* « prépare le devis » : le client dont on vient de parler, ou celui du devis ouvert */
+    if(!proch&&!k){var lk=S.last.client,cu=getCur();if(lk&&S.clients[lk])k=lk;else if(cu&&cu.client&&S.clients[cu.client])k=cu.client;}
+    if(!proch&&!k)return null;
     if(proch&&!k){var rv=prochainRdv(null);if(rv)k=rv.client;}
     return [C("devis","preparer",{client:k?(S.clients[k]?clientName(k):cap(k)):null,prochain:proch&&!k,texte:c.p})];}
   function parseModele(c){if(!/\b(?:enregistre|garde|sauve|sauvegarde|memorise)\b.*\b(?:comme|en)\s+modele\b/.test(c.p))return null;var m=String(c.raw).match(/(?:comme|en)\s+mod[èe]le\b\s*(?:de\s+|d[’']\s*|pour\s+|:\s*)?(.*)$/i);
@@ -1739,8 +1748,8 @@ function create(E,X,saved,opts){
     var e=S.phrases[mk.m];S.phrases[mk.m]={t:template(cmds,c,mk),n:(e?e.n:0)+1,src:src,ex:c.raw,at:Date.now()};if(prov)S.phrases[mk.m].p=1;if(src!=="local")S.lastLearned=mk.m;
     var keys=Object.keys(S.phrases);if(keys.length>800){keys.sort(function(a,b){return S.phrases[a].at-S.phrases[b].at;});delete S.phrases[keys[0]];}PV=null;}
   var PV=null;
-  function recall(c){var mk=mask(c),e=S.phrases[mk.m],via="memoire";
-    if(!e){if(!PV)PV=Object.keys(S.phrases).filter(function(k){return S.phrases[k].src!=="local";}).map(function(k){return [k,E.embed(k)];});
+  function recall(c){var mk=mask(c),e=S.phrases[mk.m],via="memoire";if(e&&e.src==="partage")e=null;
+    if(!e){if(!PV)PV=Object.keys(S.phrases).filter(function(k){return S.phrases[k].src!=="local"&&S.phrases[k].src!=="partage";}).map(function(k){return [k,E.embed(k)];});
       var q=E.embed(mk.m),best=null,bs=0,hc=(mk.m.match(/#/g)||[]).length;
       PV.forEach(function(p){if((p[0].match(/#/g)||[]).length!==hc||(p[0].indexOf("@c")>=0)!==(mk.m.indexOf("@c")>=0))return;var s=0;for(var i=0;i<q.length;i++)s+=q[i]*p[1][i];if(s>bs){bs=s;best=p[0];}});
       if(best&&bs>=0.9){e=S.phrases[best];via="memoire-proche";}}
@@ -1811,7 +1820,7 @@ function create(E,X,saved,opts){
     S.pending={type:"sure",cmds:sens,raw:c?c.raw:""};S.lastTurn=null;
     o.says.push(sens.map(sureText).join(" "));o.explain=[o.explain,B.describe(sens)].filter(Boolean).join(" ; ");o.via=via;return o;}
   B.exec=function(cmds,raw){return exec(cmds,raw?ctxOf(raw):null,"local");};
-  var CMDSTART=/^(appelle|rappelle|ajoute|rajoute|mets|met|envoie|supprime|annule|enleve|retire|ouvre|montre|affiche|fais|cree|nouveau|nouvelle|rdv|rendez vous|devis|facture|relance|peins|deplace|tourne|remplace|signe|exporte|importe|mode|mes|ma|mon)\b/;
+  var CMDSTART=/^(prepare|preparer|appelle|rappelle|ajoute|rajoute|mets|met|envoie|supprime|annule|enleve|retire|ouvre|montre|affiche|fais|cree|nouveau|nouvelle|rdv|rendez vous|devis|facture|relance|peins|deplace|tourne|remplace|signe|exporte|importe|mode|mes|ma|mon)\b/;
   var SUREYES=/^(?:(?:oui|ouais|ouep|ok|okay|vas y|go|d accord|c est bon|confirme|valide|parfait|bien sur|absolument|exact|yes|yep|si|da|tak|evet|sim)\b|(?:envoie|envoie le|envoie la|envoie lui|supprime|supprime le|supprime la|enregistre|enregistre le|relance|relance le|relance la|vas y envoie)$)/;
   var SURENO=/^(non|nan|no|nie|hayir|нет|لا|pas maintenant|plus tard|annule|laisse|laisse tomber|attends|stop|surtout pas|pas encore|non merci|pas tout de suite)\b/;
   /* ---------- point d'entrée ---------- */
@@ -1885,7 +1894,7 @@ function create(E,X,saved,opts){
         var corr=/^(non |pas |plutot |je voulais |je veux dire |en fait |c est |je parlais |je disais )/.test(c.n),own=recall(c)||localParse(c);
         /* une autre phrase sur le même sujet au lieu de « oui » : c'est la bonne formulation, la piste proposée était fausse */
         if(related(pd,c)&&(corr||!own||!sameAction(own,pd.cmds))){if(own&&!sameAction(own,pd.cmds))reject(pd.raw,pd.cmds);pd={type:"reformuler",raw:pd.raw};}else pd={type:"aucun"};}
-      if(pd.type==="reformuler"&&(LAISSE.test(c.n)||LAISSE.test(c.p)))return {explain:"",says:[tr("D’accord.")],open:null};
+      if(pd.type==="reformuler"&&(LAISSE.test(c.n)||LAISSE.test(c.p)||/^(non|nan|no|non merci)$/.test(c.n)))return {explain:"",says:[tr("D’accord.")],open:null};
       var fort=pd.type==="reformuler"&&related(pd,c);
       if(pd.type==="reformuler"&&!fort){var rq0=recall(c),cm0=rq0&&!rq0.prov?rq0.cmds:localParse(c);if(!soonAction(pd,c,cm0))pd={type:"aucun"};}
       if(pd.type==="reformuler"){var rq=recall(c)||{cmds:localParse(c),via:"local"};if(rq.cmds&&B.isQuestion(pd.raw)&&!askSafe(rq.cmds))return exec(rq.cmds,c,"local");if(rq.cmds){var ro=exec(rq.cmds,c,"appris",null);learnFrom(pd.raw,c,rq.cmds,!!pd.prov||!fort,fort);return ro;}return unknown(c);}
@@ -1966,7 +1975,7 @@ function create(E,X,saved,opts){
   function historyGuess(c){var mk=mask(c),q=E.embed(mk.m),best=null,bs=0;
     Object.keys(S.phrases).forEach(function(k){var v=E.embed(k),s=0;for(var i=0;i<q.length;i++)s+=q[i]*v[i];if(s>bs){bs=s;best=k;}});
     if(best&&bs>=0.7){var cm=fill(S.phrases[best].t,c,mk);if(cm)return cm;}return null;}
-  function guess(c,teach,prefix){var L=pistes(c);if(L.length)return propose(c,L[0],teach,prefix,L.slice(1));return B.notUnderstood({c:c,teach:teach});}
+  function guess(c,teach,prefix){var sh=partageDe(c);if(sh&&!rejected(c,sh))return propose(c,sh,teach,prefix||"",null,true);var L=pistes(c);if(L.length)return propose(c,L[0],teach,prefix,L.slice(1));return B.notUnderstood({c:c,teach:teach});}
   /* ---------- moteur d'apprentissage : il apprend de chaque demande incomprise, sans le dire dans le chat ----------
      - toute phrase incomprise est notée (S.unrec) ; la phrase suivante, si elle parle de la même chose, en donne le sens ;
      - une phrase apprise ainsi reste « à confirmer » : la première fois, le chat propose l'action avant de la faire ;
@@ -2210,6 +2219,74 @@ function create(E,X,saved,opts){
       if(a.date&&!/^\d{4}-\d{2}-\d{2}$/.test(a.date))delete a.date;if(a.heure&&!/^\d{2}:\d{2}$/.test(a.heure))delete a.heure;});
     cmds=cmds.filter(function(x){return !(x.m==="scene"&&x.a==="ajouter"&&!(x.args.items||[]).length);});
     return cmds.length?cmds:null;};
+  /* ---------- plusieurs demandes dans une phrase, renvois, corrections (nov. 2026) ---------- */
+  /* une demande commence par un verbe d'action ou un mot de demande (phrase traduite en français) */
+  var DEMANDE=/^(?:cree|creer|ajoute|ajouter|rajoute|mets|met|mettre|envoie|envoyer|envoi|appelle|appeler|rappelle|rappeler|previens|prevenir|prepare|preparer|fais|faire|cale|caler|prends|prendre|annule|annuler|decale|decaler|supprime|supprimer|enleve|retire|ouvre|ouvrir|montre|affiche|commande|commander|pointe|relance|relancer|facture|facturer|exporte|importe|duplique|dupliquer|valide|valider|signe|enregistre|enregistrer|programme|planifie|reserve|bloque|rendez vous|rdv|nouveau|nouvelle|devis|facture|sms|texto|mail|e mail|courriel|whatsapp)\b/;
+  /* séparateurs dans les 10 langues : virgule, point-virgule, « puis », « ensuite », « et » */
+  var SEPS=/(\s*[,;]\s*|\s+(?:puis|ensuite|apr[eè]s [cç]a|et puis|et ensuite|then|and then|luego|despu[eé]s|y luego|depois|e depois|poi|e poi|dopo|apoi|[sș]i apoi|potem|a potem|nast[eę]pnie|sonra|ard[ıi]ndan|daha sonra|потом|затем|а потом|ثم)\s+|\s+(?:et|and|y|e|[sș]i|i|oraz|ve|и|و)\s+)/iu;
+  /* hors français, le verbe n'est pas toujours traduit : un verbe d'action courant ou un mot de demande dans la phrase suffit */
+  var VERBE_X=/^(?:create|crea|crear|crie|criar|creeaza|utworz|stworz|olustur|создай|создать|book|schedule|send|envia|enviar|envie|invia|manda|trimite|wyslij|gonder|отправь|call|llama|liga|chiama|suna|zadzwon|ara|позвони|prepare|prepara|preparar|pregateste|przygotuj|hazirla|подготовь|add|anade|adiciona|aggiungi|adauga|dodaj|ekle|добавь|marca|marque|fissa|programeaza|umow|ayarla|запиши|назначь|make|fai|haz|faz|fa|zrob|yap|сделай)\b/;
+  var MOTDEM=/\b(?:rdv|rendez vous|devis|facture|sms|texto|mail|e mail|whatsapp|client|cliente)\b/;
+  function demande(x,lg){var t=B.translate(x),p=t.p,l=lg||t.lang;if(DEMANDE.test(p))return p;if(l&&l!=="fr"&&(VERBE_X.test(p)||MOTDEM.test(p)))return p;return null;}
+  /* « crée le client Dupont, rendez-vous mardi 9h et prépare le devis » → les trois demandes, telles qu'elles sont tapées.
+     Les mots qui ne commencent pas une demande restent avec la précédente (« carrelage et faïence », « à Paul et Marie »). */
+  B.decoupe=function(raw){raw=String(raw||"").trim();if(!raw||/[:«»"“”]/.test(raw))return null;
+    var lg=B.translate(raw).lang,bouts=raw.split(SEPS),parts=[],sep="";
+    for(var i=0;i<bouts.length;i++){var b=bouts[i];if(i%2){sep=b;continue;}if(!b||!b.trim())continue;
+      if(parts.length&&!demande(b,lg))parts[parts.length-1]+=sep+b;else parts.push(b.trim());}
+    if(parts.length<2||parts.length>5)return null;
+    var fr=parts.map(function(x){return demande(x,lg);});if(fr.some(function(x){return !x||x.split(" ").length<2;}))return null;
+    /* la maquette 3D sait faire plusieurs changements d'un coup : elle garde la phrase entière */
+    var cs=fr.map(function(x,i){var c=ctxOf(parts[i]);return parseScene(c);});if(cs.every(function(x){return x&&x.length&&x.every(function(y){return y.m==="scene";});}))return null;
+    /* le chat sait faire toutes les demandes lui-même (« nouveau devis pour Petit, ajoute faïence 10 m² ») : il garde la phrase,
+       sauf s'il y a un rendez-vous (c'est le planning de casô qui le prend) */
+    var loc=parts.map(function(x){var c=ctxOf(x);return parseApp(c)||parseExtra(c)||parseWork(c)||parseScene(c)||parseDevisBuild(c);});
+    if(loc.every(function(x){return x&&x.length;})&&!loc.some(function(x){return x.some(function(y){return y.m==="planning";});}))return null;
+    return parts;};
+  /* le client nommé dans une demande (connu, ou créé par la phrase) */
+  B.clientDans=function(raw){var c=ctxOf(raw),k=findClient(c.raw,c.n)||capName(c.raw);return k&&S.clients[k]?clientName(k):null;};
+  /* une demande qui parle d'un client sans le nommer (« rendez-vous mardi 9h », « prépare le devis ») */
+  var POURQUI=/^(?:rendez vous|rdv|cale|caler|prends|prendre|programme|planifie|reserve|bloque|prepare|preparer|fais|faire|devis|facture|facturer|relance|relancer|envoie|envoyer|envoi|sms|texto|mail|e mail|whatsapp|appelle|appeler|rappelle|rappeler|previens|prevenir|duplique|valide|signe)\b/;
+  var PRONOM=/\b(lui|leur|le|la|l|les|celui|celle|ce client|cette cliente|il|elle)\b/;
+  B.sansClient=function(raw){var c=ctxOf(raw);if(!POURQUI.test(c.p))return false;if(findClient(c.raw,c.n)||capName(c.raw))return false;
+    /* « appelle-le », « envoie-lui » : le pronom suffit, le chat sait de qui on parle */
+    if(/^(?:appelle|appeler|rappelle|envoie|previens|relance)\s+(?:le|la|lui|leur)\b/.test(c.p))return false;return true;};
+  /* le client dont on parle, pour les demandes suivantes */
+  B.sujet=function(nom){var k=nom?clientKey(nom):null;if(k)S.last.client=k;};
+  /* « non » juste après une action faite par casô : ce que le chat avait compris n'est plus refait pour cette phrase,
+     et la phrase suivante (si elle en parle) lui apprend ce qui était voulu */
+  B.refuser=function(){var LT=S.lastTurn;S.lastTurn=null;if(!LT||!LT.raw||!LT.cmds||!LT.cmds.length)return false;
+    forgetLearned(LT.raw,LT.cmds,LT.via);S.pending={type:"reformuler",raw:LT.raw,at:Date.now()};return true;};
+  /* ---------- apprentissage partagé entre les usagers de casô ----------
+     Seules partent les demandes de lecture (ouvrir un écran, une information) que l'usager a apprises au chat, sous leur forme
+     masquée (« @c » pour le client, « # » pour les nombres, « @d » pour le jour), et seulement si tous leurs mots sont des
+     mots connus du métier ou de la langue : aucun nom, aucun texte de message, aucun montant ne quitte le téléphone. */
+  var PARTAGE_SRC={user:1,guess:1};
+  /* seules les demandes qui ouvrent un écran ou lisent une information se partagent (jamais une modification) */
+  function partLecture(k){return READONLY.test(k)&&!/^sys\.|^memoire\.|^fichiers\.|\.appeler$/.test(k);}
+  /* mots du métier et des commandes seulement (pas le dictionnaire général : « martin », « petit », « lilas » n'y sont pas) ;
+     jamais un nom déjà vu tapé avec une majuscule, ni un mot d'un nom de client */
+  function motPublic(w){if(w==="@c"||w==="@d"||w==="@m"||/^#[\p{L}²³%€]{0,3}$/u.test(w)||/^(h|m2|m²|m3|ml|€|%)$/.test(w))return true;
+    if(NOMS_VUS[w]||Object.keys(S.clients).some(function(k){return k.split(" ").indexOf(w)>=0;}))return false;
+    return !!(E.isStop(w)||(CMDS.fr&&CMDS.fr.has(w))||vocab()[w]);}
+  /* gabarit : arguments vides, valeurs à trous ($n, $c, $d, $h), booléens, ou un mot court du métier ; aucun nombre écrit en clair */
+  function gabaritPublic(t){var ok=true;try{JSON.parse(t,function(k,v){if(!ok||k==="m"||k==="a"||k.charAt(0)==="$")return v;
+      if(typeof v==="number"&&!/^\d+$/.test(k))ok=false;
+      else if(typeof v==="string"){if(/^(nom|client|source|texte|message|note|notes|adresse|email|tel|telephone|iban|siret|titre|objet|fournisseur)$/.test(k)||!v||v.length>24||/\d|@/.test(v)||!hn(v).split(" ").every(function(w){return w&&(E.isStop(w)||(CMDS.fr&&CMDS.fr.has(w))||vocab()[w]);}))ok=false;}
+      else if(Array.isArray(v)&&v.some(function(x){return typeof x==="string";}))ok=false;return v;});}catch(e){return false;}return ok;}
+  function cmdsPublics(t){try{var c=JSON.parse(t);return Array.isArray(c)&&c.length===1&&c.every(function(x){return x&&X_[x.m+"."+x.a]&&partLecture(x.m+"."+x.a);});}catch(e){return false;}}
+  function partageDe(c){var mk=mask(c),e=S.phrases[mk.m];if(!e||e.src!=="partage"||!cmdsPublics(e.t))return null;return fill(e.t,c,mk);}
+  B.partageables=function(deja){deja=deja||{};var L=[];Object.keys(S.phrases).forEach(function(m){var x=S.phrases[m];if(!x||!PARTAGE_SRC[x.src]||x.p)return;
+      var w=m.split(" ");if(w.length<2||w.length>14||!w.every(motPublic))return;if(!cmdsPublics(x.t)||!gabaritPublic(x.t))return;
+      var l=x.ex?B.translate(x.ex).lang||"fr":"fr";if(deja[l+"|"+m])return;L.push({l:l,m:m,t:x.t});});return L;};
+  /* ce que les autres usagers ont appris : seulement quand le chat ne comprend pas la phrase lui-même, et toujours en
+     proposition (« Tu veux : … ? ») ; ce que l'usager a appris lui-même passe toujours avant */
+  B.partage=function(list){if(!Array.isArray(list))return 0;var n=0;
+    list.slice(0,400).forEach(function(x){if(!x||typeof x.m!=="string"||typeof x.t!=="string"||x.m.length>160||x.t.length>800)return;var cur=S.phrases[x.m];if(cur&&cur.src!=="partage")return;
+      if(S.neg&&S.neg[x.m]){try{var lb=labelOf(JSON.parse(x.t));if(lb&&S.neg[x.m].indexOf(lb)>=0)return;}catch(e){return;}}
+      if(!x.m.split(" ").every(motPublic)||!cmdsPublics(x.t)||!gabaritPublic(x.t))return;S.phrases[x.m]={t:x.t,n:cur?cur.n:0,src:"partage",ex:"",at:cur?cur.at:Date.now(),p:1};n++;});
+    var P0=Object.keys(S.phrases).filter(function(k){return S.phrases[k].src==="partage";});if(P0.length>300){P0.sort(function(a,b){return S.phrases[a].at-S.phrases[b].at;});P0.slice(0,P0.length-300).forEach(function(k){delete S.phrases[k];});}
+    PV=null;return n;};
   /* ---------- données pour les écrans ---------- */
   B.motConnu=function(w){w=hn(w);return !!(knownWord(w)||nearFr(w));};B.motCmd=function(w){w=hn(w);return !!((CMDS.fr&&CMDS.fr.has(w))||MOTSFR.has(w));};B.qty=qty;B.TYPES=TYPES;B.roomLabel=roomLabel;B.totalHT=totalHT;B.totalTTC=totalTTC;B.tvaParTaux=tvaParTaux;B.getCur=getCur;B.clientName=clientName;B.paid=paid;B.devisOf=devisOf;B.budget=budget;B.fdate=fdate;B.ftime=ftime;B.fnum=fnum;B.eur=eur;B.matColor=matColor;B.colorHex=colorHex;B.level=level;B.fromIso=fromIso;B.iso=iso;B.sod=sod;B.addDays=addDays;B.undo=undo;
   B.dump=function(){var s=clone(S);s.pending=null;s.lastTurn=null;return s;};
