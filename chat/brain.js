@@ -180,6 +180,8 @@ function create(E,X,saved,opts){
     var fs=0;FRKEYS.forEach(function(re){if(re.test(n))fs++;});var fw=n.match(FRW);if(fw)fs+=fw.length;
     /* égalité entre deux langues : la langue de l'interface l'emporte */
     if(hint&&hint!=="fr"&&hint!=="perso"&&LANGS.indexOf(hint)>=0&&bs>0&&hint!==best){var hs=0;trTable(hint).forEach(function(r){if(r[0]&&peut(r,n)&&rxOf(r)){r[3].lastIndex=0;if(r[3].test(n))hs++;}});if(hs>=bs)best=hint,bs=hs;else if(langScore(hint,n)>=bs)best=hint;}
+    /* rien de reconnu (mot mal tapé seul) : la langue de l'interface */
+    if(!bs&&!fs&&hint&&hint!=="fr"&&hint!=="perso"&&LANGS.indexOf(hint)>=0)return hint;
     return bs>fs?best:"fr";
   }
   function langScore(L,n){var s=0;trTable(L).forEach(function(r){
@@ -236,20 +238,30 @@ function create(E,X,saved,opts){
   function dice2(a,b){var A=bgs(a),Bb=bgs(b),x=0,g;for(g in A)if(Bb[g])x+=Math.min(A[g],Bb[g]);return 2*x/Math.max(1,a.length+b.length-2);}
   /* mot mal tapé du bâtiment ou d'une commande (« carelage », « faïance ») : ce n'est pas un nom de client */
   function nearFr(w){if(!E.dl||w.length<4)return false;var max=w.length>=8?2:1,ok=false;Object.keys(vocab()).concat(CMDW.fr||[]).forEach(function(v){if(!ok&&v.indexOf(" ")<0&&Math.abs(v.length-w.length)<=max&&E.dl(w,v,max)<=max)ok=true;});return ok;}
-  function cmdFix(n,raw,L,an){if(!E.dl||!CMDW.fr)return n;var vu={};((an&&an.mentions)||[]).forEach(function(m){if(m.how==="exact")return;var sp=String(m.span||"");if(sp.indexOf(" ")<0)vu[sp]=hn(m.alias||"");});var lists=[CMDW.fr];if(L&&L!=="fr"&&CMDW[L])lists.push(CMDW[L]);
+  /* mots du vocabulaire d'une langue (règles de traduction) : servent aussi à corriger les fautes (« radidor » -> radiador) */
+  var VOCL={};function vocL(L){if(VOCL[L])return VOCL[L];var st={};
+    trTable(L).forEach(function(r){var src=r[0]?r[0]:(r[2]?String(r[2]).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase():"");
+      src.split(/[|()]/).forEach(function(alt){if(!/^[\p{L} ]+$/u.test(alt))return;hn(alt).split(" ").forEach(function(w){if([...w].length>=5&&!CMDALL.has(w))st[w]=1;});});});
+    return VOCL[L]=Object.keys(st);}
+  var POLI=["super","parfait","nickel","merci","genial","impeccable"];/* « spuer », « meci » */
+  function cmdFix(n,raw,L,an){if(!E.dl||!CMDW.fr)return n;var vu={};((an&&an.mentions)||[]).forEach(function(m){if(m.how==="exact")return;var sp=String(m.span||"");if(sp.indexOf(" ")<0)vu[sp]=hn(m.alias||"");});var lists=[CMDW.fr];if(L&&L!=="fr"&&CMDW[L])lists.push(CMDW[L]);if(L&&L!=="fr")lists.push(vocL(L));lists.push(POLI);
     var caps={};String(raw).replace(/[\p{L}'’-]+/gu,function(w){if(/^\p{Lu}/u.test(w)&&w!==w.toUpperCase())caps[hn(w)]=1;return w;});
     var t=n.split(" ");
-    return t.map(function(w,i){if(w.length<4||!/^[a-z]+$/.test(w)||CMDALL.has(w)||caps[w]||/^(chez|client|cliente|clients|madame|monsieur|mme|mr|m)$/.test(t[i-1]||""))return w;
+    var VL=L&&L!=="fr"?new Set(vocL(L)):null;
+    return t.map(function(w,i){if(w.length<4||!(L==="fr"||!L?/^[a-z]+$/:/^\p{L}+$/u).test(w)||(VL&&VL.has(w))||CMDALL.has(w)||caps[w]||/^(chez|client|cliente|clients|madame|monsieur|mme|mr|m)$/.test(t[i-1]||""))return w;
       if(CMDS.fr.has(w)||(CMDS[L]&&CMDS[L].has(w))||knownWord(w)||S.clients[w]||NOMS_VUS[w])return w;
       var max=w.length>=8?2:1,best=null,bd=99,bs=-1,tie=false;
-      lists.forEach(function(Ls){Ls.forEach(function(c){if(Math.abs(c.length-w.length)>max||c===best)return;var d=E.dl(w,c,max);if(d>max)return;var sc=dice2(w,c);
+      lists.forEach(function(Ls,li){Ls.forEach(function(c){if(Math.abs(c.length-w.length)>max||c===best)return;var d=E.dl(w,c,max);if(d>max)return;var sc=dice2(w,c)+(li>0?0.5:0);/* à distance égale, le mot de la langue de la phrase passe avant le français */
         if(d<bd||(d===bd&&sc>bs)){bd=d;best=c;bs=sc;tie=false;}else if(d===bd&&sc===bs)tie=true;});});
-      if(!best||tie||(bd===2&&best.charAt(0)!==w.charAt(0))||w.indexOf(best)===0)return w;
+      if(best)best=hn(best);
+      if(!best||best===w||tie||(bd===2&&best.charAt(0)!==w.charAt(0))||w.indexOf(best)===0)return w;
       /* le moteur a déjà reconnu ce mot (« carelage » -> carrelage) : on garde sa lecture si elle est aussi proche */
-      if(vu[w]){var da=E.dl(w,vu[w],2);if(da<bd||(da===bd&&dice2(w,vu[w])>=bs))return w;}
+      if(vu[w]&&vu[w]!==best){var da=E.dl(w,vu[w],2);if(da<bd||(da===bd&&dice2(w,vu[w])>=bs))return w;}
       /* mots courts : seulement une lettre oubliée, en trop ou inversée (pas une lettre remplacée : « porte » n'est pas « poste ») */
       if(w.length<=5&&best.length===w.length&&w.split("").sort().join("")!==best.split("").sort().join(""))return w;if(root.CMDFIX_LOG)root.CMDFIX_LOG.push(w+">"+best);return best;}).join(" ");}
-  B.translate=function(raw0){var raw=corrRaw(raw0),n=hn(raw),a=E.analyze(raw),L=detectLang(n,LANG!=="fr"&&(!a.lang||a.lang==="fr"||a.lang==="perso")?LANG:a.lang);n=expandAbbr(n,L);n=cmdFix(n,raw,L,a).replace(/\bq est ce\b/g,"qu est ce").replace(/\bja i\b/g,"j ai");if(L==="fr")n=words2num(n);var p=toFr(n,L);p=vocabFr(p,a,L);p=applyLex(p);if(L!=="fr")p=words2num(p);return {n:n,p:p,lang:L,a:a};};
+  B.translate=function(raw0){var raw=corrRaw(raw0),n=hn(raw),a=E.analyze(raw),hint=function(a){return LANG!=="fr"&&(!a.lang||a.lang==="fr"||a.lang==="perso")?LANG:a.lang;},L=detectLang(n,hint(a));n=expandAbbr(n,L);var n0=n;n=cmdFix(n,raw,L,a);
+    /* mot corrigé : relire la phrase corrigée (langue et vocabulaire) */
+    if(n!==n0){var a2=E.analyze(n);a2.text=a.text;a2.fixes=a.fixes.concat(a2.fixes||[]);a=a2;L=detectLang(n,hint(a));}n=n.replace(/\bq est ce\b/g,"qu est ce").replace(/\bja i\b/g,"j ai");if(L==="fr")n=words2num(n);var p=toFr(n,L);p=vocabFr(p,a,L);p=applyLex(p);if(S.mode==="artisan")p=p.replace(/^(?:(?:j ai |on a |il y a |j ai recu )?(?:une |la |nouvelle )?)demande de devis\b/,"nouveau devis");/* artisan : « demande de devis de Dupont » (bricoleur : demander un devis à un artisan) */if(L!=="fr")p=words2num(p);return {n:n,p:p,lang:L,a:a};};
 
   /* ---------- entités ---------- */
   var POSREF=/\b(pres d(?:u|e la|e l|es|e)|sous|devant|a cote d(?:u|e la|e l|es|e)|en face d(?:u|e la|e l|es|e)|contre)\s+(?:la |le |l |les )?([\p{L}]+(?: [\p{L}]+)?)/gu;
@@ -1367,10 +1379,11 @@ function create(E,X,saved,opts){
   X_["sys.voix"]=function(a){S.voix=!!a.on;return {say:a.on?tr("D’accord, je te lis mes réponses."):tr("D’accord, je ne parle plus."),ui:"voix"};};
 
   /* ---------- supprimer une fiche client ---------- */
-  function parseDel(c){var raw=c.raw,m;
+  function parseDel(c){var L=[c.raw];if(c.p&&c.p!==c.raw)L.push(c.p);/* autre langue : la phrase traduite */
+   for(var li=0;li<L.length;li++){var raw=L[li],m;
     if((m=raw.match(/\b(?:supprime|supprimer|efface|effacer|enlève|enleve|retire|vire|dégage|degage)[sz]?(?:-moi)?\s+(?:le |la |l['’]\s*)?(?:fiche(?:\s+client)?\s+(?:de\s+|d['’]\s*)?|client(?:e)?\s+|contact\s+)(?:M\.\s*|Mme\s+|Monsieur\s+|Madame\s+)?([\p{L}'’-]+)/iu))||
        (m=raw.match(/\b(?:supprime|efface|enlève|enleve|retire|vire)\s+(?:M\.\s*|Mme\s+)?([\p{L}'’-]+)\s+(?:de|des)\s+(?:mes|la liste des|mon carnet de|la liste de mes)\s+clients\b/iu)))
-      if(!NOTNAME.test(m[1]))return [C("clients","supprimer",{nom:cap(m[1])})];
+      if(!NOTNAME.test(m[1])&&(li===0||S.clients[clientKey(m[1])]||new RegExp("(^|[^\\p{L}])"+cap(m[1])+"($|[^\\p{L}])","u").test(c.raw)))return [C("clients","supprimer",{nom:cap(m[1])})];}
     return null;}
   /* retrouver une fiche même écrite autrement (Ivanov / Иванова, Dupond / Dupont) */
   var CYR={"а":"a","б":"b","в":"v","г":"g","д":"d","е":"e","ё":"e","ж":"j","з":"z","и":"i","й":"i","к":"k","л":"l","м":"m","н":"n","о":"o","п":"p","р":"r","с":"s","т":"t","у":"u","ф":"f","х":"h","ц":"ts","ч":"tch","ш":"ch","щ":"ch","ъ":"","ы":"y","ь":"","э":"e","ю":"iou","я":"ia"};
@@ -2048,7 +2061,7 @@ function create(E,X,saved,opts){
     raw.split(/\s+/).forEach(function(w,i){if(i&&/^\p{Lu}/u.test(w))names[hn(w)]=1;});
     return hn(raw).split(" ").filter(function(w){return w.length>=4&&!SW[w]&&!/^\d/.test(w)&&!names[w]&&!GEN[w];});}
   function overlap(a,b){return a.some(function(w){return b.some(function(x){return x===w||w.length>=5&&x.length>=5&&x.slice(0,5)===w.slice(0,5);});});}
-  function sameAction(a,b){var f=function(L){return (L||[]).filter(function(x){return x.m!=="sys";}).map(function(x){return x.m+"."+x.a;});},fa=f(a),fb=f(b);return fa.some(function(m){return fb.indexOf(m)>=0;});}
+  function sameAction(a,b){var f=function(L){return (Array.isArray(L)?L:L&&L.m?[L]:[]).filter(function(x){return x.m!=="sys";}).map(function(x){return x.m+"."+x.a;});},fa=f(a),fb=f(b);return fa.some(function(m){return fb.indexOf(m)>=0;});}
   /* une phrase apprise ne doit pas porter le client d'une autre phrase */
   function sameClients(origRaw,cmds){var ko=findClient(origRaw,hn(origRaw))||capName(origRaw),ok=true;
     (cmds||[]).forEach(function(x){if(x.m==="fournisseurs")return;var a=x.args||{};["client","nom"].forEach(function(f){if(typeof a[f]==="string"&&a[f]&&clientKey(a[f])!==ko)ok=false;});});return ok;}
