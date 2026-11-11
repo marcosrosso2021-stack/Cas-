@@ -2699,6 +2699,7 @@ function vlSet(l){try{localStorage.setItem('caso_lang',l)}catch(e){}}
 function vlRec(l){const d=VL_DEF[l]||VL_DEF.fr;if(l==='pt'&&/^pt-br/i.test(navigator.language||''))return'pt-BR';return d.rec}
 function vlT(i,l){const d=VL_DEF[l||VN.lang]||VL_DEF.fr;return d.ui[i]||VL_DEF.fr.ui[i]}
 /** Devine la langue d'un texte. Renvoie {l,score} ou null si pas sûr. */
+const VL_FR_PETITS=new Set(['a','de','la','le','les','des','du','en','et','un','une','au','aux','pour','sur','avec','par','ou']);
 function vlDetect(txt){
  const s=String(txt||'');const ar=(s.match(/[؀-ۿ]/g)||[]).length,lat=(s.match(/[A-Za-zÀ-ž]/g)||[]).length;
  if(ar>lat)return{l:'ar',score:9};
@@ -2707,7 +2708,7 @@ function vlDetect(txt){
  if(!VL.fr)vlBuild();
  const sc={};
  for(const k in VL){if(k==='ar')continue;let n=0;
-  let st=0;for(let i=0;i<ws.length;i++){if(VL[k].stopSet.has(ws[i])){n+=1;st++}
+  let st=0;for(let i=0;i<ws.length;i++){/* « a », « de », « la »… sont aussi des petits mots français : ils ne font pas pencher vers une autre langue */if(VL[k].stopSet.has(ws[i])&&(k==='fr'||!VL.fr.stopSet.has(ws[i])&&!VL_FR_PETITS.has(ws[i]))){n+=1;st++}
    if(k!=='fr'){const w2=i+1<ws.length?ws[i]+' '+ws[i+1]:null,v=VL[k].map.has(ws[i])?VL[k].map.get(ws[i]):(w2&&VL[k].map.has(w2)?VL[k].map.get(w2):null);
     if(v&&vnNorm(v)!==ws[i]&&!(VL.fr.stopSet.has(ws[i])))n+=.5}}
   sc[k]=k==='fr'||st>=2?n:0}
@@ -2786,9 +2787,10 @@ const VN_UNITS=[
 ];
 const VN_STOP=new Set(['de','des','du','d','la','le','les','l','un','une','et','a','au','aux','en','pour','sur','dans','avec','pose','fourniture','faire','refaire','mettre','il','faut','prevoir']);
 function vnTok(s){return vnNorm(s).replace(/[^a-z0-9 ]/g,' ').split(' ').filter(w=>w&&!VN_STOP.has(w)).map(w=>w.length>3?w.replace(/(s|x)$/,''):w)}
+const VN_DEP=/\b(depose|deposer|demolition|demolir|arrachage|arracher|enlevement|retrait)\b/;
 function vnMatch(label,prices){
- const a=vnTok(label);if(!a.length)return null;let best=null,bs=0;
- for(const p of prices||[]){const b=vnTok(p.nom);if(!b.length)continue;
+ const a=vnTok(label);if(!a.length)return null;let best=null,bs=0;const dep=VN_DEP.test(vnNorm(label));
+ for(const p of prices||[]){const b=vnTok(p.nom);if(!b.length)continue;if(VN_DEP.test(vnNorm(p.nom))!==dep)continue;
   let hit=0;for(const w of b)if(a.some(x=>x===w||(w.length>4&&x.startsWith(w.slice(0,5)))))hit++;
   const s=hit/b.length;if(s>bs){bs=s;best=p}}
  return bs>=.5?best:null;
@@ -2839,8 +2841,10 @@ function parseNote(raw,prices,lang){
  const cm=t.match(/\b(?:(?:(?:nouveau|nouvelle|nouv|un|une|mon|ma)\s+)?client(?:e)?|chez|pour)\s*(?:c'est|est|:)?\s*((?:monsieur|madame|mme|m\.|mr|mademoiselle)\s+)?(\p{L}[\p{L}'-]+(?:\s+(?!(?:et|au|a|rue|qui|il|pour|avec|le|la|de|du|tel|telephone|numero|chantier|adresse|portable|monsieur|madame|ensuite|refaire|renover)(?![\p{L}]))\p{L}[\p{L}'-]+)?)/u);
  if(cm&&!/^(le|la|les|un|une|des|faire|refaire|la salle|l|salle|cuisine)(\s|$)/.test(cm[2])){
   const civ=cm[1]?({monsieur:'M.',mr:'M.','m.':'M.',madame:'Mme',mme:'Mme',mademoiselle:'Mlle'}[cm[1].trim()]||''):'';
-  const cn=vnNorm(cm[2]);
-  if(!R.suppliers.some(x=>{const k=vnNorm(x);return cn.startsWith(k)||k.startsWith(cn)})){R.client=(civ?civ+' ':'')+cm[2].split(' ').map(w=>O(w)).join(' ');t=t.replace(cm[0],' ')}
+  let nm=cm[2],cut=cm[0];const ws=nm.split(' ');
+  if(ws.length===2&&((db.clients||[]).some(c=>vnNorm(c.nom).replace(/^(m|mme|mlle)\.?\s+/,'')===vnNorm(ws[0]))||chatKnown().has(vnNorm(ws[1]))||vnMatch(ws[1],prices))){nm=ws[0];cut=cm[0].slice(0,cm[0].lastIndexOf(ws[1])).trimEnd()}
+  const cn=vnNorm(nm);
+  if(!R.suppliers.some(x=>{const k=vnNorm(x);return cn.startsWith(k)||k.startsWith(cn)})){R.client=(civ?civ+' ':'')+nm.split(' ').map(w=>O(w)).join(' ');t=t.replace(cut,' ')}
  }
  // client nommé avec civilité, sans le mot « client »
  if(!R.client){const cv=t.match(/(?:^|[^\p{L}])(monsieur|madame|mme|mr|mlle|mademoiselle|m\.)\s+(\p{L}[\p{L}'-]{1,})/u);
@@ -3728,12 +3732,12 @@ function chatSend(text){
  if(/^(non|nan|no|não|nao|nu|nie|hayır|hayir|нет|لا)[.!]*$/i.test(t0)&&chatNonUndo()){inp.value='';chatGrow(inp);qkUpdate();CHAT.m.push({who:'me',text:t0});CHAT.m.push({who:'bot',html:`<p data-noi18n>${esc(window.casoPont&&casoPont.ready?casoPont.tr('D’accord, j’ai annulé. ').trim():'D’accord, j’ai annulé.')}</p>`});try{if(!(casoPont.refuser&&casoPont.refuser())){casoPont.B.S.lastTurn=null;casoPont.B.S.pending=null}}catch(e){}chatSave();chatRender(true);return}
  if(window.casoPont&&casoPont.ready&&!adrSeule){
   /* « le client d'hier », « la dame de la rue des Lilas » : le chat met le nom du client ; la phrase tapée reste affichée */
-  if(casoPont.renvoi&&!chatSend.renv){const r=casoPont.renvoi(t0);if(r&&r!==t0){chatSend.renv=1;try{chatSend(r)}finally{chatSend.renv=0}
+  if(casoPont.renvoi&&!chatSend.renv){const r=casoPont.renvoi(t0);if(r===true){inp.value='';chatGrow(inp);qkUpdate();return}if(r&&r!==t0){chatSend.renv=1;try{chatSend(r)}finally{chatSend.renv=0}
    for(let i=CHAT.m.length-1;i>=0;i--){const m=CHAT.m[i];if(m.who==='me'){if(m.text===r){m.text=t0;chatSave();chatRender(false)}break}}return}}
   /* plusieurs demandes dans la même phrase */
   if(casoPont.decoupe&&!chatSend.multi){const parts=casoPont.decoupe(t0);if(parts){chatMulti(t0,parts);return}}
   /* questions sur l'activité, durée d'un travail, devis depuis une description */
-  if(casoPont.question&&(casoPont.question(t0)||casoPont.duree(t0)||casoPont.decrire(t0))){inp.value='';chatGrow(inp);qkUpdate();return}}
+  if(casoPont.question&&(casoPont.marge(t0)||casoPont.question(t0)||casoPont.duree(t0)||casoPont.decrire(t0))){inp.value='';chatGrow(inp);qkUpdate();return}}
  if(!adrSeule&&window.casoPont&&casoPont.essaie(t0)){inp.value='';chatGrow(inp);qkUpdate();return}
  let t=t0;try{let lg=VN.lang||'fr';const dt=vlDetect(t0);if(dt&&dt.score>=3)lg=dt.l;t=chatFix(t0,lg)}catch(e){t=t0}
  if(t!==t0)setTimeout(()=>{for(let i=CHAT.m.length-1;i>=0;i--){const m=CHAT.m[i];if(m.who==='me'){if(m.text===t&&!m.orig){m.orig=t0;chatSave();chatRender(false)}break}}},0);

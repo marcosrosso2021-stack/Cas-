@@ -201,6 +201,8 @@ P.essaie=function(t,force){if(!P.ready||typeof db==="undefined"||typeof q==="und
   if(lab0==="clients.maj"&&w.u.cAdd.length===1&&r.cmds.length===1){var nc=(db.clients||[]).filter(function(x){return x.id===w.u.cAdd[0];})[0];
     if(nc){var dt=String((r.says||[])[0]||"").match(/[:：]\s*(.+?)[.。]?$/);r.explain="";r.says=[P.tr("Nouveau client : {0}.",[nc.nom+(dt?" · "+dt[1]:"")])];}}P.attente=!!(B.S.pending&&B.S.pending.type!=="reformuler");
   if(qMod){w.u.q=q0;w.u.qMod=true;}
+  /* « nouveau devis pour Petit » : le devis ouvert est celui que le chat vient de créer (pas un devis vide à côté) */
+  if(lab0==="devis.nouveau"&&w.u.qAdd.length){var nq=w.u.qAdd[w.u.qAdd.length-1];apres=function(){var d=(db.quotes||[]).filter(function(x){return x.id===nq;})[0];if(d){q=d;if(typeof fillForm==="function")fillForm();CHAT.qid=q.id;}};}
   if(xa&&xa.u)Object.keys(xa.u).forEach(function(k){w.u[k]=xa.u[k];});
   if(CHAT.qid!==q.id)CHAT.qid=q.id;
   CHAT.m.push({who:"me",text:t});CHAT.m.push({who:"bot",html:html(r,w.carte),pUndo:(w.u.qAdd.length||w.u.cAdd.length||w.u.cMod.length||w.u.eAdd||w.u.qMod||w.u.prof||w.u.cDel||w.u.sAdd||w.u.pDel||w.u.eDel||w.u.ptAdd)?w.u:undefined});

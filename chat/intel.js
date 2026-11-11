@@ -63,12 +63,19 @@ var ART={"du ":"de ","de la ":"de ","de l ":"de ","au ":"à ","a la ":"à "};
 /* motif trouvé dans la phrase traduite → même passage dans la phrase tapée (accents, apostrophes, majuscules) */
 function motifTape(m){var cls={a:"[aàâä]",e:"[eéèêë]",i:"[iîï]",o:"[oôö]",u:"[uùûü]",c:"[cç]",y:"[yÿ]"};
   return new RegExp(m.trim().split(" ").map(function(w){return w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&").replace(/[aeiouyc]/g,function(ch){return cls[ch];});}).join("[\\s'’-]+"),"iu");}
-P.renvoi=function(t){if(!P.ready||typeof db==="undefined")return null;var c=fr(t),s=" "+c.p+" ",m,qui=null;
-  if((m=s.match(RE_JOUR))){var d=jourDe(m[2],m[3]),L=d?clientsDuJour(d,m[2]):[];if(L.length===1)qui=L[0];}
+var ATT=null;
+P.renvoi=function(t){if(!P.ready||typeof db==="undefined")return null;
+  /* réponse à « Lequel ? » : le nom choisi remplace le renvoi dans la demande de départ */
+  if(ATT){var a=ATT;ATT=null;var k=cle(t).replace(/^(c est |plutot |)/,"");if(Date.now()-a.at<5*60000&&k.split(" ").length<=3){var ch=a.L.filter(function(x){return cle(x.nom)===k||cle(x.nom).split(" ").indexOf(k)>=0;})[0];if(ch)return a.ref(ch);}}
+  var c=fr(t),s=" "+c.p+" ",m,qui=null;
+  if((m=s.match(RE_JOUR))){var d=jourDe(m[2],m[3]),L=d?clientsDuJour(d,m[2]):[];if(L.length===1)qui=L[0];
+    /* aucun client ou plusieurs ce jour-là : le chat le dit, au lieu de prendre « De Mardi » pour un nom */
+    else if(d){langue();var jt=P.B.fdate(d),m0=m;if(L.length)ATT={at:Date.now(),L:L,ref:function(ch){return remplace(t,c,s,m0,ch);}};bulle(t,p(L.length?T("Le {0} : {1}. Lequel ?",[jt,L.map(function(x){return x.nom;}).join(", ")]):T("Aucun client au planning le {0}.",[jt])));return true;}}
   if(!qui&&(m=s.match(RE_RUE))){var L2=clientsDeLaRue(m[2]);if(L2.length===1)qui=L2[0];}
-  if(!qui)return null;var rep=(ART[m[1]||""]||"")+qui.nom,brut=m[0].trim();
+  if(!qui)return null;return remplace(t,c,s,m,qui);};
+function remplace(t,c,s,m,qui){var rep=(ART[m[1]||""]||"")+qui.nom,brut=m[0].trim();
   if(c.lang==="fr"||!c.lang){var re=motifTape(brut),x=String(t).match(re);if(x)return String(t).replace(re,rep);}
-  return s.replace(m[0]," "+rep).trim();};
+  return s.replace(m[0]," "+rep).trim();}
 
 /* ---------- contrôle du devis : oublis, prix inhabituels, vente à perte ---------- */
 var AVEC=[[/\b(carrelage|faience|carreaux?|mosaique)\b/,[[/\bcolle\b/,"colle"],[/\bjoints?\b/,"joint"]]],
@@ -158,6 +165,17 @@ P.duree=function(t){langue();if(!P.ready||typeof db==="undefined")return false;v
   var hh=Math.round(medianne(R)*Q*2)/2,jj=Math.max(1,Math.ceil(hh/7)),txt=[T("Environ {0} h de travail ({1} j), d’après tes anciens chantiers.",[N(hh),jj])],lib=joursLibres(jj);
   if(lib)txt.push(T("Libre à partir du {0}.",[P.B.fdate(new Date(lib[0]+"T12:00:00"))]));
   bulle(t,txt.map(p).join(""));return true;};
+
+/* ---------- marge sur le devis : « ajoute une marge de 10 % », « 15 % de marge sur la fourniture » ---------- */
+var MARGE=/^(?:ajoute|rajoute|mets|met|applique|prends|fais)?\s*(?:une |un |ma |la |de la )?(?:marge (?:de )?(\d+(?:\.\d+)?) ?(?:%|pour ?cent)|(\d+(?:\.\d+)?) ?(?:%|pour ?cent) de marge)(?: sur (?:le devis|tout|tout le devis|(la |les )?(fournitures?|materiaux|materiel|main d oeuvre|pose)))?$/;
+P.marge=function(t){if(!P.ready||typeof q==="undefined")return false;var s=fr(t).p.trim(),m=s.match(MARGE);if(!m)return false;langue();
+  var x=parseFloat(m[1]||m[2]),cible=m[4]||"";if(!(x>0&&x<=300))return false;
+  var L=(q.lines||[]).filter(function(l){if(!(+l.pu>0)||!l.label)return false;var lab=hn(l.label),u=hn(l.unit);
+    if(/fourniture|materia/.test(cible))return MATIERE.test(lab)||/^(sac|pot|rouleau|kg|l|boite|paquet)$/.test(u)||(db.hist||[]).some(function(h){return cle(h.nom)===cle(l.label);});
+    if(/main|pose/.test(cible))return u==="h"||/main d|pose/.test(lab);return true;});
+  if(!L.length){bulle(t,p(T("Le devis n’a pas encore de lignes.")));return true;}
+  var before=JSON.stringify(q);L.forEach(function(l){l.pu=Math.round(+l.pu*(1+x/100)*100)/100;});fillForm();store();
+  bulle(t,'<div data-noi18n>'+p(T("Marge de {0} % ajoutée sur {1} ligne(s).",[N(x),L.length]))+'</div><div class="msg-tot"><span>Total du devis</span><b data-noi18n>'+e(E(totals(q).ttc))+' TTC</b></div>',{undo:before},true);return true;};
 
 /* ---------- questions sur l'activité ---------- */
 var MOINS_CHER=/\b(moins cher|meilleur prix|prix le plus bas|plus bas prix|cheaper|cheapest)\b/;
