@@ -51,6 +51,23 @@ function createServer(opts={}){
  if(!data.signs)data.signs={};if(!data.subs)data.subs=[];if(!data.remSent)data.remSent={};if(!data.invSeq)data.invSeq={};if(!data.invShares)data.invShares={};if(!data.ics)data.ics={};
  if(!data.vapid){data.vapid=webpush.vapidKeys();try{const t=FILE+'.tmp';fs.writeFileSync(t,JSON.stringify(data));fs.renameSync(t,FILE)}catch(e){}}
  const pushSend=opts.pushSend||((sub,payload)=>webpush.send(sub,payload,data.vapid,{subject:process.env.VAPID_SUBJECT}));
+ /* --- apprentissage partagé du chat : phrases apprises par les usagers, sans rien de personnel (fichier à part) --- */
+ const APF=path.join(DIR,'appris.json'),APL=['fr','en','es','pt','it','ro','pl','tr','ru','ar'];
+ let appris=Object.create(null);
+ let apT=null;const apSave=()=>{if(apT)return;apT=setTimeout(()=>{const t=APF+'.tmp';fs.writeFile(t,JSON.stringify(appris),e=>{apT=null;if(!e)fs.rename(t,APF,()=>{})})},60000);if(apT.unref)apT.unref()};
+ const apHits=new Map();
+ function apTrop(ip){const now=Date.now();if(apHits.size>5000){for(const [k,v] of apHits)if(now-v.at>36e5)apHits.delete(k);if(apHits.size>5000)return true}const h=apHits.get(ip)||{n:0,at:now};if(now-h.at>36e5){h.n=0;h.at=now}h.n++;apHits.set(ip,h);return h.n>10}
+ /* une phrase masquée : mots en minuscules, « @c » (client), « @d » (jour), « # » (nombre) ; jamais de chiffres ni d'adresse */
+ const apMot=m=>typeof m==='string'&&m.length>=3&&m.length<=160&&/^[\p{Ll}\p{Lo}\p{Mn}@#²³%€ ]+$/u.test(m)&&m.split(' ').length>=2&&m.split(' ').length<=14;
+ function apGab(t){if(typeof t!=='string'||t.length>800)return false;let c;try{c=JSON.parse(t)}catch(e){return false}
+  if(!Array.isArray(c)||c.length!==1)return false;
+  let ok=true;const vu=(v,k)=>{if(!ok)return;if(typeof v==='number'){if(k.charAt(0)!=='$')ok=false}else if(typeof v==='string'){if(k!=='m'&&k!=='a'&&k.charAt(0)!=='$'&&(!v||v.length>24||/\d|@/.test(v)))ok=false}else if(Array.isArray(v)){if(v.length)ok=false}else if(v&&typeof v==='object')for(const kk of Object.keys(v)){if(/^(texte|message|note|notes|adresse|email|tel|telephone|nom|client|titre|objet|fournisseur|iban|siret)$/.test(kk)&&typeof v[kk]==='string')ok=false;vu(v[kk],kk)}};
+  c.forEach(x=>{if(!x||typeof x.m!=='string'||typeof x.a!=='string'||!/^[a-z0-9_]{2,20}$/.test(x.m)||!/^(ouvrir|liste|info|vue|libre|total|compte|prochain|dispo|impayes|ca|[a-z_]*_ouvrir)$/.test(x.a)&&x.m!=='stats'&&x.m!=='app')ok=false;vu(x,'')});return ok}
+ function apDonne(l){const L=appris[l]||{},best=Object.create(null);
+  for(const k in L){const x=L[k],o=best[x.m];if(!o||x.u.length>o.u.length||x.u.length===o.u.length&&x.at>o.at)best[x.m]=x}
+  return Object.values(best).sort((a,b)=>b.u.length-a.u.length||b.at-a.at).slice(0,400).map(x=>({m:x.m,t:x.t,n:x.u.length}))}
+ try{const a=JSON.parse(fs.readFileSync(APF,'utf8'));if(a&&typeof a==='object')for(const l of APL)if(a[l]&&typeof a[l]==='object'){const L=appris[l]=Object.create(null);
+  for(const k of Object.keys(a[l]).slice(0,1000)){const x=a[l][k];if(x&&apMot(x.m)&&apGab(x.t)&&Array.isArray(x.u)&&x.u.every(v=>typeof v==='string'))L[k]={m:x.m,t:x.t,u:x.u.slice(0,50),at:+x.at||0}}}}catch(e){}
  const SIGNER=opts.signerFile||path.join(__dirname,'signer.html');
  const FACTURE=opts.factureFile||path.join(__dirname,'facture.html');
 
@@ -401,6 +418,16 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
     const u=data.users[inv.user];
     if(!u)return send(res,404,{error:'Ce compte n\'existe plus.'});
     return send(res,200,newToken(u))}
+
+   /* apprentissage partagé du chat (sans compte) : chaque appareil envoie ses phrases apprises, reçoit celles des autres */
+   if(url==='/api/appris'){
+    if(req.method==='GET'){const l=(req.url.split('?')[1]||'').match(/(?:^|&)l=([a-z]{2})(?:&|$)/);const lg=l&&APL.includes(l[1])?l[1]:'fr';return send(res,200,{e:apDonne(lg)})}
+    if(POST){if(apTrop(ip))return send(res,429,{error:'Trop d\'envois.'});const b=await readBody(req),id=String(b.id||'');
+     if(!/^[a-f0-9]{32}$/.test(id)||!Array.isArray(b.e))return send(res,400,{error:'Requête invalide.'});
+     const u=crypto.createHash('sha256').update('caso-appris|'+ip).digest('hex').slice(0,16);let n=0;
+     b.e.slice(0,10).forEach(x=>{if(!x||!APL.includes(x.l)||!apMot(x.m)||!apGab(x.t))return;const L=appris[x.l]||(appris[x.l]=Object.create(null)),k=x.m+'\u0001'+x.t,o=L[k];
+      if(o){if(!o.u.includes(u)&&o.u.length<50)o.u.push(u);o.at=Date.now()}else{const ks=Object.keys(L);if(ks.length>=1000){/* plein : on retire la plus ancienne apprise par un seul usager ; sinon rien de nouveau */let v=null;for(const kk of ks)if(L[kk].u.length<2&&(!v||L[kk].at<L[v].at))v=kk;if(!v)return;delete L[v]}L[k]={m:x.m,t:x.t,u:[u],at:Date.now()}}n++});
+     if(n)apSave();return send(res,200,{ok:n})}}
 
    m=null;
    const user=authUser(req);

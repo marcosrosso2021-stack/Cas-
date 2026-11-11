@@ -3585,13 +3585,20 @@ function chDoc(dest){const a=CH_ASK;if(!a||a.k!=='doc'||!a.four)return;CH_ASK=nu
  const M=a.meta,sel=a.rows,before=JSON.stringify({p:db.prices,s:db.suppliers,ql:q.lines,a:db.achats||[],h:db.hist.length});
  const {x,isNew}=upsert('suppliers',{nom:a.four,tel:M.tel||'',email:M.email||'',adr:M.adr||'',siret:M.siret||''});
  IMP_DOC=M;impDocShow();if(sel.length)learnFrom(x.nom,sel);achSave(x.nom,sel);IMP_DOC=null;impDocShow();
- const m=parseFloat(($('impMarge')||{}).value)||0;
+ const m=parseFloat(($('impMarge')||{}).value)||0,pareils=[];
  sel.forEach(r=>{const vente=Math.round(r.pu*(1+m/100)*100)/100;logPrice(r.label,x.nom,r.pu,r.unit);
-  if(dest==='prix'){const ex=db.prices.find(p=>p.nom.toLowerCase()===r.label.toLowerCase());if(ex){ex.prix=vente;ex.unit=r.unit;ex.tva=r.tva;ex.four=x.nom}else db.prices.push({id:uid(),nom:r.label,unit:r.unit,prix:vente,tva:r.tva,four:x.nom})}
+  if(dest==='prix'){let ex=db.prices.find(p=>p.nom.toLowerCase()===r.label.toLowerCase());if(!ex){ex=prixPareil(r.label,r.unit);if(ex)pareils.push([r.label,ex.nom])}
+   if(ex){ex.prix=vente;ex.unit=r.unit;ex.tva=r.tva;ex.four=x.nom}else db.prices.push({id:uid(),nom:r.label,unit:r.unit,prix:vente,tva:r.tva,four:x.nom})}
   else q.lines.push({label:r.label,qty:r.qty,unit:r.unit,pu:vente,tva:r.tva})});
  if(dest==='devis'&&sel.length){fillForm();store()}else save();try{renderPrices();renderQuick()}catch(e){}
  chBot(`<p><svg class="i i-sm"><use href="#i-truck"/></svg> <span>Fournisseur</span> : <b data-noi18n>${esc(x.nom)}</b> <span class="pill-s ${isNew?'new':''}">${isNew?'Nouveau, ajouté à tes fournisseurs':'Déjà dans tes fournisseurs'}</span></p>`+
-  (sel.length?`<p><b data-noi18n>${sel.length}</b> <span>${dest==='prix'?(sel.length>1?'matériaux ajoutés à tes prix':'matériau ajouté à tes prix'):(sel.length>1?'lignes ajoutées au devis':'ligne ajoutée au devis')}</span>${m?` <span class="mut" data-noi18n>(+${m} %)</span>`:''}</p>`:`<p><span>Document enregistré.</span></p>`),{chUndo:{back:before,sNew:isNew?x.id:null}})}
+  (sel.length?`<p><b data-noi18n>${sel.length}</b> <span>${dest==='prix'?(sel.length>1?'matériaux ajoutés à tes prix':'matériau ajouté à tes prix'):(sel.length>1?'lignes ajoutées au devis':'ligne ajoutée au devis')}</span>${m?` <span class="mut" data-noi18n>(+${m} %)</span>`:''}</p>`+pareils.map(([a,b])=>`<p class="mut" data-noi18n>${esc(a)} → ${esc(b)}</p>`).join(''):`<p><span>Document enregistré.</span></p>`),{chUndo:{back:before,sNew:isNew?x.id:null}})}
+/* « PLAQUE BA13 STD 2500x1200 » sur la facture = « Placo BA13 » de tes prix : même référence (BA13), ou tous les mots de ton
+   libellé, pour un prix qui vient déjà d'un fournisseur (jamais un prix de pose) ; même unité */
+function prixPareil(label,unit){const SYN={placo:'plaque',placoplatre:'plaque',platre:'plaque'},w=s=>vnNorm(s).split(/[^\p{L}\d]+/u).filter(x=>x.length>=3||/\d/.test(x)).map(x=>SYN[x]||x),A=w(label),code=x=>/\d/.test(x)&&/\p{L}/u.test(x)&&x.length>=3&&!/^\d+x\d+(x\d+)?$/.test(x),CA=A.filter(code);let best=null,bs=0;
+ const U=u=>String(u||'').toLowerCase().replace(/^m2$/,'m²').replace(/^m3$/,'m³').replace(/^(u|unite|pce|piece)s?$/,'u');(db.prices||[]).forEach(p=>{if(p.unit&&unit&&U(p.unit)!==U(unit))return;const L=w(p.nom);if(!L.length)return;const CP=L.filter(code),MP=L.filter(x=>!code(x));
+  if(CA.length&&CP.length&&!CP.some(c=>CA.includes(c)))return;const sc=L.filter(x=>A.includes(x)).length/L.length,mot=MP.some(x=>A.includes(x));
+  if((CP.some(c=>CA.includes(c))&&mot||sc>=1&&p.four)&&sc>=bs){bs=sc;best=p}});return best}
 /* coordonnées lues sur une photo : client ou fournisseur (même question que pour un nom tapé) */
 function chContact(T){const c=ctParse(T);CH_PEND={tel:c.tel||'',adr:c.adr||'',email:c.email||''};if(c.nom)CH_ASK={k:'contact',nom:c.nom};
  const info=[c.tel,c.email,c.adr].filter(Boolean).map(esc).join(' · ');
@@ -3644,7 +3651,7 @@ function chatRender(scroll){
  const log=$('chatLog');if(!log)return;
  const M=CHAT.m.length?CHAT.m:[chatGreet()];
  const ac=(i,me)=>CHAT.m.length?`<div class="acts${me?' acts-me':''}" data-i="${i}">${chatIc('copier',i)}${me?chatIc('renvoyer',i)+chatIc('modifier',i):''}</div>`:'';
- log.innerHTML=M.map((x,i)=>x.who==='me'?`<div class="msg me" dir="auto" data-noi18n data-i="${i}">${esc(x.text)}</div>${ac(i,1)}${x.orig?`<div class="msg-orig"><span>Tu as écrit</span> <span dir="auto" data-noi18n>« ${esc(x.orig)} »</span></div>`:''}`:`<div class="msg bot" data-i="${i}">${x.html}${x.agUndo&&i===M.length-1?`<button class="lnk" onclick="agUndoLast()"><svg class="i i-sm"><use href="#i-undo"/></svg> Annuler</button>`:''}${x.prUndo&&i===M.length-1?`<button class="lnk" onclick="prUndoLast()"><svg class="i i-sm"><use href="#i-undo"/></svg> Annuler</button>`:''}${x.undo&&i===M.length-1?`<button class="lnk" onclick="chatUndo()"><svg class="i i-sm"><use href="#i-undo"/></svg> Annuler</button>`:''}${x.pUndo&&i===M.length-1?`<button class="lnk" onclick="chatPontUndo()"><svg class="i i-sm"><use href="#i-undo"/></svg> Annuler</button>`:''}</div>${ac(i,0)}`).join('');
+ log.innerHTML=M.map((x,i)=>x.who==='me'?`<div class="msg me" dir="auto" data-noi18n data-i="${i}">${esc(x.text)}</div>${ac(i,1)}${x.orig?`<div class="msg-orig"><span>Tu as écrit</span> <span dir="auto" data-noi18n>« ${esc(x.orig)} »</span></div>`:''}`:`<div class="msg bot" data-i="${i}">${x.html}${x.agUndo&&i===M.length-1?`<button class="lnk" onclick="agUndoLast()"><svg class="i i-sm"><use href="#i-undo"/></svg> Annuler</button>`:''}${x.prUndo&&i===M.length-1?`<button class="lnk" onclick="prUndoLast()"><svg class="i i-sm"><use href="#i-undo"/></svg> Annuler</button>`:''}${x.undo&&i===M.length-1?`<button class="lnk" onclick="chatUndo()"><svg class="i i-sm"><use href="#i-undo"/></svg> Annuler</button>`:''}${x.mUndo&&i===M.length-1&&MULTI_UNDO?`<button class="lnk" onclick="chatMultiUndo()"><svg class="i i-sm"><use href="#i-undo"/></svg> Annuler</button>`:''}${x.pUndo&&i===M.length-1?`<button class="lnk" onclick="chatPontUndo()"><svg class="i i-sm"><use href="#i-undo"/></svg> Annuler</button>`:''}</div>${ac(i,0)}`).join('');
  chatTop();
  if(scroll!==false)requestAnimationFrame(()=>window.scrollTo({top:document.documentElement.scrollHeight,behavior:scroll===true?'smooth':'auto'}))}
 /* ---------- mini icônes des messages ---------- */
@@ -3659,7 +3666,7 @@ function chatCopy(t,b){const fin=()=>{if(!b)return;const o=b.innerHTML;b.innerHT
  const old=()=>{try{const a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');a.style.cssText='position:fixed;opacity:0';document.body.appendChild(a);a.select();document.execCommand('copy');a.remove();fin()}catch(e){}};
  try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(fin,old);return}}catch(e){}old()}
 /* annuler ce que le chat autonome a écrit (devis préparé, client créé ou complété) */
-function chatPontUndo(){const m=CHAT.m[CHAT.m.length-1];if(!m||!m.pUndo)return;if(window.casoPont)casoPont.annuler(m.pUndo);CHAT.m.pop();
+function chatPontUndo(){const m=CHAT.m[CHAT.m.length-1];if(!m||!m.pUndo)return;if(window.casoPont){casoPont.annuler(m.pUndo);if(casoPont.refuser)casoPont.refuser()}CHAT.m.pop();
  const me=CHAT.m[CHAT.m.length-1];if(me&&me.who==='me')CHAT.m.pop();CHAT.qid=q.id;chatSave();chatRender()}
 /* modifier : la dernière demande est corrigée sur place (ce qu'elle avait fait est annulé), une plus ancienne repart en bas */
 function chatEdit(i){const el=document.querySelector('#chatLog .msg.me[data-i="'+i+'"]'),m=CHAT.m[i];if(!el||!m||el.isContentEditable)return;
@@ -3680,13 +3687,36 @@ document.addEventListener('click',ev=>{const b=ev.target.closest('#chatLog [data
  else if(b.dataset.ac==='renvoyer')chatSend(m.text);
  else if(b.dataset.ac==='modifier')chatEdit(i)});
 function chatNew(){newQuote();CHAT={qid:q.id,m:[]};chatSave();chatRender()}
-function chatNonUndo(){const b=CHAT.m[CHAT.m.length-1];if(!b||b.who!=='bot')return false;if(b.agUndo&&typeof agUndoLast==='function')agUndoLast();else if(b.prUndo&&typeof prUndoLast==='function')prUndoLast();else if(b.pUndo)chatPontUndo();else if(b.undo)chatUndo();else if(b.chUndo)chUndoGo(b.chUndo);else return false;return true}
+function chatNonUndo(){const b=CHAT.m[CHAT.m.length-1];if(!b||b.who!=='bot')return false;if(b.mUndo)return chatMultiUndo();if(b.agUndo&&typeof agUndoLast==='function')agUndoLast();else if(b.prUndo&&typeof prUndoLast==='function')prUndoLast();else if(b.pUndo)chatPontUndo();else if(b.undo)chatUndo();else if(b.chUndo)chUndoGo(b.chUndo);else return false;return true}
 function chatUndo(){const m=CHAT.m[CHAT.m.length-1];if(!m||!m.undo)return;{const cur=q;q=JSON.parse(m.undo);if(cur.num)q.num=cur.num;if(cur.sign)q.sign=cur.sign;if(cur.status)q.status=cur.status}fillForm();store();CHAT.m.pop();
  const me=CHAT.m[CHAT.m.length-1];if(me&&me.who==='me'){$('chatIn').value=me.text;CHAT.m.pop()}chatSave();chatRender()}
+/* plusieurs demandes dans une phrase : chacune suit son chemin dans l'ordre ; le client nommé (ou créé) vaut pour les suivantes ;
+   la phrase tapée s'affiche une fois, suivie de la réponse à chaque demande */
+let MULTI_UNDO=null;
+function chatMulti(t0,parts){const inp=$('chatIn');inp.value='';chatGrow(inp);qkUpdate();
+ const C0=CHAT,n0=CHAT.m.length,lg=casoPont.langue(t0),av={db:JSON.stringify(db),q:JSON.stringify(q)};let sujet=null,i=0;chatMulti.busy=1;
+ /* une demande après l'autre, avec le temps que la précédente finisse (nouveau devis, écran ouvert…) */
+ const suite=()=>{try{let x=parts[i];const ids=new Set((db.clients||[]).map(c=>c.id));if(sujet){const x0=x;x=casoPont.avecClient(x,sujet,lg);/* « envoie-lui », « appelle-le » : le client dont on vient de parler */if(x!==x0||/(^|[\s'’-])(lui|leur|le|la|l)([\s'’-]|$)/i.test(x0))casoPont.sujet(sujet)}
+   /* à partir du 2e morceau : une nouvelle demande, pas la réponse à la question du morceau d'avant */
+   if(i)try{casoPont.B.S.pending=null;CH_ASK=null}catch(e){}
+   chatSend.multi=1;chatSend(x);const nv=(db.clients||[]).filter(c=>!ids.has(c.id));sujet=nv.length?nv[nv.length-1].nom:(casoPont.clientDans(x)||sujet)}catch(e){try{console.error(e)}catch(_){}i=parts.length}
+  finally{chatSend.multi=0}
+  if(++i<parts.length)return setTimeout(suite,800);setTimeout(fin,500)};
+ /* la phrase tapée une fois, puis la réponse à chaque demande ; « non » ou Annuler défait toute la phrase */
+ const fin=()=>{chatMulti.busy=0;const add=(CHAT===C0?CHAT.m.slice(n0):CHAT.m).filter(m=>m.who!=='me').map(m=>{const o=Object.assign({},m);['undo','pUndo','agUndo','prUndo','chUndo'].forEach(k=>delete o[k]);return o});
+  CHAT.m=(CHAT===C0?C0.m.slice(0,n0):[]).concat([{who:'me',text:t0}],add);
+  if(add.length){add[add.length-1].mUndo=1;MULTI_UNDO={i:CHAT.m.length-add.length-1,db:av.db,q:av.q,qid:CHAT.qid}}
+  chatSave();chatRender(true)};
+ suite()}
+function chatMultiUndo(){const m=CHAT.m[CHAT.m.length-1];if(!m||!m.mUndo||!MULTI_UNDO||MULTI_UNDO.qid!==CHAT.qid)return false;
+ const o=JSON.parse(MULTI_UNDO.db);Object.keys(db).forEach(k=>{if(!(k in o))delete db[k]});Object.assign(db,o);q=JSON.parse(MULTI_UNDO.q);
+ CHAT.m.splice(MULTI_UNDO.i);MULTI_UNDO=null;CHAT.qid=q.id;fillForm();save();try{renderPrices();renderQuick()}catch(e){}chatSave();chatRender();return true}
 /* « FONTAINE » tapé en majuscules : Fontaine */
 function chatCasse(n){return n&&n===n.toUpperCase()&&/\p{L}{2}/u.test(n)?n.toLowerCase().replace(/(^|[\s'’.-])(\p{L})/gu,(m,a,b)=>a+b.toUpperCase()):n}
 function chatSend(text){
  const inp=$('chatIn');const t0=String(text??inp.value).trim();if(!t0)return;
+ /* une phrase à plusieurs demandes est en cours : la suivante attend son tour */
+ if(chatMulti.busy&&!chatSend.multi){inp.value='';setTimeout(()=>chatSend(t0),400);return}
  /* premier message : le modèle qui comprend les fautes doit être là */
  if(window.casoPont&&casoPont.ready&&!casoPont.miniOk&&casoPont.miniPret){if(!chatSend.att){chatSend.att=1;casoPont.miniPret().then(()=>{chatSend.att=0;chatSend(t0)})}return}
  /* « casô note » / « casô fin » tapés ou dictés : ce sont des commandes de la dictée, pas du texte */
@@ -3695,7 +3725,15 @@ function chatSend(text){
  const adrSeule=chAdrSeule(t0);
  if(CH_ASK&&chReponse(t0)){inp.value='';chatGrow(inp);qkUpdate();chatSave();chatRender(true);return}
  /* « non » juste après une action : comme le bouton Annuler de sa bulle */
- if(/^(non|nan|no|não|nao|nu|nie|hayır|hayir|нет|لا)[.!]*$/i.test(t0)&&chatNonUndo()){inp.value='';chatGrow(inp);qkUpdate();CHAT.m.push({who:'me',text:t0});CHAT.m.push({who:'bot',html:`<p data-noi18n>${esc(window.casoPont&&casoPont.ready?casoPont.tr('D’accord, j’ai annulé. ').trim():'D’accord, j’ai annulé.')}</p>`});try{casoPont.B.S.lastTurn=null;casoPont.B.S.pending=null}catch(e){}chatSave();chatRender(true);return}
+ if(/^(non|nan|no|não|nao|nu|nie|hayır|hayir|нет|لا)[.!]*$/i.test(t0)&&chatNonUndo()){inp.value='';chatGrow(inp);qkUpdate();CHAT.m.push({who:'me',text:t0});CHAT.m.push({who:'bot',html:`<p data-noi18n>${esc(window.casoPont&&casoPont.ready?casoPont.tr('D’accord, j’ai annulé. ').trim():'D’accord, j’ai annulé.')}</p>`});try{if(!(casoPont.refuser&&casoPont.refuser())){casoPont.B.S.lastTurn=null;casoPont.B.S.pending=null}}catch(e){}chatSave();chatRender(true);return}
+ if(window.casoPont&&casoPont.ready&&!adrSeule){
+  /* « le client d'hier », « la dame de la rue des Lilas » : le chat met le nom du client ; la phrase tapée reste affichée */
+  if(casoPont.renvoi&&!chatSend.renv){const r=casoPont.renvoi(t0);if(r&&r!==t0){chatSend.renv=1;try{chatSend(r)}finally{chatSend.renv=0}
+   for(let i=CHAT.m.length-1;i>=0;i--){const m=CHAT.m[i];if(m.who==='me'){if(m.text===r){m.text=t0;chatSave();chatRender(false)}break}}return}}
+  /* plusieurs demandes dans la même phrase */
+  if(casoPont.decoupe&&!chatSend.multi){const parts=casoPont.decoupe(t0);if(parts){chatMulti(t0,parts);return}}
+  /* questions sur l'activité, durée d'un travail, devis depuis une description */
+  if(casoPont.question&&(casoPont.question(t0)||casoPont.duree(t0)||casoPont.decrire(t0))){inp.value='';chatGrow(inp);qkUpdate();return}}
  if(!adrSeule&&window.casoPont&&casoPont.essaie(t0)){inp.value='';chatGrow(inp);qkUpdate();return}
  let t=t0;try{let lg=VN.lang||'fr';const dt=vlDetect(t0);if(dt&&dt.score>=3)lg=dt.l;t=chatFix(t0,lg)}catch(e){t=t0}
  if(t!==t0)setTimeout(()=>{for(let i=CHAT.m.length-1;i>=0;i--){const m=CHAT.m[i];if(m.who==='me'){if(m.text===t&&!m.orig){m.orig=t0;chatSave();chatRender(false)}break}}},0);
@@ -3740,7 +3778,8 @@ function chatSend(text){
  if(R.travaux.length){any=true;
   q.lines=q.lines.filter(l=>l.label||l.pu);
   R.travaux.forEach(l=>q.lines.push({label:l.label,qty:l.qty,unit:l.unit,pu:l.pu,tva:l.tva}));
-  out.push(`<div class="msg-lines">`+R.travaux.map(l=>`<div class="ml"><div><b data-noi18n lang="fr">${esc(l.label)}</b><div class="mut" data-noi18n>${fmtN(l.qty)} ${esc(l.unit)}${l.pu?' × '+eur(l.pu):''}</div>${l.ok||l.warn?'':'<div class="vn-w">Pas dans tes prix : prix à remplir</div>'}${l.warn?'<div class="vn-w">'+esc(l.warn)+'</div>':''}</div><b>${l.pu?eur(l.qty*l.pu):''}</b></div>`).join('')+`</div>`)}
+  out.push(`<div class="msg-lines">`+R.travaux.map(l=>`<div class="ml"><div><b data-noi18n lang="fr">${esc(l.label)}</b><div class="mut" data-noi18n>${fmtN(l.qty)} ${esc(l.unit)}${l.pu?' × '+eur(l.pu):''}</div>${l.ok||l.warn?'':'<div class="vn-w">Pas dans tes prix : prix à remplir</div>'}${l.warn?'<div class="vn-w">'+esc(l.warn)+'</div>':''}</div><b>${l.pu?eur(l.qty*l.pu):''}</b></div>`).join('')+`</div>`);
+  const vf=window.casoPont&&casoPont.verifier?casoPont.verifier(q):'';if(vf)out.push(vf)}
  if(cand)R.remarques=R.remarques.filter(x=>vnNorm(x)!==vnNorm(cand));
  if(R.remarques.length)out.push(`<p class="mut"><b>Remarques</b> : <span data-noi18n dir="auto">${esc(R.remarques.join(' · '))}</span></p>`);
  if(R.todo.length)out.push(`<p class="mut"><b>À faire</b> : <span data-noi18n dir="auto">${esc(R.todo.join(' · '))}</span></p>`);
@@ -7750,6 +7789,7 @@ function entExtra(){const p=db.prof||{},v=$('eLogoV');if(v)v.innerHTML=p.logo?`<
 <script type="text/x-caso" data-src="chat/brain.js"></script>
 <script type="text/x-caso" data-src="chat/caso-mini.js"></script>
 <script type="text/x-caso" data-src="chat/pont.js"></script>
+<script type="text/x-caso" data-src="chat/intel.js"></script>
 <script>/* démarrage : le coffre s'ouvre (ou il n'y en a pas), puis les scripts de l'appli s'exécutent dans l'ordre */
 VAULT.start(()=>{document.querySelectorAll('script[type="text/x-caso"]').forEach(t=>{const e=document.createElement('script');
  if(t.dataset.src){e.src=t.dataset.src;e.async=false}else e.textContent=t.textContent;t.replaceWith(e)})});

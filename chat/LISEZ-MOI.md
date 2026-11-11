@@ -9,6 +9,7 @@ et n'utilise aucun service extérieur. Il travaille sur les données de casô (`
 - `i18n/xx.json` : les réponses du chat dans chaque langue (le français sert de clé).
 - `caso-mini.js`, `caso-mini-model.json` : le mini modèle (5 Mo), chargé après coup, sans bloquer casô.
 - `pont.js` : le branchement avec casô.
+- `intel.js` : plusieurs demandes dans une phrase, renvois, devis depuis une description, contrôle du devis, durée d'un travail, questions sur l'activité, apprentissage partagé.
 
 ## Comment il s'insère dans casô
 `chatSend()` passe d'abord la phrase au chat. Il la garde s'il sait la faire lui-même, sinon les modules de casô
@@ -70,6 +71,43 @@ n'est pas affiché. Banc d'essai (4 documents × net / petit / photo) : 48 ligne
 
 **Premier message** : le mini modèle (fautes de frappe) se charge dès qu'on touche la barre d'écriture ; le premier
 message l'attend au plus 4 s.
+
+**Plus malin (nov. 2026)** — `intel.js`, `brain/p10.js` du moteur, branché dans `chatSend` :
+- **Plusieurs demandes dans une phrase** : « crée le client Durand, rendez-vous jeudi 9h et prépare le devis » (10 langues ;
+  virgules, « et », « puis »). Chaque demande suit son chemin, l'une après l'autre ; le client nommé ou créé vaut pour les
+  suivantes ; la phrase tapée s'affiche une fois, suivie d'une réponse par demande ; « non » ou Annuler défait toute la phrase.
+  Quand le chat sait faire toutes les demandes lui-même et qu'il n'y a pas de rendez-vous (« nouveau devis pour Petit, ajoute
+  faïence 10 m² »), il garde la phrase entière comme avant. Les mots qui ne commencent pas une demande restent avec la
+  précédente (« carrelage et faïence », « à Paul et Marie »). « crée le client X » crée le client (avant : question).
+- **Renvois** : « le client d'hier / de ce matin / de lundi » (rendez-vous et pointages du jour), « la dame de la rue des
+  Lilas » (adresse des clients et des chantiers). Un seul client trouvé : son nom remplace le renvoi ; la phrase tapée reste
+  affichée. « fais le même devis que Martin pour Dupont » copie le devis de Martin. « prépare le devis » sans nom : le client
+  dont on vient de parler, ou celui du devis ouvert.
+- **Devis depuis une description** : « salle de bain 6 m², dépose carrelage, pose faïence, receveur » → une ligne par travail,
+  quantités calculées (sol, murs, plinthes, pièces à l'unité) avec les mesures de la maquette si la pièce y est, sinon pour une
+  pièce carrée de cette surface (2,50 m sous plafond, une porte) ; prix de « Mes services » quand ils correspondent.
+- **Contrôle du devis** (une ligne « À vérifier » sous les lignes ajoutées, une seule fois par remarque) : fournitures oubliées
+  (colle et joint avec le carrelage…) quand le devis détaille ses fournitures, dépose sans évacuation des gravats, prix à moins
+  de 70 % de d'habitude, prix de vente sous le dernier prix d'achat.
+- **Durée d'un travail** : « combien de temps pour 25 m² de carrelage » → heures par m² des anciens devis où ce travail est le
+  poste principal (lignes en h, sinon heures pointées), puis le premier jour où le planning a assez de jours libres de suite.
+- **Questions sur l'activité** : fournisseur le moins cher pour un produit (achats lus sur les factures), chantiers les plus
+  rentables (HT facturé − achats rattachés au client, € par heure pointée), achats chez un fournisseur sur une période,
+  meilleurs clients.
+- **Facture d'un fournisseur** : « PLAQUE BA13 STD 2500x1200 » met à jour « Placo BA13 » de tes prix (même référence, ou tous
+  les mots du libellé pour un prix qui vient déjà d'un fournisseur ; jamais un prix de pose), au lieu d'en créer un second.
+- **Corrections** : « non » ou le bouton Annuler juste après une action du chat : ce qu'il avait compris n'est plus refait pour
+  cette phrase, et la phrase suivante, si elle en parle, lui apprend ce qui était voulu.
+- **Apprentissage partagé** (rien n'est affiché) : les demandes de lecture apprises par l'usager (ouvrir un écran, une
+  information ; jamais une modification) partent au serveur casô (`/api/appris`) sous forme masquée (« @c » pour le client,
+  « # » pour les nombres), seulement si tous leurs mots sont des mots du métier ou des commandes, sans nom (ni ceux des clients,
+  ni ceux déjà tapés avec une majuscule), sans texte, sans nombre écrit en clair. L'appareil reçoit une fois par jour celles des
+  autres. Elles ne servent que si le chat ne comprend pas la phrase lui-même, et toujours en proposition (« Tu veux : … ? ») ;
+  ce que l'usager a appris lui-même passe avant ; un « non » l'efface chez lui. Serveur : `window.CASO_APPRIS`
+  (défaut https://api.caso.fr).
+- **Contrôle chaque semaine** : `.github/workflows/chat-semaine.yml` lance `outils/chat/controle.js` (363 phrases de contrôle,
+  exemples dans les 10 langues) et `outils/chat/essai-appli.js` (essais dans l'appli). `node outils/chat/controle.js --base`
+  enregistre une nouvelle référence après un changement voulu.
 
 **Toutes les fonctions de l'appli par le chat** (10 langues, fautes et tournures libres ; moteur : `brain/p8app.js`,
 intentions `app.*` ; exécution : `pont.js` → `appFaire` / `autreFaire`) :

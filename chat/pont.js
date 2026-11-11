@@ -29,6 +29,7 @@ function chargerMini(base){if(P.miniP)return P.miniP;if(!window.CasoMini||!P.B||
 /* le mini modèle se charge dès qu'on touche la barre d'écriture (sinon 5 s après l'ouverture) ; le premier message l'attend au plus 4 s */
 P.miniPret=function(){if(P.miniOk||!P.ready)return Promise.resolve();return Promise.race([chargerMini(P.base),new Promise(function(r){setTimeout(r,4000);})]).then(function(){P.miniOk=true;});};
 document.addEventListener("focusin",function(e){if(P.ready&&e.target&&e.target.id==="chatIn")chargerMini(P.base);});
+P.garderIA=function(){garder();};
 function garder(){if(!P.B)return;try{var s=P.B.dump(),b={};APPRIS.forEach(function(k){if(s[k]!=null)b[k]=s[k];});localStorage.setItem(KEY,JSON.stringify({e:P.E.dump(),b:b}));}catch(e){}
   try{if(P.B.mini&&P.B.miniDirty){localStorage.setItem("caso_ia_mini",JSON.stringify(P.B.mini.dumpHead()));P.B.miniDirty=false;}}catch(e){}}
 
@@ -110,7 +111,7 @@ function msgHref(m){var t=encodeURIComponent(m.texte||""),to=String(m.to||"");if
   if(m.canal==="whatsapp")return "https://wa.me/"+to.replace(/\D/g,"").replace(/^0/,"33")+"?text="+t;return "sms:"+to.replace(/\s/g,"")+"?&body="+t;}
 function html(r,id){var h="";if(r.explain)h+='<p class="mut" dir="auto">'+e(r.explain)+'</p>';
   (r.says||[]).filter(Boolean).forEach(function(s){h+='<p dir="auto">'+e(s)+'</p>';});
-  if(id)h+="<!--carte-->"+carte(id)+"<!--/carte-->";
+  if(id){h+="<!--carte-->"+carte(id)+"<!--/carte-->";if(P.verifier){var dv=devisDe(id);if(dv)h+=P.verifier(dv);}}
   if(r.ui==="message"&&r.msg)h+=lien(msgHref(r.msg),r.msg.canal==="mail"?P.tr("Ouvrir l’e-mail"):r.msg.canal==="whatsapp"?P.tr("Ouvrir WhatsApp"):P.tr("Envoyer le SMS"));
   if(r.bouton)h+=bouton(r.bouton.act,r.bouton.label);
   if(r.ui==="appel"&&r.tel)h+=lien("tel:"+String(r.tel).replace(/\s/g,""),P.tr("Appeler"));
@@ -195,7 +196,10 @@ P.essaie=function(t,force){if(!P.ready||typeof db==="undefined"||typeof q==="und
   /* maquette 3D : le module 3D de casô reçoit la phrase */
   /* sans maquette enregistrée, le module 3D s'ouvrirait vide et la phrase serait perdue : on le dit, avec le bouton du plan */
   if(/^scene\./.test(lab0)){var mq=dernMaq();r.says=[];if(mq){r.explain=P.tr("Maquette 3D");apres=function(){vers3D(t,mq);};}else{r.explain="";r.says=[P.tr("Pour la maquette 3D, ajoute d’abord le plan.")];r.bouton={act:"3d",label:P.tr("Plan 3D")};}}
-  var w=ecrire(avant,t);garder();P.attente=!!(B.S.pending&&B.S.pending.type!=="reformuler");
+  var w=ecrire(avant,t);garder();
+  /* client créé par la phrase (« crée le client Durand ») : « Nouveau client », pas « fiche à jour » */
+  if(lab0==="clients.maj"&&w.u.cAdd.length===1&&r.cmds.length===1){var nc=(db.clients||[]).filter(function(x){return x.id===w.u.cAdd[0];})[0];
+    if(nc){var dt=String((r.says||[])[0]||"").match(/[:：]\s*(.+?)[.。]?$/);r.explain="";r.says=[P.tr("Nouveau client : {0}.",[nc.nom+(dt?" · "+dt[1]:"")])];}}P.attente=!!(B.S.pending&&B.S.pending.type!=="reformuler");
   if(qMod){w.u.q=q0;w.u.qMod=true;}
   if(xa&&xa.u)Object.keys(xa.u).forEach(function(k){w.u[k]=xa.u[k];});
   if(CHAT.qid!==q.id)CHAT.qid=q.id;

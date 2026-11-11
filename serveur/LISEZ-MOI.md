@@ -226,6 +226,15 @@ Tests : `node outils/test-devis-canvas-appli.js` (avec `python3 -m http.server 8
 - **Ménage** : Mes services montre une ligne par service (on la touche pour changer le prix, la croix supprime). Au pointage, quand il n'y a encore ni chantier ni personne, on les crée sur place, ou en touchant un client. Le planning du jour sans créneaux va de 6 h à 21 h, et non plus de 0 h à 24 h. « Mon équipe » ne montre plus l'adresse technique d'office. La sauvegarde a un vrai bouton « Restaurer une sauvegarde ». Retirés : le bouton « Retour » en double dans le menu du compte, l'ancienne clé d'IA payante, la bande orange vide du plan et quelques textes d'explication.
 - Tests : `test-module-artisan.js`, `test-fiche-client.js`, `test-achats-fournisseurs.js`. La partie PDF du dernier test demande pdf.js dans `outils/pdfjs`, ou la variable `PDFJS`.
 
+## Apprentissage partagé du chat (10 novembre 2026)
+
+- `GET /api/appris?l=fr` et `POST /api/appris` (sans compte) : les appareils envoient les demandes de lecture apprises par leur chat
+  (ouvrir un écran, une information), sous forme masquée, et reçoivent celles des autres. Le serveur refuse les chiffres, les nombres,
+  les noms, les textes et les commandes qui modifient quelque chose. Les usagers sont comptés par une empreinte de leur adresse réseau
+  (l'adresse elle-même n'est pas gardée).
+- Rangé à part dans `donnees/appris.json` (1 000 phrases au plus par langue ; plein, une phrase apprise par plusieurs usagers n'est
+  jamais remplacée), écrit toutes les minutes sans bloquer le serveur, 10 envois par heure et par adresse au plus.
+
 ## Sécurité et anti-fraude (3 novembre 2026)
 
 Deux relectures de sécurité indépendantes (serveur, appli) ; chaque faille trouvée est corrigée et a son test (`outils/test-securite-serveur.js`, `outils/test-securite-appli.js`, `outils/test-anti-fraude.js`).
