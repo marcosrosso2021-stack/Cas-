@@ -2801,6 +2801,8 @@ function vnClauses(t){
  const out=[];
  t.split(/[.;!?\n]+|,(?!\d)|\s+(?:ensuite|puis|et puis|apres ca|et aussi|en plus|aussi)\s+|\s+(?=(?:attention|remarque|il faut|faut|penser a|prevoir de|ne pas oublier|forfait)\b)/).forEach(c=>{
   c=(c||'').trim();if(!c)return;
+  /* « carrelage 14 m² et main d'oeuvre 8 h » : deux quantités, « et » sépare les deux lignes */
+  VN_QU.lastIndex=0;if((c.match(VN_QU)||[]).length>=2&&/\s+et\s+/.test(c)){c.split(/\s+et\s+/).forEach(x=>{x=x.trim();if(x)out.push(...vnClauses(x))});return}
   // « 20 m² carrelage 6 heures main d'oeuvre » : coupe avant chaque nouvelle quantité
   const pos=[];let m;VN_QU.lastIndex=0;while((m=VN_QU.exec(c)))pos.push(m.index);
   let from=0;pos.slice(1).forEach(i=>{if(i>from){out.push(c.slice(from,i).trim());from=i}});out.push(c.slice(from).trim());

@@ -28,7 +28,7 @@ const ESSAIS=[
  ["fr",["nouveau devis pour Petit","faïence 10 m² à 18 €"],["",/À vérifier[\s\S]*acheté 21/]],
  ["es",["¿cuál es mi obra más rentable?"],[/rentables/]],
  ["en",["where is BA13 the cheapest"],[/Point P/]],
- ["fr",["devis pour Dupont carrelage 14 m² et main d'oeuvre 8 h"],[/Carrelage[\s\S]*14/]],
+ ["fr",["devis pour Dupont carrelage 14 m² et main d'oeuvre 8 h"],[/Carrelage 14 m²[\s\S]*Main d.œuvre 8 h/]],
  ["fr",["rdv mardi 9h avec Dupont"],[/Dupont/]],
  ["fr",["rdv demain à 9h chez Dupont et envoie-lui un SMS pour confirmer le rdv"],[/Dupont[\s\S]*SMS/]],
  ["fr",["nouveau devis pour Petit, ajoute faïence 10 m² à 50 €"],[/Faïence/]],
