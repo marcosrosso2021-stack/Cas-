@@ -2287,6 +2287,12 @@ function create(E,X,saved,opts){
       if(!x.m.split(" ").every(motPublic)||!cmdsPublics(x.t)||!gabaritPublic(x.t))return;S.phrases[x.m]={t:x.t,n:cur?cur.n:0,src:"partage",ex:"",at:cur?cur.at:Date.now(),p:1};n++;});
     var P0=Object.keys(S.phrases).filter(function(k){return S.phrases[k].src==="partage";});if(P0.length>300){P0.sort(function(a,b){return S.phrases[a].at-S.phrases[b].at;});P0.slice(0,P0.length-300).forEach(function(k){delete S.phrases[k];});}
     PV=null;return n;};
+  /* ---------- apprendre du geste : « Je n'ai pas compris », puis l'usager ouvre lui-même un écran ----------
+     La phrase voulait sans doute dire « ouvrir cet écran » : c'est retenu en proposition (« Tu veux : ouvrir le planning ? »),
+     un « oui » le confirme, un « non » l'efface. Rien n'est affiché au moment du geste. */
+  B.geste=function(raw,cmds){if(!raw||!cmds||!cmds.length)return false;var c=ctxOf(raw),w=c.n.split(" ").filter(Boolean);if(!w.length||w.length>12)return false;
+    if(localParse(c))return false;if(rejected(c,cmds))return false;var cur=S.phrases[mask(c).m];if(cur&&cur.src!=="partage")return false;
+    remember(c,cmds,"geste",true);if(S.pending&&S.pending.type==="reformuler")S.pending=null;PV=null;return true;};
   /* ---------- données pour les écrans ---------- */
   B.motConnu=function(w){w=hn(w);return !!(knownWord(w)||nearFr(w));};B.motCmd=function(w){w=hn(w);return !!((CMDS.fr&&CMDS.fr.has(w))||MOTSFR.has(w));};B.qty=qty;B.TYPES=TYPES;B.roomLabel=roomLabel;B.totalHT=totalHT;B.totalTTC=totalTTC;B.tvaParTaux=tvaParTaux;B.getCur=getCur;B.clientName=clientName;B.paid=paid;B.devisOf=devisOf;B.budget=budget;B.fdate=fdate;B.ftime=ftime;B.fnum=fnum;B.eur=eur;B.matColor=matColor;B.colorHex=colorHex;B.level=level;B.fromIso=fromIso;B.iso=iso;B.sod=sod;B.addDays=addDays;B.undo=undo;
   B.dump=function(){var s=clone(S);s.pending=null;s.lastTurn=null;return s;};

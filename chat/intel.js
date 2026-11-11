@@ -236,3 +236,20 @@ function plusTard(){var go=function(){try{recevoir();envoyer();}catch(x){}};if("
 (function attendre(n){if(P.ready){setTimeout(plusTard,15000);setInterval(plusTard,30*60000);return;}if(n<120)setTimeout(function(){attendre(n+1);},500);})(0);
 P.partagerMaintenant=function(){envoyer();};
 })();
+/* ---------- apprendre du geste : après « Je n'ai pas compris », l'écran que l'usager ouvre lui-même ---------- */
+(function(){var P=window.casoPont;if(!P)return;function B(){return P.B;}function garder(){try{P.garderIA&&P.garderIA();}catch(x){}}
+ var INC=null,ECR={cli:[{m:"clients",a:"ouvrir",args:{}}],prix:[{m:"services",a:"ouvrir",args:{}}],fou:[{m:"fournisseurs",a:"ouvrir",args:{}}],
+  fact:[{m:"factures",a:"ouvrir",args:{client:null}}],agenda:[{m:"planning",a:"ouvrir",args:{date:null,semaine:false}}],pt:[{m:"pointage",a:"ouvrir",args:{}}],
+  devis:[{m:"devis",a:"liste",args:{filtre:null}}],cpt:[{m:"app",a:"compte",args:{}}]};
+ function incompris(){var m=CHAT&&CHAT.m&&CHAT.m[CHAT.m.length-1];if(!m||m.who!=="bot")return false;var h=String(m.html||"").replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim();
+  try{var a=P.tr("Je n’ai pas compris."),b=P.tr("Je n'ai pas bien compris. Pouvez-vous le dire autrement ?");return h===a||h===b||h.indexOf(a)===0&&h.length<a.length+4;}catch(x){return false;}}
+ function brancher(){if(typeof window.chatSend!=="function"||typeof window.go!=="function"||window.chatSend.geste)return false;
+  var cs=window.chatSend,g=window.go;
+  window.chatSend=function(t){try{if(!cs.multi&&!(window.chatMulti&&chatMulti.busy)){var t0=String(t==null?(document.getElementById("chatIn")||{}).value||"":t).trim();if(t0)INC={t:t0,at:Date.now()};}}catch(x){}return cs.apply(this,arguments);};
+  Object.keys(cs).forEach(function(k){try{window.chatSend[k]=cs[k];}catch(x){}});
+  Object.defineProperty(window.chatSend,"multi",{get:function(){return cs.multi;},set:function(v){cs.multi=v;}});
+  ["att","renv"].forEach(function(k){Object.defineProperty(window.chatSend,k,{get:function(){return cs[k];},set:function(v){cs[k]=v;}});});
+  window.chatSend.geste=1;
+  window.go=function(sc){try{if(INC&&Date.now()-INC.at<120000&&ECR[sc]&&P.ready&&incompris()){if(B().geste(INC.t,ECR[sc]))garder();INC=null;}}catch(x){}return g.apply(this,arguments);};
+  return true;}
+ (function essai(n){if(!brancher()&&n<60)setTimeout(function(){essai(n+1);},500);})(0);})();
