@@ -61,6 +61,16 @@ Ce que le chat fait lui-même :
 - Lecture impossible → « C'est un plan ou un document fournisseur ? ».
 On répond en tapant (« oui », « au devis », « client », un nom, dans les 10 langues) ou d'un seul bouton.
 
+**Lecture des documents** (`index.html` : `docImg`, utilisé par le chat et par l'import) : avant la lecture, la photo
+est agrandie si elle est petite, le papier est égalisé (ombre, éclairage), l'image est redressée (−5° à 5°) et les
+traits de tableau sont effacés. Les lignes de ticket sur deux lignes (« PLAQUE BA13 » puis « 14 x 8,95  125,30 »)
+sont réunies ; une virgule perdue (« 6240 » pour 62,40) est rétablie quand quantité × prix = total le confirme ;
+les adresses et les totaux mal lus ne deviennent pas des articles ; un total TTC qui ne colle pas avec les lignes
+n'est pas affiché. Banc d'essai (4 documents × net / petit / photo) : 48 lignes justes sur 57, contre 10 avant.
+
+**Premier message** : le mini modèle (fautes de frappe) se charge dès qu'on touche la barre d'écriture ; le premier
+message l'attend au plus 4 s.
+
 **Toutes les fonctions de l'appli par le chat** (10 langues, fautes et tournures libres ; moteur : `brain/p8app.js`,
 intentions `app.*` ; exécution : `pont.js` → `appFaire` / `autreFaire`) :
 - Compte et réglages : langue de l'appli (« mets l'appli en anglais »), mon compte, code de secours, déconnexion

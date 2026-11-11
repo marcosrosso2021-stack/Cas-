@@ -3554,7 +3554,7 @@ async function chatFile(inp){const f=inp.files&&inp.files[0];if(!f)return;inp.va
  const b=chBot(`<p class="mut"><span>Lecture du document…</span> <span data-noi18n class="ch-pc"></span></p>`);
  const pc=n=>{b.html=`<p class="mut"><span>Lecture du document…</span> <span data-noi18n>${n} %</span></p>`;chatRender(false)};
  let T=null,W=[];const sm=setImpMsg;setImpMsg=s=>{const m=/(\d+)\s*%/.exec(s||'');if(m)pc(m[1])};
- try{const r=pdf?await pdfRead(f):await ocrRun(await loadImgData(f,2000,true),pc,'6');T=r.text||'';W=r.words||[]}catch(e){T=null}finally{setImpMsg=sm}
+ try{const r=pdf?await pdfRead(f):await ocrRun(await docImg(f),pc,'6');T=r.text||'';W=r.words||[]}catch(e){T=null}finally{setImpMsg=sm}
  CHAT.m.splice(CHAT.m.indexOf(b),1);
  const k=T==null?'?':chKind(T);
  if(k==='plan')return chPlan(f);
@@ -3571,6 +3571,8 @@ function chPlan(f){chBot(`<p><svg class="i i-sm"><use href="#i-plan"/></svg> <sp
 /* document d'un fournisseur : on dit ce qu'on a lu, une question, « oui » enregistre */
 function chDocAsk(f,T,W){const M=docMeta(T);$('impFour').value=M.four||'';
  const rows=rowsFromWords(W,T).filter(r=>r.on!==false&&r.pu>0&&r.label&&/\p{L}{3}/u.test(r.label)&&!/\b(t[ée]l|siret|tva|total|iban|bic|capital|rcs|ape|net [àa] payer|acompte)\b/i.test(r.label)).map(r=>Object.assign(r,{label:r.label.replace(/[\[\]|]+.*$/,'').replace(/\s+/g,' ').trim()})).filter(r=>r.label.length>2);
+ /* total lu de travers (photo floue) : affiché seulement s'il colle avec les lignes lues */
+ if(M.ttc!=null&&rows.length){const S=rows.reduce((t,r)=>t+(r.qty||1)*r.pu,0);if(![1,1.055,1.1,1.2].some(k=>Math.abs(S*k-M.ttc)<=Math.max(1,M.ttc*.01)))M.ttc=null}
  CH_ASK={k:'doc',meta:M,rows,four:M.four||''};
  const ty={facture:'Facture',devis:'Devis',ticket:'Ticket',bl:'Bon de livraison'}[M.type]||'Document';
  const head=`<p><svg class="i i-sm"><use href="#i-truck"/></svg> <b>${ty}</b>${M.four?` · <b data-noi18n>${esc(M.four)}</b>`:''}${rows.length?` · <b data-noi18n>${rows.length}</b> <span>${rows.length>1?'lignes':'ligne'}</span>`:''}${M.ttc!=null?` · <b data-noi18n>${eur(M.ttc)}</b> <span>TTC</span>`:''}</p>`;
@@ -3685,6 +3687,8 @@ function chatUndo(){const m=CHAT.m[CHAT.m.length-1];if(!m||!m.undo)return;{const
 function chatCasse(n){return n&&n===n.toUpperCase()&&/\p{L}{2}/u.test(n)?n.toLowerCase().replace(/(^|[\s'’.-])(\p{L})/gu,(m,a,b)=>a+b.toUpperCase()):n}
 function chatSend(text){
  const inp=$('chatIn');const t0=String(text??inp.value).trim();if(!t0)return;
+ /* premier message : le modèle qui comprend les fautes doit être là */
+ if(window.casoPont&&casoPont.ready&&!casoPont.miniOk&&casoPont.miniPret){if(!chatSend.att){chatSend.att=1;casoPont.miniPret().then(()=>{chatSend.att=0;chatSend(t0)})}return}
  /* « casô note » / « casô fin » tapés ou dictés : ce sont des commandes de la dictée, pas du texte */
  {const tn=t0.replace(VN_END,'$1').replace(new RegExp(VN_WAKE.source,'giu'),'$1').replace(/\s+/g,' ').trim();if(tn!==t0){if(tn)return chatSend(tn);inp.value='';chatGrow(inp);qkUpdate();if(VN_WAKE.test(t0)){if(VN.mode!=='note')vnRec()}else if(VN.mode==='note')vnStop();return}}
  /* réponse à la question que le chat vient de poser (chantier, fournisseur, plan ou document) */
@@ -6195,6 +6199,45 @@ function enhance(c){
  const k=hi>lo+10?255/(hi-lo):1;
  for(let i=0;i<d.length;i+=4){const v=Math.max(0,Math.min(255,(d[i]-lo)*k));d[i]=d[i+1]=d[i+2]=v}
  x.putImageData(im,0,0)}
+/* photo ou capture d'un document → image propre pour la lecture : agrandie, papier égalisé, redressée, sans traits de tableau */
+function docGray(c){const W=c.width,H=c.height,d=c.getContext('2d').getImageData(0,0,W,H).data,g=new Float32Array(W*H);
+ for(let i=0,j=0;j<g.length;i+=4,j++)g[j]=.299*d[i]+.587*d[i+1]+.114*d[i+2];return g}
+/* papier : clair par blocs lissé (l'encre disparaît, il reste l'éclairage) ; chaque point est ramené au blanc du papier */
+function docFlat(g,W,H){const B=Math.max(16,Math.round(Math.max(W,H)/50)),bw=Math.ceil(W/B),bh=Math.ceil(H/B),bm=new Float32Array(bw*bh),sm=new Float32Array(bw*bh);
+ for(let by=0;by<bh;by++)for(let bx=0;bx<bw;bx++){const v=[];for(let y=by*B;y<Math.min(H,by*B+B);y+=2)for(let x=bx*B;x<Math.min(W,bx*B+B);x+=2)v.push(g[y*W+x]);v.sort((a,b)=>b-a);bm[by*bw+bx]=v[Math.floor(v.length*.1)]||255}
+ for(let by=0;by<bh;by++)for(let bx=0;bx<bw;bx++){let s=0,n=0;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const yy=by+dy,xx=bx+dx;if(yy>=0&&yy<bh&&xx>=0&&xx<bw){s+=bm[yy*bw+xx];n++}}sm[by*bw+bx]=s/n}
+ for(let y=0;y<H;y++){const fy=Math.min(bh-1,Math.max(0,y/B-.5)),y0=Math.floor(fy),y1=Math.min(bh-1,y0+1),ay=fy-y0;
+  for(let x=0;x<W;x++){const fx=Math.min(bw-1,Math.max(0,x/B-.5)),x0=Math.floor(fx),x1=Math.min(bw-1,x0+1),ax=fx-x0;
+   const bg=(sm[y0*bw+x0]*(1-ax)+sm[y0*bw+x1]*ax)*(1-ay)+(sm[y1*bw+x0]*(1-ax)+sm[y1*bw+x1]*ax)*ay;const j=y*W+x;g[j]=Math.min(255,g[j]/Math.max(40,bg)*255)}}}
+function docOtsu(g){const h=new Array(256).fill(0);for(let j=0;j<g.length;j++)h[g[j]|0]++;let sum=0;for(let i=0;i<256;i++)sum+=i*h[i];let sB=0,wB=0,best=0,th=180;
+ for(let i=0;i<256;i++){wB+=h[i];if(!wB)continue;const wF=g.length-wB;if(!wF)break;sB+=i*h[i];const mB=sB/wB,mF=(sum-sB)/wF,v=wB*wF*(mB-mF)*(mB-mF);if(v>best){best=v;th=i}}return th}
+/* inclinaison des lignes de texte (−5° à 5°), mesurée sur l'encre */
+function docAngle(g,W,H,th){const sc=Math.max(1,Math.round(W/600)),sw=Math.floor(W/sc),sh=Math.floor(H/sc),pts=[];
+ for(let y=Math.floor(sh*.05);y<sh*.95;y++)for(let x=Math.floor(sw*.05);x<sw*.95;x++)if(g[(y*sc)*W+x*sc]<th)pts.push(x,y);
+ if(pts.length<60)return 0;const score=a=>{const t=Math.tan(a*Math.PI/180),prof=new Float32Array(sh+sw);for(let i=0;i<pts.length;i+=2){const r=Math.round(pts[i+1]-pts[i]*t+sw*.1);if(r>=0&&r<prof.length)prof[r]++}let v=0;for(let r=1;r<prof.length;r++){const d=prof[r]-prof[r-1];v+=d*d}return v};
+ let best=0,bv=-1;for(let a=-5;a<=5.001;a+=.25){const v=score(a);if(v>bv){bv=v;best=a}}
+ for(let a=best-.2;a<=best+.2001;a+=.05){const v=score(a);if(v>bv){bv=v;best=a}}return Math.round(best*100)/100}
+function docImgCanvas(im){
+ const W0=im.naturalWidth||im.width,H0=im.naturalHeight||im.height;
+ let k=Math.min(3,2400/Math.max(W0,H0));if(Math.max(W0,H0)*k<1000)k=1000/Math.max(W0,H0);
+ const W=Math.round(W0*k),H=Math.round(H0*k);
+ let c=document.createElement('canvas');c.width=W;c.height=H;let x=c.getContext('2d');x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';x.fillStyle='#fff';x.fillRect(0,0,W,H);x.drawImage(im,0,0,W,H);
+ let g=docGray(c);docFlat(g,W,H);let th=docOtsu(g);
+ const ang=docAngle(g,W,H,th);
+ if(Math.abs(ang)>=.3){const id=x.getImageData(0,0,W,H),d=id.data;for(let i=0,j=0;j<g.length;i+=4,j++){d[i]=d[i+1]=d[i+2]=g[j];d[i+3]=255}x.putImageData(id,0,0);
+  const r=document.createElement('canvas');r.width=W;r.height=H;const rx=r.getContext('2d');rx.fillStyle='#fff';rx.fillRect(0,0,W,H);rx.translate(W/2,H/2);rx.rotate(-ang*Math.PI/180);rx.drawImage(c,-W/2,-H/2);rx.setTransform(1,0,0,1,0,0);
+  c=r;x=rx;g=docGray(c);th=docOtsu(g)}
+ /* traits de tableau : longues suites d'encre horizontales ou verticales effacées */
+ {const minH=Math.max(80,W*.15),minV=Math.max(80,H*.06),tl=th+(255-th)*.45,ink=j=>g[j]<tl,er=[];
+  for(let y=0;y<H;y++){let s=-1;for(let xx=0;xx<=W;xx++){const on=xx<W&&ink(y*W+xx);if(on&&s<0)s=xx;else if(!on&&s>=0){if(xx-s>=minH)er.push(y*W+s,y*W+xx,1);s=-1}}}
+  for(let xx=0;xx<W;xx++){let s=-1;for(let y=0;y<=H;y++){const on=y<H&&ink(y*W+xx);if(on&&s<0)s=y;else if(!on&&s>=0){if(y-s>=minV)er.push(s*W+xx,y*W+xx,W);s=-1}}}
+  for(let i=0;i<er.length;i+=3)for(let j=er[i];j<er[i+1];j+=er[i+2])g[j]=255}
+ const id=x.getImageData(0,0,W,H),d=id.data;
+ for(let i=0,j=0;j<g.length;i+=4,j++){const v=Math.round(g[j]);d[i]=d[i+1]=d[i+2]=v;d[i+3]=255}
+ x.putImageData(id,0,0);return c}
+function docImg(file){return new Promise((res,rej)=>{const u=URL.createObjectURL(file),im=new Image();
+ im.onload=()=>{try{res(docImgCanvas(im).toDataURL('image/png'))}catch(e){rej(e)}finally{URL.revokeObjectURL(u)}};
+ im.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('Image illisible.'))};im.src=u})}
 function loadImgData(file,max=1600,enh=false){return new Promise((res,rej)=>{
  const r=new FileReader();
  r.onload=()=>{const im=new Image();
@@ -6253,6 +6296,18 @@ function verify(v,qty,pu){
  const qi=v.findIndex(x=>Math.abs(x-qty)<1e-9);
  const pi=v.findIndex((x,i)=>i!==qi&&Math.abs(x-pu)<1e-9);
  return v.filter((x,i)=>i!==qi&&i!==pi).some(x=>near(x,t))}
+/* virgule perdue à la lecture (« 6240 » pour 62,40, « 045 » pour 0,45) : rétablie si quantité × prix = total ne tombe juste qu'avec elle */
+let DEC_NORM=false;
+function decFix(nums){
+ const v=nums.map(n=>n.v);if(v.length<3)return;
+ const idx=nums.map((n,i)=>i).filter(i=>/^\d{3,}$/.test(nums[i].t)||/^0\d+$/.test(nums[i].t));
+ if(!idx.length||idx.length>6)return;
+ /* le calcul tombe juste sans virgule : on ne change rien, sauf si tout le document écrit ses prix avec centimes */
+ if(pickByMath(v)){if(!DEC_NORM)return;const m=pickByMath(v),pi=v.indexOf(m.pu);if(pi<0||!idx.includes(pi))return;
+  idx.forEach(i=>{if(i!==v.indexOf(m.qty))nums[i].v=Math.round(v[i])/100});return}
+ let best=null;
+ for(let m=1;m<(1<<idx.length);m++){const w=v.slice();let c=0;idx.forEach((i,b)=>{if(m>>b&1){w[i]=Math.round(v[i])/100;c++}});if(pickByMath(w)&&(!best||c<best.c))best={w,c}}
+ if(best)nums.forEach((n,i)=>n.v=best.w[i])}
 function pickByMath(v){
  const n=v.length;
  for(let k=n-1;k>=2;k--)for(let i=0;i<k;i++)for(let j=0;j<k;j++){
@@ -6276,6 +6331,7 @@ function mergeTokens(ws){
  for(let i=0;i<ws.length;i++){
   const w=ws[i],n=ws[i+1];
   if(n&&/^\d{1,3}$/.test(w.t)&&/^\d{3}[.,]\d{2}$/.test(n.t)&&n.x0-w.x1<(w.h||10)*0.9){out.push({...w,t:w.t+n.t,x1:n.x1});i++}
+  else if(n&&/^\d+[.,]$/.test(w.t)&&/^\d{2}$/.test(n.t)&&n.x0-w.x1<(w.h||10)*1.2){out.push({...w,t:w.t+n.t,x1:n.x1});i++}
   else out.push(w)}
  return out}
 function groupRows(words){
@@ -6302,11 +6358,15 @@ function findHeader(rows){
 
 function parseRow(ws,hdr,sup){
  const text=ws.map(w=>w.t).join(' ');
- if(/^(sous-?total|total|net|tva|acompte|remise|iban|siret|bic|page|reste|règlement|reglement|conditions|date|échéance)/i.test(text))return null;
+ if(/^(sous-?total|tot[a-z]{0,3}\b|net|tva|acompte|remise|iban|siret|bic|page|reste|règlement|reglement|conditions|date|échéance)/i.test(text))return null;
+ /* adresse (rue, code postal) : jamais une ligne d'achat */
+ if(CT_ST.test(text)&&/\b\d{5}\b/.test(text))return null;
  const clean=t=>t.replace(/€|eur$/i,'');
  const isNum=t=>NUMRE.test(t),isPct=t=>/^\d+(?:[.,]\d+)?%$/.test(t);
  let s=ws.length;
- while(s>0){const t=clean(ws[s-1].t);if(t===''||t==='%'||isNum(t)||isPct(t)||UNITRE.test(t))s--;else break}
+ while(s>0){const t=clean(ws[s-1].t);if(t===''||t==='%'||isNum(t)||isPct(t)||UNITRE.test(t)||/^[x×*]$/i.test(t))s--;else break}
+ /* « 14 x 8,95 » : le libellé s'arrête avant la quantité */
+ for(let i=ws.length-2;i>0;i--)if(/^[x×*]$/i.test(ws[i].t)&&isNum(clean(ws[i-1].t))&&isNum(clean(ws[i+1].t))){s=i-1;break}
  if(hdr&&hdr.cols.qty!=null&&hdr.cols.label!=null&&hdr.cols.qty>hdr.cols.label){const bd=hdr.cols.qty-.3*(hdr.cols.qty-hdr.cols.label);while(s<ws.length-1&&(ws[s].x0+ws[s].x1)/2<bd)s++}
  const lab=ws.slice(0,s),tail=ws.slice(s);
  if(!tail.length||!lab.length)return null;
@@ -6319,9 +6379,10 @@ function parseRow(ws,hdr,sup){
   if(t==='')return;
   if(isPct(t)){tva=numVal(t.slice(0,-1));return}
   if(t==='%'){if(nums.length)tva=nums.pop().v;return}
-  if(isNum(t)){nums.push({v:numVal(t),x:(w.x0+w.x1)/2});return}
+  if(isNum(t)){nums.push({v:numVal(t),x:(w.x0+w.x1)/2,t});return}
   if(UNITRE.test(t))unit=t});
  if(!nums.length)return null;
+ decFix(nums);
  const v=nums.map(n=>n.v);
  let qty=null,pu=null,src='';
  // 1) colonnes de l'en-tête
@@ -6375,7 +6436,15 @@ function parseText(t){
 function rowsFromWords(words,text){
  const sup=supGet($('impFour').value);
  const lines=words.length?groupRows(words):[];
+ for(let i=0;i<lines.length-1;i++){const a=lines[i],b=lines[i+1],num=t=>/^\d+(?:[.,]\d+)?€?$/.test(t);
+  const fois=b.some(w=>/^[x×*]$/i.test(w.t));
+  if(!/\p{L}{3}/u.test(a.map(w=>w.t).join(' '))||(num(a[a.length-1].t)&&!fois))continue;
+  if(b.some(w=>/\p{L}{3}/u.test(w.t))||b.filter(w=>num(w.t)).length<2)continue;
+  if(/^(total|tva|cb|esp|rendu|net|sous)/i.test(a[0].t))continue;
+  lines.splice(i,2,a.concat(b))}
  if(!lines.length)return parseText(text||'');
+ const tk=words.map(w=>String(w.text||'').replace(/€$/,''));
+ DEC_NORM=tk.filter(t=>/^\d+[.,]\d{2}$/.test(t)).length>=Math.max(3,2*tk.filter(t=>/^\d{3,}$/.test(t)).length);
  const hdr=findHeader(lines),out=[];
  lines.forEach((ws,i)=>{
   if(hdr&&i<=hdr.i)return;
@@ -6390,7 +6459,7 @@ function loadScript(src){return new Promise((res,rej)=>{
 async function ocrExtract(f){
  if(f.type==='application/pdf'){const r=await pdfRead(f);return rowsFromWords(r.words||[],r.text||'')}
  await loadScript(OCR_V.js);
- const d=await loadImgData(f,2000,true);
+ const d=await docImg(f);
  const w=await Tesseract.createWorker('fra',1,{workerPath:OCR_V.worker,corePath:OCR_V.core,langPath:OCR_V.lang,logger:m=>{if(m.status)setImpMsg(m.status+' '+Math.round((m.progress||0)*100)+' %')}});
  try{
   await w.setParameters({tessedit_pageseg_mode:'6',preserve_interword_spaces:'1'});
@@ -6465,7 +6534,7 @@ async function pdfRead(f){
  return ocrRun(c.toDataURL('image/jpeg',.9),pc=>setImpMsg(i18nT('Lecture en cours…')+' '+pc+' %'),'6')}
 async function docExtract(f){
  const pdf=f.type==='application/pdf'||/\.pdf$/i.test(f.name||'');
- const r=pdf?await pdfRead(f):await ocrRun(await loadImgData(f,2000,true),pc=>setImpMsg(i18nT('Lecture en cours…')+' '+pc+' %'),'6');
+ const r=pdf?await pdfRead(f):await ocrRun(await docImg(f),pc=>setImpMsg(i18nT('Lecture en cours…')+' '+pc+' %'),'6');
  IMP_DOC=docMeta(r.text||'');
  {const cur=$('impFour').value.trim();if(IMP_DOC.four&&(!cur||!vnNorm(r.text||'').includes(vnNorm(cur)))){$('impFour').value=IMP_DOC.four;supHint()}}
  impDocShow();
