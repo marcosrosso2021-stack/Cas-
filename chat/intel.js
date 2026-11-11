@@ -63,24 +63,31 @@ var ART={"du ":"de ","de la ":"de ","de l ":"de ","au ":"à ","a la ":"à "};
 /* motif trouvé dans la phrase traduite → même passage dans la phrase tapée (accents, apostrophes, majuscules) */
 function motifTape(m){var cls={a:"[aàâä]",e:"[eéèêë]",i:"[iîï]",o:"[oôö]",u:"[uùûü]",c:"[cç]",y:"[yÿ]"};
   return new RegExp(m.trim().split(" ").map(function(w){return w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&").replace(/[aeiouyc]/g,function(ch){return cls[ch];});}).join("[\\s'’-]+"),"iu");}
-P.renvoi=function(t){if(!P.ready||typeof db==="undefined")return null;var c=fr(t),s=" "+c.p+" ",m,qui=null;
-  if((m=s.match(RE_JOUR))){var d=jourDe(m[2],m[3]),L=d?clientsDuJour(d,m[2]):[];if(L.length===1)qui=L[0];}
+var ATT=null;
+P.renvoi=function(t){if(!P.ready||typeof db==="undefined")return null;
+  /* réponse à « Lequel ? » : le nom choisi remplace le renvoi dans la demande de départ */
+  if(ATT){var a=ATT;ATT=null;var k=cle(t).replace(/^(c est |plutot |)/,"");if(Date.now()-a.at<5*60000&&k.split(" ").length<=3){var ch=a.L.filter(function(x){return cle(x.nom)===k||cle(x.nom).split(" ").indexOf(k)>=0;})[0];if(ch)return a.ref(ch);}}
+  var c=fr(t),s=" "+c.p+" ",m,qui=null;
+  if((m=s.match(RE_JOUR))){var d=jourDe(m[2],m[3]),L=d?clientsDuJour(d,m[2]):[];if(L.length===1)qui=L[0];
+    /* aucun client ou plusieurs ce jour-là : le chat le dit, au lieu de prendre « De Mardi » pour un nom */
+    else if(d){langue();var jt=P.B.fdate(d),m0=m;if(L.length)ATT={at:Date.now(),L:L,ref:function(ch){return remplace(t,c,s,m0,ch);}};bulle(t,p(L.length?T("Le {0} : {1}. Lequel ?",[jt,L.map(function(x){return x.nom;}).join(", ")]):T("Aucun client au planning le {0}.",[jt])));return true;}}
   if(!qui&&(m=s.match(RE_RUE))){var L2=clientsDeLaRue(m[2]);if(L2.length===1)qui=L2[0];}
-  if(!qui)return null;var rep=(ART[m[1]||""]||"")+qui.nom,brut=m[0].trim();
+  if(!qui)return null;return remplace(t,c,s,m,qui);};
+function remplace(t,c,s,m,qui){var rep=(ART[m[1]||""]||"")+qui.nom,brut=m[0].trim();
   if(c.lang==="fr"||!c.lang){var re=motifTape(brut),x=String(t).match(re);if(x)return String(t).replace(re,rep);}
-  return s.replace(m[0]," "+rep).trim();};
+  return s.replace(m[0]," "+rep).trim();}
 
 /* ---------- contrôle du devis : oublis, prix inhabituels, vente à perte ---------- */
 var AVEC=[[/\b(carrelage|faience|carreaux?|mosaique)\b/,[[/\bcolle\b/,"colle"],[/\bjoints?\b/,"joint"]]],
   [/\bparquet\b|\bstratifie\b/,[[/sous couche|sous-couche|isolant/,"sous-couche"],[/plinthes?/,"plinthes"]]],
   [/\b(placo|plaque de platre|ba13|ba 13|cloison|doublage)\b/,[[/\bbandes?\b/,"bandes"],[/\benduit\b/,"enduit"]]],
   [/\bpeinture\b/,[[/sous couche|sous-couche|impression/,"sous-couche"]]]];
-var MATIERE=/\b(sacs?|pots?|rouleaux?|kg|l|boites?|paquets?)\b|\bfournitures?\b/;
+var MATIERE=/\b(sacs?|pots?|rouleaux?|kg|litres?|boites?|paquets?)\b|\bfournitures?\b/;
 var VU={};
 function medianne(v){v=v.slice().sort(function(a,b){return a-b;});return v.length?v[Math.floor(v.length/2)]:null;}
 P.verifier=function(o){langue();if(!o||!(o.lines||[]).length)return "";var L=o.lines.filter(function(l){return l.label;}),txt=L.map(function(l){return hn(l.label);}).join(" | "),out=[];
   /* fournitures oubliées : seulement si le devis détaille déjà ses fournitures */
-  var detaille=L.some(function(l){return MATIERE.test(hn(l.label))||/^(sac|pot|rouleau|kg|l|boite|paquet)$/.test(hn(l.unit));});
+  var detaille=L.some(function(l){return MATIERE.test(hn(l.label))||/^(sac|pot|rouleau|kg|l|litre|boite|paquet)$/.test(hn(l.unit));});
   if(detaille)AVEC.forEach(function(r){if(!r[0].test(txt))return;var m=r[1].filter(function(x){return !x[0].test(txt);}).map(function(x){return T(x[1]);});if(m.length)out.push({k:"oubli:"+m.join(","),t:T("pas de {0}",[m.join(T(" ni "))])});});
   if(/\b(depose|demolition|arrachage|casse)\b/.test(txt)&&!/\b(gravats?|evacuation|benne|decheterie|dechets?)\b/.test(txt))out.push({k:"gravats",t:T("pas d’évacuation des gravats")});
   /* prix bien plus bas que d'habitude, ou sous le prix d'achat */
@@ -159,6 +166,37 @@ P.duree=function(t){langue();if(!P.ready||typeof db==="undefined")return false;v
   if(lib)txt.push(T("Libre à partir du {0}.",[P.B.fdate(new Date(lib[0]+"T12:00:00"))]));
   bulle(t,txt.map(p).join(""));return true;};
 
+/* ---------- devis de la rénovation : l'estimation de la Rénovation (postes cochés, quantités de la maquette) devient un devis,
+   avec les prix de « Mes services » quand ils correspondent, sinon le milieu de la fourchette indicative (TTC → HT, TVA 10 %) ---------- */
+var RENO=/\b(devis|chiffre|chiffrer|chiffrage)\b.*\b(renovation|reno|estimation|maquette|piece photographiee)\b|\b(estimation|renovation)\b.*\ben devis\b/;
+P.renoDevis=function(t){if(!P.ready||typeof db==="undefined"||typeof q==="undefined")return false;var c=fr(t),s=c.p;if(!RENO.test(s)||/^\s*(combien|quel|quelle|ou)\b/.test(s))return false;langue();
+  var M=(db.maq3d||[]).filter(function(x){return x&&x.d&&x.d.estimation&&(x.d.estimation.lignes||[]).length;}).sort(function(a,b){return (b.at||0)-(a.at||0);})[0];
+  if(!M){bulle(t,p(T("Aucune rénovation enregistrée.")));return true;}
+  var before=JSON.stringify(q),cl=P.clientDans(t);if((q.lines||[]).some(function(l){return l.label||l.pu;})){if(typeof newQuote==="function")newQuote();}
+  if(cl&&cliNom(cl))q.client=cliNom(cl).nom;
+  var ind=[],nouv=[];M.d.estimation.lignes.forEach(function(r){if(!r||!r.poste)return;var pr=null,bs=0;(db.prices||[]).forEach(function(x){var v=Math.min(proche(r.poste,x.nom),proche(x.nom,r.poste)+0.5);if(v>bs){bs=v;pr=x;}});
+    var u=String(r.unite||"u").replace(/^m2$/,"m²");if(bs<0.5||pr&&pr.unit&&String(pr.unit).replace(/^m2$/,"m²")!==u)pr=null;
+    var pu=pr?nombre(pr.prix):Math.round(((+r.prix_min||0)+(+r.prix_max||+r.prix_min||0))/2/1.1*100)/100;if(!pr)ind.push(r.poste);
+    var l={label:pr?pr.nom:r.poste,qty:Math.round((+r.quantite||1)*10)/10,unit:pr&&pr.unit?pr.unit:u,pu:pu||null,tva:pr&&pr.tva!=null?pr.tva:10};q.lines.push(l);nouv.push(l);});
+  if(!nouv.length){bulle(t,p(T("Aucune rénovation enregistrée.")));return true;}
+  q.lines=q.lines.filter(function(l){return l.label||l.pu;});fillForm();store();CHAT.qid=q.id;var tt=totals(q),out=[];
+  out.push('<div class="msg-lines">'+nouv.map(function(l){return '<div class="ml"><div><b data-noi18n>'+e(l.label)+'</b><div class="mut" data-noi18n>'+e(N(l.qty)+" "+l.unit)+(l.pu?' × '+e(E(l.pu)):'')+'</div></div><b data-noi18n>'+(l.pu?e(E(l.qty*l.pu)):'')+'</b></div>';}).join("")+'</div>');
+  if(ind.length)out.push('<p class="mut" dir="auto" data-noi18n>'+e(T("Prix indicatifs pour : {0}.",[ind.join(", ")]))+'</p>');
+  var vf=P.verifier(q);if(vf)out.push(vf.replace("<p ","<p data-noi18n "));
+  out.push('<div class="msg-tot"><span>Total du devis</span><b data-noi18n>'+e(E(tt.ttc))+' TTC</b></div><div class="msg-act"><button class="btn sm sec" onclick="go(\'edit\')"><svg class="i"><use href="#i-quote"/></svg>Voir le devis</button></div>');
+  bulle(t,out.join(""),{undo:before},true);return true;};
+
+/* ---------- marge sur le devis : « ajoute une marge de 10 % », « 15 % de marge sur la fourniture » ---------- */
+var MARGE=/^(?:ajoute|rajoute|mets|met|applique|prends|fais)?\s*(?:une |un |ma |la |de la )?(?:marge (?:de )?(\d+(?:\.\d+)?) ?(?:%|pour ?cent)|(\d+(?:\.\d+)?) ?(?:%|pour ?cent) de marge)(?: sur (?:le devis|tout|tout le devis|(la |les )?(fournitures?|materiaux|materiel|main d oeuvre|pose)))?$/;
+P.marge=function(t){if(!P.ready||typeof q==="undefined")return false;var s=fr(t).p.trim(),m=s.match(MARGE);if(!m)return false;langue();
+  var x=parseFloat(m[1]||m[2]),cible=m[4]||"";if(!(x>0&&x<=300))return false;
+  var L=(q.lines||[]).filter(function(l){if(!(+l.pu>0)||!l.label)return false;var lab=hn(l.label),u=hn(l.unit);
+    if(/fourniture|materia/.test(cible))return MATIERE.test(lab)||/^(sac|pot|rouleau|kg|l|boite|paquet)$/.test(u)||(db.hist||[]).some(function(h){return cle(h.nom)===cle(l.label);});
+    if(/main|pose/.test(cible))return u==="h"||/main d|pose/.test(lab);return true;});
+  if(!L.length){bulle(t,p(T("Le devis n’a pas encore de lignes.")));return true;}
+  var before=JSON.stringify(q);L.forEach(function(l){l.pu=Math.round(+l.pu*(1+x/100)*100)/100;});fillForm();store();
+  bulle(t,'<div data-noi18n>'+p(T("Marge de {0} % ajoutée sur {1} ligne(s).",[N(x),L.length]))+'</div><div class="msg-tot"><span>Total du devis</span><b data-noi18n>'+e(E(totals(q).ttc))+' TTC</b></div>',{undo:before},true);return true;};
+
 /* ---------- questions sur l'activité ---------- */
 var MOINS_CHER=/\b(moins cher|meilleur prix|prix le plus bas|plus bas prix|cheaper|cheapest)\b/;
 var RENTABLE=/\b(plus rentables?|rapporte le plus|meilleure marge|plus de marge|rentabilite|quelle marge|combien de marge|combien j ai gagne sur|combien m a rapporte)\b/;
@@ -217,4 +255,75 @@ function recevoir(){if(!P.ready||!navigator.onLine)return;var o=etat();if(o.recu
 function plusTard(){var go=function(){try{recevoir();envoyer();}catch(x){}};if("requestIdleCallback" in window)requestIdleCallback(go,{timeout:8000});else setTimeout(go,3000);}
 (function attendre(n){if(P.ready){setTimeout(plusTard,15000);setInterval(plusTard,30*60000);return;}if(n<120)setTimeout(function(){attendre(n+1);},500);})(0);
 P.partagerMaintenant=function(){envoyer();};
+})();
+/* ---------- apprendre du geste : après « Je n'ai pas compris », l'écran que l'usager ouvre lui-même ---------- */
+(function(){var P=window.casoPont;if(!P)return;function B(){return P.B;}function garder(){try{P.garderIA&&P.garderIA();}catch(x){}}
+ var INC=null,ECR={cli:[{m:"clients",a:"ouvrir",args:{}}],prix:[{m:"services",a:"ouvrir",args:{}}],fou:[{m:"fournisseurs",a:"ouvrir",args:{}}],
+  fact:[{m:"factures",a:"ouvrir",args:{client:null}}],agenda:[{m:"planning",a:"ouvrir",args:{date:null,semaine:false}}],pt:[{m:"pointage",a:"ouvrir",args:{}}],
+  devis:[{m:"devis",a:"liste",args:{filtre:null}}],cpt:[{m:"app",a:"compte",args:{}}]};
+ function incompris(){var m=CHAT&&CHAT.m&&CHAT.m[CHAT.m.length-1];if(!m||m.who!=="bot")return false;var h=String(m.html||"").replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim();
+  try{var a=P.tr("Je n’ai pas compris."),b=P.tr("Je n'ai pas bien compris. Pouvez-vous le dire autrement ?");return h===a||h===b||h.indexOf(a)===0&&h.length<a.length+4;}catch(x){return false;}}
+ function brancher(){if(typeof window.chatSend!=="function"||typeof window.go!=="function"||window.chatSend.geste)return false;
+  var cs=window.chatSend,g=window.go;
+  window.chatSend=function(t){try{if(!cs.multi&&!(window.chatMulti&&chatMulti.busy)){var t0=String(t==null?(document.getElementById("chatIn")||{}).value||"":t).trim();if(t0)INC={t:t0,at:Date.now()};}}catch(x){}return cs.apply(this,arguments);};
+  Object.keys(cs).forEach(function(k){try{window.chatSend[k]=cs[k];}catch(x){}});
+  Object.defineProperty(window.chatSend,"multi",{get:function(){return cs.multi;},set:function(v){cs.multi=v;}});
+  ["att","renv"].forEach(function(k){Object.defineProperty(window.chatSend,k,{get:function(){return cs[k];},set:function(v){cs[k]=v;}});});
+  window.chatSend.geste=1;
+  window.go=function(sc){try{if(INC&&Date.now()-INC.at<120000&&ECR[sc]&&P.ready&&incompris()){if(B().geste(INC.t,ECR[sc]))garder();INC=null;}}catch(x){}return g.apply(this,arguments);};
+  return true;}
+ (function essai(n){if(!brancher()&&n<60)setTimeout(function(){essai(n+1);},500);})(0);})();
+
+/* ---------- enchaînements (feuille de route, étape 2) ---------- */
+(function(){var P=window.casoPont;if(!P)return;function B(){return P.B;}
+ function hn(x){return CasoBrain.hn(String(x||""));}function e(x){return String(x==null?"":x).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+ function T(t,a){return P.tr(t,a);}function E(x){return P.B.eurFr(Math.round(x*100)/100);}
+ function langue(){try{B().setLangue((typeof I18N!=="undefined"&&I18N.lang)||"fr");}catch(x){}}
+ function ymd(d){return d.getFullYear()+"-"+(d.getMonth()<9?"0":"")+(d.getMonth()+1)+"-"+(d.getDate()<10?"0":"")+d.getDate();}
+ function bot(h,o){CHAT.m.push(Object.assign({who:"bot",html:'<div data-noi18n>'+h+'</div>'},o||{}));chatSave();chatRender(true);}
+ function bouton(lab,fn){return '<div class="msg-act"><button class="btn sm" onclick="casoPont.'+fn+'()">'+e(lab)+'</button></div>';}
+ var ATT=null;/* une seule question en attente : {quoi, faire()} */
+ var OUI=/^(oui|ok|d accord|vas y|go|yes|yep|si|sí|sim|tak|evet|да|نعم|da)\b/;
+ P.oui=function(t){if(!ATT)return false;var a=ATT,k=hn(t);if(Date.now()-a.at>10*60000){ATT=null;return false;}
+  if(OUI.test(k)){ATT=null;CHAT.m.push({who:"me",text:t});a.faire();return true;}
+  if(/^(non|no|nao|nie|hayir|нет|لا|nu)\b/.test(k)){ATT=null;CHAT.m.push({who:"me",text:t});langue();bot('<p>'+e(T("D’accord."))+'</p>');return true;}
+  ATT=null;return false;};
+ P.ouiBouton=function(){if(!ATT)return;var a=ATT;ATT=null;a.faire();};
+ function demander(h,faire){ATT={at:Date.now(),faire:faire};bot(h+bouton(T("Oui"),"ouiBouton"));}
+
+ /* message d'un client collé dans le chat → rendez-vous proposé */
+ var JOURS="lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche|demain|apres demain";
+ P.messageClient=function(t){if(!P.ready||typeof db==="undefined")return false;var raw=String(t||"");if(raw.length<50)return false;
+  var c=B().translate(raw),s=" "+c.p+" ";if(!/\b(bonjour|bonsoir|salut|cordialement|merci|bonne journee|bien a vous)\b/.test(s))return false;
+  var j=s.match(new RegExp("\\b("+JOURS+")\\b")),h=s.match(/\b(\d{1,2})\s*(?:h|heures?|:)\s*(\d{2})?\b/);if(!j||!h||+h[1]>21||+h[1]<6)return false;
+  var nom=P.clientDans(raw);if(!nom){var sg=raw.match(/(?:cordialement|bien à vous|merci)[\s,.!]*\n?\s*((?:M\.|Mme|Mr|Madame|Monsieur)?\s*\p{Lu}[\p{L}'-]+(?:\s+\p{Lu}[\p{L}'-]+)?)\s*$/iu);if(sg)nom=sg[1].trim();}
+  var quand=j[1].replace("apres demain","après-demain")+" "+(+h[1])+"h"+(h[2]||"");langue();
+  CHAT.m.push({who:"me",text:raw});
+  demander('<p>'+e(nom?T("Rendez-vous {0} avec {1} ?",[quand,nom]):T("Rendez-vous {0} ?",[quand]))+'</p>',function(){var x="rendez-vous "+quand+(nom?" avec "+nom:"");chatSend(x);for(var i=CHAT.m.length-1;i>=0;i--){if(CHAT.m[i].who==="me"&&CHAT.m[i].text===x){CHAT.m.splice(i,1);break;}}chatSave();chatRender(false);});
+  var inp=document.getElementById("chatIn");if(inp){inp.value="";try{chatGrow(inp);qkUpdate();}catch(x){}}return true;};
+
+ /* devis signé → facture d'acompte et jours de chantier au planning */
+ function joursLibres(n){if(typeof agGaps!=="function"||typeof agToday!=="function")return null;var d=agToday(),run=[],dp=typeof agHours==="function"&&agHours();
+  for(var i=1;i<=45&&run.length<n;i++){var jj=agAdd(d,i),wd=new Date(jj+"T12:00:00").getDay();if(!dp&&(wd===0||wd===6)){run=[];continue;}var g=agGaps(jj,60),lib=g.reduce(function(a,x){return a+(x[1]-x[0]);},0);if(lib>=360)run.push(jj);else run=[];}
+  return run.length===n?run:null;}
+ function signes(){var lim=Date.now()-30*864e5;return (db.quotes||[]).filter(function(o){return o&&o.status==="accepte"&&!o.ench&&o.lines&&o.lines.length&&o.sign&&+o.sign.signedAt>lim;});}
+ function proposerSigne(o){var h=(o.lines||[]).filter(function(l){return l.unit==="h";}).reduce(function(a,l){return a+(+l.qty||0);},0),n=Math.max(1,Math.min(10,Math.ceil((h||7)/7))),L=joursLibres(n),pc=o.acompte>0?o.acompte:30;
+  o.ench=1;try{storeQ(o);}catch(x){save();}langue();
+  var txt=L?T("Devis {0} de {1} signé : facture d’acompte de {2} % et {3} j de chantier au planning à partir du {4} ?",[o.num||"",o.client||"",pc,n,P.B.fdate(new Date(L[0]+"T12:00:00"))]):T("Devis {0} de {1} signé : facture d’acompte de {2} % ?",[o.num||"",o.client||"",pc]);
+  demander('<p>'+e(txt)+'</p>',function(){var c=(db.clients||[]).filter(function(x){return hn(x.nom)===hn(o.client);})[0];
+   (L||[]).forEach(function(d){db.events.push({id:uid(),src:"main",t:"rdv",d:d,a:"08:00",b:"17:00",title:T("Chantier")+" "+(o.client||""),cid:c?c.id:undefined,adr:o.adr||"",at:Date.now()});});save();
+   bot('<p>'+e(T("C’est fait."))+'</p>');if(typeof faNew==="function")setTimeout(function(){faNew(o.id,"acompte");},400);});}
+
+ /* à l'ouverture (une fois par jour) : une ligne de rappel, puis les devis signés */
+ function rappels(){var out=[],auj=ymd(new Date()),now=Date.now();
+  var R=(db.events||[]).filter(function(x){return x.t==="rdv"&&x.d===auj&&x.a;}).sort(function(a,b){return String(a.a).localeCompare(String(b.a));}).map(function(x){var c=x.cid&&(db.clients||[]).filter(function(y){return y.id===x.cid;})[0];return String(x.a).replace(/^0/,"").replace(":00","h").replace(":","h")+" "+(c?c.nom:x.title||"");});
+  if(R.length)out.push(T("Rendez-vous aujourd’hui : {0}.",[R.join(", ")]));
+  var Q=(db.quotes||[]).filter(function(o){var d=o.sign&&+o.sign.sentAt||Date.parse(o.date);return o.status==="envoye"&&d&&now-d>=7*864e5;}).map(function(o){return o.client||o.num;}).filter(Boolean);
+  if(Q.length)out.push(T("À relancer : {0}.",[Q.slice(0,4).join(", ")]));
+  var F=(db.invoices||[]).filter(function(f){if(!f.num||f.kind==="avoir"||!f.due||f.due>=auj)return false;var t=0;try{t=faTot(f).ttc;}catch(x){}var p=(f.pays||[]).reduce(function(a,y){return a+(+y.amt||0);},0);f._reste=t-p;return f._reste>0.5;}).map(function(f){return f.num+" "+E(f._reste);});
+  if(F.length)out.push(T("Factures en retard : {0}.",[F.slice(0,3).join(", ")]));return out;}
+ function ouverture(){try{if(!P.ready||typeof db==="undefined")return;langue();var k="caso_rappel_jour",auj=ymd(new Date()),v=null;try{v=localStorage.getItem(k);}catch(x){}
+  if(v!==auj){var L=rappels();try{localStorage.setItem(k,auj);}catch(x){}if(L.length)bot(L.map(function(x){return '<p dir="auto">'+e(x)+'</p>';}).join(""));}
+  if(!ATT){var S=signes();if(S.length)proposerSigne(S[0]);}}catch(x){}}
+ (function attendre(n){if(P.ready&&typeof CHAT!=="undefined"&&typeof chatRender==="function"){setTimeout(ouverture,1500);setInterval(function(){if(!ATT&&signes().length)ouverture();},10*60000);document.addEventListener("visibilitychange",function(){if(!document.hidden)setTimeout(ouverture,800);});return;}if(n<120)setTimeout(function(){attendre(n+1);},500);})(0);
 })();
