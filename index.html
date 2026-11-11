@@ -3737,7 +3737,7 @@ function chatSend(text){
   /* plusieurs demandes dans la même phrase */
   if(casoPont.decoupe&&!chatSend.multi){const parts=casoPont.decoupe(t0);if(parts){chatMulti(t0,parts);return}}
   /* questions sur l'activité, durée d'un travail, devis depuis une description */
-  if(casoPont.question&&(casoPont.marge(t0)||casoPont.question(t0)||casoPont.duree(t0)||casoPont.decrire(t0))){inp.value='';chatGrow(inp);qkUpdate();return}}
+  if(casoPont.question&&(casoPont.renoDevis(t0)||casoPont.marge(t0)||casoPont.question(t0)||casoPont.duree(t0)||casoPont.decrire(t0))){inp.value='';chatGrow(inp);qkUpdate();return}}
  if(!adrSeule&&window.casoPont&&casoPont.essaie(t0)){inp.value='';chatGrow(inp);qkUpdate();return}
  let t=t0;try{let lg=VN.lang||'fr';const dt=vlDetect(t0);if(dt&&dt.score>=3)lg=dt.l;t=chatFix(t0,lg)}catch(e){t=t0}
  if(t!==t0)setTimeout(()=>{for(let i=CHAT.m.length-1;i>=0;i--){const m=CHAT.m[i];if(m.who==='me'){if(m.text===t&&!m.orig){m.orig=t0;chatSave();chatRender(false)}break}}},0);

@@ -33,7 +33,11 @@ const ESSAIS=[
  ["fr",["rdv demain à 9h chez Dupont et envoie-lui un SMS pour confirmer le rdv"],[/Dupont[\s\S]*SMS/]],
  ["fr",["nouveau devis pour Petit, ajoute faïence 10 m² à 50 €"],[/Faïence/]],
  ["fr",["nouveau devis pour Petit","durée des travaux 5 jours sur le devis"],["",/[Dd]ébut des travaux/]],
- ["fr",["combien d'heures cette semaine"],[/heures/]]
+ ["fr",["combien d'heures cette semaine"],[/heures/]],
+ ["fr",["devis pour Martin carrelage 20 m² à 45 €"],[/Martin Déjà[\s\S]*Carrelage/]],
+ ["fr",["dépose carrelage 20 m²"],[/Dépose carrelage[\s\S]*15,00/]],
+ ["fr",["nouveau devis pour Petit","carrelage 20 m² à 40 €","ajoute une marge de 10 %"],["","",/Marge de 10 %/]],
+ ["fr",["montre moi la paperasse"],[/compris/]]
 ];
 (async()=>{const b=await chromium.launch();let ko=0;const out=[];
  for(const [lg,phr,att] of ESSAIS){const ctx=await b.newContext({serviceWorkers:"block"}),p=await ctx.newPage();const err=[];p.on("pageerror",e=>err.push(e.message));

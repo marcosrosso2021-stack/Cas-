@@ -82,12 +82,12 @@ var AVEC=[[/\b(carrelage|faience|carreaux?|mosaique)\b/,[[/\bcolle\b/,"colle"],[
   [/\bparquet\b|\bstratifie\b/,[[/sous couche|sous-couche|isolant/,"sous-couche"],[/plinthes?/,"plinthes"]]],
   [/\b(placo|plaque de platre|ba13|ba 13|cloison|doublage)\b/,[[/\bbandes?\b/,"bandes"],[/\benduit\b/,"enduit"]]],
   [/\bpeinture\b/,[[/sous couche|sous-couche|impression/,"sous-couche"]]]];
-var MATIERE=/\b(sacs?|pots?|rouleaux?|kg|l|boites?|paquets?)\b|\bfournitures?\b/;
+var MATIERE=/\b(sacs?|pots?|rouleaux?|kg|litres?|boites?|paquets?)\b|\bfournitures?\b/;
 var VU={};
 function medianne(v){v=v.slice().sort(function(a,b){return a-b;});return v.length?v[Math.floor(v.length/2)]:null;}
 P.verifier=function(o){langue();if(!o||!(o.lines||[]).length)return "";var L=o.lines.filter(function(l){return l.label;}),txt=L.map(function(l){return hn(l.label);}).join(" | "),out=[];
   /* fournitures oubliées : seulement si le devis détaille déjà ses fournitures */
-  var detaille=L.some(function(l){return MATIERE.test(hn(l.label))||/^(sac|pot|rouleau|kg|l|boite|paquet)$/.test(hn(l.unit));});
+  var detaille=L.some(function(l){return MATIERE.test(hn(l.label))||/^(sac|pot|rouleau|kg|l|litre|boite|paquet)$/.test(hn(l.unit));});
   if(detaille)AVEC.forEach(function(r){if(!r[0].test(txt))return;var m=r[1].filter(function(x){return !x[0].test(txt);}).map(function(x){return T(x[1]);});if(m.length)out.push({k:"oubli:"+m.join(","),t:T("pas de {0}",[m.join(T(" ni "))])});});
   if(/\b(depose|demolition|arrachage|casse)\b/.test(txt)&&!/\b(gravats?|evacuation|benne|decheterie|dechets?)\b/.test(txt))out.push({k:"gravats",t:T("pas d’évacuation des gravats")});
   /* prix bien plus bas que d'habitude, ou sous le prix d'achat */
@@ -165,6 +165,26 @@ P.duree=function(t){langue();if(!P.ready||typeof db==="undefined")return false;v
   var hh=Math.round(medianne(R)*Q*2)/2,jj=Math.max(1,Math.ceil(hh/7)),txt=[T("Environ {0} h de travail ({1} j), d’après tes anciens chantiers.",[N(hh),jj])],lib=joursLibres(jj);
   if(lib)txt.push(T("Libre à partir du {0}.",[P.B.fdate(new Date(lib[0]+"T12:00:00"))]));
   bulle(t,txt.map(p).join(""));return true;};
+
+/* ---------- devis de la rénovation : l'estimation de la Rénovation (postes cochés, quantités de la maquette) devient un devis,
+   avec les prix de « Mes services » quand ils correspondent, sinon le milieu de la fourchette indicative (TTC → HT, TVA 10 %) ---------- */
+var RENO=/\b(devis|chiffre|chiffrer|chiffrage)\b.*\b(renovation|reno|estimation|maquette|piece photographiee)\b|\b(estimation|renovation)\b.*\ben devis\b/;
+P.renoDevis=function(t){if(!P.ready||typeof db==="undefined"||typeof q==="undefined")return false;var c=fr(t),s=c.p;if(!RENO.test(s)||/^\s*(combien|quel|quelle|ou)\b/.test(s))return false;langue();
+  var M=(db.maq3d||[]).filter(function(x){return x&&x.d&&x.d.estimation&&(x.d.estimation.lignes||[]).length;}).sort(function(a,b){return (b.at||0)-(a.at||0);})[0];
+  if(!M){bulle(t,p(T("Aucune rénovation enregistrée.")));return true;}
+  var before=JSON.stringify(q),cl=P.clientDans(t);if((q.lines||[]).some(function(l){return l.label||l.pu;})){if(typeof newQuote==="function")newQuote();}
+  if(cl&&cliNom(cl))q.client=cliNom(cl).nom;
+  var ind=[],nouv=[];M.d.estimation.lignes.forEach(function(r){if(!r||!r.poste)return;var pr=null,bs=0;(db.prices||[]).forEach(function(x){var v=Math.min(proche(r.poste,x.nom),proche(x.nom,r.poste)+0.5);if(v>bs){bs=v;pr=x;}});
+    var u=String(r.unite||"u").replace(/^m2$/,"m²");if(bs<0.5||pr&&pr.unit&&String(pr.unit).replace(/^m2$/,"m²")!==u)pr=null;
+    var pu=pr?nombre(pr.prix):Math.round(((+r.prix_min||0)+(+r.prix_max||+r.prix_min||0))/2/1.1*100)/100;if(!pr)ind.push(r.poste);
+    var l={label:pr?pr.nom:r.poste,qty:Math.round((+r.quantite||1)*10)/10,unit:pr&&pr.unit?pr.unit:u,pu:pu||null,tva:pr&&pr.tva!=null?pr.tva:10};q.lines.push(l);nouv.push(l);});
+  if(!nouv.length){bulle(t,p(T("Aucune rénovation enregistrée.")));return true;}
+  q.lines=q.lines.filter(function(l){return l.label||l.pu;});fillForm();store();CHAT.qid=q.id;var tt=totals(q),out=[];
+  out.push('<div class="msg-lines">'+nouv.map(function(l){return '<div class="ml"><div><b data-noi18n>'+e(l.label)+'</b><div class="mut" data-noi18n>'+e(N(l.qty)+" "+l.unit)+(l.pu?' × '+e(E(l.pu)):'')+'</div></div><b data-noi18n>'+(l.pu?e(E(l.qty*l.pu)):'')+'</b></div>';}).join("")+'</div>');
+  if(ind.length)out.push('<p class="mut" dir="auto" data-noi18n>'+e(T("Prix indicatifs pour : {0}.",[ind.join(", ")]))+'</p>');
+  var vf=P.verifier(q);if(vf)out.push(vf.replace("<p ","<p data-noi18n "));
+  out.push('<div class="msg-tot"><span>Total du devis</span><b data-noi18n>'+e(E(tt.ttc))+' TTC</b></div><div class="msg-act"><button class="btn sm sec" onclick="go(\'edit\')"><svg class="i"><use href="#i-quote"/></svg>Voir le devis</button></div>');
+  bulle(t,out.join(""),{undo:before},true);return true;};
 
 /* ---------- marge sur le devis : « ajoute une marge de 10 % », « 15 % de marge sur la fourniture » ---------- */
 var MARGE=/^(?:ajoute|rajoute|mets|met|applique|prends|fais)?\s*(?:une |un |ma |la |de la )?(?:marge (?:de )?(\d+(?:\.\d+)?) ?(?:%|pour ?cent)|(\d+(?:\.\d+)?) ?(?:%|pour ?cent) de marge)(?: sur (?:le devis|tout|tout le devis|(la |les )?(fournitures?|materiaux|materiel|main d oeuvre|pose)))?$/;
