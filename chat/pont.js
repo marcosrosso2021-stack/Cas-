@@ -14,10 +14,18 @@ window.casoPont=P;
 function charger(){
   if(!window.CasoEngine||!window.CasoBrain)return;
   var base=SRC?SRC.replace(/[^/]*$/,""):"chat/";
-  Promise.all([fetch(base+"data.json").then(function(r){return r.json();})].concat(LANGS.map(function(l){return fetch(base+"i18n/"+l+".json").then(function(r){return r.ok?r.json():null;}).catch(function(){return null;});})))
+  /* au démarrage : le vocabulaire et les réponses dans la langue de l'appli seulement ; les 8 autres langues arrivent ensuite */
+  var lg=(window.I18N&&I18N.lang)||(function(){try{return localStorage.getItem("caso_lang");}catch(e){return null;}})()||"fr",d1=LANGS.indexOf(lg)>=0?[lg]:[];
+  function cat(l){return fetch(base+"i18n/"+l+".json").then(function(r){return r.ok?r.json():null;}).catch(function(){return null;});}
+  Promise.all([fetch(base+"data.json").then(function(r){return r.json();})].concat(d1.map(cat)))
   .then(function(L){var data=L[0],E=CasoEngine.create(data),sv=null;
     try{var o=JSON.parse(localStorage.getItem(KEY)||"null");if(o){if(o.e)E.load(o.e);sv=o.b||null;}}catch(e){}
-    var B=CasoBrain.create(E,data,sv);LANGS.forEach(function(l,i){if(L[i+1])B.addCatalog(l,L[i+1]);});
+    var B=CasoBrain.create(E,data,sv);d1.forEach(function(l,i){if(L[i+1])B.addCatalog(l,L[i+1]);});
+    P.cat=function(l){if(!l||LANGS.indexOf(l)<0||(P.cats||(P.cats={}))[l])return Promise.resolve();P.cats[l]=1;return cat(l).then(function(c){if(c)B.addCatalog(l,c);else P.cats[l]=0;});};
+    d1.forEach(function(l){(P.cats||(P.cats={}))[l]=1;});
+    setTimeout(function(){LANGS.reduce(function(pr,l){return pr.then(function(){return P.cat(l);});},Promise.resolve());},8000);
+    /* le vocabulaire se prépare par petits paquets quand le téléphone ne fait rien */
+    (function chauffe(){if(!B.prechauffer)return;var go=function(d){if(B.prechauffer(30)>0)chauffe();};if("requestIdleCallback" in window)requestIdleCallback(go,{timeout:3000});else setTimeout(go,200);})();
     P.B=B;P.E=E;P.base=base;P.ready=true;
     setTimeout(function(){chargerMini(base);},5000);})
   .catch(function(e){if(window.console)console.error("chat casô",e);});
@@ -152,7 +160,7 @@ P.essaie=function(t,force){if(!P.ready||typeof db==="undefined"||typeof q==="und
     /* réponse gardée mais pas reprise : casô a fait la demande précédente, le chat n'a rien à annuler */
     if(g)B.S.lastTurn=null;
     avantPend=B.S.pending&&B.S.pending.type;attendait=P.attente;
-    try{B.setLangue((typeof I18N!=="undefined"&&I18N.lang)||"fr");avant=vue();r=P.corrige?B.corriger(t):B.handle(t);}catch(err){if(window.console)console.error(err);P.corrige=false;return false;}
+    try{if(P.cat)P.cat((typeof I18N!=="undefined"&&I18N.lang)||"fr");B.setLangue((typeof I18N!=="undefined"&&I18N.lang)||"fr");avant=vue();r=P.corrige?B.corriger(t):B.handle(t);}catch(err){if(window.console)console.error(err);P.corrige=false;return false;}
     P.corrige=false;}
   /* un rendez-vous compris directement reste au planning de casô (rappels, équipe, répétitions) ;
      le chat ne le prend que lorsqu'il a dû le deviner ou poser une question */

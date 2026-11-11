@@ -55,8 +55,21 @@ function moisNom(i){if(LANG==="fr")return MOISD[i];try{return new Intl.DateTimeF
 function jourNom(i){if(PSEUDO)return "⟦"+JOURS[i]+"⟧";if(LANG==="fr")return JOURS[i];try{return new Intl.DateTimeFormat(LOC[LANG],{weekday:"long"}).format(new Date(2026,10,1+i));}catch(e){return JOURS[i];}}
 function ftime(h,m){return LANG==="fr"?h+"h"+(m?pad(m):""):pad(h)+":"+pad(m||0);}
 function has(re,s){return re.test(s);}
+/* regex construite au premier usage : à l'ouverture, les centaines de mots du vocabulaire ne coûtent rien ;
+   B.prechauffer() les construit ensuite par petits paquets, quand le téléphone a le temps */
+var LAZY=[];
+function LazyRe(src){this.s=src;this.r=null;LAZY.push(this);}
+LazyRe.prototype.re=function(){return this.r||(this.r=new RegExp(this.s,"u"));};
+LazyRe.prototype.test=function(x){return this.re().test(x);};
+LazyRe.prototype.exec=function(x){return this.re().exec(x);};
+LazyRe.prototype[Symbol.replace]=function(x,y){return this.re()[Symbol.replace](x,y);};
+LazyRe.prototype[Symbol.match]=function(x){return this.re()[Symbol.match](x);};
+LazyRe.prototype[Symbol.search]=function(x){return this.re()[Symbol.search](x);};
+LazyRe.prototype[Symbol.split]=function(x,n){return this.re()[Symbol.split](x,n);};
+Object.defineProperty(LazyRe.prototype,"source",{get:function(){return this.re().source;}});
+Object.defineProperty(LazyRe.prototype,"flags",{get:function(){return "u";}});
 function wordRe(phrase){ /* phrase normalisée -> regex mot entier ; '*' = suite de lettres */
-  var p=esc(phrase).replace(/\\\*/g,"\\p{L}*");return new RegExp("(^|[^\\p{L}\\p{N}])("+p+")(?=$|[^\\p{L}\\p{N}])","u");}
+  var p=esc(phrase).replace(/\\\*/g,"\\p{L}*");return new LazyRe("(^|[^\\p{L}\\p{N}])("+p+")(?=$|[^\\p{L}\\p{N}])");}
 
 function create(E,X,saved,opts){
   opts=opts||{};
@@ -144,10 +157,20 @@ function create(E,X,saved,opts){
     rows.forEach(function(r){if(r[4]==null)r[4]=r[0]?1:2;else r[4]=0;});
     rows=rows.filter(function(r){return !(r[0]&&/^(m2|m²|m3|m|cm|h)$/.test(r[0]));});
     rows.sort(function(a,b){return a[4]-b[4]||(b[0]||"").length-(a[0]||"").length;});
-    rows.forEach(function(r){if(r[0])r[3]=new RegExp("(^|[^\\p{L}\\p{N}])"+esc(r[0]).replace(/\\\*/g,"\\p{L}*")+"(?=$|[^\\p{L}\\p{N}])","gu");
-      else{try{var src=String(r[2]).normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[A-ZÀ-Ý]/g,function(ch,i,str){return str[i-1]==="{"||str[i-2]==="{"?ch:ch.toLowerCase();});r[3]=new RegExp("(^|[^\\p{L}\\p{N}])(?:"+src+")(?=$|[^\\p{L}\\p{N}])","gu");}catch(e){r[3]=null;}}});
+    /* regex construite au premier usage (r[5] = source) ; r[6] = ce que le texte doit contenir pour que la règle puisse s'appliquer */
+    rows.forEach(function(r){if(r[0]){r[5]="(^|[^\\p{L}\\p{N}])"+esc(r[0]).replace(/\\\*/g,"\\p{L}*")+"(?=$|[^\\p{L}\\p{N}])";r[6]=r[0].split("*").sort(function(a,b){return b.length-a.length;})[0];}
+      else{var src=String(r[2]).normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[A-ZÀ-Ý]/g,function(ch,i,str){return str[i-1]==="{"||str[i-2]==="{"?ch:ch.toLowerCase();});r[5]="(^|[^\\p{L}\\p{N}])(?:"+src+")(?=$|[^\\p{L}\\p{N}])";r[6]=motsRequis(src);
+        r[7]=String(r[2]).replace(/\(\?[=!<][^)]*\)/g,"").replace(/\\.|[()?:|\[\]+*$^]/g,"").replace(/\s+/g," ").trim().length;}});
     return TR[L]=rows;
   }
+  /* mots (3 lettres ou plus) dont l'un au moins se trouve dans tout texte que la règle reconnaît ; null = pas de raccourci sûr */
+  function motsRequis(src){var x=String(src).replace(/\\u[0-9a-f]{4}|\\x[0-9a-f]{2}|\\[pPu]\{[^}]*\}|\\./gi," ").replace(/\[(?:\\.|[^\]])*\]/g," ").replace(/\(\?[=!<][^()]*\)/g," ");
+    var g,i=0;while(i++<50&&(g=x.match(/\(([^()]*)\)([?*]|\{0,?\d*\})?/))){var inner=g[1].replace(/^\?:/,""),opt=!!g[2],br=inner.split("|"),ok=!opt&&br.every(function(b){return /\p{L}{3,}/u.test(b.replace(/\p{L}[?*]|\p{L}\{0,?\d*\}/gu," "));});
+      x=x.replace(g[0],ok?" "+br.join(" ")+" ":" ");}
+    if(/[()]/.test(x))return null;var top=x.split("|");if(!top.every(function(b){return /\p{L}{3,}/u.test(b.replace(/\p{L}[?*]|\p{L}\{0,?\d*\}/gu," "));}))return null;
+    var w=x.replace(/\p{L}[?*]|\p{L}\{0,?\d*\}/gu," ").match(/\p{L}{3,}/gu);return w&&w.length?w:null;}
+  function rxOf(r){if(!r[8]){r[8]=1;try{r[3]=new RegExp(r[5],"gu");}catch(e){r[3]=null;}}return r[3];}
+  function peut(r,t){var k=r[6];if(!k)return true;if(typeof k==="string")return t.indexOf(k)>=0;for(var i=0;i<k.length;i++)if(t.indexOf(k[i])>=0)return true;return false;}
   var FRW=/(^|\s)(le|la|les|du|des|pour|avec|chez|dans|sur|et|une|je|tu|il|mon|ma|mes|demain|devis|facture|forfait|rdv|rendez vous|paye|ajoute|mets|enleve|peins|depose|pose|travaux|chantier|client|fournisseur|prix|remise|mur|murs|sol)(?=\s|$)/g;
   var FRKEYS=Object.keys(M.cmd||{}).map(function(k){return wordRe(hn(k));});
   function detectLang(n,hint){
@@ -156,14 +179,14 @@ function create(E,X,saved,opts){
     LANGS.forEach(function(L){if(L==="ru"||L==="ar")return;var s=langScore(L,n);if(s>bs){bs=s;best=L;}});
     var fs=0;FRKEYS.forEach(function(re){if(re.test(n))fs++;});var fw=n.match(FRW);if(fw)fs+=fw.length;
     /* égalité entre deux langues : la langue de l'interface l'emporte */
-    if(hint&&hint!=="fr"&&hint!=="perso"&&LANGS.indexOf(hint)>=0&&bs>0&&hint!==best){var hs=0;trTable(hint).forEach(function(r){if(r[0]&&r[3]){r[3].lastIndex=0;if(r[3].test(n))hs++;}});if(hs>=bs)best=hint,bs=hs;else if(langScore(hint,n)>=bs)best=hint;}
+    if(hint&&hint!=="fr"&&hint!=="perso"&&LANGS.indexOf(hint)>=0&&bs>0&&hint!==best){var hs=0;trTable(hint).forEach(function(r){if(r[0]&&peut(r,n)&&rxOf(r)){r[3].lastIndex=0;if(r[3].test(n))hs++;}});if(hs>=bs)best=hint,bs=hs;else if(langScore(hint,n)>=bs)best=hint;}
     return bs>fs?best:"fr";
   }
-  function langScore(L,n){var s=0;trTable(L).forEach(function(r){if(!r[3])return;r[3].lastIndex=0;
-      if(r[0]){if(r[0].length>=3&&r[3].test(n))s+=r[0].length>=6?2:1;}else if(r[4]===0&&String(r[2]).replace(/\(\?[=!<][^)]*\)/g,"").replace(/\\.|[()?:|\[\]+*$^]/g,"").replace(/\s+/g," ").trim().length>=4&&r[3].test(n))s+=2;});return s;}
+  function langScore(L,n){var s=0;trTable(L).forEach(function(r){
+      if(r[0]){if(r[0].length>=3&&peut(r,n)&&rxOf(r)){r[3].lastIndex=0;if(r[3].test(n))s+=r[0].length>=6?2:1;}}else if(r[4]===0&&r[7]>=4&&peut(r,n)&&rxOf(r)){r[3].lastIndex=0;if(r[3].test(n))s+=2;}});return s;}
   function toFr(n,L){
     if(!L||L==="fr")return n;var p=" "+n+" ";
-    trTable(L).forEach(function(r){if(!r[3])return;r[3].lastIndex=0;
+    trTable(L).forEach(function(r){if(!peut(r,p)||!rxOf(r))return;r[3].lastIndex=0;
       if(r[4]!==0){p=p.split(/(\u0001[^\u0002]*\u0002)/).map(function(seg){if(seg.charAt(0)==="\u0001")return seg;r[3].lastIndex=0;return (" "+seg+" ").replace(r[3],function(){var g=[].slice.call(arguments,1,-2);var pre=g.shift()||"";return pre+" "+r[1].replace(/\$(\d)/g,function(x,i){return g[i-1]||"";})+" ";});}).join("");return;}
       p=p.replace(r[3],function(){var g=[].slice.call(arguments,1,-2);var pre=g.shift()||"";return pre+" \u0001"+r[1].replace(/\+12:\$(\d)/,function(x,i){var h=+(g[i-1]||0);return String(h<12?h+12:h);}).replace(/\$(\d)/g,function(x,i){return g[i-1]||"";})+"\u0002 ";});});
     p=p.replace(/[\u0001\u0002]/g," ");
@@ -2293,6 +2316,8 @@ function create(E,X,saved,opts){
   B.geste=function(raw,cmds){if(!raw||!cmds||!cmds.length)return false;var c=ctxOf(raw),w=c.n.split(" ").filter(Boolean);if(!w.length||w.length>12)return false;
     if(localParse(c))return false;if(rejected(c,cmds))return false;var cur=S.phrases[mask(c).m];if(cur&&cur.src!=="partage")return false;
     remember(c,cmds,"geste",true);if(S.pending&&S.pending.type==="reformuler")S.pending=null;PV=null;return true;};
+  /* construire les regex du vocabulaire par paquets, sans gêner l'écran (appelé par casô quand le téléphone a le temps) */
+  B.prechauffer=function(n){var k=0,m=n||40;while(k<m&&LAZY.length){var r=LAZY.pop();if(!r.r)r.re();k++;}return LAZY.length;};
   /* ---------- données pour les écrans ---------- */
   B.motConnu=function(w){w=hn(w);return !!(knownWord(w)||nearFr(w));};B.motCmd=function(w){w=hn(w);return !!((CMDS.fr&&CMDS.fr.has(w))||MOTSFR.has(w));};B.qty=qty;B.TYPES=TYPES;B.roomLabel=roomLabel;B.totalHT=totalHT;B.totalTTC=totalTTC;B.tvaParTaux=tvaParTaux;B.getCur=getCur;B.clientName=clientName;B.paid=paid;B.devisOf=devisOf;B.budget=budget;B.fdate=fdate;B.ftime=ftime;B.fnum=fnum;B.eur=eur;B.matColor=matColor;B.colorHex=colorHex;B.level=level;B.fromIso=fromIso;B.iso=iso;B.sod=sod;B.addDays=addDays;B.undo=undo;
   B.dump=function(){var s=clone(S);s.pending=null;s.lastTurn=null;return s;};
