@@ -1,3 +1,8 @@
 donnees/
 serveur/donnees/
 node_modules/
+outils/mini/train.jsonl
+outils/mini/test.jsonl
+outils/mini/testnew.jsonl
+outils/mini/reel.jsonl
+outils/mini/caso-mini-model.json
