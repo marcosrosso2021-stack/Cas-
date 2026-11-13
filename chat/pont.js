@@ -61,7 +61,7 @@ function vue(){var S=P.B.S,idc={};S.mode="artisan";
   return {clients:JSON.parse(JSON.stringify(S.clients)),devis:S.devis.map(function(d){return d.id;}),rdv:S.rdv.map(function(r){return r.id;})};}
 
 /* ---------- ce que le chat fait lui-même (le reste reste aux modules de casô) ---------- */
-var PRIS=/^(app\.[a-z0-9_]+|devis\.(nouveau|dupliquer|pdf)|factures\.pdf|clients\.supprimer|fournisseurs\.ajouter|services\.supprimer|fichiers\.importer|planning\.annuler|entreprise\.(ouvrir|maj)|signature\.ouvrir|metre\.calculer|dictee\.debut|pointage\.nfc|bibliotheque\.ouvrir|sys\.(sauvegarde|mode)|fichiers\.exporter|planning\.libre|factures\.(impayes|creer)|stats\.ca|courses\.(ajouter|calcul|ouvrir|vider|retirer)|pointage\.(entree|sortie)|devis\.(remise|envoyer)|scene\.[a-z_]+|devis\.(preparer|modele|total|compte|ouvrir|liste)|clients\.(info|message|appeler|maj|note|ouvrir)|planning\.(prochain|dispo|ouvrir|date)|services\.(info|ouvrir)|fournisseurs\.ouvrir|factures\.ouvrir|pointage\.ouvrir|memoire\.[a-z]+|mot\.apprendre|sys\.politesse)$/;
+var PRIS=/^(app\.[a-z0-9_]+|devis\.(nouveau|dupliquer|pdf)|factures\.pdf|clients\.supprimer|fournisseurs\.ajouter|services\.supprimer|fichiers\.importer|planning\.annuler|entreprise\.(ouvrir|maj)|signature\.ouvrir|metre\.calculer|dictee\.debut|pointage\.nfc|bibliotheque\.ouvrir|sys\.(sauvegarde|mode)|fichiers\.exporter|planning\.libre|factures\.(impayes|creer)|stats\.ca|courses\.(ajouter|calcul|ouvrir|vider|retirer)|metier\.(info|calcul)|pointage\.(entree|sortie)|devis\.(remise|envoyer|tva)|scene\.[a-z_]+|devis\.(preparer|modele|total|compte|ouvrir|liste)|clients\.(info|message|appeler|maj|note|ouvrir)|planning\.(prochain|dispo|ouvrir|date)|services\.(info|ouvrir)|fournisseurs\.ouvrir|factures\.ouvrir|pointage\.ouvrir|memoire\.[a-z]+|mot\.apprendre|sys\.politesse)$/;
 /* écrans du chat -> écrans de casô (le planning répond dans la conversation) */
 var ECRAN={courses:null,devis:"edit","devis-liste":"mes",clients:"cli",client:"cli",services:"prix",fournisseurs:"fou",factures:"fact",pointage:"pt"};
 function libelles(c){return (c||[]).filter(function(x){return x.m!=="sys"||x.a==="politesse"||x.a==="sauvegarde"||x.a==="mode";}).map(function(x){return x.m+"."+x.a;});}
@@ -180,6 +180,10 @@ P.essaie=function(t,force){if(!P.ready||typeof db==="undefined"||typeof q==="und
   /* remise : sur le devis de casô (pourcentage) */
   if(lab0==="devis.remise"&&q){var br=(q.lines||[]).reduce(function(s2,l){return s2+(+l.qty||0)*(+l.pu||0);},0),pc=a0.pourcentage!=null?+a0.pourcentage:(a0.montant&&br?Math.round(a0.montant/br*10000)/100:0);
     if(q.lines.length){q.remise=pc||0;storeQ(q);fillForm();qMod=true;r.explain="";r.says=[pc?P.tr("Remise de {0} % sur le devis",[pc])+" · "+P.B.eurFr(totals(q).ttc)+" TTC":P.tr("Remise enlevée. Total : {0} HT.",[P.B.eurFr(totals(q).ht)])];}}
+  /* TVA du devis ouvert (« tva à 10 % », « la faïence à 5,5 % de tva ») : sur toutes les lignes, ou celles nommées */
+  if(lab0==="devis.tva"&&q){var tx=+a0.taux,kt=cle(a0.libelle||""),LT=(q.lines||[]).filter(function(l){var x=cle(l.label||"");return !kt||(x&&(x===kt||x.indexOf(kt)===0||kt.indexOf(x)===0));});
+    r.explain="";if(!(q.lines||[]).length)r.says=[P.tr("Le devis n’a pas encore de lignes.")];else if(!LT.length)r.says=[P.tr("Je ne trouve pas « {0} » dans le devis.",[a0.libelle])];
+    else{LT.forEach(function(l){l.tva=tx;});storeQ(q);fillForm();qMod=true;}}
   /* enlever une ligne du devis ouvert */
   if(lab0==="devis.supprimer_ligne"&&q){var kl=cle(a0.libelle||""),av=q.lines.length;
     q.lines=q.lines.filter(function(l){var x=cle(l.label||"");return !(kl&&x&&(x===kl||x.indexOf(kl)===0||kl.indexOf(x)===0));});

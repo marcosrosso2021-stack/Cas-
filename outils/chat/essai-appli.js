@@ -37,7 +37,11 @@ const ESSAIS=[
  ["fr",["devis pour Martin carrelage 20 m² à 45 €"],[/Martin Déjà[\s\S]*Carrelage/]],
  ["fr",["dépose carrelage 20 m²"],[/Dépose carrelage[\s\S]*15,00/]],
  ["fr",["nouveau devis pour Petit","carrelage 20 m² à 40 €","ajoute une marge de 10 %"],["","",/Marge de 10 %/]],
- ["fr",["montre moi la paperasse"],[/compris/]]
+ ["fr",["montre moi la paperasse"],[/compris/]],
+ ["fr",["quel taux de tva pour une rénovation"],[/10 %[\s\S]*5,5 %/]],
+ ["fr",["combien de parpaings pour un mur de 10 m²"],[/105 parpaings/]],
+ ["es",["qué tipo de iva para una reforma"],[/IVA en una vivienda/]],
+ ["fr",["nouveau devis pour Petit","carrelage 20 m² à 40 €","tva à 5,5 %"],["",/880,00/,/844/]]
 ];
 (async()=>{const b=await chromium.launch();let ko=0;const out=[];
  for(const [lg,phr,att] of ESSAIS){const ctx=await b.newContext({serviceWorkers:"block"}),p=await ctx.newPage();const err=[];p.on("pageerror",e=>err.push(e.message));

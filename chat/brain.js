@@ -239,15 +239,16 @@ function create(E,X,saved,opts){
   /* mot mal tapé du bâtiment ou d'une commande (« carelage », « faïance ») : ce n'est pas un nom de client */
   function nearFr(w){if(!E.dl||w.length<4)return false;var max=w.length>=8?2:1,ok=false;Object.keys(vocab()).concat(CMDW.fr||[]).forEach(function(v){if(!ok&&v.indexOf(" ")<0&&Math.abs(v.length-w.length)<=max&&E.dl(w,v,max)<=max)ok=true;});return ok;}
   /* mots du vocabulaire d'une langue (règles de traduction) : servent aussi à corriger les fautes (« radidor » -> radiador) */
-  var VOCL={};function vocL(L){if(VOCL[L])return VOCL[L];var st={};
+  var VOCL={},VOCK={};/* VOCL : mots de 5 lettres ou plus, candidats à la correction ; VOCK : tous les mots connus (jamais corrigés) */
+  function vocL(L){if(VOCL[L])return VOCL[L];var st={},kn={};
     trTable(L).forEach(function(r){var src=r[0]?r[0]:(r[2]?String(r[2]).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase():"");
-      src.split(/[|()]/).forEach(function(alt){if(!/^[\p{L} ]+$/u.test(alt))return;hn(alt).split(" ").forEach(function(w){if([...w].length>=5&&!CMDALL.has(w))st[w]=1;});});});
-    return VOCL[L]=Object.keys(st);}
+      src.replace(/\?[:=!]|\[[^\]]*\]|\\[a-z]|[?*+.{}0-9,^$]/g," ").split(/[|()]/).forEach(function(alt){alt=alt.replace(/\s+/g," ").trim();if(!alt)return;if(!/^[\p{L} ]+$/u.test(alt))return;hn(alt).split(" ").forEach(function(w){if(!w)return;kn[w]=1;if([...w].length>=5&&!CMDALL.has(w))st[w]=1;});});});
+    VOCK[L]=kn;return VOCL[L]=Object.keys(st);}
   var POLI=["super","parfait","nickel","merci","genial","impeccable"];/* « spuer », « meci » */
   function cmdFix(n,raw,L,an){if(!E.dl||!CMDW.fr)return n;var vu={};((an&&an.mentions)||[]).forEach(function(m){if(m.how==="exact")return;var sp=String(m.span||"");if(sp.indexOf(" ")<0)vu[sp]=hn(m.alias||"");});var lists=[CMDW.fr];if(L&&L!=="fr"&&CMDW[L])lists.push(CMDW[L]);if(L&&L!=="fr")lists.push(vocL(L));lists.push(POLI);
     var caps={};String(raw).replace(/[\p{L}'’-]+/gu,function(w){if(/^\p{Lu}/u.test(w)&&w!==w.toUpperCase())caps[hn(w)]=1;return w;});
     var t=n.split(" ");
-    var VL=L&&L!=="fr"?new Set(vocL(L)):null;
+    var VL=null;if(L&&L!=="fr"){vocL(L);VL={has:function(x){return VOCK[L][x]===1;}};}
     return t.map(function(w,i){if(w.length<4||!(L==="fr"||!L?/^[a-z]+$/:/^\p{L}+$/u).test(w)||(VL&&VL.has(w))||CMDALL.has(w)||caps[w]||/^(chez|client|cliente|clients|madame|monsieur|mme|mr|m)$/.test(t[i-1]||""))return w;
       if(CMDS.fr.has(w)||(CMDS[L]&&CMDS[L].has(w))||knownWord(w)||S.clients[w]||NOMS_VUS[w])return w;
       var max=w.length>=8?2:1,best=null,bd=99,bs=-1,tie=false;
@@ -973,7 +974,7 @@ function create(E,X,saved,opts){
       case "fournisseurs.ajouter":return tr("Enregistrer le fournisseur {0}{1}",[a.nom,(a.specialite?" ("+a.specialite+")":"")]);case "fournisseurs.ouvrir":return tr("Ouvrir mes fournisseurs");case "fournisseurs.commande":return tr("Commande chez {0}",[a.nom]);
       case "pointage.entree":return tr("Pointer l’arrivée{0}",[(a.client?tr(" chez {0}",[cap(a.client)]):"")]);case "pointage.sortie":return tr("Pointer la sortie");case "pointage.ouvrir":return tr("Ouvrir mes heures");
       case "metre.calculer":return tr("Métré {0} × {1} m{2}",[fnum(+a.longueur),fnum(+a.largeur),(a.piece?" ("+roomLabel(a.piece).toLowerCase()+")":"")]);
-      case "courses.ajouter":return tr("Ajouter à la liste de courses");case "courses.prix":return tr("Prix de « {0} » : {1}",[a.nom,eur(+a.prix)]);case "courses.calcul":return tr("Calculer les matériaux : {0}, {1} m²",[a.travail,fnum(+a.surface)]);case "courses.ouvrir":return tr("Ouvrir ma liste de courses");case "projet.demande":return tr("Préparer une demande de devis pour un artisan");
+      case "metier.info":return tr("Répondre à ta question");case "metier.calcul":return tr("Faire le calcul");case "courses.ajouter":return tr("Ajouter à la liste de courses");case "courses.prix":return tr("Prix de « {0} » : {1}",[a.nom,eur(+a.prix)]);case "courses.calcul":return tr("Calculer les matériaux : {0}, {1} m²",[a.travail,fnum(+a.surface)]);case "courses.ouvrir":return tr("Ouvrir ma liste de courses");case "projet.demande":return tr("Préparer une demande de devis pour un artisan");
       case "memoire.retenir":return tr("Retenir : {0}",[a.fait]);case "memoire.oublier":return tr("Oublier : {0}",[a.texte]);case "memoire.ouvrir":return tr("Ouvrir la mémoire");case "mot.apprendre":return tr("Apprendre : « {0} » = {1}",[a.mot,a.sens]);
       case "scene.ajouter":return tr("Maquette 3D : ajouter {0}",[(a.items||[]).map(function(x){var t=resolveType(x.type);return tname(t||x.type,+x.nombre||1)+(x.couleur?" "+trw(x.couleur):"")+(x.piece?" "+where(resolveRoom(x.piece)):"");}).join(", ")]);
       case "scene.enlever":return tr("Maquette 3D : enlever {0}{1}",[(a.tous?tr("les "):""),tname(resolveType(a.type)||a.type,a.tous?2:1).replace(/^\d+ /,"")]);case "scene.remplacer":return tr("Maquette 3D : remplacer {0} par {1}",[tname(resolveType(a.de)||a.de,1),tname(resolveType(a.par)||a.par,1)]);
@@ -1724,6 +1725,79 @@ function create(E,X,saved,opts){
     "app.chantiers":function(){return tr("Chantiers et NFC");},"app.plan":function(a){return a.laser?tr("Plan calibré au laser"):tr("Plan d’une pièce");},
     "app.m3d":function(a){return a.nouveau?tr("Nouveau projet 3D"):tr("Maquette 3D");},"app.aide":function(){return tr("Ce que je sais faire");}};
   var _dx4=B.describeExtra;B.describeExtra=function(c){var f=D4[c.m+"."+c.a];return f?f(c.args||{}):_dx4(c);};
+  /* ---------- questions du métier (réponses fixes, vérifiées ; pas de conversation libre) ----------
+     Règles françaises lues le 13 novembre 2026 : TVA (loi de finances 2025, art. 41), contrat hors établissement
+     (Code de la consommation), devis de dépannage (arrêté du 24 janvier 2017), délais de paiement (Code de commerce). */
+  var METQ=/\b(combien|quel|quelle|quels|quelles|c est quoi|qu est ce|comment|faut il|est ce que|est ce qu|a quoi|duree|delai|delais|taux|pourcentage|maximum|max|minimum|obligatoire|droit|regle|regles|norme|il faut|je dois|on doit|peut on|puis je|explique|rappelle moi|retenue de garantie|autoliquidation|garantie decennale|temps de sechage|section de cable|pente evacuation|delai de retractation)\b/;
+  var METINFO=[
+   ["tva_neuf",/\btva\b/,/\b(neuf|neuve|construction|local professionnel|locaux professionnels|bureau|commerce)\b/],
+   ["tva_energie",/\btva\b/,/\b(energ\w*|isolation|isoler|pompe a chaleur|chaudiere|poele|solaire|fenetres?|double vitrage|5 5)\b/],
+   ["tva_mention",/\b(attestation|cerfa|mention)\b/,/\b(tva|taux reduit|taux intermediaire)\b/],
+   ["tva",/\btva\b/,/\b(renov\w*|travaux|logement|maison|appartement|taux|quel|quelle|combien|10|reduit\w*|intermediaire)\b/],
+   ["retenue",/\bretenue de garantie\b/,null],
+   ["decennale",/\b(decennale|dix ans|10 ans)\b/,null],
+   ["garanties",/\b(garanties?|parfait achevement|biennale|bon fonctionnement)\b/,null],
+   ["retractation",/\b(retractation|retracter|retracte|annuler (le|son|un) devis signe|7 jours|14 jours)\b/,null],
+   ["acompte",/\b(acompte|avance)\b/,/\b(maximum|max|combien|quel|pourcentage|taux|droit|loi|legal|limite|peut on|puis je|demander)\b/],
+   ["devis_oblig",/\bdevis\b/,/\b(obligatoire|oblige|payant|gratuit|faut il un|je dois faire|depannage)\b/],
+   ["paiement",/\b(delais? de paiement|paiement|retard de paiement|penalites? de retard|indemnite forfaitaire|40 euros?)\b/,/\b(delai|delais|jours|combien|retard|penalites?|indemnite|max|maximum|quand|professionnel|pro|entreprise|40)\b/],
+   ["autoliq",/\b(autoliquidation|auto liquidation|sous traitan\w*)\b/,/\b(tva|autoliquidation|auto liquidation|facture|facturer)\b/],
+   ["elec",/\b(section|cable|fil|fils|mm2|disjoncteur|ampere|amperes|\d+ a)\b/,/\b(section|cable|fil|fils|mm2|disjoncteur|prise|prises|eclairage|plaque|four|chauffe eau|lave|cuisson|\d+ a)\b/],
+   ["pente",/\b(pente|pentes)\b/,/\b(evacuation|ecoulement|douche|italienne|tuyau|pvc|canalisation|evier|eaux)\b/],
+   ["sechage",/\b(sechage|secher|seche|sec|attendre)\b/,/\b(chape|beton|dalle|enduit|ragreage|platre|temps de sechage)\b/]
+  ];
+  var METTXT={
+   tva:"TVA dans un logement achevé depuis plus de 2 ans : 10 % pour l’amélioration, la transformation, l’aménagement ou l’entretien ; 5,5 % pour la rénovation énergétique. Construction neuve et locaux professionnels : 20 %. Le client certifie les conditions par une mention sur le devis ou la facture signée (plus d’attestation depuis 2025).",
+   tva_neuf:"Construction neuve et locaux professionnels : TVA à 20 %. Les taux de 10 % et 5,5 % sont réservés aux logements achevés depuis plus de 2 ans.",
+   tva_energie:"Rénovation énergétique d’un logement achevé depuis plus de 2 ans (isolation, pompe à chaleur, fenêtres isolantes…) : TVA à 5,5 %, si les travaux et matériaux remplissent les conditions. Le client les certifie par une mention sur le devis ou la facture signée.",
+   tva_mention:"Depuis 2025, plus d’attestation de TVA : une mention sur le devis ou la facture, signée par le client, certifie que les conditions du taux de 10 % ou 5,5 % sont remplies. Un exemplaire pour toi, un pour le client, à garder 5 ans.",
+   decennale:"Garantie décennale : 10 ans après la réception, pour les dommages qui touchent la solidité de l’ouvrage ou le rendent impropre à son usage. L’assurance est obligatoire, et elle doit figurer sur le devis et la facture.",
+   garanties:"Après la réception : parfait achèvement 1 an (tous les défauts signalés), bon fonctionnement 2 ans (équipements démontables), décennale 10 ans (solidité, usage de l’ouvrage).",
+   retractation:"Contrat signé chez le client : il a 14 jours après la signature pour se rétracter, et rien ne peut être encaissé pendant 7 jours, sauf travaux urgents d’entretien ou de réparation qu’il a demandés. S’il n’a pas été informé de ce droit, le délai est prolongé de 12 mois.",
+   acompte:"La loi ne fixe pas de maximum pour un acompte de travaux ; l’usage est d’environ 30 %. Contrat signé chez le client : aucun paiement pendant 7 jours, sauf travaux urgents qu’il a demandés.",
+   devis_oblig:"Dépannage, réparation ou entretien chez un particulier : devis détaillé obligatoire avant tout accord, quel que soit le montant. Le devis dit s’il est gratuit ou payant.",
+   paiement:"Entre professionnels : 30 jours après la prestation si rien n’est prévu ; au plus 60 jours après la facture, ou 45 jours fin de mois. En cas de retard : pénalités (taux de la BCE + 10 points, au moins 3 fois le taux légal) et 40 € d’indemnité par facture. Les deux doivent être écrits sur la facture.",
+   retenue:"Retenue de garantie : au plus 5 % du marché, libérée 1 an après la réception. Elle peut être remplacée par une caution bancaire.",
+   autoliq:"Sous-traitance dans le BTP : le sous-traitant facture HT avec la mention « Autoliquidation » ; c’est l’entreprise principale qui déclare et paie la TVA.",
+   elec:"Repères NF C 15-100 : éclairage 1,5 mm² (16 A) ; prises 1,5 mm² (16 A, 8 prises au plus) ou 2,5 mm² (20 A, 12 prises au plus) ; four, lave-linge, lave-vaisselle, chauffe-eau 2,5 mm² (20 A) ; plaque de cuisson 6 mm² (32 A).",
+   pente:"Évacuations : pente de 1 à 3 cm par mètre. Douche à l’italienne : sol en pente de 1 à 2 % vers l’évacuation.",
+   sechage:"Chape ciment : environ 1 semaine par cm d’épaisseur jusqu’à 4 cm, plus au-delà. Béton : 28 jours pour sa résistance finale. Avant un parquet ou un sol souple, mesure l’humidité."
+  };
+  var ELEC={"10":"1,5 mm²","16":"1,5 mm²","20":"2,5 mm²","25":"4 mm²","32":"6 mm²","40":"10 mm²"};
+  function metNum(x){return parseFloat(String(x).replace(",","."));}
+  /* question sans mot interrogatif : « tva pour une isolation », « section de fil pour des prises », « temps de séchage d'une chape » */
+  var METQ2=/^\s*(?:la |le |les |une |un )?(?:tva (?:pour|sur|en|d un|d une|de|des|du)|taux de tva|temps de|duree de|delai de|delais de|section de|section du|pente (?:d|de|pour|minimum|mini)|garantie decennale|garanties apres|retenue de garantie|autoliquidation)\b/;
+  function parseMetier(c){var p=" "+c.p+" ",q=METQ.test(p)||METQ2.test(c.p)||/\?\s*$/.test(c.raw),m;
+    /* calculs */
+    if(/\b(combien|calcule|quantite|il me faut|il faut|prevoir|volume)\b/.test(p)||q){
+      /* dalle / béton : surface et épaisseur */
+      if(/\b(dalle|beton|chape)\b/.test(p)&&(m=p.match(/(\d+(?:[.,]\d+)?)\s*(?:m2|m²|metres? carres?)/))){var ep=p.match(/(\d+(?:[.,]\d+)?)\s*(?:cm|centimetres?)\b/);
+        if(ep)return [C("metier","calcul",{k:"beton",surface:metNum(m[1]),ep:metNum(ep[1])})];}
+      if(/\b(parpaings?|blocs?|agglos?|moellons?)\b/.test(p)&&(m=p.match(/(\d+(?:[.,]\d+)?)\s*(?:m2|m²|metres? carres?)/)))return [C("metier","calcul",{k:"parpaing",surface:metNum(m[1])})];
+      if(/\b(carreaux|carreau|dalles)\b/.test(p)&&(m=p.match(/\b(\d{1,3})\s*(?:x|par|\*)\s*(\d{1,3})\b/))){var sf=p.replace(m[0]," ").match(/(\d+(?:[.,]\d+)?)\s*(?:m2|m²|metres? carres?)/);
+        if(sf)return [C("metier","calcul",{k:"carreaux",surface:metNum(sf[1]),l:+m[1],h:+m[2]})];}
+    }
+    if((m=p.match(/(\d+(?:[.,]\d+)?)\s*(m3|m³|metres? cubes?)\s*(?:en|=|a)\s*(?:litres?|l)\b/)))return [C("metier","calcul",{k:"m3l",v:metNum(m[1])})];
+    if((m=p.match(/(\d+(?:[.,]\d+)?)\s*(?:litres?|l)\s*(?:en|=|a)\s*(?:m3|m³|metres? cubes?)\b/)))return [C("metier","calcul",{k:"lm3",v:metNum(m[1])})];
+    if(/\b(combien|calcule|ca fait)\b/.test(p)&&(m=p.match(/(\d+(?:[.,]\d+)?)\s*(m2|m²|ml|m|h|heures?|u|unites?|pieces?)?\s*(?:a|x|fois|\*|at|×)\s*(\d+(?:[.,]\d+)?)\s*(?:€|euros?|eur)/)))
+      return [C("metier","calcul",{k:"montant",q:metNum(m[1]),u:m[2]||"",pu:metNum(m[3])})];
+    if(!q)return null;
+    /* électricité : un ampérage dit → la section */
+    if(/\b(section|cable|fil|fils|mm2)\b/.test(p)&&(m=p.match(/\b(10|16|20|25|32|40)\s*(?:a|un|а|amperes?|amp|امبير)(?![\p{L}])/u)))return [C("metier","info",{k:"elec",a:m[1]})];
+    var pct=/\d+(?:[.,]\d+)?\s*%/.test(p);/* « tva à 10 % » : réglage du devis, pas une question */
+    for(var i=0;i<METINFO.length;i++){var r=METINFO[i];if(pct&&/^tva/.test(r[0]))continue;if(r[1].test(p)&&(!r[2]||r[2].test(p)))return [C("metier","info",{k:r[0]})];}
+    return null;}
+  X_["metier.info"]=function(a){var t=METTXT[a.k];if(!t)return R(tr("Je n’ai pas compris."));
+    if(a.k==="elec"&&a.a&&ELEC[a.a])return R(tr("Disjoncteur de {0} A : câble de {1} en cuivre (NF C 15-100).",[a.a,ELEC[a.a]]));
+    return R(tr(t));};
+  X_["metier.calcul"]=function(a){var f=function(x,d){return fnum(Math.round(x*Math.pow(10,d||0))/Math.pow(10,d||0));};
+    if(a.k==="beton"){var v=a.surface*a.ep/100;return R(tr("Dalle de {0} m² en {1} cm : {2} m³ de béton, soit environ {3} sacs de ciment de 35 kg, {4} t de sable, {5} t de gravier et {6} L d’eau (dosage 350 kg/m³).",[f(a.surface,1),f(a.ep,1),f(v,2),Math.ceil(v*10),f(v*0.7,1),f(v*1.1,1),Math.ceil(v*175)]));}
+    if(a.k==="parpaing")return R(tr("Mur de {0} m² : environ {1} parpaings de 20 × 50 cm (10 au m², 5 % de casse en plus).",[f(a.surface,1),Math.ceil(a.surface*10*1.05)]));
+    if(a.k==="carreaux"){var n=Math.ceil(a.surface*1.1/(a.l*a.h/10000));return R(tr("{0} m² en carreaux de {1} × {2} cm : {3} carreaux, avec 10 % de coupes.",[f(a.surface,1),a.l,a.h,n]));}
+    if(a.k==="m3l")return R(tr("{0} m³ = {1} litres.",[f(a.v,3),f(a.v*1000)]));
+    if(a.k==="lm3")return R(tr("{0} litres = {1} m³.",[f(a.v),f(a.v/1000,3)]));
+    if(a.k==="montant"){var ht=a.q*a.pu;return R(tr("{0} × {1} = {2} HT, soit {3} TTC à 10 % ou {4} TTC à 20 %.",[f(a.q,2)+(a.u?" "+trw(a.u.replace(/^m2$/,"m²")):""),eur(a.pu),eur(ht),eur(ht*1.1),eur(ht*1.2)]));}
+    return R(tr("Je n’ai pas compris."));};
 
   /* ---------- apprentissage des mots ---------- */
   function learnWord(mot,sens){
@@ -1760,7 +1834,7 @@ function create(E,X,saved,opts){
   B.snapshot=function(desc){HIST.push({s:snap(),d:desc||""});if(HIST.length>30)HIST.shift();REDO=[];};
   function undo(){var h=HIST.pop();if(!h)return null;REDO.push({s:snap(),d:h.d});restore(h.s);return h.d||"la dernière action";}
   function redo(){var h=REDO.pop();if(!h)return null;HIST.push({s:snap(),d:h.d});restore(h.s);return h.d||"l’action";}
-  var READONLY=/\.(ouvrir|liste|info|vue|libre|pdf|total|compte|prochain|dispo|impayes|appeler)$|^stats\.|^sys\.|^memoire\.(?:ouvrir|desapprendre)$|^signature\.ouvrir$|^projet\.|^bibliotheque\.|^fichiers\.|^dictee\.|^pointage\.nfc$/;
+  var READONLY=/\.(ouvrir|liste|info|vue|libre|pdf|total|compte|prochain|dispo|impayes|appeler)$|^stats\.|^sys\.|^memoire\.(?:ouvrir|desapprendre)$|^signature\.ouvrir$|^projet\.|^metier\.|^bibliotheque\.|^fichiers\.|^dictee\.|^pointage\.nfc$/;
   function mutating(cmds){return cmds.some(function(c){return !READONLY.test(c.m+"."+c.a)||c.m==="sys"&&c.a==="mode";});}
 
   /* ---------- base de phrases apprises ---------- */
@@ -1800,7 +1874,7 @@ function create(E,X,saved,opts){
   function rawParts(raw,n){var r=String(raw).split(new RegExp(SPLITR.source,"giu")).filter(function(x){return x&&x.trim();});return r.length===n?r:null;}
   function localParse(c){
     var parts=c.p.split(SPLIT).filter(function(x){return x&&x.trim();});
-    var r=(parts.length<2?parseApp(c):null)||parseSys(c);if(r)return r;var q=isQ(c);
+    var r=(parts.length<2?parseMetier(c)||parseApp(c):null)||parseSys(c);if(r)return r;var q=isQ(c);
     var rp=parts.length>1?rawParts(c.raw,parts.length):null;
     var sub=function(x,i){return Object.assign({},c,{p:x,n:x,raw:rp?rp[i]:c.raw});};
     /* plusieurs demandes dans la même phrase : chacune doit être comprise */
