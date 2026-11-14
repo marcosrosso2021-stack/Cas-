@@ -1394,9 +1394,10 @@ const EQ=[
  {k:'parasol',g:'ext',fr:'Parasol',m:'out',dim:[2.5,2.5,2.4],deco:1,ic:'<path d="M3 11a9 7 0 0 1 18 0z"/><path d="M12 11v10"/>'},
  {k:'tree',g:'ext',fr:'Arbre',m:'out',dim:[2,2,4],deco:1,ic:'<circle cx="12" cy="9" r="6"/><path d="M12 15v6"/>'},
  {k:'stairs',g:'agen',fr:'Escalier',m:'wall',dim:[3.4,.9,2.8],deco:1,ic:'<path d="M3 20h5v-4h4v-4h4V8h5"/>'},
+ {k:'vcap',g:'vid',fr:'Élément capté',m:'floor',dim:[.5,.5,.5],deco:1,ic:'<rect x="5" y="5" width="14" height="14" rx="2"/><path d="M5 12h14"/>'},
  {k:'furn',g:'agen',fr:'Meuble',m:'wall',dim:[.8,.5,.8],ic:'<rect x="4" y="6" width="16" height="12" rx="1"/><path d="M4 12h16M12 6v12"/>'}];
 const EQG=[['elec','g_elec','#b88a00'],['plomb','g_plomb','#1f5fbf'],['chauf','g_chauf','#c62828'],['cuis','g_cuis','#a8571f'],['chamb','g_chamb','#6d4bb3'],['sejour','g_sejour','#1d8a6a'],['agen','g_agen','#6b6b70'],['ext','g_ext','#2f7d45']];
-const EQF={elec:'Électricité',plomb:'Plomberie',chauf:'Chauffage',cuis:'Cuisine',chamb:'Chambre',sejour:'Séjour',agen:'Agencement',ext:'Extérieur'};
+const EQF={vid:'Éléments captés',elec:'Électricité',plomb:'Plomberie',chauf:'Chauffage',cuis:'Cuisine',chamb:'Chambre',sejour:'Séjour',agen:'Agencement',ext:'Extérieur'};
 const eqDef=k=>EQ.find(e=>e.k===k);
 const svgI=(ic,cls='i')=>`<svg class="${cls}" viewBox="0 0 24 24">${ic}</svg>`;
 
@@ -3031,7 +3032,31 @@ const artTex=k=>cvTex('art_'+k,256,(x,n)=>{const P=[['#e8d9c0','#c4553b','#2f4e6
   x.globalAlpha=0.6;x.strokeStyle=P[4];x.lineWidth=2;x.beginPath();x.moveTo(rnd()*n,rnd()*n);for(let i=0;i<4;i++)x.quadraticCurveTo(rnd()*n,rnd()*n,rnd()*n,rnd()*n);x.stroke();x.globalAlpha=1;noise(x,n,1600,['#ffffff','#000000'])});
 /* nouveaux objets et arbres plus naturels ; l'escalier peut monter dans l'autre sens (fl) */
 const NEWEQ=new Set(['kwall','frame','sideboard','dresser','bush','flowers','veg','shed','car','drive','bench','bbq','glamp','hedge','gfence']);
+/* élément capté dans une vidéo : sa forme d'après ce qui a été reconnu, sa taille, sa couleur et sa hauteur mesurées */
+function vcapModel(T,e,M){const g=new T.Group(),[w,dp,h]=eqDims(e),y0=e.ez||0,col=e.col||'#9a9a9a',m1=M.S_(col,{roughness:0.8}),m2=M.S_(mixHex(col,'#000000',0.3),{roughness:0.8});
+  const B=(sx,sy,sz,m,x,y,z)=>{const o=new T.Mesh(new T.BoxGeometry(Math.max(0.01,sx),Math.max(0.01,sy),Math.max(0.01,sz)),m);o.position.set(x,y0+y+sy/2,z);o.castShadow=true;o.receiveShadow=true;g.add(o);return o};
+  const C=(rt,rb,hh,m,x,y,z)=>{const o=new T.Mesh(new T.CylinderGeometry(rt,rb,hh,16),m);o.position.set(x,y0+y+hh/2,z);o.castShadow=true;o.receiveShadow=true;g.add(o);return o};
+  const legs=(lh,m,ins)=>{for(const a of[-1,1])for(const b of[-1,1])B(0.04,lh,0.04,m,a*(w/2-ins),0,b*(dp/2-ins))};
+  switch(e.sk){
+    case'bed':{const fh=h*0.55;B(w,fh,dp,m2,0,0,0);B(w*0.96,h-fh,dp*0.94,m1,0,fh,0.02);B(w,Math.max(h+0.3,0.8),0.05,m2,0,0,-dp/2+0.025);break}
+    case'table':case'desk':{B(w,0.04,dp,m1,0,h-0.04,0);legs(h-0.04,m2,0.04);break}
+    case'chair':{const sh=Math.min(0.48,h*0.52);B(w,0.04,dp,m1,0,sh,0);legs(sh,m1,0.03);B(w,h-sh,0.04,m1,0,sh,-dp/2+0.02);break}
+    case'sofa':{const sh=h*0.45;B(w,sh,dp,m1,0,0,0);B(w,h-sh,dp*0.22,m1,0,sh,-dp/2+dp*0.11);break}
+    case'fridge':{B(w,h,dp,M.S_(col,{roughness:0.35,metalness:0.15}),0,0,0);B(w*0.98,0.01,0.005,M.S_('#333333',{}),0,h*0.66,dp/2+0.003);B(0.025,h*0.25,0.03,M.S_('#aaaaaa',{}),-w/2+0.05,h*0.3,dp/2+0.015);break}
+    case'microwave':case'oven':{B(w,h,dp,M.S_(col,{roughness:0.4,metalness:0.3}),0,0,0);B(w*0.6,h*0.65,0.005,M.S_('#111111',{}),-w*0.12,h*0.17,dp/2+0.003);break}
+    case'tv':{B(w,h,dp,M.S_('#151515',{}),0,0,0);break}
+    case'shelf':{const n=Math.max(2,Math.round(h/0.35));B(w,h,0.02,m1,0,0,-dp/2+0.01);for(let i=0;i<=n;i++)B(w,0.02,dp,m1,0,i*(h-0.02)/n,0);break}
+    case'curtain':{for(let i=0;i<6;i++)B(w*(i%2?0.75:1),h,dp/6,M.S_(col,{roughness:1}),0,0,-dp/2+(i+0.5)*dp/6);break}
+    case'lamp':{C(0.015,0.015,h*0.8,m2,0,0,0);C(Math.min(w,dp)*0.25,Math.min(w,dp)*0.45,h*0.2,m1,0,h*0.8,0);break}
+    case'ceiling_light':{const o=B(w,h,dp,new T.MeshStandardMaterial({color:'#f4f4f4',emissive:'#ffffff',emissiveIntensity:0.35,roughness:0.4}),0,0,0);o.castShadow=false;break}
+    case'plant':{C(Math.min(w,dp)*0.3,Math.min(w,dp)*0.24,h*0.3,M.S_('#9a6a44',{}),0,0,0);const s2=new T.Mesh(new T.SphereGeometry(Math.min(w,dp)*0.5,14,10),m1);s2.position.set(0,y0+h*0.65,0);g.add(s2);break}
+    case'pillar':{B(w,h,dp,M.S_(col,{roughness:0.6}),0,0,0);B(w+0.08,0.1,dp+0.08,M.S_(col,{roughness:0.6}),0,h-0.1,0);break}
+    case'toilet':{B(w*0.8,h*0.45,dp*0.7,M.S_('#f5f5f5',{}),0,0,dp*0.1);B(w,h*0.55,dp*0.25,M.S_('#f5f5f5',{}),0,h*0.45,-dp/2+dp*0.125);break}
+    case'sink':{B(w,h,dp,M.S_('#eeeeee',{}),0,0,0);break}
+    default:B(w,h,dp,m1,0,0,0)}
+  return g}
 function eqModel(T,e,M,H,top,night){
+  if(e.type==='vcap')return vcapModel(T,e,M);
   if(e.type==='tree')return treeModel(T,e,M);
   if(!NEWEQ.has(e.type)){const g=eqModel0(T,e,M,H,top,night);if(e.type==='stairs'&&e.fl)g.scale.x=-1;return g}
   const d=eqDef(e.type),[w,dp,h]=eqDims(e),g=new T.Group(),bz=-dp/2,fz=dp/2,z0=d.z||0;seed(e.id||e.type);
@@ -3276,14 +3301,21 @@ function vidFurnish(spec,k0){const fp=footprint();if(!fp||!S.scale||!spec||!spec
   const R=spec.room,W=R.width,D=R.depth,DIR={north:[1,0],east:[0,1],south:[-1,0],west:[0,-1]},NX={north:'east',east:'south',south:'west',west:'north'};
   const dx=DIR[k0],dy=DIR[NX[k0]],A={north:[-W/2,-D/2],east:[W/2,-D/2],south:[W/2,D/2],west:[-W/2,D/2]}[k0];if(!dx||!A)return 0;
   const sX=Math.abs(dx[0])?W:D,sY=Math.abs(dy[0])?W:D,kx=((fp.x1-fp.x0)*sc-ep)/sX,ky=((fp.y1-fp.y0)*sc-ep)/sY;
-  const TY={bed:o=>o.w>1.2?'bed':'bed1',sofa:'sofa',chair:'chair',table:'table',desk:'desk',fridge:'fridge',microwave:'oven',oven:'oven',tv:'tv',toilet:'wc',sink:'sink',plant:'plant',
-    cabinet:o=>o.h>1.4?'ward':'furn',shelf:'shelf',mirror:'mirror',lamp:'lamp2',ceiling_light:'light',curtain:'furn',box:'furn',bag:'furn',other:'furn'};
+  const P=(x,z)=>{const px=((x-A[0])*dx[0]+(z-A[1])*dx[1])*kx,py=((x-A[0])*dy[0]+(z-A[1])*dy[1])*ky;return[ox+px/sc,oy+py/sc]};
   S.eqs=S.eqs.filter(e=>!e.vid);let n=0;
-  for(const o of spec.objects){let ty=TY[o.type];if(typeof ty==='function')ty=ty(o);if(!ty||!eqDef(ty))continue;
-    const lit=ty==='light',cur=o.type==='curtain';if(!lit&&!cur&&o.y>0.1)continue; // objets posés sur un meuble : pas d'équipement
-    const px=((o.x-A[0])*dx[0]+(o.z-A[1])*dx[1])*kx,py=((o.x-A[0])*dy[0]+(o.z-A[1])*dy[1])*ky,r=(o.rotation||0)*Math.PI/180,b=[-Math.sin(r),-Math.cos(r)],bp=[b[0]*dx[0]+b[1]*dx[1],b[0]*dy[0]+b[1]*dy[1]];
+  for(const o of spec.objects){const[x,y]=P(o.x,o.z),r=(o.rotation||0)*Math.PI/180,b=[-Math.sin(r),-Math.cos(r)],bp=[b[0]*dx[0]+b[1]*dx[1],b[0]*dy[0]+b[1]*dy[1]];
     const rot=Math.abs(bp[0])>Math.abs(bp[1])?(bp[0]<0?270:90):(bp[1]<0?0:180);
-    S.eqs.push({id:nid('eq'),type:ty,x:ox+px/sc,y:oy+py/sc,rot,sw:[+o.w.toFixed(2),+o.d.toFixed(2)],sh:+(cur?o.y+o.h:o.h).toFixed(2),...(o.color?{col:o.color}:{}),vid:1,lab:o.label});n++}
+    S.eqs.push({id:nid('eq'),type:'vcap',sk:o.type,x,y,rot,sw:[+o.w.toFixed(2),+o.d.toFixed(2)],sh:+o.h.toFixed(2),ez:+(o.y||0).toFixed(2),...(o.color?{col:o.color}:{}),vid:1,lab:o.label});n++}
+  // portes et fenêtres vues dans la vidéo, sur leur mur (aussi un mur reconstitué)
+  const Hh=S.params.H;
+  for(const o of spec.openings||[]){const hw=o.width/2,al=o.along,E={north:[[al-hw,-D/2],[al+hw,-D/2]],south:[[al-hw,D/2],[al+hw,D/2]],west:[[-W/2,al-hw],[-W/2,al+hw]],east:[[W/2,al-hw],[W/2,al+hw]]}[o.wall];if(!E)continue;
+    const a=P(...E[0]),b=P(...E[1]),or=Math.abs(a[0]-b[0])>=Math.abs(a[1]-b[1])?'h':'v',pp=or==='h'?(a[1]+b[1])/2:(a[0]+b[0])/2;
+    let wl=null,bd=0.6/sc;for(const q of S.walls){if(q.o!==or)continue;const d=Math.abs(q.p-pp);if(d<bd){bd=d;wl=q}}if(!wl)continue;
+    const c0=Math.max(wl.a,Math.min(or==='h'?a[0]:a[1],or==='h'?b[0]:b[1])),c1=Math.min(wl.b,Math.max(or==='h'?a[0]:a[1],or==='h'?b[0]:b[1]));if(c1-c0<0.3/sc)continue;
+    if(S.ops.some(q=>q.wallId===wl.id&&c0<q.c1&&c1>q.c0))continue;
+    const op={id:nid('ouv'),wallId:wl.id,c0,c1,type:o.type==='door'?'door':'window',conf:null,side:1,hinge:0,vid:1};
+    if(op.type==='door')op.dh=+clamp(o.height||2.04,1.8,Hh-0.05).toFixed(2);else{op.al=+clamp(o.sill||0.9,0,Hh-0.6).toFixed(2);op.wh=+clamp(o.height||1.2,0.4,Hh-op.al-0.03).toFixed(2)}
+    S.ops.push(op);n++}
   try{build3D();draw3()}catch(e){}try{if(CLIENT)saveProj();else saveArt()}catch(e){}return n}
 let VIDP=null;function vidStart(f){if(!VIDP)VIDP=new Promise((ok,ko)=>{const e=document.createElement('script');e.src='lib/vid3d.js';e.onload=ok;e.onerror=()=>{VIDP=null;ko(new Error('vid3d'))};document.head.appendChild(e)});
   VIDP.then(()=>window.vidRun(f,{RNV,busy,busyStep,tick,t,toast,fmt,rnvDetect,rnvRender,rnvMake,v2Sess,vidFurnish})).catch(()=>toast(t('vid_fail')))}
