@@ -202,7 +202,11 @@ P.marge=function(t){if(!P.ready||typeof q==="undefined")return false;var s=fr(t)
 
 /* ---------- questions sur l'activité ---------- */
 var MOINS_CHER=/\b(moins cher|meilleur prix|prix le plus bas|plus bas prix|cheaper|cheapest)\b/;
-var RENTABLE=/\b(plus rentables?|rapporte le plus|meilleure marge|plus de marge|rentabilite|quelle marge|combien de marge|combien j ai gagne sur|combien m a rapporte)\b/;
+var RENTABLE=/\b(plus rentables?|rapporte le plus|meilleure marge|plus de marge|rentabilite|quelle marge|combien de marge|combien j ai gagne|combien m a rapporte|ca m a rapporte|benefices?|marge (?:du|de|chez|sur)|gagne combien)\b/;
+/* coût d'une heure de travail (salaire et charges), pour le vrai bénéfice d'un chantier : demandé une fois dans le chat */
+var COUTH=/\b(?:mon heure|une heure de travail|cout horaire|cout de l heure|heure de travail)\b.*?(\d+(?:[.,]\d+)?)\s*(?:€|euros?|eur)?/;
+function cliTexte(t){var h=" "+cle(t)+" ",best=null;(db.clients||[]).forEach(function(c){var n=cle(c.nom||"");if(n.length>=2&&h.indexOf(" "+n+" ")>=0&&(!best||n.length>cle(best).length))best=c.nom;});return best;}
+function coutH(){var v=db.prof&&+db.prof.coutH;return v>0?v:0;}
 var MOISN=["janvier","fevrier","mars","avril","mai","juin","juillet","aout","septembre","octobre","novembre","decembre"];
 function periode(s){var d=new Date(),m;if(/\bce mois\b/.test(s))return {a:new Date(d.getFullYear(),d.getMonth(),1),b:new Date(d.getFullYear(),d.getMonth()+1,1),t:T(" ce mois-ci")};
   if(/\bcette annee\b/.test(s))return {a:new Date(d.getFullYear(),0,1),b:new Date(d.getFullYear()+1,0,1),t:T(" cette année")};
@@ -216,7 +220,10 @@ function parClient(){var M={};function m(id,nom){var k=id||cle(nom);return M[k]|
   (db.quotes||[]).forEach(function(o){if(!o.client||fact[cle(o.client)]||!/^(accepte|paye)$/.test(o.status||""))return;var c=cliNom(o.client);m(c?c.id:null,c?c.nom:o.client).ca+=totals(o).ht;});
   (db.achats||[]).forEach(function(a){if(!a.cid||a.type==="devis")return;var c=cliDe(a.cid);if(c)m(c.id,c.nom).ach+=achatHT(a);});
   Object.keys(M).forEach(function(k){var x=M[k];if(x.id)x.h=heuresChantier(x.id);x.marge=x.ca-x.ach;});return Object.keys(M).map(function(k){return M[k];}).filter(function(x){return x.ca>0;});}
-function ligneMarge(x){var s=T("{0} : {1} HT, {2} d’achats, marge {3}",[x.nom,E(x.ca),E(x.ach),E(x.marge)]);if(x.h>=1)s+=T(" · {0} h ({1}/h)",[N(x.h),E(x.marge/x.h)]);return s;}
+function ligneMarge(x){var ch=coutH();if(ch&&x.h>=0.5){var bn=x.ca-x.ach-x.h*ch;return T("{0} : {1} HT, {2} d’achats, {3} h à {4} : bénéfice {5} ({6} %)",[x.nom,E(x.ca),E(x.ach),N(x.h),E(ch),E(bn),Math.round(bn/x.ca*100)]);}
+  var s=T("{0} : {1} HT, {2} d’achats, marge {3}",[x.nom,E(x.ca),E(x.ach),E(x.marge)]);if(x.h>=1)s+=T(" · {0} h ({1}/h)",[N(x.h),E(x.marge/x.h)]);return s;}
+var ATTCH=false;function demanderCH(M){if(coutH()||ATTCH||!M.some(function(x){return x.h>=0.5;}))return "";ATTCH=true;return p(T("Combien te coûte une heure de travail (salaire et charges) ? Je l’enlève de la marge."));}
+function poserCH(v){db.prof=db.prof||{};db.prof.coutH=v;try{save();}catch(x){}ATTCH=false;}
 P.question=function(t){langue();if(!P.ready||typeof db==="undefined")return false;var c=fr(t),s=" "+c.p+" ";
   /* une demande d'action (« ajoute une marge de 10 % », « mets le prix le moins cher ») n'est pas une question sur l'activité */
   if(/^\s*(ajoute|rajoute|mets|met|applique|enleve|retire|change|modifie|fais|cree|envoie|supprime|note|retiens)\b/.test(s)||/%/.test(s))return false;
@@ -234,11 +241,15 @@ P.question=function(t){langue();if(!P.ready||typeof db==="undefined")return fals
     var L=Object.keys(best).map(function(k){return best[k];}).sort(function(a,b){return a.prix-b.prix;});
     bulle(t,p(T("Le moins cher pour « {0} » : {1}.",[prod,L.slice(0,4).map(function(x){return x.four+" "+E(x.prix)+(x.unit&&x.unit!=="u"?" / "+x.unit:"")+(x.date?" ("+String(x.date).slice(8,10)+"/"+String(x.date).slice(5,7)+")":"");}).join(" · ")])));return true;}
   /* chantiers rentables, marge d'un client */
-  if(RENTABLE.test(s)&&/\b(chantiers?|clients?|travaux|chez|sur|job)\b/.test(s)){var M=parClient(),qui=P.clientDans(t),k=qui?cle(qui):null;
-    if(k){var x=M.filter(function(y){return cle(y.nom)===k;})[0];bulle(t,p(x?ligneMarge(x):T("Rien de facturé pour {0}.",[qui])));return true;}
+  /* coût de l'heure : réponse à la question, ou dit directement (« mon heure me coûte 28 € ») */
+  {var mh=s.match(COUTH)||(ATTCH&&s.match(/^\s*(\d+(?:[.,]\d+)?)\s*(?:€|euros?|eur)?(?:\s*(?:de l heure|l heure|par heure|\/h))?\s*$/));
+   if(mh){var vh=parseFloat(String(mh[1]).replace(",","."));if(vh>0&&vh<500){poserCH(vh);bulle(t,p(T("Heure de travail : {0}. C’est noté.",[E(vh)])));return true;}}}
+  if(RENTABLE.test(s)&&(/\b(chantiers?|clients?|travaux|chez|sur|job|avec)\b/.test(s)||P.clientDans(t))){var M=parClient(),qui=P.clientDans(t)||cliTexte(t),k=qui?cle(qui):null;
+    if(k){var x=M.filter(function(y){return cle(y.nom)===k;})[0];bulle(t,p(x?ligneMarge(x):T("Rien de facturé pour {0}.",[qui]))+(x?demanderCH([x]):""));return true;}
     if(!M.length){bulle(t,p(T("Pas encore de chantier facturé.")));return true;}
-    M.sort(function(a,b){var ra=a.h>=1?a.marge/a.h:null,rb=b.h>=1?b.marge/b.h:null;return ra!=null&&rb!=null?rb-ra:b.marge-a.marge;});
-    bulle(t,p(T("Les plus rentables :"))+M.slice(0,3).map(function(y){return p(ligneMarge(y));}).join(""));return true;}
+    var ch0=coutH();M.forEach(function(y){y.bn=ch0?y.ca-y.ach-y.h*ch0:y.marge;});
+    M.sort(function(a,b){if(ch0)return b.bn-a.bn;var ra=a.h>=1?a.marge/a.h:null,rb=b.h>=1?b.marge/b.h:null;return ra!=null&&rb!=null?rb-ra:b.marge-a.marge;});
+    bulle(t,p(T("Les plus rentables :"))+M.slice(0,3).map(function(y){return p(ligneMarge(y));}).join("")+demanderCH(M));return true;}
   /* achats chez un fournisseur */
   if(/\bcombien\b/.test(s)&&/\b(depense|achete|paye|claque|lache)\b/.test(s)&&/\bchez\b/.test(s)){var per=periode(s),fo=(db.suppliers||[]).filter(function(f){return f.nom&&(" "+s+" ").indexOf(" "+cle(f.nom)+" ")>=0;})[0];if(!fo)return false;
     var tot=(db.achats||[]).filter(function(a){return a.type!=="devis"&&cle(a.four)===cle(fo.nom)&&dans(per,a.date);}).reduce(function(s2,a){return s2+(+a.ttc||0);},0);
