@@ -6,8 +6,8 @@ const URL0=process.argv[2]||"http://localhost:8767/index.html";
 const P={fr:["ajoute un canapé","ajoute une lamep dans la chambre","anule"],en:["add a sofa","add a lamp in the bedroom"],es:["añade un sofá","pon una mesa en el salón"],
  pt:["adiciona um sofá","põe uma mesa na sala"],it:["aggiungi un divano","aggiungi una lampada in camera"],ro:["adaugă o canapea","pune o masă în sufragerie"],
  pl:["dodaj kanapę","postaw stół w salonie"],tr:["bir kanepe ekle","kaepeyi döndür"],ru:["добавь диван","отмни"],ar:["أضف أريكة","ضع طاولة في غرفة المعيشة"]};
-/* textes « pas compris » du module 3D, lus dans index.html */
-const h=fs.readFileSync(path.join(__dirname,"..","..","index.html"),"utf8"),i=h.indexOf("const M3D_SRC="),src=JSON.parse(h.slice(i+14,h.indexOf("\n",i)).replace(/;\s*$/,""));
+/* textes « pas compris » du module 3D, lus dans lib/m3d.html */
+const src=fs.readFileSync(path.join(__dirname,"..","..","lib","m3d.html"),"utf8");
 const esc=x=>x.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
 const NONE=new RegExp(src.split("\n").filter(l=>/^chat_none\|/.test(l)).flatMap(l=>l.split("|").slice(1)).map(x=>esc(x.slice(0,18))).join("|"));
 (async()=>{const b=await chromium.launch();const res={},rat=[];

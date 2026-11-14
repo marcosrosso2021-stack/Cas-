@@ -335,10 +335,13 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
    if(NEWL&&req.method==='GET'&&url==='/devis.html'){/* module Devis, ouvert dans un cadre de l'appli */
     let html;try{html=fs.readFileSync(path.join(ROOT,'devis.html'),'utf8')}catch(e){return send(res,404,{error:'introuvable'})}
     return send(res,200,html,{'content-security-policy':CSP_APP.replace("frame-ancestors 'none'","frame-ancestors 'self'"),'x-frame-options':'SAMEORIGIN'})}
-   if(NEWL&&req.method==='GET'&&!url.includes('..')&&/^\/(?:chat|lib)\/[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)*\.(?:js|json|wasm|mjs)$/.test(url)){/* fichiers du chat et bibliothèques */
+   if(NEWL&&req.method==='GET'&&!url.includes('..')&&/^\/(?:chat|lib|i18n)\/[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)*\.(?:js|json|wasm|mjs)$/.test(url)){/* fichiers du chat, bibliothèques et traductions */
     let b;try{b=fs.readFileSync(path.join(ROOT,url))}catch(e){return send(res,404,{error:'introuvable'})}
     const ty=url.endsWith('.json')?'application/json; charset=utf-8':url.endsWith('.wasm')?'application/wasm':'text/javascript; charset=utf-8';
     res.writeHead(200,Object.assign({'content-type':ty,'cache-control':'no-cache'},SEC));return res.end(b)}
+   if(NEWL&&req.method==='GET'&&url==='/lib/m3d.html'){/* module 3D : lu par l'appli comme texte, puis mis dans son cadre */
+    let b;try{b=fs.readFileSync(path.join(ROOT,'lib','m3d.html'))}catch(e){return send(res,404,{error:'introuvable'})}
+    res.writeHead(200,Object.assign({'content-type':'text/plain; charset=utf-8','cache-control':'no-cache'},SEC));return res.end(b)}
    if(NEWL&&req.method==='GET'&&url==='/sw.js'){let b;try{b=fs.readFileSync(path.join(ROOT,'sw.js'))}catch(e){b=null}
     if(b){res.writeHead(200,{'content-type':'text/javascript; charset=utf-8','cache-control':'no-cache','service-worker-allowed':'/'});return res.end(b)}}
    if(req.method==='GET'&&(url==='/'||url==='/index.html'||(!NEWL&&url==='/devis.html'))){
