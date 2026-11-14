@@ -73,6 +73,19 @@ function createServer(opts={}){
   return Object.values(best).sort((a,b)=>b.u.length-a.u.length||b.at-a.at).slice(0,400).map(x=>({m:x.m,t:x.t,n:x.u.length}))}
  try{const a=JSON.parse(fs.readFileSync(APF,'utf8'));if(a&&typeof a==='object')for(const l of APL)if(a[l]&&typeof a[l]==='object'){const L=appris[l]=Object.create(null);
   for(const k of Object.keys(a[l]).slice(0,1000)){const x=a[l][k];if(x&&apMot(x.m)&&apGab(x.t)&&Array.isArray(x.u)&&x.u.every(v=>typeof v==='string'))L[k]={m:x.m,t:x.t,u:x.u.slice(0,50),at:+x.at||0}}}}catch(e){}
+ /* --- chat du module 3D : mots appris (synonyme de meuble, nom de couleur), même règles : rien de personnel, publié à partir de 2 usagers --- */
+ const A3MOT=w=>typeof w==='string'&&w.length>=2&&w.length<=30&&/^[\p{Ll}\p{Lo}\p{Mn}' -]+$/u.test(w)&&w.trim().split(/\s+/).length<=3;
+ const A3K=k=>typeof k==='string'&&/^[a-z][a-z0-9_]{1,19}$/.test(k),A3C=c=>typeof c==='string'&&/^#[0-9a-f]{6}$/.test(c);
+ function ap3d(){const d=appris._3d;if(d&&d.syn&&d.col)return d;return appris._3d={syn:Object.create(null),col:Object.create(null)}}
+ function ap3dDonne(){const d=ap3d(),o={syn:{},col:{}};for(const k of ['syn','col'])for(const w in d[k])for(const v in d[k][w]){const n=d[k][w][v].length;if(n>=2)(o[k][w]=o[k][w]||{})[v]=n}return o}
+ try{const a=JSON.parse(fs.readFileSync(APF,'utf8')),x=a&&a._3d;if(x&&typeof x==='object'){const d=ap3d();for(const [k,ok] of [['syn',A3K],['col',A3C]])for(const w of Object.keys(x[k]||{}).slice(0,2000)){if(!A3MOT(w))continue;for(const v of Object.keys(x[k][w]||{}).slice(0,5)){const u=x[k][w][v];if(ok(v)&&Array.isArray(u)&&u.every(z=>typeof z==='string'))((d[k][w]=d[k][w]||Object.create(null)))[v]=u.slice(0,50)}}}}catch(e){}
+ /* --- phrases que l'IA n'a pas comprises (chat et module 3D), masquées sur l'appareil : chiffres → #, mots en majuscule → @ ;
+    lisibles seulement avec la clé CASO_CLE_IA, et seulement celles envoyées par au moins 3 usagers --- */
+ const INF=path.join(DIR,'incompris.json');let incompris=Object.create(null);
+ let inT=null;const inSave=()=>{if(inT)return;inT=setTimeout(()=>{const t=INF+'.tmp';fs.writeFile(t,JSON.stringify(incompris),e=>{inT=null;if(!e)fs.rename(t,INF,()=>{})})},60000);if(inT.unref)inT.unref()};
+ const inMot=m=>typeof m==='string'&&m.length>=2&&m.length<=160&&/^[\p{Ll}\p{Lo}\p{Mn}@#²³%€' -]+$/u.test(m)&&m.trim().split(/\s+/).length<=14;
+ try{const a=JSON.parse(fs.readFileSync(INF,'utf8'));if(a&&typeof a==='object')for(const l of APL)if(a[l]&&typeof a[l]==='object'){const L=incompris[l]=Object.create(null);
+  for(const k of Object.keys(a[l]).slice(0,2000)){const x=a[l][k];if(x&&inMot(k)&&Array.isArray(x.u)&&x.u.every(v=>typeof v==='string'))L[k]={u:x.u.slice(0,50),s:x.s==='3d'?'3d':'chat',at:+x.at||0}}}}catch(e){}
  const SIGNER=opts.signerFile||path.join(__dirname,'signer.html');
  const FACTURE=opts.factureFile||path.join(__dirname,'facture.html');
 
@@ -429,13 +442,29 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
 
    /* apprentissage partagé du chat (sans compte) : chaque appareil envoie ses phrases apprises, reçoit celles des autres */
    if(url==='/api/appris'){
-    if(req.method==='GET'){const l=(req.url.split('?')[1]||'').match(/(?:^|&)l=([a-z]{2})(?:&|$)/);const lg=l&&APL.includes(l[1])?l[1]:'fr';return send(res,200,{e:apDonne(lg)})}
+    if(req.method==='GET'){const q=req.url.split('?')[1]||'';if(/(?:^|&)d=3d(?:&|$)/.test(q))return send(res,200,{sh:ap3dDonne()});const l=q.match(/(?:^|&)l=([a-z]{2})(?:&|$)/);const lg=l&&APL.includes(l[1])?l[1]:'fr';return send(res,200,{e:apDonne(lg)})}
     if(POST){if(apTrop(ip))return send(res,429,{error:'Trop d\'envois.'});const b=await readBody(req),id=String(b.id||'');
+     if(b.d==='3d'){if(!/^[a-f0-9]{32}$/.test(id))return send(res,400,{error:'Requête invalide.'});
+      const u=crypto.createHash('sha256').update('caso-appris|'+ip).digest('hex').slice(0,16),d=ap3d();let n=0;
+      for(const [k,ok] of [['syn',A3K],['col',A3C]]){const src=b[k]&&typeof b[k]==='object'?b[k]:{};for(const w of Object.keys(src).slice(0,30)){const v=src[w];if(!A3MOT(w)||!ok(v))continue;
+        if(!d[k][w]){if(Object.keys(d[k]).length>=2000)continue;d[k][w]=Object.create(null)}const m=d[k][w];if(!m[v]){if(Object.keys(m).length>=5)continue;m[v]=[]}if(!m[v].includes(u)&&m[v].length<50){m[v].push(u);n++}}}
+      if(n)apSave();return send(res,200,{ok:n})}
      if(!/^[a-f0-9]{32}$/.test(id)||!Array.isArray(b.e))return send(res,400,{error:'Requête invalide.'});
      const u=crypto.createHash('sha256').update('caso-appris|'+ip).digest('hex').slice(0,16);let n=0;
      b.e.slice(0,10).forEach(x=>{if(!x||!APL.includes(x.l)||!apMot(x.m)||!apGab(x.t))return;const L=appris[x.l]||(appris[x.l]=Object.create(null)),k=x.m+'\u0001'+x.t,o=L[k];
       if(o){if(!o.u.includes(u)&&o.u.length<50)o.u.push(u);o.at=Date.now()}else{const ks=Object.keys(L);if(ks.length>=1000){/* plein : on retire la plus ancienne apprise par un seul usager ; sinon rien de nouveau */let v=null;for(const kk of ks)if(L[kk].u.length<2&&(!v||L[kk].at<L[v].at))v=kk;if(!v)return;delete L[v]}L[k]={m:x.m,t:x.t,u:[u],at:Date.now()}}n++});
      if(n)apSave();return send(res,200,{ok:n})}}
+
+   /* phrases incomprises (masquées) : l'appareil les envoie ; le propriétaire de casô les lit avec sa clé */
+   if(url==='/api/incompris'){
+    if(req.method==='GET'){const cle=process.env.CASO_CLE_IA||'';if(!cle||String(req.headers['x-caso-cle']||'')!==cle)return send(res,404,{error:'Introuvable.'});
+     const out={};for(const l of APL){const L=incompris[l]||{};out[l]=Object.keys(L).filter(k=>L[k].u.length>=3).map(k=>({t:k,n:L[k].u.length,s:L[k].s})).sort((a,b)=>b.n-a.n).slice(0,200)}return send(res,200,{e:out})}
+    if(POST){if(apTrop(ip))return send(res,429,{error:'Trop d\'envois.'});const b=await readBody(req),id=String(b.id||'');
+     if(!/^[a-f0-9]{32}$/.test(id)||!Array.isArray(b.e))return send(res,400,{error:'Requête invalide.'});
+     const u=crypto.createHash('sha256').update('caso-incompris|'+ip).digest('hex').slice(0,16);let n=0;
+     b.e.slice(0,20).forEach(x=>{if(!x||!APL.includes(x.l)||!inMot(x.t))return;const L=incompris[x.l]||(incompris[x.l]=Object.create(null)),o=L[x.t];
+      if(o){if(!o.u.includes(u)&&o.u.length<50){o.u.push(u);n++}o.at=Date.now()}else{const ks=Object.keys(L);if(ks.length>=2000){let v=null;for(const kk of ks)if(L[kk].u.length<2&&(!v||L[kk].at<L[v].at))v=kk;if(!v)return;delete L[v]}L[x.t]={u:[u],s:x.s==='3d'?'3d':'chat',at:Date.now()};n++}});
+     if(n)inSave();return send(res,200,{ok:n})}}
 
    m=null;
    const user=authUser(req);
