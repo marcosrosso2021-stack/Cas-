@@ -1,0 +1,3407 @@
+{
+ "version": 1,
+ "maj": "2026-11-14",
+ "source": "Cahier des charges ŒIL 3D (Marcos) — familles 01 à 15",
+ "notes": "Dimensions en mètres [largeur, profondeur, hauteur] ; null = selon la pièce. pose : sol | mur | plafond | pose (sur un autre élément) | integre (dans un mur). detr : catégories COCO panoptique du modèle DETR déjà présent ; owl : question OWLv2 (anglais). ref : repère de taille servant à caler l'échelle. Une classe sans règle est connue de la bibliothèque mais pas encore reconnue automatiquement.",
+ "relations": [
+  "pose_sol",
+  "pose_sur",
+  "fixe_mur",
+  "suspendu_plafond",
+  "integre_mur",
+  "appartient_piece",
+  "proche_de",
+  "masque_par"
+ ],
+ "statuts_mesure": [
+  "observee",
+  "estimee",
+  "supposee",
+  "mesuree",
+  "validee"
+ ],
+ "familles": [
+  {
+   "id": "F01",
+   "nom": "Structure et gros œuvre",
+   "materiaux": [
+    "béton",
+    "béton armé",
+    "acier",
+    "bois",
+    "parpaing",
+    "brique",
+    "pierre"
+   ],
+   "categories": [
+    {
+     "id": "F01.fondations",
+     "nom": "Fondations",
+     "classes": [
+      {
+       "id": "F01.fondations.semelles_filantes",
+       "nom": "Semelles filantes",
+       "lab": "Semelle filantes"
+      },
+      {
+       "id": "F01.fondations.semelles_isolees",
+       "nom": "Semelles isolées",
+       "lab": "Semelle isolées"
+      },
+      {
+       "id": "F01.fondations.longrines",
+       "nom": "Longrines",
+       "lab": "Longrine"
+      },
+      {
+       "id": "F01.fondations.radiers",
+       "nom": "Radiers",
+       "lab": "Radier"
+      },
+      {
+       "id": "F01.fondations.pieux",
+       "nom": "Pieux",
+       "lab": "Pieu"
+      },
+      {
+       "id": "F01.fondations.micropieux",
+       "nom": "Micropieux",
+       "lab": "Micropieu"
+      },
+      {
+       "id": "F01.fondations.plots_beton",
+       "nom": "Plots béton",
+       "lab": "Plot béton"
+      },
+      {
+       "id": "F01.fondations.fondations_superficielles",
+       "nom": "Fondations superficielles",
+       "lab": "Fondation superficielles"
+      },
+      {
+       "id": "F01.fondations.fondations_profondes",
+       "nom": "Fondations profondes",
+       "lab": "Fondation profondes"
+      }
+     ]
+    },
+    {
+     "id": "F01.structure",
+     "nom": "Structure",
+     "classes": [
+      {
+       "id": "F01.structure.dalles_beton",
+       "nom": "Dalles béton",
+       "lab": "Dalle béton"
+      },
+      {
+       "id": "F01.structure.dalles_pleines",
+       "nom": "Dalles pleines",
+       "lab": "Dalle pleines"
+      },
+      {
+       "id": "F01.structure.dalles_alveolaires",
+       "nom": "Dalles alvéolaires",
+       "lab": "Dalle alvéolaires"
+      },
+      {
+       "id": "F01.structure.poutres",
+       "nom": "Poutres",
+       "sk": "beam",
+       "pose": "plafond",
+       "dim": [
+        0.2,
+        null,
+        0.26
+       ],
+       "regle": "deux longues lignes parallèles sous le plafond (Rénovation)",
+       "lab": "Poutre"
+      },
+      {
+       "id": "F01.structure.poteaux",
+       "nom": "Poteaux",
+       "sk": "pillar",
+       "pose": "sol",
+       "dim": [
+        0.3,
+        0.3,
+        null
+       ],
+       "geo": "colonne continue du sol au plafond, loin des murs",
+       "regle": "geometrie",
+       "lab": "Poteau"
+      },
+      {
+       "id": "F01.structure.voiles_beton",
+       "nom": "Voiles béton",
+       "lab": "Voile béton"
+      },
+      {
+       "id": "F01.structure.murs_porteurs",
+       "nom": "Murs porteurs",
+       "lab": "Mur porteurs"
+      },
+      {
+       "id": "F01.structure.refends",
+       "nom": "Refends",
+       "lab": "Refend"
+      },
+      {
+       "id": "F01.structure.linteaux",
+       "nom": "Linteaux",
+       "lab": "Linteau"
+      },
+      {
+       "id": "F01.structure.chainages",
+       "nom": "Chaînages",
+       "lab": "Chaînage"
+      },
+      {
+       "id": "F01.structure.planchers",
+       "nom": "Planchers",
+       "lab": "Plancher"
+      },
+      {
+       "id": "F01.structure.escaliers_beton",
+       "nom": "Escaliers béton",
+       "sk": "stairs",
+       "pose": "sol",
+       "detr": [
+        161
+       ],
+       "owl": "a staircase",
+       "lab": "Escalier béton"
+      },
+      {
+       "id": "F01.structure.structures_metalliques",
+       "nom": "Structures métalliques",
+       "lab": "Structure métalliques"
+      },
+      {
+       "id": "F01.structure.structures_bois",
+       "nom": "Structures bois",
+       "lab": "Structure bois"
+      }
+     ]
+    },
+    {
+     "id": "F01.maconnerie",
+     "nom": "Maçonnerie",
+     "classes": [
+      {
+       "id": "F01.maconnerie.parpaings",
+       "nom": "Parpaings",
+       "sk": "wall",
+       "dim": [
+        0.5,
+        0.2,
+        0.2
+       ],
+       "detr": [
+        172
+       ],
+       "lab": "Parpaing"
+      },
+      {
+       "id": "F01.maconnerie.briques",
+       "nom": "Briques",
+       "sk": "wall",
+       "dim": [
+        0.22,
+        0.105,
+        0.065
+       ],
+       "detr": [
+        171
+       ],
+       "lab": "Brique"
+      },
+      {
+       "id": "F01.maconnerie.briques_creuses",
+       "nom": "Briques creuses",
+       "lab": "Brique creuses"
+      },
+      {
+       "id": "F01.maconnerie.briques_pleines",
+       "nom": "Briques pleines",
+       "lab": "Brique pleines"
+      },
+      {
+       "id": "F01.maconnerie.beton_cellulaire",
+       "nom": "Béton cellulaire",
+       "lab": "Béton cellulaire"
+      },
+      {
+       "id": "F01.maconnerie.pierre_naturelle",
+       "nom": "Pierre naturelle",
+       "detr": [
+        175
+       ],
+       "lab": "Pierre naturelle"
+      },
+      {
+       "id": "F01.maconnerie.blocs_de_beton",
+       "nom": "Blocs de béton",
+       "lab": "Bloc de béton"
+      },
+      {
+       "id": "F01.maconnerie.blocs_a_bancher",
+       "nom": "Blocs à bancher",
+       "lab": "Bloc à bancher"
+      },
+      {
+       "id": "F01.maconnerie.mortier",
+       "nom": "Mortier",
+       "lab": "Mortier"
+      },
+      {
+       "id": "F01.maconnerie.beton_arme",
+       "nom": "Béton armé",
+       "lab": "Béton armé"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "F02",
+   "nom": "Murs et cloisons",
+   "materiaux": [
+    "plâtre",
+    "béton",
+    "parpaing",
+    "brique",
+    "bois",
+    "verre",
+    "métal"
+   ],
+   "categories": [
+    {
+     "id": "F02.murs_et_cloisons",
+     "nom": "Murs et cloisons",
+     "classes": [
+      {
+       "id": "F02.murs_et_cloisons.murs_interieurs",
+       "nom": "Murs intérieurs",
+       "lab": "Mur intérieurs"
+      },
+      {
+       "id": "F02.murs_et_cloisons.murs_exterieurs",
+       "nom": "Murs extérieurs",
+       "lab": "Mur extérieurs"
+      },
+      {
+       "id": "F02.murs_et_cloisons.murs_porteurs",
+       "nom": "Murs porteurs",
+       "lab": "Mur porteurs"
+      },
+      {
+       "id": "F02.murs_et_cloisons.murs_non_porteurs",
+       "nom": "Murs non porteurs",
+       "lab": "Mur non porteurs"
+      },
+      {
+       "id": "F02.murs_et_cloisons.cloisons_placo",
+       "nom": "Cloisons placo",
+       "lab": "Cloison placo"
+      },
+      {
+       "id": "F02.murs_et_cloisons.cloisons_alveolaires",
+       "nom": "Cloisons alvéolaires",
+       "lab": "Cloison alvéolaires"
+      },
+      {
+       "id": "F02.murs_et_cloisons.cloisons_vitrees",
+       "nom": "Cloisons vitrées",
+       "lab": "Cloison vitrées"
+      },
+      {
+       "id": "F02.murs_et_cloisons.cloisons_acoustiques",
+       "nom": "Cloisons acoustiques",
+       "lab": "Cloison acoustiques"
+      },
+      {
+       "id": "F02.murs_et_cloisons.cloisons_coupe_feu",
+       "nom": "Cloisons coupe-feu",
+       "lab": "Cloison coupe-feu"
+      },
+      {
+       "id": "F02.murs_et_cloisons.cloisons_metalliques",
+       "nom": "Cloisons métalliques",
+       "lab": "Cloison métalliques"
+      },
+      {
+       "id": "F02.murs_et_cloisons.cloisons_bois",
+       "nom": "Cloisons bois",
+       "lab": "Cloison bois"
+      },
+      {
+       "id": "F02.murs_et_cloisons.doublages",
+       "nom": "Doublages",
+       "lab": "Doublage"
+      },
+      {
+       "id": "F02.murs_et_cloisons.contre_cloisons",
+       "nom": "Contre-cloisons",
+       "lab": "Contre-cloison"
+      },
+      {
+       "id": "F02.murs_et_cloisons.demi_cloisons",
+       "nom": "Demi-cloisons",
+       "lab": "Demi-cloison"
+      },
+      {
+       "id": "F02.murs_et_cloisons.murets",
+       "nom": "Murets",
+       "lab": "Muret"
+      },
+      {
+       "id": "F02.murs_et_cloisons.murs_de_separation",
+       "nom": "Murs de séparation",
+       "lab": "Mur de séparation"
+      },
+      {
+       "id": "F02.murs_et_cloisons.murs_de_soutenement",
+       "nom": "Murs de soutènement",
+       "lab": "Mur de soutènement"
+      },
+      {
+       "id": "F02.murs_et_cloisons.murs_enterres",
+       "nom": "Murs enterrés",
+       "lab": "Mur enterrés"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "F03",
+   "nom": "Portes, fenêtres et ouvertures",
+   "materiaux": [
+    "PVC",
+    "aluminium",
+    "bois",
+    "verre",
+    "acier"
+   ],
+   "categories": [
+    {
+     "id": "F03.portes",
+     "nom": "Portes",
+     "classes": [
+      {
+       "id": "F03.portes.portes_battantes",
+       "nom": "Portes battantes",
+       "sk": "door",
+       "pose": "integre",
+       "dim": [
+        0.83,
+        0.05,
+        2.04
+       ],
+       "detr": [
+        112,
+        71
+       ],
+       "owl": "a door",
+       "ref": {
+        "h": 2.04
+       },
+       "lab": "Porte battantes"
+      },
+      {
+       "id": "F03.portes.portes_coulissantes",
+       "nom": "Portes coulissantes",
+       "lab": "Porte coulissantes"
+      },
+      {
+       "id": "F03.portes.portes_pivotantes",
+       "nom": "Portes pivotantes",
+       "lab": "Porte pivotantes"
+      },
+      {
+       "id": "F03.portes.portes_pliantes",
+       "nom": "Portes pliantes",
+       "lab": "Porte pliantes"
+      },
+      {
+       "id": "F03.portes.portes_accordeon",
+       "nom": "Portes accordéon",
+       "lab": "Porte accordéon"
+      },
+      {
+       "id": "F03.portes.portes_blindees",
+       "nom": "Portes blindées",
+       "lab": "Porte blindées"
+      },
+      {
+       "id": "F03.portes.portes_coupe_feu",
+       "nom": "Portes coupe-feu",
+       "lab": "Porte coupe-feu"
+      },
+      {
+       "id": "F03.portes.portes_techniques",
+       "nom": "Portes techniques",
+       "lab": "Porte techniques"
+      },
+      {
+       "id": "F03.portes.portes_de_garage",
+       "nom": "Portes de garage",
+       "lab": "Porte de garage"
+      },
+      {
+       "id": "F03.portes.portes_fenetres",
+       "nom": "Portes-fenêtres",
+       "sk": "door",
+       "pose": "integre",
+       "dim": [
+        1.2,
+        0.05,
+        2.15
+       ],
+       "owl": "a french window",
+       "lab": "Portes-fenêtre"
+      }
+     ]
+    },
+    {
+     "id": "F03.fenetres",
+     "nom": "Fenêtres",
+     "classes": [
+      {
+       "id": "F03.fenetres.fenetres_pvc",
+       "nom": "Fenêtres PVC",
+       "sk": "window",
+       "pose": "integre",
+       "dim": [
+        1.2,
+        0.1,
+        1.15
+       ],
+       "detr": [
+        180,
+        181,
+        68
+       ],
+       "owl": "a window",
+       "lab": "Fenêtre PVC"
+      },
+      {
+       "id": "F03.fenetres.fenetres_aluminium",
+       "nom": "Fenêtres aluminium",
+       "lab": "Fenêtre aluminium"
+      },
+      {
+       "id": "F03.fenetres.fenetres_bois",
+       "nom": "Fenêtres bois",
+       "lab": "Fenêtre bois"
+      },
+      {
+       "id": "F03.fenetres.fenetres_mixtes",
+       "nom": "Fenêtres mixtes",
+       "lab": "Fenêtre mixtes"
+      },
+      {
+       "id": "F03.fenetres.simple_vitrage",
+       "nom": "Simple vitrage",
+       "lab": "Simple vitrage"
+      },
+      {
+       "id": "F03.fenetres.double_vitrage",
+       "nom": "Double vitrage",
+       "lab": "Double vitrage"
+      },
+      {
+       "id": "F03.fenetres.triple_vitrage",
+       "nom": "Triple vitrage",
+       "lab": "Triple vitrage"
+      },
+      {
+       "id": "F03.fenetres.fenetres_fixes",
+       "nom": "Fenêtres fixes",
+       "lab": "Fenêtre fixes"
+      },
+      {
+       "id": "F03.fenetres.fenetres_oscillo_battantes",
+       "nom": "Fenêtres oscillo-battantes",
+       "lab": "Fenêtre oscillo-battantes"
+      },
+      {
+       "id": "F03.fenetres.fenetres_coulissantes",
+       "nom": "Fenêtres coulissantes",
+       "lab": "Fenêtre coulissantes"
+      }
+     ]
+    },
+    {
+     "id": "F03.autres_ouvertures",
+     "nom": "Autres ouvertures",
+     "classes": [
+      {
+       "id": "F03.autres_ouvertures.baies_vitrees",
+       "nom": "Baies vitrées",
+       "sk": "window",
+       "pose": "integre",
+       "dim": [
+        2.4,
+        0.1,
+        2.15
+       ],
+       "owl": "a sliding glass door",
+       "lab": "Baie vitrées"
+      },
+      {
+       "id": "F03.autres_ouvertures.verrieres",
+       "nom": "Verrières",
+       "lab": "Verrière"
+      },
+      {
+       "id": "F03.autres_ouvertures.fenetres_de_toit",
+       "nom": "Fenêtres de toit",
+       "lab": "Fenêtre de toit"
+      },
+      {
+       "id": "F03.autres_ouvertures.lucarnes",
+       "nom": "Lucarnes",
+       "lab": "Lucarne"
+      },
+      {
+       "id": "F03.autres_ouvertures.velux",
+       "nom": "Velux",
+       "lab": "Velu"
+      },
+      {
+       "id": "F03.autres_ouvertures.volets_roulants",
+       "nom": "Volets roulants",
+       "sk": "other",
+       "pose": "mur",
+       "owl": "a roller shutter",
+       "lab": "Volet roulants"
+      },
+      {
+       "id": "F03.autres_ouvertures.volets_battants",
+       "nom": "Volets battants",
+       "lab": "Volet battants"
+      },
+      {
+       "id": "F03.autres_ouvertures.stores",
+       "nom": "Stores",
+       "lab": "Store"
+      },
+      {
+       "id": "F03.autres_ouvertures.poignees",
+       "nom": "Poignées",
+       "lab": "Poignée"
+      },
+      {
+       "id": "F03.autres_ouvertures.serrures",
+       "nom": "Serrures",
+       "lab": "Serrure"
+      },
+      {
+       "id": "F03.autres_ouvertures.dormants",
+       "nom": "Dormants",
+       "lab": "Dormant"
+      },
+      {
+       "id": "F03.autres_ouvertures.ouvrants",
+       "nom": "Ouvrants",
+       "lab": "Ouvrant"
+      },
+      {
+       "id": "F03.autres_ouvertures.seuils",
+       "nom": "Seuils",
+       "lab": "Seuil"
+      },
+      {
+       "id": "F03.autres_ouvertures.encadrements",
+       "nom": "Encadrements",
+       "lab": "Encadrement"
+      },
+      {
+       "id": "F03.autres_ouvertures.linteaux",
+       "nom": "Linteaux",
+       "lab": "Linteau"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "F04",
+   "nom": "Sols, plafonds et revêtements",
+   "materiaux": [
+    "céramique",
+    "bois",
+    "PVC",
+    "textile",
+    "résine",
+    "béton",
+    "pierre",
+    "plâtre"
+   ],
+   "categories": [
+    {
+     "id": "F04.sols",
+     "nom": "Sols",
+     "classes": [
+      {
+       "id": "F04.sols.carrelage",
+       "nom": "Carrelage",
+       "sk": "floor",
+       "detr": [
+        117
+       ],
+       "lab": "Carrelage"
+      },
+      {
+       "id": "F04.sols.gres_cerame",
+       "nom": "Grès cérame",
+       "lab": "Grè cérame"
+      },
+      {
+       "id": "F04.sols.faience",
+       "nom": "Faïence",
+       "lab": "Faïence"
+      },
+      {
+       "id": "F04.sols.parquet_massif",
+       "nom": "Parquet massif",
+       "sk": "floor",
+       "detr": [
+        118
+       ],
+       "lab": "Parquet massif"
+      },
+      {
+       "id": "F04.sols.parquet_stratifie",
+       "nom": "Parquet stratifié",
+       "lab": "Parquet stratifié"
+      },
+      {
+       "id": "F04.sols.pvc",
+       "nom": "PVC",
+       "lab": "PVC"
+      },
+      {
+       "id": "F04.sols.vinyle",
+       "nom": "Vinyle",
+       "lab": "Vinyle"
+      },
+      {
+       "id": "F04.sols.moquette",
+       "nom": "Moquette",
+       "sk": "floor",
+       "detr": [
+        101,
+        200
+       ],
+       "lab": "Moquette"
+      },
+      {
+       "id": "F04.sols.resine",
+       "nom": "Résine",
+       "lab": "Résine"
+      },
+      {
+       "id": "F04.sols.beton_cire",
+       "nom": "Béton ciré",
+       "lab": "Béton ciré"
+      },
+      {
+       "id": "F04.sols.beton_brut",
+       "nom": "Béton brut",
+       "lab": "Béton brut"
+      },
+      {
+       "id": "F04.sols.marbre",
+       "nom": "Marbre",
+       "lab": "Marbre"
+      },
+      {
+       "id": "F04.sols.granit",
+       "nom": "Granit",
+       "lab": "Granit"
+      },
+      {
+       "id": "F04.sols.pierre_naturelle",
+       "nom": "Pierre naturelle",
+       "detr": [
+        175
+       ],
+       "lab": "Pierre naturelle"
+      },
+      {
+       "id": "F04.sols.terre_cuite",
+       "nom": "Terre cuite",
+       "lab": "Terre cuite"
+      },
+      {
+       "id": "F04.sols.linoleum",
+       "nom": "Linoléum",
+       "lab": "Linoléum"
+      },
+      {
+       "id": "F04.sols.chape",
+       "nom": "Chape",
+       "lab": "Chape"
+      },
+      {
+       "id": "F04.sols.ragreage",
+       "nom": "Ragréage",
+       "lab": "Ragréage"
+      }
+     ]
+    },
+    {
+     "id": "F04.plafonds",
+     "nom": "Plafonds",
+     "classes": [
+      {
+       "id": "F04.plafonds.plafond_beton",
+       "nom": "Plafond béton",
+       "lab": "Plafond béton"
+      },
+      {
+       "id": "F04.plafonds.plafond_platre",
+       "nom": "Plafond plâtre",
+       "sk": "ceiling",
+       "detr": [
+        186
+       ],
+       "lab": "Plafond plâtre"
+      },
+      {
+       "id": "F04.plafonds.faux_plafond",
+       "nom": "Faux plafond",
+       "lab": "Fau plafond"
+      },
+      {
+       "id": "F04.plafonds.plafond_suspendu",
+       "nom": "Plafond suspendu",
+       "lab": "Plafond suspendu"
+      },
+      {
+       "id": "F04.plafonds.dalles_acoustiques",
+       "nom": "Dalles acoustiques",
+       "lab": "Dalle acoustiques"
+      },
+      {
+       "id": "F04.plafonds.plafond_bois",
+       "nom": "Plafond bois",
+       "lab": "Plafond bois"
+      },
+      {
+       "id": "F04.plafonds.plafond_tendu",
+       "nom": "Plafond tendu",
+       "lab": "Plafond tendu"
+      },
+      {
+       "id": "F04.plafonds.corniches",
+       "nom": "Corniches",
+       "lab": "Corniche"
+      },
+      {
+       "id": "F04.plafonds.rosaces",
+       "nom": "Rosaces",
+       "lab": "Rosace"
+      },
+      {
+       "id": "F04.plafonds.trappes_de_visite",
+       "nom": "Trappes de visite",
+       "lab": "Trappe de visite"
+      }
+     ]
+    },
+    {
+     "id": "F04.revetements_muraux",
+     "nom": "Revêtements muraux",
+     "classes": [
+      {
+       "id": "F04.revetements_muraux.peinture",
+       "nom": "Peinture",
+       "sk": "wall",
+       "detr": [
+        199,
+        173
+       ],
+       "lab": "Peinture"
+      },
+      {
+       "id": "F04.revetements_muraux.enduit",
+       "nom": "Enduit",
+       "lab": "Enduit"
+      },
+      {
+       "id": "F04.revetements_muraux.papier_peint",
+       "nom": "Papier peint",
+       "lab": "Papier peint"
+      },
+      {
+       "id": "F04.revetements_muraux.faience_murale",
+       "nom": "Faïence murale",
+       "sk": "wall",
+       "detr": [
+        176
+       ],
+       "lab": "Faïence murale"
+      },
+      {
+       "id": "F04.revetements_muraux.lambris",
+       "nom": "Lambris",
+       "lab": "Lambri"
+      },
+      {
+       "id": "F04.revetements_muraux.bardage",
+       "nom": "Bardage",
+       "lab": "Bardage"
+      },
+      {
+       "id": "F04.revetements_muraux.panneaux_decoratifs",
+       "nom": "Panneaux décoratifs",
+       "lab": "Panneau décoratifs"
+      },
+      {
+       "id": "F04.revetements_muraux.pierre_de_parement",
+       "nom": "Pierre de parement",
+       "lab": "Pierre de parement"
+      },
+      {
+       "id": "F04.revetements_muraux.crepi",
+       "nom": "Crépi",
+       "lab": "Crépi"
+      },
+      {
+       "id": "F04.revetements_muraux.beton_apparent",
+       "nom": "Béton apparent",
+       "lab": "Béton apparent"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "F05",
+   "nom": "Isolation et étanchéité",
+   "materiaux": [
+    "minéral",
+    "plastique",
+    "bois",
+    "bitume",
+    "caoutchouc"
+   ],
+   "categories": [
+    {
+     "id": "F05.isolation_et_etancheite",
+     "nom": "Isolation et étanchéité",
+     "classes": [
+      {
+       "id": "F05.isolation_et_etancheite.laine_de_verre",
+       "nom": "Laine de verre",
+       "lab": "Laine de verre"
+      },
+      {
+       "id": "F05.isolation_et_etancheite.laine_de_roche",
+       "nom": "Laine de roche",
+       "lab": "Laine de roche"
+      },
+      {
+       "id": "F05.isolation_et_etancheite.polystyrene_expanse",
+       "nom": "Polystyrène expansé",
+       "lab": "Polystyrène expansé"
+      },
+      {
+       "id": "F05.isolation_et_etancheite.polystyrene_extrude",
+       "nom": "Polystyrène extrudé",
+       "lab": "Polystyrène extrudé"
+      },
+      {
+       "id": "F05.isolation_et_etancheite.polyurethane",
+       "nom": "Polyuréthane",
+       "lab": "Polyuréthane"
+      },
+      {
+       "id": "F05.isolation_et_etancheite.fibre_de_bois",
+       "nom": "Fibre de bois",
+       "lab": "Fibre de bois"
+      },
+      {
+       "id": "F05.isolation_et_etancheite.ouate_de_cellulose",
+       "nom": "Ouate de cellulose",
+       "lab": "Ouate de cellulose"
+      },
+      {
+       "id": "F05.isolation_et_etancheite.isolants_multicouches",
+       "nom": "Isolants multicouches",
+       "lab": "Isolant multicouches"
+      },
+      {
+       "id": "F05.isolation_et_etancheite.pare_vapeur",
+       "nom": "Pare-vapeur",
+       "lab": "Pare-vapeur"
+      },
+      {
+       "id": "F05.isolation_et_etancheite.frein_vapeur",
+       "nom": "Frein-vapeur",
+       "lab": "Frein-vapeur"
+      },
+      {
+       "id": "F05.isolation_et_etancheite.membranes",
+       "nom": "Membranes",
+       "lab": "Membrane"
+      },
+      {
+       "id": "F05.isolation_et_etancheite.ecrans_sous_toiture",
+       "nom": "Écrans sous toiture",
+       "lab": "Écran sous toiture"
+      },
+      {
+       "id": "F05.isolation_et_etancheite.etancheite_liquide",
+       "nom": "Étanchéité liquide",
+       "lab": "Étanchéité liquide"
+      },
+      {
+       "id": "F05.isolation_et_etancheite.membranes_bitumineuses",
+       "nom": "Membranes bitumineuses",
+       "lab": "Membrane bitumineuses"
+      },
+      {
+       "id": "F05.isolation_et_etancheite.epdm",
+       "nom": "EPDM",
+       "lab": "EPDM"
+      },
+      {
+       "id": "F05.isolation_et_etancheite.bandes_d_etancheite",
+       "nom": "Bandes d'étanchéité",
+       "lab": "Bande d'étanchéité"
+      },
+      {
+       "id": "F05.isolation_et_etancheite.joints",
+       "nom": "Joints",
+       "lab": "Joint"
+      },
+      {
+       "id": "F05.isolation_et_etancheite.sous_couches_acoustiques",
+       "nom": "Sous-couches acoustiques",
+       "lab": "Sous-couche acoustiques"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "F06",
+   "nom": "Électricité et éclairage",
+   "materiaux": [
+    "plastique",
+    "métal",
+    "verre"
+   ],
+   "categories": [
+    {
+     "id": "F06.electricite_et_eclairage",
+     "nom": "Électricité et éclairage",
+     "classes": [
+      {
+       "id": "F06.electricite_et_eclairage.tableaux_electriques",
+       "nom": "Tableaux électriques",
+       "sk": "box",
+       "pose": "mur",
+       "dim": [
+        0.45,
+        0.12,
+        0.55
+       ],
+       "owl": "an electrical panel",
+       "z": 1.3,
+       "lab": "Tableau électrique"
+      },
+      {
+       "id": "F06.electricite_et_eclairage.disjoncteurs",
+       "nom": "Disjoncteurs",
+       "lab": "Disjoncteur"
+      },
+      {
+       "id": "F06.electricite_et_eclairage.differentiels",
+       "nom": "Différentiels",
+       "lab": "Différentiel"
+      },
+      {
+       "id": "F06.electricite_et_eclairage.interrupteurs",
+       "nom": "Interrupteurs",
+       "sk": "plate",
+       "pose": "mur",
+       "dim": [
+        0.085,
+        0.01,
+        0.085
+       ],
+       "owl": "a light switch",
+       "z": 1.1,
+       "ref": {
+        "z": 1.1
+       },
+       "lab": "Interrupteur"
+      },
+      {
+       "id": "F06.electricite_et_eclairage.va_et_vient",
+       "nom": "Va-et-vient",
+       "lab": "Va-et-vient"
+      },
+      {
+       "id": "F06.electricite_et_eclairage.boutons_poussoirs",
+       "nom": "Boutons poussoirs",
+       "lab": "Bouton poussoirs"
+      },
+      {
+       "id": "F06.electricite_et_eclairage.prises_electriques",
+       "nom": "Prises électriques",
+       "sk": "plate",
+       "pose": "mur",
+       "dim": [
+        0.08,
+        0.01,
+        0.08
+       ],
+       "owl": "an electrical outlet",
+       "z": 0.3,
+       "ref": {
+        "z": 0.3
+       },
+       "lab": "Prise électriques"
+      },
+      {
+       "id": "F06.electricite_et_eclairage.prises_usb",
+       "nom": "Prises USB",
+       "lab": "Prise USB"
+      },
+      {
+       "id": "F06.electricite_et_eclairage.rj45",
+       "nom": "RJ45",
+       "lab": "RJ45"
+      },
+      {
+       "id": "F06.electricite_et_eclairage.prises_tv",
+       "nom": "Prises TV",
+       "lab": "Prise TV"
+      },
+      {
+       "id": "F06.electricite_et_eclairage.boites_de_derivation",
+       "nom": "Boîtes de dérivation",
+       "lab": "Boîte de dérivation"
+      },
+      {
+       "id": "F06.electricite_et_eclairage.gaines",
+       "nom": "Gaines",
+       "sk": "other",
+       "pose": "mur",
+       "owl": "a cable conduit",
+       "lab": "Gaine"
+      },
+      {
+       "id": "F06.electricite_et_eclairage.cables",
+       "nom": "Câbles",
+       "lab": "Câble"
+      },
+      {
+       "id": "F06.electricite_et_eclairage.chemins_de_cables",
+       "nom": "Chemins de câbles",
+       "lab": "Chemin de câbles"
+      },
+      {
+       "id": "F06.electricite_et_eclairage.spots_encastres",
+       "nom": "Spots encastrés",
+       "sk": "ceiling_light",
+       "pose": "plafond",
+       "dim": [
+        0.09,
+        0.09,
+        0.02
+       ],
+       "owl": "a recessed spotlight",
+       "lab": "Spot encastrés"
+      },
+      {
+       "id": "F06.electricite_et_eclairage.plafonniers",
+       "nom": "Plafonniers",
+       "sk": "ceiling_light",
+       "pose": "plafond",
+       "dim": [
+        0.3,
+        0.3,
+        0.08
+       ],
+       "detr": [
+        130
+       ],
+       "owl": "a ceiling light",
+       "lab": "Plafonnier"
+      },
+      {
+       "id": "F06.electricite_et_eclairage.suspensions",
+       "nom": "Suspensions",
+       "sk": "ceiling_light",
+       "pose": "plafond",
+       "owl": "a pendant lamp",
+       "lab": "Suspension"
+      },
+      {
+       "id": "F06.electricite_et_eclairage.appliques",
+       "nom": "Appliques",
+       "sk": "lamp",
+       "pose": "mur",
+       "owl": "a wall lamp",
+       "z": 1.7,
+       "lab": "Applique"
+      },
+      {
+       "id": "F06.electricite_et_eclairage.rubans_led",
+       "nom": "Rubans LED",
+       "lab": "Ruban LED"
+      },
+      {
+       "id": "F06.electricite_et_eclairage.detecteurs_de_mouvement",
+       "nom": "Détecteurs de mouvement",
+       "lab": "Détecteur de mouvement"
+      },
+      {
+       "id": "F06.electricite_et_eclairage.detecteurs_de_fumee",
+       "nom": "Détecteurs de fumée",
+       "sk": "other",
+       "pose": "plafond",
+       "dim": [
+        0.12,
+        0.12,
+        0.05
+       ],
+       "owl": "a smoke detector",
+       "lab": "Détecteur de fumée"
+      },
+      {
+       "id": "F06.electricite_et_eclairage.eclairages_exterieurs",
+       "nom": "Éclairages extérieurs",
+       "lab": "Éclairage extérieurs"
+      },
+      {
+       "id": "F06.electricite_et_eclairage.bornes_de_recharge",
+       "nom": "Bornes de recharge",
+       "lab": "Borne de recharge"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "F07",
+   "nom": "Plomberie et sanitaires",
+   "materiaux": [
+    "céramique",
+    "PVC",
+    "cuivre",
+    "acier",
+    "verre",
+    "acrylique"
+   ],
+   "categories": [
+    {
+     "id": "F07.canalisations",
+     "nom": "Canalisations",
+     "classes": [
+      {
+       "id": "F07.canalisations.canalisations_pvc",
+       "nom": "Canalisations PVC",
+       "lab": "Canalisation PVC"
+      },
+      {
+       "id": "F07.canalisations.canalisations_cuivre",
+       "nom": "Canalisations cuivre",
+       "lab": "Canalisation cuivre"
+      },
+      {
+       "id": "F07.canalisations.per",
+       "nom": "PER",
+       "lab": "PER"
+      },
+      {
+       "id": "F07.canalisations.multicouche",
+       "nom": "Multicouche",
+       "lab": "Multicouche"
+      },
+      {
+       "id": "F07.canalisations.collecteurs",
+       "nom": "Collecteurs",
+       "lab": "Collecteur"
+      },
+      {
+       "id": "F07.canalisations.vannes",
+       "nom": "Vannes",
+       "lab": "Vanne"
+      },
+      {
+       "id": "F07.canalisations.robinetteries",
+       "nom": "Robinetteries",
+       "sk": "other",
+       "pose": "mur",
+       "owl": "a faucet",
+       "lab": "Robinetterie"
+      },
+      {
+       "id": "F07.canalisations.siphons",
+       "nom": "Siphons",
+       "lab": "Siphon"
+      },
+      {
+       "id": "F07.canalisations.evacuations",
+       "nom": "Évacuations",
+       "lab": "Évacuation"
+      },
+      {
+       "id": "F07.canalisations.regards",
+       "nom": "Regards",
+       "lab": "Regard"
+      },
+      {
+       "id": "F07.canalisations.caniveaux",
+       "nom": "Caniveaux",
+       "lab": "Caniveau"
+      },
+      {
+       "id": "F07.canalisations.compteurs",
+       "nom": "Compteurs",
+       "lab": "Compteur"
+      },
+      {
+       "id": "F07.canalisations.reducteurs_de_pression",
+       "nom": "Réducteurs de pression",
+       "lab": "Réducteur de pression"
+      },
+      {
+       "id": "F07.canalisations.pompes_de_relevage",
+       "nom": "Pompes de relevage",
+       "lab": "Pompe de relevage"
+      }
+     ]
+    },
+    {
+     "id": "F07.equipements_sanitaires",
+     "nom": "Équipements sanitaires",
+     "classes": [
+      {
+       "id": "F07.equipements_sanitaires.eviers",
+       "nom": "Éviers",
+       "sk": "sink",
+       "pose": "mur",
+       "dim": [
+        1.2,
+        0.6,
+        0.9
+       ],
+       "detr": [
+        81
+       ],
+       "owl": "a kitchen sink",
+       "lab": "Évier"
+      },
+      {
+       "id": "F07.equipements_sanitaires.lavabos",
+       "nom": "Lavabos",
+       "sk": "sink",
+       "pose": "mur",
+       "dim": [
+        0.6,
+        0.45,
+        0.85
+       ],
+       "detr": [
+        81
+       ],
+       "owl": "a bathroom sink",
+       "ref": {
+        "h": 0.85
+       },
+       "lab": "Lavabo"
+      },
+      {
+       "id": "F07.equipements_sanitaires.vasques",
+       "nom": "Vasques",
+       "lab": "Vasque"
+      },
+      {
+       "id": "F07.equipements_sanitaires.wc_suspendus",
+       "nom": "WC suspendus",
+       "lab": "WC suspendus"
+      },
+      {
+       "id": "F07.equipements_sanitaires.wc_classiques",
+       "nom": "WC classiques",
+       "sk": "toilet",
+       "pose": "sol",
+       "dim": [
+        0.38,
+        0.68,
+        0.8
+       ],
+       "detr": [
+        70
+       ],
+       "owl": "a toilet",
+       "ref": {
+        "h": 0.4,
+        "mesure": "assise"
+       },
+       "lab": "WC"
+      },
+      {
+       "id": "F07.equipements_sanitaires.douches",
+       "nom": "Douches",
+       "sk": "other",
+       "pose": "sol",
+       "dim": [
+        0.9,
+        0.9,
+        2
+       ],
+       "owl": "a shower",
+       "lab": "Douche"
+      },
+      {
+       "id": "F07.equipements_sanitaires.receveurs",
+       "nom": "Receveurs",
+       "lab": "Receveur"
+      },
+      {
+       "id": "F07.equipements_sanitaires.baignoires",
+       "nom": "Baignoires",
+       "sk": "other",
+       "pose": "sol",
+       "dim": [
+        1.7,
+        0.75,
+        0.56
+       ],
+       "owl": "a bathtub",
+       "lab": "Baignoire"
+      },
+      {
+       "id": "F07.equipements_sanitaires.bidets",
+       "nom": "Bidets",
+       "lab": "Bidet"
+      },
+      {
+       "id": "F07.equipements_sanitaires.colonnes_de_douche",
+       "nom": "Colonnes de douche",
+       "lab": "Colonne de douche"
+      },
+      {
+       "id": "F07.equipements_sanitaires.parois",
+       "nom": "Parois",
+       "lab": "Paroi"
+      },
+      {
+       "id": "F07.equipements_sanitaires.meubles_vasques",
+       "nom": "Meubles vasques",
+       "lab": "Meuble vasques"
+      },
+      {
+       "id": "F07.equipements_sanitaires.chauffe_eau",
+       "nom": "Chauffe-eau",
+       "sk": "other",
+       "pose": "mur",
+       "dim": [
+        0.55,
+        0.55,
+        1
+       ],
+       "owl": "a water heater",
+       "lab": "Chauffe-eau"
+      },
+      {
+       "id": "F07.equipements_sanitaires.ballons_d_eau_chaude",
+       "nom": "Ballons d'eau chaude",
+       "lab": "Ballon d'eau chaude"
+      },
+      {
+       "id": "F07.equipements_sanitaires.seche_serviettes",
+       "nom": "Sèche-serviettes",
+       "sk": "radiator",
+       "pose": "mur",
+       "dim": [
+        0.5,
+        0.08,
+        0.9
+       ],
+       "owl": "a towel radiator",
+       "lab": "Sèche-serviette"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "F08",
+   "nom": "Chauffage, climatisation et ventilation",
+   "materiaux": [
+    "acier",
+    "aluminium",
+    "fonte",
+    "plastique"
+   ],
+   "categories": [
+    {
+     "id": "F08.cvc",
+     "nom": "CVC",
+     "classes": [
+      {
+       "id": "F08.cvc.radiateurs_electriques",
+       "nom": "Radiateurs électriques",
+       "sk": "radiator",
+       "pose": "mur",
+       "dim": [
+        0.8,
+        0.1,
+        0.6
+       ],
+       "owl": "a radiator",
+       "z": 0.15,
+       "lab": "Radiateur électriques"
+      },
+      {
+       "id": "F08.cvc.radiateurs_a_eau",
+       "nom": "Radiateurs à eau",
+       "sk": "radiator",
+       "pose": "mur",
+       "dim": [
+        0.8,
+        0.1,
+        0.6
+       ],
+       "owl": "a radiator",
+       "lab": "Radiateur à eau"
+      },
+      {
+       "id": "F08.cvc.convecteurs",
+       "nom": "Convecteurs",
+       "sk": "radiator",
+       "pose": "mur",
+       "dim": [
+        0.7,
+        0.1,
+        0.5
+       ],
+       "owl": "an electric heater",
+       "lab": "Convecteur"
+      },
+      {
+       "id": "F08.cvc.planchers_chauffants",
+       "nom": "Planchers chauffants",
+       "lab": "Plancher chauffants"
+      },
+      {
+       "id": "F08.cvc.pompes_a_chaleur",
+       "nom": "Pompes à chaleur",
+       "lab": "Pompe à chaleur"
+      },
+      {
+       "id": "F08.cvc.chaudieres_gaz",
+       "nom": "Chaudières gaz",
+       "lab": "Chaudière gaz"
+      },
+      {
+       "id": "F08.cvc.chaudieres_fioul",
+       "nom": "Chaudières fioul",
+       "lab": "Chaudière fioul"
+      },
+      {
+       "id": "F08.cvc.chaudieres_bois",
+       "nom": "Chaudières bois",
+       "lab": "Chaudière bois"
+      },
+      {
+       "id": "F08.cvc.climatisations_split",
+       "nom": "Climatisations split",
+       "sk": "other",
+       "pose": "mur",
+       "dim": [
+        0.85,
+        0.22,
+        0.3
+       ],
+       "owl": "an air conditioner",
+       "z": 2.05,
+       "lab": "Climatisation split"
+      },
+      {
+       "id": "F08.cvc.climatisations_gainables",
+       "nom": "Climatisations gainables",
+       "lab": "Climatisation gainables"
+      },
+      {
+       "id": "F08.cvc.groupes_exterieurs",
+       "nom": "Groupes extérieurs",
+       "lab": "Groupe extérieurs"
+      },
+      {
+       "id": "F08.cvc.ventilo_convecteurs",
+       "nom": "Ventilo-convecteurs",
+       "lab": "Ventilo-convecteur"
+      },
+      {
+       "id": "F08.cvc.vmc_simple_flux",
+       "nom": "VMC simple flux",
+       "lab": "VMC simple flux"
+      },
+      {
+       "id": "F08.cvc.vmc_double_flux",
+       "nom": "VMC double flux",
+       "lab": "VMC double flux"
+      },
+      {
+       "id": "F08.cvc.gaines",
+       "nom": "Gaines",
+       "sk": "other",
+       "pose": "mur",
+       "owl": "a cable conduit",
+       "lab": "Gaine"
+      },
+      {
+       "id": "F08.cvc.bouches_d_extraction",
+       "nom": "Bouches d'extraction",
+       "sk": "plate",
+       "pose": "plafond",
+       "dim": [
+        0.15,
+        0.15,
+        0.02
+       ],
+       "owl": "a ventilation grille",
+       "lab": "Bouche d'extraction"
+      },
+      {
+       "id": "F08.cvc.entrees_d_air",
+       "nom": "Entrées d'air",
+       "lab": "Entrée d'air"
+      },
+      {
+       "id": "F08.cvc.conduits_de_fumee",
+       "nom": "Conduits de fumée",
+       "lab": "Conduit de fumée"
+      },
+      {
+       "id": "F08.cvc.thermostats",
+       "nom": "Thermostats",
+       "sk": "plate",
+       "pose": "mur",
+       "dim": [
+        0.1,
+        0.03,
+        0.1
+       ],
+       "owl": "a thermostat",
+       "z": 1.5,
+       "lab": "Thermostat"
+      },
+      {
+       "id": "F08.cvc.collecteurs",
+       "nom": "Collecteurs",
+       "lab": "Collecteur"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "F09",
+   "nom": "Mobilier et équipements domestiques",
+   "materiaux": [
+    "bois",
+    "métal",
+    "verre",
+    "textile",
+    "plastique",
+    "céramique"
+   ],
+   "categories": [
+    {
+     "id": "F09.salon",
+     "nom": "Salon",
+     "classes": [
+      {
+       "id": "F09.salon.canapes",
+       "nom": "Canapés",
+       "sk": "sofa",
+       "pose": "sol",
+       "dim": [
+        2,
+        0.9,
+        0.85
+       ],
+       "detr": [
+        63
+       ],
+       "owl": "a sofa",
+       "ref": {
+        "h": 0.85
+       },
+       "minT": 0.8,
+       "lab": "Canapé"
+      },
+      {
+       "id": "F09.salon.fauteuils",
+       "nom": "Fauteuils",
+       "sk": "sofa",
+       "pose": "sol",
+       "dim": [
+        0.85,
+        0.85,
+        0.85
+       ],
+       "owl": "an armchair",
+       "minT": 0.7,
+       "lab": "Fauteuil"
+      },
+      {
+       "id": "F09.salon.tables_basses",
+       "nom": "Tables basses",
+       "sk": "table",
+       "pose": "sol",
+       "dim": [
+        1.1,
+        0.6,
+        0.42
+       ],
+       "owl": "a coffee table",
+       "lab": "Table basse"
+      },
+      {
+       "id": "F09.salon.tables_a_manger",
+       "nom": "Tables à manger",
+       "sk": "table",
+       "pose": "sol",
+       "dim": [
+        1.6,
+        0.9,
+        0.75
+       ],
+       "detr": [
+        67,
+        165,
+        189
+       ],
+       "owl": "a dining table",
+       "ref": {
+        "h": 0.75
+       },
+       "minT": 0.6,
+       "lab": "Table"
+      },
+      {
+       "id": "F09.salon.chaises",
+       "nom": "Chaises",
+       "sk": "chair",
+       "pose": "sol",
+       "dim": [
+        0.45,
+        0.5,
+        0.9
+       ],
+       "detr": [
+        62
+       ],
+       "owl": "a chair",
+       "ref": {
+        "h": 0.88
+       },
+       "minT": 0.42,
+       "lab": "Chaise"
+      },
+      {
+       "id": "F09.salon.meubles_tv",
+       "nom": "Meubles TV",
+       "sk": "cabinet",
+       "pose": "mur",
+       "dim": [
+        1.6,
+        0.4,
+        0.5
+       ],
+       "owl": "a tv stand",
+       "lab": "Meuble TV"
+      },
+      {
+       "id": "F09.salon.televisions",
+       "nom": "Télévisions",
+       "sk": "tv",
+       "pose": "mur",
+       "dim": [
+        1.2,
+        0.08,
+        0.7
+       ],
+       "detr": [
+        72
+       ],
+       "owl": "a television",
+       "minT": 0.08,
+       "lab": "Télévision"
+      },
+      {
+       "id": "F09.salon.bibliotheques",
+       "nom": "Bibliothèques",
+       "sk": "shelf",
+       "pose": "mur",
+       "dim": [
+        1,
+        0.35,
+        1.9
+       ],
+       "detr": [
+        156
+       ],
+       "owl": "a bookcase",
+       "minT": 0.3,
+       "lab": "Bibliothèque"
+      },
+      {
+       "id": "F09.salon.etageres",
+       "nom": "Étagères",
+       "sk": "shelf",
+       "pose": "mur",
+       "dim": [
+        0.8,
+        0.3,
+        0.04
+       ],
+       "detr": [
+        156
+       ],
+       "owl": "a wall shelf",
+       "minT": 0.25,
+       "lab": "Étagère"
+      },
+      {
+       "id": "F09.salon.buffets",
+       "nom": "Buffets",
+       "sk": "cabinet",
+       "pose": "mur",
+       "dim": [
+        1.6,
+        0.45,
+        0.85
+       ],
+       "owl": "a sideboard",
+       "lab": "Buffet"
+      },
+      {
+       "id": "F09.salon.consoles",
+       "nom": "Consoles",
+       "lab": "Console"
+      },
+      {
+       "id": "F09.salon.tapis",
+       "nom": "Tapis",
+       "sk": "rug",
+       "pose": "sol",
+       "dim": [
+        2,
+        1.4,
+        0.01
+       ],
+       "detr": [
+        200,
+        131
+       ],
+       "owl": "a rug",
+       "lab": "Tapis"
+      },
+      {
+       "id": "F09.salon.rideaux",
+       "nom": "Rideaux",
+       "sk": "curtain",
+       "pose": "mur",
+       "dim": [
+        1.4,
+        0.1,
+        2.4
+       ],
+       "detr": [
+        109
+       ],
+       "owl": "a curtain",
+       "minT": 0.08,
+       "lab": "Rideau"
+      }
+     ]
+    },
+    {
+     "id": "F09.cuisine",
+     "nom": "Cuisine",
+     "classes": [
+      {
+       "id": "F09.cuisine.meubles_hauts",
+       "nom": "Meubles hauts",
+       "sk": "cabinet",
+       "pose": "mur",
+       "dim": [
+        1.2,
+        0.35,
+        0.7
+       ],
+       "owl": "a wall cabinet",
+       "z": 1.45,
+       "lab": "Meuble haut"
+      },
+      {
+       "id": "F09.cuisine.meubles_bas",
+       "nom": "Meubles bas",
+       "sk": "cabinet",
+       "pose": "mur",
+       "dim": [
+        1.2,
+        0.6,
+        0.9
+       ],
+       "detr": [
+        107,
+        188
+       ],
+       "owl": "a kitchen base cabinet",
+       "ref": {
+        "h": 0.9
+       },
+       "lab": "Meuble bas"
+      },
+      {
+       "id": "F09.cuisine.plans_de_travail",
+       "nom": "Plans de travail",
+       "sk": "table",
+       "pose": "pose",
+       "dim": [
+        2.4,
+        0.65,
+        0.04
+       ],
+       "detr": [
+        107
+       ],
+       "owl": "a kitchen countertop",
+       "lab": "Plan de travail"
+      },
+      {
+       "id": "F09.cuisine.ilots",
+       "nom": "Îlots",
+       "lab": "Îlot"
+      },
+      {
+       "id": "F09.cuisine.eviers_de_cuisine",
+       "nom": "Éviers de cuisine",
+       "lab": "Évier de cuisine"
+      },
+      {
+       "id": "F09.cuisine.hottes",
+       "nom": "Hottes",
+       "sk": "other",
+       "pose": "mur",
+       "dim": [
+        0.6,
+        0.5,
+        0.1
+       ],
+       "owl": "a range hood",
+       "z": 1.6,
+       "lab": "Hotte"
+      },
+      {
+       "id": "F09.cuisine.plaques",
+       "nom": "Plaques",
+       "sk": "other",
+       "pose": "pose",
+       "dim": [
+        0.6,
+        0.52,
+        0.05
+       ],
+       "owl": "a cooktop",
+       "lab": "Plaque"
+      },
+      {
+       "id": "F09.cuisine.fours",
+       "nom": "Fours",
+       "sk": "oven",
+       "pose": "sol",
+       "dim": [
+        0.6,
+        0.6,
+        0.6
+       ],
+       "detr": [
+        79
+       ],
+       "owl": "an oven",
+       "minT": 0.55,
+       "lab": "Four"
+      },
+      {
+       "id": "F09.cuisine.micro_ondes",
+       "nom": "Micro-ondes",
+       "sk": "microwave",
+       "pose": "pose",
+       "dim": [
+        0.5,
+        0.38,
+        0.3
+       ],
+       "detr": [
+        78
+       ],
+       "owl": "a microwave",
+       "minT": 0.35,
+       "lab": "Micro-ondes"
+      },
+      {
+       "id": "F09.cuisine.refrigerateurs",
+       "nom": "Réfrigérateurs",
+       "sk": "fridge",
+       "pose": "sol",
+       "dim": [
+        0.6,
+        0.65,
+        1.85
+       ],
+       "detr": [
+        82
+       ],
+       "owl": "a refrigerator",
+       "minT": 0.6,
+       "lab": "Réfrigérateur"
+      },
+      {
+       "id": "F09.cuisine.congelateurs",
+       "nom": "Congélateurs",
+       "lab": "Congélateur"
+      },
+      {
+       "id": "F09.cuisine.lave_vaisselle",
+       "nom": "Lave-vaisselle",
+       "sk": "cabinet",
+       "pose": "sol",
+       "dim": [
+        0.6,
+        0.6,
+        0.85
+       ],
+       "owl": "a dishwasher",
+       "lab": "Lave-vaisselle"
+      },
+      {
+       "id": "F09.cuisine.machines_a_cafe",
+       "nom": "Machines à café",
+       "sk": "other",
+       "pose": "pose",
+       "dim": [
+        0.25,
+        0.35,
+        0.35
+       ],
+       "owl": "a coffee machine",
+       "lab": "Machine à café"
+      },
+      {
+       "id": "F09.cuisine.credences",
+       "nom": "Crédences",
+       "lab": "Crédence"
+      }
+     ]
+    },
+    {
+     "id": "F09.chambre",
+     "nom": "Chambre",
+     "classes": [
+      {
+       "id": "F09.chambre.lits",
+       "nom": "Lits",
+       "sk": "bed",
+       "pose": "sol",
+       "dim": [
+        0.9,
+        1.9,
+        0.5
+       ],
+       "detr": [
+        65
+       ],
+       "owl": "a bed",
+       "minT": 0.9,
+       "complete": [
+        0.9,
+        1.9
+       ],
+       "lab": "Lit"
+      },
+      {
+       "id": "F09.chambre.matelas",
+       "nom": "Matelas",
+       "sk": "bed",
+       "pose": "sol",
+       "dim": [
+        0.9,
+        1.9,
+        0.2
+       ],
+       "owl": "a mattress",
+       "lab": "Matela"
+      },
+      {
+       "id": "F09.chambre.sommiers",
+       "nom": "Sommiers",
+       "lab": "Sommier"
+      },
+      {
+       "id": "F09.chambre.tetes_de_lit",
+       "nom": "Têtes de lit",
+       "lab": "Tête de lit"
+      },
+      {
+       "id": "F09.chambre.armoires",
+       "nom": "Armoires",
+       "sk": "cabinet",
+       "pose": "mur",
+       "dim": [
+        1.2,
+        0.6,
+        2.1
+       ],
+       "detr": [
+        188,
+        108
+       ],
+       "owl": "a wardrobe",
+       "minT": 0.45,
+       "lab": "Armoire"
+      },
+      {
+       "id": "F09.chambre.dressings",
+       "nom": "Dressings",
+       "lab": "Dressing"
+      },
+      {
+       "id": "F09.chambre.commodes",
+       "nom": "Commodes",
+       "sk": "cabinet",
+       "pose": "mur",
+       "dim": [
+        1,
+        0.5,
+        0.85
+       ],
+       "owl": "a chest of drawers",
+       "lab": "Commode"
+      },
+      {
+       "id": "F09.chambre.tables_de_chevet",
+       "nom": "Tables de chevet",
+       "sk": "cabinet",
+       "pose": "sol",
+       "dim": [
+        0.45,
+        0.4,
+        0.5
+       ],
+       "owl": "a nightstand",
+       "lab": "Table de chevet"
+      },
+      {
+       "id": "F09.chambre.bureaux",
+       "nom": "Bureaux",
+       "sk": "desk",
+       "pose": "sol",
+       "dim": [
+        1.2,
+        0.6,
+        0.75
+       ],
+       "detr": [
+        110
+       ],
+       "owl": "a desk",
+       "ref": {
+        "h": 0.75
+       },
+       "minT": 0.5,
+       "lab": "Bureau"
+      },
+      {
+       "id": "F09.chambre.miroirs",
+       "nom": "Miroirs",
+       "sk": "mirror",
+       "pose": "mur",
+       "dim": [
+        0.6,
+        0.03,
+        0.9
+       ],
+       "detr": [
+        66,
+        133
+       ],
+       "owl": "a mirror",
+       "minT": 0.03,
+       "lab": "Miroir"
+      }
+     ]
+    },
+    {
+     "id": "F09.salle_de_bain",
+     "nom": "Salle de bain",
+     "classes": [
+      {
+       "id": "F09.salle_de_bain.meubles_de_salle_de_bain",
+       "nom": "Meubles de salle de bain",
+       "lab": "Meuble de salle de bain"
+      },
+      {
+       "id": "F09.salle_de_bain.miroirs_de_salle_de_bain",
+       "nom": "Miroirs de salle de bain",
+       "lab": "Miroir de salle de bain"
+      },
+      {
+       "id": "F09.salle_de_bain.colonnes",
+       "nom": "Colonnes",
+       "lab": "Colonne"
+      },
+      {
+       "id": "F09.salle_de_bain.rangements",
+       "nom": "Rangements",
+       "lab": "Rangement"
+      },
+      {
+       "id": "F09.salle_de_bain.porte_serviettes",
+       "nom": "Porte-serviettes",
+       "lab": "Porte-serviette"
+      },
+      {
+       "id": "F09.salle_de_bain.accessoires",
+       "nom": "Accessoires",
+       "lab": "Accessoire"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "F10",
+   "nom": "Toitures et couvertures",
+   "materiaux": [
+    "terre cuite",
+    "ardoise",
+    "acier",
+    "zinc",
+    "bois"
+   ],
+   "categories": [
+    {
+     "id": "F10.toitures",
+     "nom": "Toitures",
+     "classes": [
+      {
+       "id": "F10.toitures.tuiles_canal",
+       "nom": "Tuiles canal",
+       "lab": "Tuile canal"
+      },
+      {
+       "id": "F10.toitures.tuiles_mecaniques",
+       "nom": "Tuiles mécaniques",
+       "lab": "Tuile mécaniques"
+      },
+      {
+       "id": "F10.toitures.ardoises",
+       "nom": "Ardoises",
+       "lab": "Ardoise"
+      },
+      {
+       "id": "F10.toitures.bac_acier",
+       "nom": "Bac acier",
+       "lab": "Bac acier"
+      },
+      {
+       "id": "F10.toitures.zinc",
+       "nom": "Zinc",
+       "lab": "Zinc"
+      },
+      {
+       "id": "F10.toitures.epdm_toiture",
+       "nom": "EPDM toiture",
+       "lab": "EPDM toiture"
+      },
+      {
+       "id": "F10.toitures.membranes_bitumineuses_toiture",
+       "nom": "Membranes bitumineuses toiture",
+       "lab": "Membrane bitumineuses toiture"
+      },
+      {
+       "id": "F10.toitures.charpentes",
+       "nom": "Charpentes",
+       "lab": "Charpente"
+      },
+      {
+       "id": "F10.toitures.chevrons",
+       "nom": "Chevrons",
+       "lab": "Chevron"
+      },
+      {
+       "id": "F10.toitures.pannes",
+       "nom": "Pannes",
+       "lab": "Panne"
+      },
+      {
+       "id": "F10.toitures.liteaux",
+       "nom": "Liteaux",
+       "lab": "Liteau"
+      },
+      {
+       "id": "F10.toitures.gouttieres",
+       "nom": "Gouttières",
+       "lab": "Gouttière"
+      },
+      {
+       "id": "F10.toitures.descentes_pluviales",
+       "nom": "Descentes pluviales",
+       "lab": "Descente pluviales"
+      },
+      {
+       "id": "F10.toitures.cheneaux",
+       "nom": "Chéneaux",
+       "lab": "Chéneau"
+      },
+      {
+       "id": "F10.toitures.solins",
+       "nom": "Solins",
+       "lab": "Solin"
+      },
+      {
+       "id": "F10.toitures.faitages",
+       "nom": "Faîtages",
+       "lab": "Faîtage"
+      },
+      {
+       "id": "F10.toitures.rives",
+       "nom": "Rives",
+       "lab": "Rive"
+      },
+      {
+       "id": "F10.toitures.fenetres_de_toit",
+       "nom": "Fenêtres de toit",
+       "lab": "Fenêtre de toit"
+      },
+      {
+       "id": "F10.toitures.panneaux_photovoltaiques",
+       "nom": "Panneaux photovoltaïques",
+       "lab": "Panneau photovoltaïques"
+      },
+      {
+       "id": "F10.toitures.antennes",
+       "nom": "Antennes",
+       "lab": "Antenne"
+      },
+      {
+       "id": "F10.toitures.cheminees",
+       "nom": "Cheminées",
+       "lab": "Cheminée"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "F11",
+   "nom": "Façades et extérieurs",
+   "materiaux": [
+    "béton",
+    "brique",
+    "pierre",
+    "bois",
+    "métal",
+    "verre"
+   ],
+   "categories": [
+    {
+     "id": "F11.facades_et_exterieurs",
+     "nom": "Façades et extérieurs",
+     "classes": [
+      {
+       "id": "F11.facades_et_exterieurs.facades_beton",
+       "nom": "Façades béton",
+       "lab": "Façade béton"
+      },
+      {
+       "id": "F11.facades_et_exterieurs.facades_brique",
+       "nom": "Façades brique",
+       "lab": "Façade brique"
+      },
+      {
+       "id": "F11.facades_et_exterieurs.facades_pierre",
+       "nom": "Façades pierre",
+       "lab": "Façade pierre"
+      },
+      {
+       "id": "F11.facades_et_exterieurs.enduits_de_facade",
+       "nom": "Enduits de façade",
+       "lab": "Enduit de façade"
+      },
+      {
+       "id": "F11.facades_et_exterieurs.bardages_bois",
+       "nom": "Bardages bois",
+       "lab": "Bardage bois"
+      },
+      {
+       "id": "F11.facades_et_exterieurs.bardages_metalliques",
+       "nom": "Bardages métalliques",
+       "lab": "Bardage métalliques"
+      },
+      {
+       "id": "F11.facades_et_exterieurs.isolation_thermique_exterieure",
+       "nom": "Isolation thermique extérieure",
+       "lab": "Isolation thermique extérieure"
+      },
+      {
+       "id": "F11.facades_et_exterieurs.balcons",
+       "nom": "Balcons",
+       "lab": "Balcon"
+      },
+      {
+       "id": "F11.facades_et_exterieurs.terrasses",
+       "nom": "Terrasses",
+       "lab": "Terrasse"
+      },
+      {
+       "id": "F11.facades_et_exterieurs.verandas",
+       "nom": "Vérandas",
+       "lab": "Véranda"
+      },
+      {
+       "id": "F11.facades_et_exterieurs.pergolas",
+       "nom": "Pergolas",
+       "lab": "Pergola"
+      },
+      {
+       "id": "F11.facades_et_exterieurs.auvents",
+       "nom": "Auvents",
+       "lab": "Auvent"
+      },
+      {
+       "id": "F11.facades_et_exterieurs.marquises",
+       "nom": "Marquises",
+       "lab": "Marquise"
+      },
+      {
+       "id": "F11.facades_et_exterieurs.garde_corps",
+       "nom": "Garde-corps",
+       "sk": "other",
+       "pose": "sol",
+       "detr": [
+        146
+       ],
+       "owl": "a railing",
+       "lab": "Garde-corp"
+      },
+      {
+       "id": "F11.facades_et_exterieurs.rampes",
+       "nom": "Rampes",
+       "lab": "Rampe"
+      },
+      {
+       "id": "F11.facades_et_exterieurs.escaliers_exterieurs",
+       "nom": "Escaliers extérieurs",
+       "lab": "Escalier extérieurs"
+      },
+      {
+       "id": "F11.facades_et_exterieurs.clotures",
+       "nom": "Clôtures",
+       "lab": "Clôture"
+      },
+      {
+       "id": "F11.facades_et_exterieurs.portails",
+       "nom": "Portails",
+       "lab": "Portail"
+      },
+      {
+       "id": "F11.facades_et_exterieurs.portillons",
+       "nom": "Portillons",
+       "lab": "Portillon"
+      },
+      {
+       "id": "F11.facades_et_exterieurs.allees",
+       "nom": "Allées",
+       "lab": "Allée"
+      },
+      {
+       "id": "F11.facades_et_exterieurs.parkings",
+       "nom": "Parkings",
+       "lab": "Parking"
+      },
+      {
+       "id": "F11.facades_et_exterieurs.murets_exterieurs",
+       "nom": "Murets extérieurs",
+       "lab": "Muret extérieurs"
+      },
+      {
+       "id": "F11.facades_et_exterieurs.piscines",
+       "nom": "Piscines",
+       "lab": "Piscine"
+      },
+      {
+       "id": "F11.facades_et_exterieurs.abris_de_jardin",
+       "nom": "Abris de jardin",
+       "lab": "Abri de jardin"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "F12",
+   "nom": "Terrain et jardin",
+   "materiaux": [
+    "minéral",
+    "végétal",
+    "béton",
+    "pierre",
+    "bois"
+   ],
+   "categories": [
+    {
+     "id": "F12.terrain_et_jardin",
+     "nom": "Terrain et jardin",
+     "classes": [
+      {
+       "id": "F12.terrain_et_jardin.terre",
+       "nom": "Terre",
+       "lab": "Terre"
+      },
+      {
+       "id": "F12.terrain_et_jardin.sable",
+       "nom": "Sable",
+       "lab": "Sable"
+      },
+      {
+       "id": "F12.terrain_et_jardin.gravier",
+       "nom": "Gravier",
+       "lab": "Gravier"
+      },
+      {
+       "id": "F12.terrain_et_jardin.gazon",
+       "nom": "Gazon",
+       "lab": "Gazon"
+      },
+      {
+       "id": "F12.terrain_et_jardin.pelouse_synthetique",
+       "nom": "Pelouse synthétique",
+       "lab": "Pelouse synthétique"
+      },
+      {
+       "id": "F12.terrain_et_jardin.dalles",
+       "nom": "Dalles",
+       "lab": "Dalle"
+      },
+      {
+       "id": "F12.terrain_et_jardin.paves",
+       "nom": "Pavés",
+       "lab": "Pavé"
+      },
+      {
+       "id": "F12.terrain_et_jardin.bordures",
+       "nom": "Bordures",
+       "lab": "Bordure"
+      },
+      {
+       "id": "F12.terrain_et_jardin.enrobe",
+       "nom": "Enrobé",
+       "lab": "Enrobé"
+      },
+      {
+       "id": "F12.terrain_et_jardin.beton_exterieur",
+       "nom": "Béton extérieur",
+       "lab": "Béton extérieur"
+      },
+      {
+       "id": "F12.terrain_et_jardin.arbres",
+       "nom": "Arbres",
+       "lab": "Arbre"
+      },
+      {
+       "id": "F12.terrain_et_jardin.arbustes",
+       "nom": "Arbustes",
+       "lab": "Arbuste"
+      },
+      {
+       "id": "F12.terrain_et_jardin.haies",
+       "nom": "Haies",
+       "lab": "Haie"
+      },
+      {
+       "id": "F12.terrain_et_jardin.plantes",
+       "nom": "Plantes",
+       "sk": "plant",
+       "pose": "sol",
+       "dim": [
+        0.5,
+        0.5,
+        1.2
+       ],
+       "detr": [
+        64,
+        142
+       ],
+       "owl": "a potted plant",
+       "minT": 0.3,
+       "lab": "Plante"
+      },
+      {
+       "id": "F12.terrain_et_jardin.massifs",
+       "nom": "Massifs",
+       "lab": "Massif"
+      },
+      {
+       "id": "F12.terrain_et_jardin.jardinieres",
+       "nom": "Jardinières",
+       "lab": "Jardinière"
+      },
+      {
+       "id": "F12.terrain_et_jardin.pots",
+       "nom": "Pots",
+       "lab": "Pot"
+      },
+      {
+       "id": "F12.terrain_et_jardin.arrosage",
+       "nom": "Arrosage",
+       "lab": "Arrosage"
+      },
+      {
+       "id": "F12.terrain_et_jardin.regards_de_jardin",
+       "nom": "Regards de jardin",
+       "lab": "Regard de jardin"
+      },
+      {
+       "id": "F12.terrain_et_jardin.caniveaux_de_jardin",
+       "nom": "Caniveaux de jardin",
+       "lab": "Caniveau de jardin"
+      },
+      {
+       "id": "F12.terrain_et_jardin.eclairage_exterieur",
+       "nom": "Éclairage extérieur",
+       "lab": "Éclairage extérieur"
+      },
+      {
+       "id": "F12.terrain_et_jardin.mobilier_de_jardin",
+       "nom": "Mobilier de jardin",
+       "lab": "Mobilier de jardin"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "F13",
+   "nom": "Matériaux et fournitures de chantier",
+   "materiaux": [
+    "minéral",
+    "acier",
+    "bois",
+    "plâtre",
+    "plastique",
+    "carton"
+   ],
+   "categories": [
+    {
+     "id": "F13.materiaux",
+     "nom": "Matériaux",
+     "classes": [
+      {
+       "id": "F13.materiaux.ciment",
+       "nom": "Ciment",
+       "lab": "Ciment"
+      },
+      {
+       "id": "F13.materiaux.mortier",
+       "nom": "Mortier",
+       "lab": "Mortier"
+      },
+      {
+       "id": "F13.materiaux.beton",
+       "nom": "Béton",
+       "lab": "Béton"
+      },
+      {
+       "id": "F13.materiaux.sable",
+       "nom": "Sable",
+       "lab": "Sable"
+      },
+      {
+       "id": "F13.materiaux.gravier",
+       "nom": "Gravier",
+       "lab": "Gravier"
+      },
+      {
+       "id": "F13.materiaux.granulats",
+       "nom": "Granulats",
+       "lab": "Granulat"
+      },
+      {
+       "id": "F13.materiaux.parpaings",
+       "nom": "Parpaings",
+       "sk": "wall",
+       "dim": [
+        0.5,
+        0.2,
+        0.2
+       ],
+       "detr": [
+        172
+       ],
+       "lab": "Parpaing"
+      },
+      {
+       "id": "F13.materiaux.briques",
+       "nom": "Briques",
+       "sk": "wall",
+       "dim": [
+        0.22,
+        0.105,
+        0.065
+       ],
+       "detr": [
+        171
+       ],
+       "lab": "Brique"
+      },
+      {
+       "id": "F13.materiaux.ferraillage",
+       "nom": "Ferraillage",
+       "lab": "Ferraillage"
+      },
+      {
+       "id": "F13.materiaux.treillis_soude",
+       "nom": "Treillis soudé",
+       "lab": "Treilli soudé"
+      },
+      {
+       "id": "F13.materiaux.barres_d_acier",
+       "nom": "Barres d'acier",
+       "lab": "Barre d'acier"
+      },
+      {
+       "id": "F13.materiaux.placo",
+       "nom": "Placo",
+       "lab": "Placo"
+      },
+      {
+       "id": "F13.materiaux.rails",
+       "nom": "Rails",
+       "lab": "Rail"
+      },
+      {
+       "id": "F13.materiaux.montants",
+       "nom": "Montants",
+       "lab": "Montant"
+      },
+      {
+       "id": "F13.materiaux.bois",
+       "nom": "Bois",
+       "lab": "Boi"
+      },
+      {
+       "id": "F13.materiaux.osb",
+       "nom": "OSB",
+       "lab": "OSB"
+      },
+      {
+       "id": "F13.materiaux.contreplaque",
+       "nom": "Contreplaqué",
+       "lab": "Contreplaqué"
+      },
+      {
+       "id": "F13.materiaux.carrelage",
+       "nom": "Carrelage",
+       "sk": "floor",
+       "detr": [
+        117
+       ],
+       "lab": "Carrelage"
+      },
+      {
+       "id": "F13.materiaux.colles",
+       "nom": "Colles",
+       "lab": "Colle"
+      },
+      {
+       "id": "F13.materiaux.enduits",
+       "nom": "Enduits",
+       "lab": "Enduit"
+      },
+      {
+       "id": "F13.materiaux.peintures",
+       "nom": "Peintures",
+       "lab": "Peinture"
+      },
+      {
+       "id": "F13.materiaux.joints",
+       "nom": "Joints",
+       "lab": "Joint"
+      },
+      {
+       "id": "F13.materiaux.silicones",
+       "nom": "Silicones",
+       "lab": "Silicone"
+      },
+      {
+       "id": "F13.materiaux.vis",
+       "nom": "Vis",
+       "lab": "Vis"
+      },
+      {
+       "id": "F13.materiaux.chevilles",
+       "nom": "Chevilles",
+       "lab": "Cheville"
+      },
+      {
+       "id": "F13.materiaux.clous",
+       "nom": "Clous",
+       "lab": "Clou"
+      },
+      {
+       "id": "F13.materiaux.gaines",
+       "nom": "Gaines",
+       "sk": "other",
+       "pose": "mur",
+       "owl": "a cable conduit",
+       "lab": "Gaine"
+      },
+      {
+       "id": "F13.materiaux.tuyaux",
+       "nom": "Tuyaux",
+       "lab": "Tuyau"
+      },
+      {
+       "id": "F13.materiaux.cables",
+       "nom": "Câbles",
+       "lab": "Câble"
+      },
+      {
+       "id": "F13.materiaux.isolants",
+       "nom": "Isolants",
+       "lab": "Isolant"
+      },
+      {
+       "id": "F13.materiaux.membranes",
+       "nom": "Membranes",
+       "lab": "Membrane"
+      }
+     ]
+    },
+    {
+     "id": "F13.conditionnements",
+     "nom": "Conditionnements",
+     "classes": [
+      {
+       "id": "F13.conditionnements.emballages",
+       "nom": "Emballages",
+       "lab": "Emballage"
+      },
+      {
+       "id": "F13.conditionnements.palettes",
+       "nom": "Palettes",
+       "sk": "box",
+       "pose": "sol",
+       "dim": [
+        1.2,
+        0.8,
+        0.15
+       ],
+       "owl": "a wooden pallet",
+       "lab": "Palette"
+      },
+      {
+       "id": "F13.conditionnements.sacs",
+       "nom": "Sacs",
+       "sk": "bag",
+       "pose": "pose",
+       "dim": [
+        0.5,
+        0.3,
+        0.45
+       ],
+       "detr": [
+        27,
+        31,
+        33
+       ],
+       "owl": "a bag",
+       "minT": 0.2,
+       "lab": "Sac"
+      },
+      {
+       "id": "F13.conditionnements.plaques",
+       "nom": "Plaques",
+       "sk": "other",
+       "pose": "pose",
+       "dim": [
+        0.6,
+        0.52,
+        0.05
+       ],
+       "owl": "a cooktop",
+       "lab": "Plaque"
+      },
+      {
+       "id": "F13.conditionnements.rouleaux",
+       "nom": "Rouleaux",
+       "lab": "Rouleau"
+      },
+      {
+       "id": "F13.conditionnements.cartons",
+       "nom": "Cartons",
+       "sk": "box",
+       "pose": "pose",
+       "dim": [
+        0.4,
+        0.3,
+        0.3
+       ],
+       "detr": [
+        100
+       ],
+       "owl": "a cardboard box",
+       "minT": 0.25,
+       "lab": "Carton"
+      },
+      {
+       "id": "F13.conditionnements.materiaux_en_vrac",
+       "nom": "Matériaux en vrac",
+       "lab": "Matériau en vrac"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "F14",
+   "nom": "Outils et machines de chantier",
+   "materiaux": [
+    "acier",
+    "plastique",
+    "bois"
+   ],
+   "categories": [
+    {
+     "id": "F14.outils_manuels",
+     "nom": "Outils manuels",
+     "classes": [
+      {
+       "id": "F14.outils_manuels.marteaux",
+       "nom": "Marteaux",
+       "lab": "Marteau"
+      },
+      {
+       "id": "F14.outils_manuels.massettes",
+       "nom": "Massettes",
+       "lab": "Massette"
+      },
+      {
+       "id": "F14.outils_manuels.burins",
+       "nom": "Burins",
+       "lab": "Burin"
+      },
+      {
+       "id": "F14.outils_manuels.tournevis",
+       "nom": "Tournevis",
+       "lab": "Tournevi"
+      },
+      {
+       "id": "F14.outils_manuels.pinces",
+       "nom": "Pinces",
+       "lab": "Pince"
+      },
+      {
+       "id": "F14.outils_manuels.cles",
+       "nom": "Clés",
+       "lab": "Clé"
+      },
+      {
+       "id": "F14.outils_manuels.scies",
+       "nom": "Scies",
+       "lab": "Scie"
+      },
+      {
+       "id": "F14.outils_manuels.cutters",
+       "nom": "Cutters",
+       "lab": "Cutter"
+      },
+      {
+       "id": "F14.outils_manuels.metres_rubans",
+       "nom": "Mètres rubans",
+       "lab": "Mètre rubans"
+      },
+      {
+       "id": "F14.outils_manuels.niveaux",
+       "nom": "Niveaux",
+       "lab": "Niveau"
+      },
+      {
+       "id": "F14.outils_manuels.equerres",
+       "nom": "Équerres",
+       "lab": "Équerre"
+      },
+      {
+       "id": "F14.outils_manuels.truelles",
+       "nom": "Truelles",
+       "lab": "Truelle"
+      },
+      {
+       "id": "F14.outils_manuels.taloches",
+       "nom": "Taloches",
+       "lab": "Taloche"
+      },
+      {
+       "id": "F14.outils_manuels.spatules",
+       "nom": "Spatules",
+       "lab": "Spatule"
+      },
+      {
+       "id": "F14.outils_manuels.raclettes",
+       "nom": "Raclettes",
+       "lab": "Raclette"
+      }
+     ]
+    },
+    {
+     "id": "F14.outils_electriques",
+     "nom": "Outils électriques",
+     "classes": [
+      {
+       "id": "F14.outils_electriques.perceuses",
+       "nom": "Perceuses",
+       "lab": "Perceuse"
+      },
+      {
+       "id": "F14.outils_electriques.visseuses",
+       "nom": "Visseuses",
+       "lab": "Visseuse"
+      },
+      {
+       "id": "F14.outils_electriques.perforateurs",
+       "nom": "Perforateurs",
+       "lab": "Perforateur"
+      },
+      {
+       "id": "F14.outils_electriques.meuleuses",
+       "nom": "Meuleuses",
+       "lab": "Meuleuse"
+      },
+      {
+       "id": "F14.outils_electriques.scies_circulaires",
+       "nom": "Scies circulaires",
+       "lab": "Scie circulaires"
+      },
+      {
+       "id": "F14.outils_electriques.scies_sauteuses",
+       "nom": "Scies sauteuses",
+       "lab": "Scie sauteuses"
+      },
+      {
+       "id": "F14.outils_electriques.ponceuses",
+       "nom": "Ponceuses",
+       "lab": "Ponceuse"
+      },
+      {
+       "id": "F14.outils_electriques.rainureuses",
+       "nom": "Rainureuses",
+       "lab": "Rainureuse"
+      },
+      {
+       "id": "F14.outils_electriques.decapeurs_thermiques",
+       "nom": "Décapeurs thermiques",
+       "lab": "Décapeur thermiques"
+      },
+      {
+       "id": "F14.outils_electriques.lasers_de_mesure",
+       "nom": "Lasers de mesure",
+       "lab": "Laser de mesure"
+      },
+      {
+       "id": "F14.outils_electriques.telemetres",
+       "nom": "Télémètres",
+       "lab": "Télémètre"
+      },
+      {
+       "id": "F14.outils_electriques.aspirateurs_de_chantier",
+       "nom": "Aspirateurs de chantier",
+       "lab": "Aspirateur de chantier"
+      }
+     ]
+    },
+    {
+     "id": "F14.machines",
+     "nom": "Machines",
+     "classes": [
+      {
+       "id": "F14.machines.mini_pelles",
+       "nom": "Mini-pelles",
+       "lab": "Mini-pelle"
+      },
+      {
+       "id": "F14.machines.pelles_hydrauliques",
+       "nom": "Pelles hydrauliques",
+       "lab": "Pelle hydrauliques"
+      },
+      {
+       "id": "F14.machines.bulldozers",
+       "nom": "Bulldozers",
+       "lab": "Bulldozer"
+      },
+      {
+       "id": "F14.machines.chargeuses",
+       "nom": "Chargeuses",
+       "lab": "Chargeuse"
+      },
+      {
+       "id": "F14.machines.grues",
+       "nom": "Grues",
+       "lab": "Grue"
+      },
+      {
+       "id": "F14.machines.chariots_elevateurs",
+       "nom": "Chariots élévateurs",
+       "lab": "Chariot élévateurs"
+      },
+      {
+       "id": "F14.machines.nacelles",
+       "nom": "Nacelles",
+       "lab": "Nacelle"
+      },
+      {
+       "id": "F14.machines.compacteurs",
+       "nom": "Compacteurs",
+       "lab": "Compacteur"
+      },
+      {
+       "id": "F14.machines.betonnieres",
+       "nom": "Bétonnières",
+       "sk": "other",
+       "pose": "sol",
+       "dim": [
+        0.8,
+        1.2,
+        1.3
+       ],
+       "owl": "a cement mixer",
+       "lab": "Bétonnière"
+      },
+      {
+       "id": "F14.machines.pompes_a_beton",
+       "nom": "Pompes à béton",
+       "lab": "Pompe à béton"
+      },
+      {
+       "id": "F14.machines.camions_bennes",
+       "nom": "Camions bennes",
+       "lab": "Camion bennes"
+      },
+      {
+       "id": "F14.machines.dumpers",
+       "nom": "Dumpers",
+       "lab": "Dumper"
+      }
+     ]
+    },
+    {
+     "id": "F14.equipements_de_chantier",
+     "nom": "Équipements de chantier",
+     "classes": [
+      {
+       "id": "F14.equipements_de_chantier.echafaudages",
+       "nom": "Échafaudages",
+       "sk": "other",
+       "pose": "sol",
+       "owl": "scaffolding",
+       "lab": "Échafaudage"
+      },
+      {
+       "id": "F14.equipements_de_chantier.echelles",
+       "nom": "Échelles",
+       "sk": "other",
+       "pose": "sol",
+       "owl": "a ladder",
+       "lab": "Échelle"
+      },
+      {
+       "id": "F14.equipements_de_chantier.escabeaux",
+       "nom": "Escabeaux",
+       "sk": "other",
+       "pose": "sol",
+       "dim": [
+        0.5,
+        0.8,
+        1.5
+       ],
+       "owl": "a stepladder",
+       "lab": "Escabeau"
+      },
+      {
+       "id": "F14.equipements_de_chantier.etais",
+       "nom": "Étais",
+       "sk": "pillar",
+       "pose": "sol",
+       "dim": [
+        0.08,
+        0.08,
+        null
+       ],
+       "owl": "a construction prop",
+       "lab": "Étai"
+      },
+      {
+       "id": "F14.equipements_de_chantier.treteaux",
+       "nom": "Tréteaux",
+       "lab": "Tréteau"
+      },
+      {
+       "id": "F14.equipements_de_chantier.coffrages",
+       "nom": "Coffrages",
+       "lab": "Coffrage"
+      },
+      {
+       "id": "F14.equipements_de_chantier.banches",
+       "nom": "Banches",
+       "lab": "Banche"
+      },
+      {
+       "id": "F14.equipements_de_chantier.garde_corps_provisoires",
+       "nom": "Garde-corps provisoires",
+       "lab": "Garde-corp provisoires"
+      },
+      {
+       "id": "F14.equipements_de_chantier.barrieres",
+       "nom": "Barrières",
+       "lab": "Barrière"
+      },
+      {
+       "id": "F14.equipements_de_chantier.groupes_electrogenes",
+       "nom": "Groupes électrogènes",
+       "lab": "Groupe électrogènes"
+      },
+      {
+       "id": "F14.equipements_de_chantier.coffrets_electriques",
+       "nom": "Coffrets électriques",
+       "lab": "Coffret électriques"
+      },
+      {
+       "id": "F14.equipements_de_chantier.bennes",
+       "nom": "Bennes",
+       "sk": "box",
+       "pose": "sol",
+       "owl": "a skip container",
+       "lab": "Benne"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "F15",
+   "nom": "Sécurité et pathologies",
+   "materiaux": [],
+   "categories": [
+    {
+     "id": "F15.defauts",
+     "nom": "Défauts",
+     "classes": [
+      {
+       "id": "F15.defauts.fissures_horizontales",
+       "nom": "Fissures horizontales",
+       "sk": "defect",
+       "regle": "trait sombre fin et long (Rénovation : rsCracks)",
+       "lab": "Fissure horizontales"
+      },
+      {
+       "id": "F15.defauts.fissures_verticales",
+       "nom": "Fissures verticales",
+       "sk": "defect",
+       "regle": "trait sombre fin et long (Rénovation : rsCracks)",
+       "lab": "Fissure verticales"
+      },
+      {
+       "id": "F15.defauts.fissures_en_escalier",
+       "nom": "Fissures en escalier",
+       "lab": "Fissure en escalier"
+      },
+      {
+       "id": "F15.defauts.microfissures",
+       "nom": "Microfissures",
+       "lab": "Microfissure"
+      },
+      {
+       "id": "F15.defauts.decollements",
+       "nom": "Décollements",
+       "lab": "Décollement"
+      },
+      {
+       "id": "F15.defauts.humidite",
+       "nom": "Humidité",
+       "sk": "defect",
+       "owl": "a water stain on a wall",
+       "lab": "Humidité"
+      },
+      {
+       "id": "F15.defauts.infiltrations",
+       "nom": "Infiltrations",
+       "lab": "Infiltration"
+      },
+      {
+       "id": "F15.defauts.moisissures",
+       "nom": "Moisissures",
+       "sk": "defect",
+       "owl": "mold on a wall",
+       "lab": "Moisissure"
+      },
+      {
+       "id": "F15.defauts.salpetre",
+       "nom": "Salpêtre",
+       "lab": "Salpêtre"
+      },
+      {
+       "id": "F15.defauts.corrosion",
+       "nom": "Corrosion",
+       "lab": "Corrosion"
+      },
+      {
+       "id": "F15.defauts.bois_degrade",
+       "nom": "Bois dégradé",
+       "lab": "Boi dégradé"
+      },
+      {
+       "id": "F15.defauts.deformations",
+       "nom": "Déformations",
+       "lab": "Déformation"
+      },
+      {
+       "id": "F15.defauts.affaissements",
+       "nom": "Affaissements",
+       "lab": "Affaissement"
+      },
+      {
+       "id": "F15.defauts.peinture_ecaillee",
+       "nom": "Peinture écaillée",
+       "sk": "defect",
+       "owl": "peeling paint",
+       "lab": "Peinture écaillée"
+      },
+      {
+       "id": "F15.defauts.carrelage_casse",
+       "nom": "Carrelage cassé",
+       "lab": "Carrelage cassé"
+      },
+      {
+       "id": "F15.defauts.joints_deteriores",
+       "nom": "Joints détériorés",
+       "lab": "Joint détériorés"
+      },
+      {
+       "id": "F15.defauts.fuites",
+       "nom": "Fuites",
+       "lab": "Fuite"
+      },
+      {
+       "id": "F15.defauts.condensation",
+       "nom": "Condensation",
+       "lab": "Condensation"
+      },
+      {
+       "id": "F15.defauts.degradations_de_toiture",
+       "nom": "Dégradations de toiture",
+       "lab": "Dégradation de toiture"
+      }
+     ]
+    },
+    {
+     "id": "F15.securite",
+     "nom": "Sécurité",
+     "classes": [
+      {
+       "id": "F15.securite.casques",
+       "nom": "Casques",
+       "lab": "Casque"
+      },
+      {
+       "id": "F15.securite.gilets",
+       "nom": "Gilets",
+       "lab": "Gilet"
+      },
+      {
+       "id": "F15.securite.chaussures_de_securite",
+       "nom": "Chaussures de sécurité",
+       "lab": "Chaussure de sécurité"
+      },
+      {
+       "id": "F15.securite.gants",
+       "nom": "Gants",
+       "lab": "Gant"
+      },
+      {
+       "id": "F15.securite.lunettes",
+       "nom": "Lunettes",
+       "lab": "Lunette"
+      },
+      {
+       "id": "F15.securite.harnais",
+       "nom": "Harnais",
+       "lab": "Harnai"
+      },
+      {
+       "id": "F15.securite.extincteurs",
+       "nom": "Extincteurs",
+       "sk": "other",
+       "pose": "mur",
+       "dim": [
+        0.15,
+        0.15,
+        0.5
+       ],
+       "owl": "a fire extinguisher",
+       "lab": "Extincteur"
+      },
+      {
+       "id": "F15.securite.signalisation",
+       "nom": "Signalisation",
+       "sk": "plate",
+       "pose": "mur",
+       "owl": "a safety sign",
+       "lab": "Signalisation"
+      },
+      {
+       "id": "F15.securite.barrieres_de_securite",
+       "nom": "Barrières de sécurité",
+       "lab": "Barrière de sécurité"
+      },
+      {
+       "id": "F15.securite.filets",
+       "nom": "Filets",
+       "lab": "Filet"
+      },
+      {
+       "id": "F15.securite.detecteurs",
+       "nom": "Détecteurs",
+       "lab": "Détecteur"
+      },
+      {
+       "id": "F15.securite.issues_de_secours",
+       "nom": "Issues de secours",
+       "sk": "plate",
+       "pose": "mur",
+       "owl": "an emergency exit sign",
+       "lab": "Issue de secours"
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

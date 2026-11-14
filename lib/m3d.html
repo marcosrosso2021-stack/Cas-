@@ -3302,10 +3302,11 @@ function vidFurnish(spec,k0){const fp=footprint();if(!fp||!S.scale||!spec||!spec
   const dx=DIR[k0],dy=DIR[NX[k0]],A={north:[-W/2,-D/2],east:[W/2,-D/2],south:[W/2,D/2],west:[-W/2,D/2]}[k0];if(!dx||!A)return 0;
   const sX=Math.abs(dx[0])?W:D,sY=Math.abs(dy[0])?W:D,kx=((fp.x1-fp.x0)*sc-ep)/sX,ky=((fp.y1-fp.y0)*sc-ep)/sY;
   const P=(x,z)=>{const px=((x-A[0])*dx[0]+(z-A[1])*dx[1])*kx,py=((x-A[0])*dy[0]+(z-A[1])*dy[1])*ky;return[ox+px/sc,oy+py/sc]};
-  S.eqs=S.eqs.filter(e=>!e.vid);let n=0;
+  S.eqs=S.eqs.filter(e=>!e.vid);let n=0;const orig=[];
   for(const o of spec.objects){const[x,y]=P(o.x,o.z),r=(o.rotation||0)*Math.PI/180,b=[-Math.sin(r),-Math.cos(r)],bp=[b[0]*dx[0]+b[1]*dx[1],b[0]*dy[0]+b[1]*dy[1]];
     const rot=Math.abs(bp[0])>Math.abs(bp[1])?(bp[0]<0?270:90):(bp[1]<0?0:180);
-    S.eqs.push({id:nid('eq'),type:'vcap',sk:o.type,x,y,rot,sw:[+o.w.toFixed(2),+o.d.toFixed(2)],sh:+o.h.toFixed(2),ez:+(o.y||0).toFixed(2),...(o.color?{col:o.color}:{}),vid:1,lab:o.label});n++}
+    const eq={id:nid('eq'),type:'vcap',sk:o.type,x,y,rot,sw:[+o.w.toFixed(2),+o.d.toFixed(2)],sh:+o.h.toFixed(2),ez:+(o.y||0).toFixed(2),...(o.color?{col:o.color}:{}),vid:1,lab:o.label,vcls:o.cls||null,vmes:o.mes||null,vrel:o.rel||null};
+    S.eqs.push(eq);orig.push({id:eq.id,cls:eq.vcls||('vcap.'+o.type),x,y,sw:eq.sw.slice(),sh:eq.sh,col:eq.col||'',src:o.src||''});n++}
   // portes et fenêtres vues dans la vidéo, sur leur mur (aussi un mur reconstitué)
   const Hh=S.params.H;
   for(const o of spec.openings||[]){const hw=o.width/2,al=o.along,E={north:[[al-hw,-D/2],[al+hw,-D/2]],south:[[al-hw,D/2],[al+hw,D/2]],west:[[-W/2,al-hw],[-W/2,al+hw]],east:[[W/2,al-hw],[W/2,al+hw]]}[o.wall];if(!E)continue;
@@ -3316,9 +3317,25 @@ function vidFurnish(spec,k0){const fp=footprint();if(!fp||!S.scale||!spec||!spec
     const op={id:nid('ouv'),wallId:wl.id,c0,c1,type:o.type==='door'?'door':'window',conf:null,side:1,hinge:0,vid:1};
     if(op.type==='door')op.dh=+clamp(o.height||2.04,1.8,Hh-0.05).toFixed(2);else{op.al=+clamp(o.sill||0.9,0,Hh-0.6).toFixed(2);op.wh=+clamp(o.height||1.2,0.4,Hh-op.al-0.03).toFixed(2)}
     S.ops.push(op);n++}
+  // base d'apprentissage de l'œil 3D : ce qui a été créé (pour comparer avec les corrections), graphe de scène
+  if(S.rnv){S.rnv.vid={at:Date.now(),orig,graphe:spec.graphe||null}}
+  if(window.__vdebug){window.__m3dS=S;window.__vidLearn=vidLearn}
+  try{const L=oe3Get();for(const o of orig)L.n[o.cls]=(L.n[o.cls]||0)+1;oe3Put(L)}catch(e){}
   try{build3D();draw3()}catch(e){}try{if(CLIENT)saveProj();else saveArt()}catch(e){}return n}
+/* œil 3D, apprentissage par correction humaine : un élément capté supprimé, déplacé, redimensionné ou recoloré à la main
+   est enregistré avec sa classe et la vignette de l'image source (dans l'appareil seulement) ; la prochaine vidéo en tient compte.
+   Aucun poids de modèle n'est modifié. */
+function oe3Get(){try{const v=JSON.parse(localStorage.getItem('m3d_oeil3d')||'null');if(v&&v.v===1)return v}catch(e){}return{v:1,ex:[],n:{}}}
+function oe3Put(L){L.ex=L.ex.slice(-400);try{localStorage.setItem('m3d_oeil3d',JSON.stringify(L))}catch(e){L.ex=L.ex.map(x=>({...x,src:''}));try{localStorage.setItem('m3d_oeil3d',JSON.stringify(L))}catch(_){}}}
+function vidLearn(){const V=S.rnv&&S.rnv.vid;if(!V||!V.orig||!V.orig.length||!S.scale)return;const sc=S.scale,L=oe3Get(),now=Date.now();let ch=0;
+  for(const o of V.orig){const e=S.eqs.find(q=>q.id===o.id);
+    if(!e){if(!o.gone){L.ex.push({t:'del',cls:o.cls,src:o.src,at:now});o.gone=1;ch++}continue}
+    const dm=Math.hypot(e.x-o.x,e.y-o.y)*sc;if(dm>0.15){L.ex.push({t:'move',cls:o.cls,dm:+dm.toFixed(2),at:now});o.x=e.x;o.y=e.y;ch++}
+    const sw=e.sw||o.sw,sh=e.sh||o.sh,r=[sw[0]/o.sw[0],sw[1]/o.sw[1],sh/o.sh];if(r.some(v=>Math.abs(v-1)>0.05)){L.ex.push({t:'size',cls:o.cls,r:r.map(v=>+v.toFixed(3)),src:o.src,at:now});o.sw=sw.slice();o.sh=sh;ch++}
+    if((e.col||'')!==o.col){L.ex.push({t:'col',cls:o.cls,c:e.col||'',at:now});o.col=e.col||'';ch++}}
+  if(ch)oe3Put(L)}
 let VIDP=null;function vidStart(f){if(!VIDP)VIDP=new Promise((ok,ko)=>{const e=document.createElement('script');e.src='lib/vid3d.js';e.onload=ok;e.onerror=()=>{VIDP=null;ko(new Error('vid3d'))};document.head.appendChild(e)});
-  VIDP.then(()=>window.vidRun(f,{RNV,busy,busyStep,tick,t,toast,fmt,rnvDetect,rnvRender,rnvMake,v2Sess,vidFurnish})).catch(()=>toast(t('vid_fail')))}
+  VIDP.then(()=>window.vidRun(f,{RNV,busy,busyStep,tick,t,toast,fmt,rnvDetect,rnvRender,rnvMake,v2Sess,vidFurnish,oe3:oe3Get()})).catch(()=>toast(t('vid_fail')))}
 /* couleur du sol (sous la jonction mur / sol) et du plafond, lues sur les photos */
 function rnvSample(ws,where){const A=[[],[],[]];for(const w of ws){const cv=w.cv,c=cv.getContext('2d'),fl=where==='floor',a=fl?w.q[3]:w.q[0],e=fl?w.q[2]:w.q[1],dy=(fl?1:-1)*cv.height;
     for(let i=1;i<=12;i++)for(const f of[0.02,0.04,0.07,0.1,0.13]){const tt=i/13,x=a[0]+(e[0]-a[0])*tt,y=a[1]+(e[1]-a[1])*tt+dy*f;if(x<0||y<0||x>=cv.width||y>=cv.height)continue;const p=c.getImageData(x|0,y|0,1,1).data;for(let k=0;k<3;k++)A[k].push(p[k])}}
@@ -7253,14 +7270,14 @@ function projList(){try{return JSON.parse(localStorage.getItem(PJK)||'[]')}catch
 function projStore(l){try{localStorage.setItem(PJK,JSON.stringify(l));return true}catch(e){return false}}
 const projData=()=>({plans:(syncPlan(),S.plans.map(p=>({...p,rectURL:null}))),planIdx:S.planIdx,extCol:S.extCol||null,ext:S.ext||null,roof:S.roof||null,autoF:S.autoF,W:S.W,H:S.H,params:S.params,walls:S.walls,ops:S.ops,lvl:S.lvl,eqs:S.eqs,scale:S.scale,calib:S.calib,cotes:S.cotes,roomNames:S.roomNames,finish:S.finish,wallDef:S.wallDef||null,floorDef:S.floorDef||null,base3:S.base3,str:S.str||null,rnv:S.rnv||null,chat:S.chat.slice(-80)});
 let saveT=null;
-function saveProj(){if(!CLIENT||!S.pid||!S.W)return;clearTimeout(saveT);saveT=setTimeout(saveNow,350)}
+function saveProj(){try{vidLearn()}catch(e){}if(!CLIENT||!S.pid||!S.W)return;clearTimeout(saveT);saveT=setTimeout(saveNow,350)}
 function saveNow(){clearTimeout(saveT);saveT=null;if(!CLIENT||!S.pid||!S.W)return;try{const l=projList(),i=l.findIndex(p=>p.id===S.pid),p={id:S.pid,name:S.pname||t('m_ex'),at:Date.now(),d:projData(),ch:i>=0&&l[i].ch||undefined};
   if(i>=0)l.splice(i,1);l.unshift(p);try{casoEmit('saveProject',p)}catch(e){}if(!projStore(l)){p.d.chat=[];p.d.plans=null;if(!projStore(l)){p.d=rnvLite(p.d);if(!projStore(l))toast(t('t_full'))}}renderDrawer()}catch(e){}}
 function bumpUid(){let m=uid;for(const a of[S.walls,S.ops,...(S.lvl&&S.lvl.E?S.lvl.E:[S.eqs])])for(const x of a||[]){const n=+String(x.id||'').split('_').pop();if(n>=m)m=n+1}uid=m}
 function setTitle(){if(CLIENT&&S.screen==='3d')$('#h-title').textContent=S.pname||t('t_cli')}
 /* artisan : le croquis en cours est gardé sur l'appareil, pour reprendre après une fermeture de la page */
 let artT=null;const ARTK='m3d_art';
-function saveArt(){if(CLIENT||!S.W||!S.walls.length)return;clearTimeout(artT);artT=setTimeout(saveArtNow,500)}
+function saveArt(){try{vidLearn()}catch(e){}if(CLIENT||!S.W||!S.walls.length)return;clearTimeout(artT);artT=setTimeout(saveArtNow,500)}
 function saveArtNow(){clearTimeout(artT);artT=null;if(CLIENT||!S.W||!S.walls.length)return;{const d={...projData(),rectURL:S.rectURL||'',at:Date.now()};
   try{localStorage.setItem(ARTK,JSON.stringify(d))}catch(e){try{d.rectURL='';localStorage.setItem(ARTK,JSON.stringify(d))}catch(_){try{localStorage.setItem(ARTK,JSON.stringify(rnvLite(d)))}catch(__){}}}}}
 function flushSave(){try{if(CLIENT){if(saveT)saveNow()}else if(artT)saveArtNow()}catch(e){}}
