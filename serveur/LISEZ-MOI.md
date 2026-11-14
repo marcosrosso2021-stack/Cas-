@@ -300,3 +300,9 @@ Relecture complète du code : environ 60 défauts corrigés, chacun avec un test
 - **Vieux iPhone** (iOS antérieur à 16.4, par exemple iPhone 6s ou 7) : avant, l'appli restait blanche. Maintenant, seul le module qui comprend les phrases du planning et des paiements dictés manque ; le reste fonctionne (vérifié en simulant l'absence du module, pas sur un vrai vieil iPhone).
 
 Vitesse (mesurée sur un processeur ralenti comme un téléphone) : ouverture environ 25 % plus rapide, enregistrement et historique 2 fois plus rapides, pointage près de 4 fois plus rapide ; l'animation d'accueil s'arrête au lieu de tourner en arrière-plan et dure 1,2 s au lieu de 2,2 s aux ouvertures suivantes.
+
+**IA (14 novembre 2026)** :
+- `GET /api/appris?d=3d`, `POST /api/appris` avec `d:"3d"` : mots appris par le chat du module 3D (synonymes de meubles, noms de couleurs), publiés à partir de 2 usagers.
+- `POST /api/incompris` : phrases incomprises, masquées sur l'appareil. `GET /api/incompris` avec l'en-tête `x-caso-cle` : seulement si la variable
+  `CASO_CLE_IA` est définie sur le serveur (Clever Cloud › Environment variables), et seulement les phrases envoyées par au moins 3 usagers. Fichier : `incompris.json`.
+
