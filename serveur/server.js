@@ -39,6 +39,11 @@ function createServer(opts={}){
  const ROOT=path.join(__dirname,'..'),NEWL=!opts.appFile&&fs.existsSync(path.join(ROOT,'index.html'));
  const APP=opts.appFile||(NEWL?path.join(ROOT,'index.html'):path.join(__dirname,'devis.html'));
  const lan=opts.lan||lanAddresses;
+ /* Hébergé derrière un proxy qui termine le TLS (Clever Cloud pose APP_HOME) : on fait confiance aux en-têtes x-forwarded-*,
+    on force HTTPS, on envoie HSTS, et les liens publics (signature, facture) sont en https.
+    En local (poste du bureau, Wi-Fi), rien de tout cela : le serveur reste en http sur le réseau interne. */
+ const HOSTED=!!(opts.hosted||process.env.TRUST_PROXY||process.env.TRUST_CF||process.env.APP_HOME);
+ const HTTPS_ONLY=HOSTED&&!opts.allowHttp&&process.env.ALLOW_HTTP!=='1';
 
  let data={rev:0,counter:0,users:{},tokens:{},invites:{},recs:{},tombs:[],signs:{},subs:[],vapid:null};
  {let raw=null;try{raw=fs.readFileSync(FILE,'utf8')}catch(e){if(e.code!=='ENOENT')throw e}
@@ -106,7 +111,7 @@ function createServer(opts={}){
   if(Date.now()-t.at>60000){t.n=0;t.at=Date.now()}
   tries.set(ip,t);return t.n>=10}
  const fail=ip=>{const t=tries.get(ip)||{n:0,at:Date.now()};t.n++;tries.set(ip,t)};
- const isLocal=req=>!process.env.TRUST_PROXY&&!process.env.TRUST_CF&&!req.headers['x-forwarded-for']&&!req.headers['cf-connecting-ip']&&['127.0.0.1','::1','::ffff:127.0.0.1'].includes(req.socket.remoteAddress);
+ const isLocal=req=>!HOSTED&&!req.headers['x-forwarded-for']&&!req.headers['cf-connecting-ip']&&['127.0.0.1','::1','::ffff:127.0.0.1'].includes(req.socket.remoteAddress);
  const sameSecret=(a,b)=>{const x=crypto.createHash('sha256').update(String(a)).digest(),y=crypto.createHash('sha256').update(String(b)).digest();return crypto.timingSafeEqual(x,y)};
 
  function authUser(req){
@@ -178,11 +183,11 @@ function createServer(opts={}){
 
 /* --- signature des devis --- */
  const privIp=a=>/^(10\.|127\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|::1$|f[cd]|fe80|::ffff:(10\.|127\.|192\.168\.))/i.test(a);
- const clientIp=req=>{if(process.env.TRUST_CF&&req.headers['cf-connecting-ip'])return String(req.headers['cf-connecting-ip']).slice(0,64);if(process.env.TRUST_PROXY){const L=String(req.headers['x-forwarded-for']||'').split(',').map(x=>x.trim()).filter(Boolean);
+ const clientIp=req=>{if(process.env.TRUST_CF&&req.headers['cf-connecting-ip'])return String(req.headers['cf-connecting-ip']).slice(0,64);if(HOSTED&&!process.env.TRUST_CF){const L=String(req.headers['x-forwarded-for']||'').split(',').map(x=>x.trim()).filter(Boolean);
    for(let i=L.length-1;i>=0;i--)if(!privIp(L[i]))return L[i];if(L.length)return L[0]}return req.socket.remoteAddress||'?'};
  function baseUrl(req){
   const pub=opts.publicUrl||process.env.PUBLIC_URL;if(pub)return pub.replace(/\/+$/,'');
-  const proto=process.env.TRUST_PROXY&&req.headers['x-forwarded-proto']?String(req.headers['x-forwarded-proto']).split(',')[0]:'http';
+  const proto=HOSTED?'https':'http';   // hébergé : liens de signature et de facture toujours en https
   return proto+'://'+(req.headers.host||'localhost')}
  const okPng=v=>typeof v==='string'&&v.length<400000&&/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(v);
  const cut=(v,n)=>String(v==null?'':v).slice(0,n);
@@ -293,7 +298,7 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
  /* --- HTTP --- */
  const cors={'access-control-allow-origin':'*','access-control-allow-headers':'content-type, authorization','access-control-allow-methods':'GET, POST, OPTIONS'};
  const SEC={'x-content-type-options':'nosniff','referrer-policy':'no-referrer','x-frame-options':'DENY','permissions-policy':'geolocation=(), payment=(), usb=()','cross-origin-opener-policy':'same-origin'};
- if(process.env.TRUST_PROXY||process.env.TRUST_CF)SEC['strict-transport-security']='max-age=31536000; includeSubDomains';
+ if(HOSTED)SEC['strict-transport-security']='max-age=63072000; includeSubDomains'+(process.env.HSTS_PRELOAD==='1'?'; preload':'');
  const CSP_APP="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/ https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1/ https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/ https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/ https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: mediastream:; font-src 'self' data:; connect-src 'self' https:; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
  const CSP_PUB="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
  function send(res,code,obj,extra){
@@ -310,6 +315,9 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
  const server=http.createServer(async(req,res)=>{
   const url=req.url.split('?')[0],ip=clientIp(req),POST=req.method==='POST';
   try{
+   // hébergé : toute requête arrivée en clair est renvoyée vers https (jamais de données en http)
+   if(HTTPS_ONLY&&String(req.headers['x-forwarded-proto']||'').split(',')[0].trim()==='http'){
+    res.writeHead(301,{location:'https://'+(req.headers.host||'')+req.url,'cache-control':'no-store'});return res.end()}
    if(req.method==='OPTIONS'){res.writeHead(204,cors);return res.end()}
    if(NEWL&&req.method==='GET'&&url==='/devis.html'){/* module Devis, ouvert dans un cadre de l'appli */
     let html;try{html=fs.readFileSync(path.join(ROOT,'devis.html'),'utf8')}catch(e){return send(res,404,{error:'introuvable'})}
@@ -574,7 +582,7 @@ function start(opts={}){
   s.server.once('error',ko);
   s.server.listen(port,'0.0.0.0',()=>ok(Object.assign(s,{port:s.server.address().port,addresses:lanAddresses()})))})}
 
-module.exports={createServer,start,lanAddresses}; // srvfix-v1 srvsec-v1
+module.exports={createServer,start,lanAddresses}; // srvfix-v1 srvsec-v2
 
 if(require.main===module){
  start().then(s=>{
