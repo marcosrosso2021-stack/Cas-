@@ -358,6 +358,34 @@ P.partagerMaintenant=function(){envoyer();};
  function proposerFin(o){o.ench2=1;try{storeQ(o);}catch(x){save();}langue();var t=0,ac=0;try{t=totals(o).ttc;ac=faOfQuote(o.id).filter(function(f){return f.kind==="acompte";}).reduce(function(a,f){return a+faTot(f).ttc;},0);}catch(x){}
   var txt=ac>0?T("Chantier de {0} terminé : facture de solde de {1} ?",[o.client||"",E(t-ac)]):T("Chantier de {0} terminé : facture de {1} ?",[o.client||"",E(t)]);
   demander('<p>'+e(txt)+'</p>',function(){if(typeof faNew==="function")faNew(o.id);});}
+ /* pointage par la position, appli ouverte (iPhone, site web ; l'appli Android pointe seule en arrière-plan) :
+    sur un chantier du jour → « je pointe ton arrivée ? » ; loin du chantier en cours → « je pointe ta sortie ? » */
+ function natif(){try{return !!(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform());}catch(x){return false;}}
+ function moiPt(){var P0=db.people||[],a=(typeof accountGet==="function"&&accountGet())||{},u="";try{u=String((getSync()||{}).user||"").trim().toLowerCase();}catch(x){}
+  var n=u||String(a.prenom||"").split(" ")[0].toLowerCase(),f=P0.filter(function(p){return String(p.nom||"").toLowerCase()===n;})[0];return f?f.id:P0.length===1?P0[0].id:null;}
+ function dist(a,b){var R=6371e3,r=Math.PI/180,dl=(b.lat-a.lat)*r,dn=(b.lng-a.lng)*r,x=Math.sin(dl/2)*Math.sin(dl/2)+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dn/2)*Math.sin(dn/2);return 2*R*Math.asin(Math.sqrt(x));}
+ function geoChantier(c,adr){if(c.geo)return Promise.resolve(c.geo);var q=adr||c.adr||c.nom;if(!q||!navigator.onLine)return Promise.resolve(null);
+  return fetch("https://data.geopf.fr/geocodage/search?limit=1&q="+encodeURIComponent(q)).then(function(r){return r.ok?r.json():null;}).then(function(j){var f=j&&(j.features||[])[0];if(!f||!f.geometry)return null;
+   c.geo={lat:f.geometry.coordinates[1],lng:f.geometry.coordinates[0]};if(!c.rayon)c.rayon=100;save();return c.geo;}).catch(function(){return null;});}
+ function chantiersDuJour(me){var auj=typeof agToday==="function"?agToday():ymd(new Date()),now=Date.now(),L=[];if(typeof agDayEvents!=="function")return L;
+  agDayEvents(auj).forEach(function(ev){if(ev.t!=="rdv"||!ev.a||(ev.who||[]).indexOf(me)<0)return;var cl=ev.cid&&(db.clients||[]).filter(function(c){return c.id===ev.cid;})[0],adr=ev.adr||(cl&&cl.adr)||"";if(!adr&&!ev.ch)return;
+   var t0=new Date(auj+"T"+ev.a+":00").getTime(),t1=ev.b?new Date(auj+"T"+ev.b+":00").getTime():t0+36e5;if(now<t0-36e5||now>t1+2*36e5)return;
+   var cid=typeof agChFor==="function"?agChFor(ev):ev.ch;if(cid)L.push({cid:cid,adr:adr});});return L;}
+ function ouvert(me){var last=null;(db.pts||[]).forEach(function(x){if(x.p===me&&(!last||x.ts>last.ts))last=x;});return last&&last.t==="in"?last:null;}
+ var GPSV=0;function gps(){if(ATT||natif()||!navigator.geolocation||typeof db==="undefined"||!db.people||!db.pts||Date.now()-GPSV<4*60000)return;var me=moiPt();if(!me)return;
+  var cur=ouvert(me),L=chantiersDuJour(me);if(!cur&&!L.length)return;GPSV=Date.now();
+  var lire=function(){navigator.geolocation.getCurrentPosition(function(pos){var here={lat:pos.coords.latitude,lng:pos.coords.longitude},acc=Math.min(pos.coords.accuracy||50,200),hh=function(){var d=new Date();return d.getHours()+"h"+(d.getMinutes()<10?"0":"")+d.getMinutes();};
+    var ch=function(id){return (db.chantiers||[]).filter(function(c){return c.id===id;})[0];};
+    if(cur){var c0=ch(cur.c);if(c0&&c0.geo&&dist(here,c0.geo)>Math.max(300,(c0.rayon||100)+acc)){langue();demander('<p>'+e(T("Tu as quitté le chantier {0} ? Je pointe ta sortie à {1} ?",[c0.nom||"",hh()]))+'</p>',function(){db.pts.push({id:uid(),c:cur.c,p:me,t:"out",ts:Date.now(),note:"position (casô ouvert)"});save();bot('<p>'+e(T("C’est fait."))+'</p>');});}return;}
+    (function suivant(i){if(i>=L.length)return;var c=ch(L[i].cid);if(!c)return suivant(i+1);geoChantier(c,L[i].adr).then(function(g){if(g&&dist(here,g)<=(c.rayon||100)+acc){langue();
+      demander('<p>'+e(T("Tu es sur le chantier {0} : je pointe ton arrivée à {1} ?",[c.nom||"",hh()]))+'</p>',function(){db.pts.push({id:uid(),c:c.id,p:me,t:"in",ts:Date.now(),note:"position (casô ouvert)"});save();bot('<p>'+e(T("C’est fait."))+'</p>');});}else suivant(i+1);});})(0);
+   },function(){},{enableHighAccuracy:true,timeout:15000,maximumAge:0});};
+  var ok=null;try{ok=localStorage.getItem("caso_gps");}catch(x){}
+  if(ok==="1")return lire();if(ok==="0"||!L.length)return;
+  (navigator.permissions&&navigator.permissions.query?navigator.permissions.query({name:"geolocation"}).then(function(r){return r.state;}).catch(function(){return "prompt";}):Promise.resolve("prompt")).then(function(st){
+   if(st==="granted"){try{localStorage.setItem("caso_gps","1");}catch(x){}return lire();}if(st==="denied")return;langue();
+   demander('<p>'+e(T("Chantier aujourd’hui : je regarde ta position quand casô est ouvert, pour pointer ton arrivée et ta sortie ?"))+'</p>',function(){try{localStorage.setItem("caso_gps","1");}catch(x){}GPSV=0;lire();});});}
+ P.position=function(){GPSV=0;gps();};
  /* devis refusé : la raison, une seule question (prix, délai, autre) ; sert à « pourquoi mes devis sont refusés » */
  function refuses(){return (db.quotes||[]).filter(function(o){return o&&o.status==="refuse"&&!o.refus&&!o.ench3;});}
  var REF=null;function demanderRefus(o){o.ench3=1;try{storeQ(o);}catch(x){save();}langue();REF=o.id;
@@ -366,6 +394,7 @@ P.partagerMaintenant=function(){envoyer();};
  function ouverture(){try{if(!P.ready||typeof db==="undefined")return;langue();var k="caso_rappel_jour",auj=ymd(new Date()),v=null;try{v=localStorage.getItem(k);}catch(x){}
   if(v!==auj){var L=rappels();try{localStorage.setItem(k,auj);}catch(x){}if(L.length)bot(L.map(function(x){return '<p dir="auto">'+e(x)+'</p>';}).join("")+(REL.length||ACO?'<div class="msg-act">'+(REL.length?'<button class="btn sm" onclick="casoPont.relancerDevis()">'+e(T("Relancer les devis"))+'</button>':'')+(ACO?'<button class="btn sm sec" onclick="casoPont.relancer()">'+e(T("Relancer l’acompte"))+'</button>':'')+'</div>':""));}
   if(!ATT){var S=signes();if(S.length){proposerSigne(S[0]);return;}var Fn=finis();if(Fn.length){proposerFin(Fn[0]);return;}}
-  if(!REF){var Rf=refuses();if(Rf.length)demanderRefus(Rf[0]);}}catch(x){}}
- (function attendre(n){if(P.ready&&typeof CHAT!=="undefined"&&typeof chatRender==="function"){setTimeout(ouverture,1500);setInterval(function(){if(!ATT&&(signes().length||finis().length))ouverture();},10*60000);document.addEventListener("visibilitychange",function(){if(!document.hidden)setTimeout(ouverture,800);});return;}if(n<120)setTimeout(function(){attendre(n+1);},500);})(0);
+  if(!REF){var Rf=refuses();if(Rf.length){demanderRefus(Rf[0]);return;}}
+  gps();}catch(x){}}
+ (function attendre(n){if(P.ready&&typeof CHAT!=="undefined"&&typeof chatRender==="function"){setTimeout(ouverture,1500);setInterval(function(){if(!ATT&&(signes().length||finis().length))ouverture();},10*60000);setInterval(function(){if(!document.hidden)try{gps();}catch(x){}},5*60000);document.addEventListener("visibilitychange",function(){if(!document.hidden)setTimeout(ouverture,800);});return;}if(n<120)setTimeout(function(){attendre(n+1);},500);})(0);
 })();
