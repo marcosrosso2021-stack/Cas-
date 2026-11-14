@@ -1,5 +1,5 @@
 /* casô : appli hors ligne + notifications (copie pour la version GitHub ; le serveur casô sert le même code) */
-const CACHE='caso-app-52',APP=/(\/|\/index\.html|\/devis\.html|\/manifest\.webmanifest|\/(?:icon-[a-z0-9-]+|favicon-32)\.png|\/chat\/[\w./-]+\.(?:js|json)|\/lib\/[\w.-]+\.js|\/lib\/real\/[\w.-]+\.(?:jpg|hdr))$/;
+const CACHE='caso-app-53',APP=/(\/|\/index\.html|\/devis\.html|\/manifest\.webmanifest|\/(?:icon-[a-z0-9-]+|favicon-32)\.png|\/chat\/[\w./-]+\.(?:js|json)|\/lib\/[\w.-]+\.js|\/lib\/real\/[\w.-]+\.(?:jpg|hdr))$/;
 const home=()=>new URL('./',self.registration.scope).pathname;
 // repli sur l'accueil seulement pour l'appli elle-même (jamais pour devis.html : sinon l'appli s'ouvrirait dans le module)
 const fromCache=u=>caches.open(CACHE).then(x=>x.match(u.pathname).then(m=>m||(/\.(?:png|webmanifest)$|\/chat\/|\/lib\/|\/devis\.html$/.test(u.pathname)?null:x.match(home()))));
