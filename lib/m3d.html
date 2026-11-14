@@ -1092,6 +1092,7 @@ vst_seg|Murs, sol, plafond et objets ({i} sur {n})…|Walls, floor, ceiling and 
 vst_room|Assemblage de la pièce…|Assembling the room…|Montagem da divisão…|Montaje de la habitación…|Assemblaggio della stanza…|Asamblarea camerei…|Składanie pomieszczenia…|Oda birleştiriliyor…|Сборка комнаты…|تجميع الغرفة…
 vst_load|Chargement des modèles…|Loading the models…|Carregamento dos modelos…|Carga de los modelos…|Caricamento dei modelli…|Încărcarea modelelor…|Wczytywanie modeli…|Modeller yükleniyor…|Загрузка моделей…|تحميل النماذج…
 vid_sum|Pièce de {w} × {d} m, {h} m sous plafond.|Room {w} × {d} m, {h} m ceiling.|Divisão de {w} × {d} m, {h} m de pé-direito.|Habitación de {w} × {d} m, {h} m de altura.|Stanza di {w} × {d} m, {h} m di altezza.|Cameră de {w} × {d} m, {h} m înălțime.|Pomieszczenie {w} × {d} m, {h} m wysokości.|{w} × {d} m oda, {h} m tavan.|Комната {w} × {d} м, потолок {h} м.|غرفة {w} × {d} م، ارتفاع {h} م.
+vst_furn|Meubles et objets captés…|Captured furniture and objects…|Móveis e objetos captados…|Muebles y objetos captados…|Mobili e oggetti rilevati…|Mobilier și obiecte detectate…|Wykryte meble i przedmioty…|Algılanan mobilya ve nesneler…|Найденная мебель и предметы…|الأثاث والأشياء الملتقطة…
 vid_ok|Pièce de {w} × {d} m, {h} m sous plafond : vérifiez les coins de chaque mur.|Room {w} × {d} m, {h} m ceiling: check each wall's corners.|Divisão de {w} × {d} m, {h} m de pé-direito: verifique os cantos de cada parede.|Habitación de {w} × {d} m, {h} m de altura: compruebe las esquinas de cada pared.|Stanza di {w} × {d} m, {h} m di altezza: controllate gli angoli di ogni parete.|Cameră de {w} × {d} m, {h} m înălțime: verificați colțurile fiecărui perete.|Pomieszczenie {w} × {d} m, {h} m wysokości: sprawdź narożniki każdej ściany.|{w} × {d} m oda, {h} m tavan: her duvarın köşelerini kontrol edin.|Комната {w} × {d} м, потолок {h} м: проверьте углы каждой стены.|غرفة {w} × {d} م، ارتفاع {h} م: تحقق من زوايا كل جدار.
 vid_few|Trop peu de murs vus : filmez en tournant lentement sur vous-même.|Too few walls seen: film while turning slowly on the spot.|Poucas paredes vistas: filme rodando devagar sobre si mesmo.|Muy pocas paredes vistas: filme girando despacio sobre sí mismo.|Troppe poche pareti viste: filmate ruotando lentamente su voi stessi.|Prea puțini pereți văzuți: filmați rotindu-vă încet pe loc.|Za mało widocznych ścian: nagrywaj, obracając się powoli w miejscu.|Çok az duvar görüldü: yerinizde yavaşça dönerek çekin.|Видно слишком мало стен: снимайте, медленно поворачиваясь на месте.|عدد قليل جدًا من الجدران: صوّر وأنت تستدير ببطء في مكانك.
 vid_fail|Vidéo non lue : réessayez, ou filmez de nouveau.|Video could not be read: try again or film again.|Vídeo não lido: tente de novo ou filme novamente.|Vídeo no leído: inténtelo de nuevo o vuelva a filmar.|Video non letto: riprovate o filmate di nuovo.|Videoclip necitit: încercați din nou sau filmați din nou.|Nie odczytano wideo: spróbuj ponownie lub nagraj jeszcze raz.|Video okunamadı: tekrar deneyin veya yeniden çekin.|Видео не прочитано: попробуйте снова или переснимите.|تعذّرت قراءة الفيديو: حاول مجددًا أو صوّر من جديد.
@@ -3270,8 +3271,22 @@ function rnvRender(){const el=$('#rnv');if(!el)return;const w=RNV.walls[RNV.cur]
   $$('.rv-th button').forEach(b=>b.onclick=()=>{RNV.cur=+b.dataset.i;rnvRender()});
   $('#rv-go').onclick=rnvMake}
 /* Rénovation par vidéo : moteur dans lib/vid3d.js, chargé au premier usage (mêmes murs qu'une série de photos) */
+/* objets captés dans la vidéo → équipements de la maquette (taille, couleur et orientation mesurées) */
+function vidFurnish(spec,k0){const fp=footprint();if(!fp||!S.scale||!spec||!spec.objects)return 0;const sc=S.scale,ep=S.params.ep,m=ep/2/sc,ox=fp.x0+m,oy=fp.y0+m;
+  const R=spec.room,W=R.width,D=R.depth,DIR={north:[1,0],east:[0,1],south:[-1,0],west:[0,-1]},NX={north:'east',east:'south',south:'west',west:'north'};
+  const dx=DIR[k0],dy=DIR[NX[k0]],A={north:[-W/2,-D/2],east:[W/2,-D/2],south:[W/2,D/2],west:[-W/2,D/2]}[k0];if(!dx||!A)return 0;
+  const sX=Math.abs(dx[0])?W:D,sY=Math.abs(dy[0])?W:D,kx=((fp.x1-fp.x0)*sc-ep)/sX,ky=((fp.y1-fp.y0)*sc-ep)/sY;
+  const TY={bed:o=>o.w>1.2?'bed':'bed1',sofa:'sofa',chair:'chair',table:'table',desk:'desk',fridge:'fridge',microwave:'oven',oven:'oven',tv:'tv',toilet:'wc',sink:'sink',plant:'plant',
+    cabinet:o=>o.h>1.4?'ward':'furn',shelf:'shelf',mirror:'mirror',lamp:'lamp2',ceiling_light:'light',curtain:'furn',box:'furn',bag:'furn',other:'furn'};
+  S.eqs=S.eqs.filter(e=>!e.vid);let n=0;
+  for(const o of spec.objects){let ty=TY[o.type];if(typeof ty==='function')ty=ty(o);if(!ty||!eqDef(ty))continue;
+    const lit=ty==='light',cur=o.type==='curtain';if(!lit&&!cur&&o.y>0.1)continue; // objets posés sur un meuble : pas d'équipement
+    const px=((o.x-A[0])*dx[0]+(o.z-A[1])*dx[1])*kx,py=((o.x-A[0])*dy[0]+(o.z-A[1])*dy[1])*ky,r=(o.rotation||0)*Math.PI/180,b=[-Math.sin(r),-Math.cos(r)],bp=[b[0]*dx[0]+b[1]*dx[1],b[0]*dy[0]+b[1]*dy[1]];
+    const rot=Math.abs(bp[0])>Math.abs(bp[1])?(bp[0]<0?270:90):(bp[1]<0?0:180);
+    S.eqs.push({id:nid('eq'),type:ty,x:ox+px/sc,y:oy+py/sc,rot,sw:[+o.w.toFixed(2),+o.d.toFixed(2)],sh:+(cur?o.y+o.h:o.h).toFixed(2),...(o.color?{col:o.color}:{}),vid:1,lab:o.label});n++}
+  try{build3D();draw3()}catch(e){}try{if(CLIENT)saveProj();else saveArt()}catch(e){}return n}
 let VIDP=null;function vidStart(f){if(!VIDP)VIDP=new Promise((ok,ko)=>{const e=document.createElement('script');e.src='lib/vid3d.js';e.onload=ok;e.onerror=()=>{VIDP=null;ko(new Error('vid3d'))};document.head.appendChild(e)});
-  VIDP.then(()=>window.vidRun(f,{RNV,busy,busyStep,tick,t,toast,fmt,rnvDetect,rnvRender,rnvMake,v2Sess})).catch(()=>toast(t('vid_fail')))}
+  VIDP.then(()=>window.vidRun(f,{RNV,busy,busyStep,tick,t,toast,fmt,rnvDetect,rnvRender,rnvMake,v2Sess,vidFurnish})).catch(()=>toast(t('vid_fail')))}
 /* couleur du sol (sous la jonction mur / sol) et du plafond, lues sur les photos */
 function rnvSample(ws,where){const A=[[],[],[]];for(const w of ws){const cv=w.cv,c=cv.getContext('2d'),fl=where==='floor',a=fl?w.q[3]:w.q[0],e=fl?w.q[2]:w.q[1],dy=(fl?1:-1)*cv.height;
     for(let i=1;i<=12;i++)for(const f of[0.02,0.04,0.07,0.1,0.13]){const tt=i/13,x=a[0]+(e[0]-a[0])*tt,y=a[1]+(e[1]-a[1])*tt+dy*f;if(x<0||y<0||x>=cv.width||y>=cv.height)continue;const p=c.getImageData(x|0,y|0,1,1).data;for(let k=0;k<3;k++)A[k].push(p[k])}}
