@@ -46,7 +46,7 @@ jobs:
       - name: Contrôles du chat avec le nouveau modèle
         if: steps.tr.outputs.ok == '1'
         run: |
-          node outils/chat/controle.js
+          node outils/ia/bilan.js
           npm install --no-save playwright@1.63.0
           npx playwright install --with-deps chromium
           python3 -m http.server 8767 >/dev/null 2>&1 &

@@ -185,3 +185,15 @@ Source du moteur et outils de traduction : le module « caso-ia » (moteur, cata
 - « tva à 10 % » avec une phrase de réglage (un nombre et %) reste un réglage du devis : la TVA des lignes du devis ouvert change
   (avant, casô ajoutait une ligne « Tva 10 u »).
 
+**Cœur de l'IA (14 novembre 2026)** :
+- Chat du module 3D : quand il ne comprend pas une phrase ou ne connaît pas un mot, le chat de l'appli la relit (10 langues, fautes),
+  et le module 3D répond dans la langue de l'usager (`coeur3d` dans le module 3D).
+- Mémoire commune (`chat/memoire.js`) : le chat 3D apprend sur le même serveur que le chat (mots seulement, publiés à partir de 2 usagers) ;
+  les phrases incomprises (chat et 3D) partent masquées (chiffres → #, noms → @) et ne sont lisibles qu'à partir de 3 usagers,
+  avec la clé `CASO_CLE_IA` (`node outils/ia/incompris.js`).
+- Contexte : « mets la rénovation sur le devis de Dupont » va sur le devis en cours de Dupont.
+- Enchaînements : acompte non reçu au bout de 7 jours [Relancer] ; fin de chantier au planning → facture de solde [Oui] ;
+  devis refusé → la raison (prix, délai, autre), reprise par « pourquoi mes devis sont refusés ».
+- Bilan de toute l'IA chaque lundi : `node outils/ia/bilan.js` (commandes, métier, fautes, seuils dans `outils/ia/seuils.json`),
+  puis `outils/chat/essai-appli.js` et `outils/ia/essai-3d.js` dans le navigateur.
+
