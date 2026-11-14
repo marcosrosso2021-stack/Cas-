@@ -1,0 +1,19 @@
+(()=>{const d=n=>{const x=new Date();x.setDate(x.getDate()+n);return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0')};
+db.clients.push({id:'c1',nom:'Martin',tel:'0611111111',adr:'3 rue Victor Hugo, Lyon'},{id:'c2',nom:'Dupont',tel:'0622222222',adr:'12 rue des Lilas, Marseille'},{id:'c3',nom:'Petit',tel:'0633333333',adr:'8 avenue Foch, Paris'});
+db.prices.push({id:'p1',nom:'Carrelage',unit:'m²',prix:45,tva:10},{id:'p2',nom:'Faïence',unit:'m²',prix:50,tva:10},{id:'p3',nom:'Dépose carrelage',unit:'m²',prix:15,tva:10},{id:'p4',nom:'Receveur de douche',unit:'u',prix:350,tva:10},{id:'p5',nom:"Main d'œuvre",unit:'h',prix:45,tva:10},{id:'p6',nom:'Colle carrelage',unit:'sac',prix:18,tva:10});
+db.quotes.push({id:'q1',num:'D2026-001',client:'Martin',date:'2026-10-20',status:'accepte',lines:[{label:'Carrelage',qty:20,unit:'m²',pu:45,tva:10},{label:'Colle carrelage',qty:4,unit:'sac',pu:18,tva:10},{label:"Main d'œuvre",qty:16,unit:'h',pu:45,tva:10}],remise:0},
+ {id:'q2',num:'D2026-002',client:'Petit',date:'2026-09-10',status:'accepte',lines:[{label:'Carrelage',qty:30,unit:'m²',pu:42,tva:10},{label:"Main d'œuvre",qty:21,unit:'h',pu:45,tva:10}],remise:0});
+db.invoices.push({id:'f1',kind:'facture',num:'F2026-001',qid:'q1',date:'2026-10-25',client:{nom:'Martin'},lines:[{label:'Carrelage',qty:20,unit:'m²',pu:45,tva:10}],pays:[{amt:900,d:'2026-10-25',mode:'virement'}],remise:0});
+db.suppliers.push({id:'s1',nom:'Point P'},{id:'s2',nom:'Cedeo'});
+db.achats=[{id:'a1',four:'Point P',type:'facture',date:'2026-10-14',ttc:300,ht:250,cid:'c1',lines:[]}];
+db.hist.push({date:'2026-10-14',nom:'PLAQUE BA13 STD 2500x1200',four:'Point P',prix:8.95,unit:'u'},{date:'2026-10-02',nom:'Plaque BA13',four:'Cedeo',prix:9.4,unit:'u'},{date:'2026-10-14',nom:'Faïence',four:'Point P',prix:21,unit:'m²'});
+db.events.push({id:'e1',t:'rdv',d:d(-1),a:'10:00',b:'11:00',title:'Dupont',cid:'c2'});
+db.chantiers=db.chantiers||[];db.pts=db.pts||[];db.chantiers.push({id:'ch1',cid:'c1',nom:'Martin',adr:'3 rue Victor Hugo, Lyon'});
+{const t0=new Date('2026-10-21T08:00:00').getTime();db.pts.push({id:'t1',c:'ch1',p:'moi',t:'in',ts:t0},{id:'t2',c:'ch1',p:'moi',t:'out',ts:t0+8*36e5},{id:'t3',c:'ch1',p:'moi',t:'in',ts:t0+864e5},{id:'t4',c:'ch1',p:'moi',t:'out',ts:t0+864e5+8*36e5});}
+db.maq3d=[{id:'m1',at:Date.now(),d:{estimation:{lignes:[{poste:'Rebouchage de fissures',unite:'ml',quantite:3,prix_min:20,prix_max:40},{poste:'Peinture murs',unite:'m2',quantite:25,prix_min:15,prix_max:25}]}}}];save();})();
+(()=>{const nm=(o,n)=>{const x=new Date();const w=(x.getDay()+6)%7;x.setDate(x.getDate()-w+7*o+n);return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0')};
+db.clients.push({id:'c4',nom:'Bernard',tel:'0644444444',adr:'25 boulevard Gambetta, Nice'},{id:'c5',nom:'Leroy',tel:'0655555555',adr:'4 place Bellecour, Lyon'});
+db.chantiers.push({id:'ch2',cid:'c2',nom:'Dupont',adr:'12 rue des Lilas, Marseille'},{id:'ch3',cid:'c3',nom:'Petit',adr:'8 avenue Foch, Paris'},{id:'ch4',cid:'c4',nom:'Bernard',adr:'25 boulevard Gambetta, Nice'});
+db.events.push({id:'w1',t:'rdv',d:nm(1,0),a:'08:00',b:'17:00',title:'Chantier Martin - carrelage salle de bain',cid:'c1'},{id:'w2',t:'rdv',d:nm(1,1),a:'08:00',b:'12:00',title:'Chantier Dupont - faïence cuisine',cid:'c2'},
+ {id:'w3',t:'rdv',d:nm(1,2),a:'09:00',b:'17:00',title:'Chantier Bernard - pose parquet',cid:'c4'},{id:'w4',t:'rdv',d:nm(1,3),a:'08:00',b:'16:00',title:'Chantier Leroy - peinture',cid:'c5'},{id:'w5',t:'rdv',d:nm(1,4),a:'08:00',b:'12:00',title:'Chantier Petit - finitions',cid:'c3'},
+ {id:'w6',t:'rdv',d:nm(0,1),a:'08:00',b:'12:00',title:'Chantier Martin',cid:'c1'},{id:'w7',t:'rdv',d:nm(0,3),a:'14:00',b:'18:00',title:'Chantier Dupont',cid:'c2'},{id:'w8',t:'rdv',d:nm(-1,2),a:'08:00',b:'17:00',title:'Chantier Petit - peinture séjour',cid:'c3'});save();})()
