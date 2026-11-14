@@ -336,13 +336,21 @@ P.partagerMaintenant=function(){envoyer();};
  function rappels(){var out=[],auj=ymd(new Date()),now=Date.now();
   var R=(db.events||[]).filter(function(x){return x.t==="rdv"&&x.d===auj&&x.a;}).sort(function(a,b){return String(a.a).localeCompare(String(b.a));}).map(function(x){var c=x.cid&&(db.clients||[]).filter(function(y){return y.id===x.cid;})[0];return String(x.a).replace(/^0/,"").replace(":00","h").replace(":","h")+" "+(c?c.nom:x.title||"");});
   if(R.length)out.push(T("Rendez-vous aujourd’hui : {0}.",[R.join(", ")]));
-  var Q=(db.quotes||[]).filter(function(o){var d=o.sign&&+o.sign.sentAt||Date.parse(o.date);return o.status==="envoye"&&d&&now-d>=7*864e5;}).map(function(o){return o.client||o.num;}).filter(Boolean);
-  if(Q.length)out.push(T("À relancer : {0}.",[Q.slice(0,4).join(", ")]));
+  var Q0=(db.quotes||[]).filter(function(o){var d=o.sign&&+o.sign.sentAt||Date.parse(o.date),r=(o.relances||[]).slice(-1)[0]||0;return o.status==="envoye"&&d&&now-d>=7*864e5&&now-r>=7*864e5;}),Q=Q0.map(function(o){return o.client||o.num;}).filter(Boolean);
+  REL=Q0.slice(0,4).map(function(o){return o.id;});if(Q.length)out.push(T("À relancer : {0}.",[Q.slice(0,4).join(", ")]));
   var F=(db.invoices||[]).filter(function(f){if(!f.num||f.kind==="avoir"||!f.due||f.due>=auj)return false;var t=0;try{t=faTot(f).ttc;}catch(x){}var p=(f.pays||[]).reduce(function(a,y){return a+(+y.amt||0);},0);f._reste=t-p;return f._reste>0.5;}).map(function(f){return f.num+" "+E(f._reste);});
   if(F.length)out.push(T("Factures en retard : {0}.",[F.slice(0,3).join(", ")]));
   /* acompte demandé il y a 7 jours ou plus, pas encore reçu (sans attendre l'échéance) */
   var A=(db.invoices||[]).filter(function(f){if(!f.num||f.kind!=="acompte"||f.due&&f.due<auj)return false;var d=Date.parse(f.date);if(!d||now-d<7*864e5)return false;var t=0;try{t=faTot(f).ttc;}catch(x){}var p=(f.pays||[]).reduce(function(a,y){return a+(+y.amt||0);},0);f._reste=t-p;return f._reste>0.5;});
   if(A.length)ACO=A[0].id;if(A.length)out.push(T("Acompte non reçu : {0}.",[A.slice(0,3).map(function(f){return f.num+" "+((f.client&&f.client.nom)||"")+" "+E(f._reste);}).join(", ")]));return out;}
+ /* devis envoyés sans réponse depuis 7 jours : le message de relance prêt, par SMS, WhatsApp ou e-mail */
+ var REL=[];P.relancerDevis=function(){var L=REL;REL=[];langue();L.forEach(function(id){var o=(db.quotes||[]).filter(function(x){return x.id===id;})[0];if(!o)return;
+   var c=(db.clients||[]).filter(function(x){return hn(x.nom)===hn(o.client);})[0]||{},d=o.sign&&+o.sign.sentAt?new Date(+o.sign.sentAt):new Date(o.date);
+   var msg=T("Bonjour {0}, je reviens vers vous au sujet du devis {1} envoyé le {2}. L’avez-vous bien reçu ? Je reste à votre disposition pour en parler.",[o.client||"",o.num||"",P.B.fdate(d)])+(o.sign&&o.sign.url?" "+o.sign.url:"");
+   var tel=String(c.tel||o.tel||"").replace(/[^\d+]/g,""),b=encodeURIComponent(msg),ios=/iP(hone|ad)/.test(navigator.userAgent);
+   var lien=function(h,lab){return '<a class="btn sm sec" href="'+e(h)+'" onclick="casoPont.relance(\''+o.id+'\')">'+e(lab)+'</a>';};
+   bot('<p dir="auto">'+e(msg)+'</p><div class="msg-act">'+(tel?lien("sms:"+tel+(ios?"&":"?")+"body="+b,T("SMS"))+lien("https://wa.me/"+tel.replace(/^0/,"33").replace(/^\+/,"")+"?text="+b,"WhatsApp"):"")+lien("mailto:"+encodeURIComponent(c.email||"")+"?subject="+encodeURIComponent(T("Devis")+" "+(o.num||""))+"&body="+b,T("E-mail"))+'</div>');});};
+ P.relance=function(id){var o=(db.quotes||[]).filter(function(x){return x.id===id;})[0];if(!o)return;o.relances=(o.relances||[]).concat(Date.now());try{storeQ(o);}catch(x){save();}};
  var ACO=null;P.relancer=function(){var id=ACO;ACO=null;if(!id||typeof faShow!=="function")return;faShow(id);if(typeof faRelance==="function")setTimeout(faRelance,400);};
  /* fin de chantier : le dernier jour au planning est passé → facture (de solde s'il y a eu un acompte) */
  function finis(){var auj=ymd(new Date());return (db.quotes||[]).filter(function(o){if(!o||o.status!=="accepte"||o.ench2)return false;var E2=(db.events||[]).filter(function(x){return x.qid===o.id;});if(!E2.length)return false;
@@ -356,7 +364,7 @@ P.partagerMaintenant=function(){envoyer();};
   bot('<p>'+e(T("Devis {0} de {1} refusé : pour quelle raison ?",[o.num||"",o.client||""]))+'</p><div class="msg-act">'+[["prix","Prix"],["delai","Délai"],["autre","Autre"]].map(function(r){return '<button class="btn sm sec" onclick="casoPont.raison(\''+r[0]+'\')">'+e(T(r[1]))+'</button>';}).join("")+'</div>');}
  P.raison=function(r){var o=(db.quotes||[]).filter(function(x){return x.id===REF;})[0];REF=null;if(!o)return;o.refus=r;try{storeQ(o);}catch(x){save();}langue();bot('<p>'+e(T("Noté."))+'</p>');};
  function ouverture(){try{if(!P.ready||typeof db==="undefined")return;langue();var k="caso_rappel_jour",auj=ymd(new Date()),v=null;try{v=localStorage.getItem(k);}catch(x){}
-  if(v!==auj){var L=rappels();try{localStorage.setItem(k,auj);}catch(x){}if(L.length)bot(L.map(function(x){return '<p dir="auto">'+e(x)+'</p>';}).join("")+(ACO?bouton(T("Relancer"),"relancer"):""));}
+  if(v!==auj){var L=rappels();try{localStorage.setItem(k,auj);}catch(x){}if(L.length)bot(L.map(function(x){return '<p dir="auto">'+e(x)+'</p>';}).join("")+(REL.length||ACO?'<div class="msg-act">'+(REL.length?'<button class="btn sm" onclick="casoPont.relancerDevis()">'+e(T("Relancer les devis"))+'</button>':'')+(ACO?'<button class="btn sm sec" onclick="casoPont.relancer()">'+e(T("Relancer l’acompte"))+'</button>':'')+'</div>':""));}
   if(!ATT){var S=signes();if(S.length){proposerSigne(S[0]);return;}var Fn=finis();if(Fn.length){proposerFin(Fn[0]);return;}}
   if(!REF){var Rf=refuses();if(Rf.length)demanderRefus(Rf[0]);}}catch(x){}}
  (function attendre(n){if(P.ready&&typeof CHAT!=="undefined"&&typeof chatRender==="function"){setTimeout(ouverture,1500);setInterval(function(){if(!ATT&&(signes().length||finis().length))ouverture();},10*60000);document.addEventListener("visibilitychange",function(){if(!document.hidden)setTimeout(ouverture,800);});return;}if(n<120)setTimeout(function(){attendre(n+1);},500);})(0);
