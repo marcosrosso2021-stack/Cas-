@@ -9,3 +9,7 @@ Ressources du rendu photo du module 3D casô
 Reconnaissance sur les photos (Rénovation : prises, lumières, eau, radiateurs, sanitaires)
 - Modèle D-FINE M entraîné sur Objects365 : D-FINE, Peng et al., licence Apache 2.0 — https://github.com/Peterande/D-FINE ; base d'images Objects365, licence CC BY 4.0 — https://www.objects365.org ; export ONNX : onnx-community/dfine_m_obj365-ONNX (Hugging Face). Téléchargé par l'appareil au premier usage, puis gardé en cache.
 - ONNX Runtime Web 1.20.1 (Microsoft, licence MIT), chargé depuis cdnjs.
+
+Lecture des murs sur les photos (Rénovation : bords et coins des murs)
+- Détecteur de lignes rapide (Fast Line Detector, J. H. Lee et al., 2014) d'OpenCV, opencv_contrib/modules/ximgproc/src/fast_line_detector.cpp, et filtre de Canny d'OpenCV (modules/imgproc), licence Apache 2.0 — https://github.com/opencv/opencv_contrib (commit b67a855) ; texte de la licence : ../opencv.LICENSE.
+  Modifications : réécrits en JavaScript dans le module 3D (index.html, fonctions cvCanny et cvFLD) ; Canny en couleur (canal au plus fort gradient) ; segments utilisés pour caler les bords du mur photographié (rnvSnap).
