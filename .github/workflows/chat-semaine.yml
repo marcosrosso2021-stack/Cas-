@@ -1,14 +1,14 @@
-name: Contrôle du chat
+name: Contrôle de l'IA
 
-# Chaque lundi matin (et à la main, onglet Actions) : les phrases de contrôle du chat, les exemples dans les 10 langues,
-# puis un essai dans l'appli (navigateur). Si quelque chose a changé, le contrôle échoue et GitHub prévient par e-mail ;
+# Chaque lundi matin (et à la main, onglet Actions) : le bilan de toute l'IA (commandes, exemples dans les 10 langues,
+# questions du métier, fautes de frappe, avec des seuils), puis les essais dans l'appli et dans le module 3D (navigateur). Si quelque chose a changé, le contrôle échoue et GitHub prévient par e-mail ;
 # le détail est dans le résumé du contrôle.
 on:
   schedule:
     - cron: '17 5 * * 1'
   workflow_dispatch:
   pull_request:
-    paths: ['chat/**', 'index.html', 'outils/chat/**']
+    paths: ['chat/**', 'index.html', 'outils/chat/**', 'outils/ia/**']
 
 permissions:
   contents: read
@@ -24,8 +24,8 @@ jobs:
         with:
           node-version: 22
 
-      - name: Phrases de contrôle et exemples traduits
-        run: node outils/chat/controle.js
+      - name: Bilan de l'IA (commandes, métier, fautes) avec seuils
+        run: node outils/ia/bilan.js
 
       - name: Navigateur pour l'essai dans l'appli
         run: |
@@ -37,3 +37,9 @@ jobs:
           python3 -m http.server 8767 >/dev/null 2>&1 &
           sleep 2
           node outils/chat/essai-appli.js http://localhost:8767/index.html
+
+      - name: Essai du chat du module 3D
+        run: |
+          (python3 -m http.server 8767 >/dev/null 2>&1 &) || true
+          sleep 1
+          node outils/ia/essai-3d.js http://localhost:8767/index.html

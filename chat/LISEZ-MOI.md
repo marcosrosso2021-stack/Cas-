@@ -106,8 +106,29 @@ message l'attend au plus 4 s.
   ce que l'usager a appris lui-même passe avant ; un « non » l'efface chez lui. Serveur : `window.CASO_APPRIS`
   (défaut https://api.caso.fr).
 - **Contrôle chaque semaine** : `.github/workflows/chat-semaine.yml` lance `outils/chat/controle.js` (363 phrases de contrôle,
-  exemples dans les 10 langues) et `outils/chat/essai-appli.js` (essais dans l'appli). `node outils/chat/controle.js --base`
+  exemples dans les 10 langues), `outils/chat/fautes.js` (une faute de frappe sur 100 phrases par langue, seuil 80 % compris)
+  et `outils/chat/essai-appli.js` (essais dans l'appli). `node outils/chat/controle.js --base`
   enregistre une nouvelle référence après un changement voulu.
+
+**Étapes du 11 novembre 2026** (`intel.js`) :
+- « le client de jeudi » avec plusieurs clients ou aucun ce jour-là : le chat le dit (« Le jeudi 5 novembre : Martin, Petit. Lequel ? »), on répond par le nom.
+- « ajoute une marge de 10 % » (« sur la fourniture », « sur la main d'œuvre ») : prix des lignes augmentés, annulable.
+- « devis pour Martin carrelage… » : le client reste Martin ; « dépose carrelage » ne prend plus le prix du carrelage ;
+  « carrelage 14 m² et main d'oeuvre 8 h » donne deux lignes ; « à », « de », « la » ne font plus passer une phrase pour de l'anglais.
+- Apprendre du geste : après « Je n'ai pas compris », l'écran ouvert à la main juste après est retenu pour cette phrase, en proposition.
+- « fais le devis de la rénovation » : l'estimation de la Rénovation (postes cochés, quantités) devient un devis, avec les prix de Mes services
+  quand ils correspondent, sinon le milieu de la fourchette indicative (TTC → HT, TVA 10 %), signalé.
+- À l'ouverture du chat (une fois par jour) : une ligne de rappel (rendez-vous du jour, devis envoyés depuis 7 jours, factures en retard).
+- Devis signé (30 derniers jours) : « facture d'acompte de 30 % et 3 j de chantier au planning à partir du lundi 16 ? » [Oui] →
+  les jours sont bloqués au planning et la facture d'acompte s'ouvre.
+- Message d'un client collé (« Bonjour, je suis disponible jeudi à 14h30… Cordialement, Mme Petit ») → « Rendez-vous jeudi 14h30 avec Mme Petit ? » [Oui].
+- Facture fournisseur : « ↑ Colle carrelage C2 25 kg : +13 % (13,20 € → 14,90 €) » quand le prix monte de 5 % ou plus chez ce fournisseur.
+- Mini modèle : `outils/mini` et `.github/workflows/mini-semaine.yml` le réentraînent chaque lundi avec les phrases apprises par plusieurs usagers.
+- Plus rapide : le chat ne teste une règle de traduction que si le texte contient ses mots (`peut`, `motsRequis`) et ne construit
+  ses regex qu'au premier usage (`rxOf`, `LazyRe`, `B.prechauffer` quand le téléphone ne fait rien) ; seules les réponses dans la
+  langue de l'appli sont chargées à l'ouverture (les 8 autres ensuite) ; le module Devis se précharge après le chat. Mêmes
+  traductions qu'avant sur 2 026 phrases des 10 langues. Téléphone lent simulé (processeur ÷ 6) : 1re réponse 15,2 s → 3,5 s,
+  3e réponse 11,3 s → 1,8 s, chat prêt 3,6 s → 2,5 s.
 
 **Toutes les fonctions de l'appli par le chat** (10 langues, fautes et tournures libres ; moteur : `brain/p8app.js`,
 intentions `app.*` ; exécution : `pont.js` → `appFaire` / `autreFaire`) :
@@ -145,3 +166,34 @@ Quand rien n'est compris : « Je n'ai pas compris. », sans phrase d'exemple ; l
 
 Le chat garde seulement ce qu'il apprend, sous la clé `caso_ia` (et `caso_ia_mini` pour le mini modèle).
 Source du moteur et outils de traduction : le module « caso-ia » (moteur, catalogues, contrôles).
+
+**Fautes de frappe dans les 10 langues (11 novembre 2026)** :
+- Le correcteur connaît aussi le vocabulaire de chaque langue (règles de traduction : « radidor » → radiador, « portta » → porta),
+  corrige aussi le russe et l'arabe, et relit la phrase après correction (langue et mots).
+- Un mot seul que rien ne reconnaît est lu dans la langue de l'appli.
+- Avec une faute, compris dans les 9 autres langues : 42 à 67 % avant, 87 à 98 % après. Français (phrases artisan) : 56 → 62 sur 74.
+- « annlue » → annule ; « spuer », « parfiat » → politesse ; « șterge clientul Paul » (et la même phrase dans les autres langues) supprime la fiche.
+- Mode Artisan : « demande de devis (de Dupont) » ouvre un nouveau devis, dans les 10 langues. En mode Bricoleur, la phrase garde son sens
+  (demander un devis à un artisan).
+
+**Questions du métier (13 novembre 2026)** (`brain/p8me.js` du moteur) :
+- Réponses fixes, vérifiées sur les textes en vigueur le 13 novembre 2026, dans les 10 langues. Ce n'est pas une conversation libre.
+- TVA (10 %, 5,5 %, 20 %, mention à la place de l'attestation depuis 2025), garanties (décennale, parfait achèvement, bon fonctionnement),
+  rétractation et paiement interdit 7 jours (contrat signé chez le client), acompte, devis obligatoire (dépannage), délais de paiement
+  entre professionnels, retenue de garantie, autoliquidation, sections de câble (NF C 15-100), pentes d'évacuation, séchage d'une chape.
+- Calculs : dalle de béton (surface et épaisseur), parpaings, nombre de carreaux d'un format, m³ ↔ litres, « combien fait 12 m² à 45 € ».
+- « tva à 10 % » avec une phrase de réglage (un nombre et %) reste un réglage du devis : la TVA des lignes du devis ouvert change
+  (avant, casô ajoutait une ligne « Tva 10 u »).
+
+**Cœur de l'IA (14 novembre 2026)** :
+- Chat du module 3D : quand il ne comprend pas une phrase ou ne connaît pas un mot, le chat de l'appli la relit (10 langues, fautes),
+  et le module 3D répond dans la langue de l'usager (`coeur3d` dans le module 3D).
+- Mémoire commune (`chat/memoire.js`) : le chat 3D apprend sur le même serveur que le chat (mots seulement, publiés à partir de 2 usagers) ;
+  les phrases incomprises (chat et 3D) partent masquées (chiffres → #, noms → @) et ne sont lisibles qu'à partir de 3 usagers,
+  avec la clé `CASO_CLE_IA` (`node outils/ia/incompris.js`).
+- Contexte : « mets la rénovation sur le devis de Dupont » va sur le devis en cours de Dupont.
+- Enchaînements : acompte non reçu au bout de 7 jours [Relancer] ; fin de chantier au planning → facture de solde [Oui] ;
+  devis refusé → la raison (prix, délai, autre), reprise par « pourquoi mes devis sont refusés ».
+- Bilan de toute l'IA chaque lundi : `node outils/ia/bilan.js` (commandes, métier, fautes, seuils dans `outils/ia/seuils.json`),
+  puis `outils/chat/essai-appli.js` et `outils/ia/essai-3d.js` dans le navigateur.
+

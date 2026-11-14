@@ -1,0 +1,68 @@
+name: Mini modèle de la semaine
+
+# Chaque lundi : les phrases que plusieurs usagers ont apprises au chat (serveur casô, /api/appris) rejoignent la base
+# d'apprentissage ; le mini modèle est réentraîné. S'il comprend au moins 98,5 % des phrases jamais vues et que les contrôles du chat
+# passent, une PR « Mini modèle de la semaine » est ouverte (à fusionner à la main).
+on:
+  schedule:
+    - cron: '41 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  mini:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 22
+
+      - name: Phrases apprises par les usagers
+        id: ph
+        run: echo "n=$(node outils/mini/apprendre-partage.js)" >> "$GITHUB_OUTPUT"
+
+      - name: Réentraînement
+        if: steps.ph.outputs.n != '0' || github.event_name == 'workflow_dispatch'
+        id: tr
+        run: |
+          pip install --quiet numpy==2.3.4
+          node outils/mini/gen-data.js
+          python3 outils/mini/train_mini.py
+          # mesure sur des phrases jamais vues (modèle entraîné sans elles) : au moins 98,5 % de demandes comprises
+          node -e '
+            const y=require("./outils/mini/caso-mini-model.json").stats.phrases_nouvelles.intention;
+            require("fs").appendFileSync(process.env.GITHUB_STEP_SUMMARY,"Mini modèle : "+(y*100).toFixed(1)+" % des phrases jamais vues comprises\n");
+            process.exit(y>=0.985?0:1)' || { echo "ok=0" >> "$GITHUB_OUTPUT"; exit 0; }
+          FINAL=1 python3 outils/mini/train_mini.py
+          cp outils/mini/caso-mini-model.json chat/caso-mini-model.json
+          echo "ok=1" >> "$GITHUB_OUTPUT"
+
+      - name: Contrôles du chat avec le nouveau modèle
+        if: steps.tr.outputs.ok == '1'
+        run: |
+          node outils/ia/bilan.js
+          npm install --no-save playwright@1.63.0
+          npx playwright install --with-deps chromium
+          python3 -m http.server 8767 >/dev/null 2>&1 &
+          sleep 2
+          node outils/chat/essai-appli.js http://localhost:8767/index.html
+
+      - name: PR « Mini modèle de la semaine »
+        if: steps.tr.outputs.ok == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          b="mini-$(date +%Y%m%d)"
+          git config user.name "casô (contrôle)"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$b"
+          git add chat/caso-mini-model.json outils/mini/feedback.jsonl
+          git commit -m "Mini modèle de la semaine : ${{ steps.ph.outputs.n }} phrases apprises par les usagers"
+          git push origin "$b"
+          gh pr create --base main --head "$b" --title "Mini modèle de la semaine ($(date +%d/%m))" --body "Réentraîné avec ${{ steps.ph.outputs.n }} phrases apprises par plusieurs usagers. Contrôles du chat passés. À fusionner à la main."

@@ -13,7 +13,8 @@ db.invoices.push({id:'f1',kind:'facture',num:'F2026-001',qid:'q1',date:'2026-10-
 db.suppliers.push({id:'s1',nom:'Point P'},{id:'s2',nom:'Cedeo'});
 db.achats=[{id:'a1',four:'Point P',type:'facture',date:'2026-10-14',ttc:300,ht:250,cid:'c1',lines:[]}];
 db.hist.push({date:'2026-10-14',nom:'PLAQUE BA13 STD 2500x1200',four:'Point P',prix:8.95,unit:'u'},{date:'2026-10-02',nom:'Plaque BA13',four:'Cedeo',prix:9.4,unit:'u'},{date:'2026-10-14',nom:'Faïence',four:'Point P',prix:21,unit:'m²'});
-db.events.push({id:'e1',t:'rdv',d:d(-1),a:'10:00',b:'11:00',title:'Dupont',cid:'c2'});save();})()`;
+db.events.push({id:'e1',t:'rdv',d:d(-1),a:'10:00',b:'11:00',title:'Dupont',cid:'c2'});
+db.maq3d=[{id:'m1',at:Date.now(),d:{estimation:{lignes:[{poste:'Rebouchage de fissures',unite:'ml',quantite:3,prix_min:20,prix_max:40},{poste:'Peinture murs',unite:'m2',quantite:25,prix_min:15,prix_max:25}]}}}];save();})()`;
 /* [langue, phrases, textes attendus dans les réponses (dans l'ordre des phrases ; "" = pas de contrôle)] */
 const ESSAIS=[
  ["fr",["crée le client Durand, rendez-vous jeudi 9h et prépare le devis"],[/Nouveau client : Durand[\s\S]*Durand[\s\S]*devis de Durand/]],
@@ -28,12 +29,22 @@ const ESSAIS=[
  ["fr",["nouveau devis pour Petit","faïence 10 m² à 18 €"],["",/À vérifier[\s\S]*acheté 21/]],
  ["es",["¿cuál es mi obra más rentable?"],[/rentables/]],
  ["en",["where is BA13 the cheapest"],[/Point P/]],
- ["fr",["devis pour Dupont carrelage 14 m² et main d'oeuvre 8 h"],[/Carrelage[\s\S]*14/]],
+ ["fr",["devis pour Dupont carrelage 14 m² et main d'oeuvre 8 h"],[/Carrelage 14 m²[\s\S]*Main d.œuvre 8 h/]],
  ["fr",["rdv mardi 9h avec Dupont"],[/Dupont/]],
  ["fr",["rdv demain à 9h chez Dupont et envoie-lui un SMS pour confirmer le rdv"],[/Dupont[\s\S]*SMS/]],
  ["fr",["nouveau devis pour Petit, ajoute faïence 10 m² à 50 €"],[/Faïence/]],
  ["fr",["nouveau devis pour Petit","durée des travaux 5 jours sur le devis"],["",/[Dd]ébut des travaux/]],
- ["fr",["combien d'heures cette semaine"],[/heures/]]
+ ["fr",["combien d'heures cette semaine"],[/heures/]],
+ ["fr",["devis pour Martin carrelage 20 m² à 45 €"],[/Martin Déjà[\s\S]*Carrelage/]],
+ ["fr",["dépose carrelage 20 m²"],[/Dépose carrelage[\s\S]*15,00/]],
+ ["fr",["nouveau devis pour Petit","carrelage 20 m² à 40 €","ajoute une marge de 10 %"],["","",/Marge de 10 %/]],
+ ["fr",["montre moi la paperasse"],[/compris/]],
+ ["fr",["quel taux de tva pour une rénovation"],[/10 %[\s\S]*5,5 %/]],
+ ["fr",["combien de parpaings pour un mur de 10 m²"],[/105 parpaings/]],
+ ["es",["qué tipo de iva para una reforma"],[/IVA en una vivienda/]],
+ ["fr",["nouveau devis pour Petit","carrelage 20 m² à 40 €","tva à 5,5 %"],["",/880,00/,/844/]],
+ ["fr",["nouveau devis pour Petit","appelle ce client"],["",/Petit : 0633333333/]],
+ ["fr",["nouveau devis pour Dupont","carrelage 10 m² à 40 €","nouveau devis pour Petit","mets la rénovation sur le devis de Dupont"],["","","",/Rebouchage de fissures[\s\S]*Peinture murs[\s\S]*Total du devis 1[\s\S]*€ TTC/]]
 ];
 (async()=>{const b=await chromium.launch();let ko=0;const out=[];
  for(const [lg,phr,att] of ESSAIS){const ctx=await b.newContext({serviceWorkers:"block"}),p=await ctx.newPage();const err=[];p.on("pageerror",e=>err.push(e.message));

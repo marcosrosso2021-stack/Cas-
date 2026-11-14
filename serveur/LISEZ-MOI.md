@@ -69,6 +69,36 @@ Copie régulièrement le dossier `donnees` (fichier `data.json`) sur une clé US
 - **N'ouvre jamais ce poste directement sur internet.** Pour y accéder depuis un chantier, utilise un accès privé de type VPN (par exemple Tailscale).
 - Les heures de travail sont des données personnelles : préviens tes salariés.
 
+### En ligne (Clever Cloud) : HTTPS, serveur, domaine
+
+Quand casô tourne sur Clever Cloud (ou tout hébergeur qui s'occupe du HTTPS), le serveur le détecte tout seul (variable `APP_HOME`) et :
+
+- renvoie en **https** toute visite arrivée en clair (`http`) ;
+- envoie l'en-tête **HSTS** (le navigateur refuse alors le `http` pendant 2 ans) ;
+- lit la **vraie adresse du visiteur** (en-têtes du proxy), pour les limites d'essais et la preuve de signature ;
+- fabrique les **liens de signature et de facture en https**.
+
+Réglages conseillés sur Clever Cloud (onglet **Variables d'environnement**) :
+
+| Variable | Valeur | À quoi ça sert |
+|---|---|---|
+| `SETUP_CODE` | un mot secret long | Créer le compte patron à distance (sinon impossible : c'est voulu) |
+| `PUBLIC_URL` | `https://ton-domaine` | Adresse exacte dans les liens envoyés aux clients |
+| `VAPID_SUBJECT` | `mailto:toi@ton-domaine` | Notifications |
+| `HSTS_PRELOAD` | `1` *(plus tard)* | Seulement une fois sûr que tout passe en https, et si tu inscris le domaine sur hstspreload.org |
+
+Pas besoin de `TRUST_PROXY` ni de `PORT` sur Clever Cloud : ils sont gérés automatiquement. En local (poste du bureau), rien ne change : le serveur reste en `http` sur le réseau interne, sans HSTS ni redirection.
+
+**Domaine (DNS), à faire une fois chez ton registraire :**
+
+- active la **double authentification** et le **verrou de transfert** (registrar lock) sur le compte du domaine ;
+- ajoute un enregistrement **CAA** `0 issue "letsencrypt.org"` : seule l'autorité qui émet le certificat de Clever Cloud peut en créer un ;
+- active **DNSSEC** si ton registraire le propose ;
+- si tu envoies des e-mails depuis ce domaine (devis, factures) : **SPF**, **DKIM** et **DMARC**, sinon tes messages partent en spam et ton domaine peut être usurpé ;
+- ne laisse pas d'entrée DNS qui pointe vers un service que tu n'utilises plus.
+
+Le certificat HTTPS (Let's Encrypt) est fourni et renouvelé par Clever Cloud : rien à acheter.
+
 ## Utiliser un téléphone Android comme poste (préparé, non testé)
 
 Possible avec l'application **Termux** (à installer depuis F-Droid) : copie ce dossier dans le téléphone puis lance `bash termux-demarrer.sh`. Le téléphone doit rester allumé, branché, avec Termux ouvert. **Cette voie n'a pas été testée sur un vrai téléphone** ; l'ordinateur reste le choix le plus fiable. Un iPhone ne peut pas servir de poste, seulement de téléphone d'employé.
@@ -270,3 +300,9 @@ Relecture complète du code : environ 60 défauts corrigés, chacun avec un test
 - **Vieux iPhone** (iOS antérieur à 16.4, par exemple iPhone 6s ou 7) : avant, l'appli restait blanche. Maintenant, seul le module qui comprend les phrases du planning et des paiements dictés manque ; le reste fonctionne (vérifié en simulant l'absence du module, pas sur un vrai vieil iPhone).
 
 Vitesse (mesurée sur un processeur ralenti comme un téléphone) : ouverture environ 25 % plus rapide, enregistrement et historique 2 fois plus rapides, pointage près de 4 fois plus rapide ; l'animation d'accueil s'arrête au lieu de tourner en arrière-plan et dure 1,2 s au lieu de 2,2 s aux ouvertures suivantes.
+
+**IA (14 novembre 2026)** :
+- `GET /api/appris?d=3d`, `POST /api/appris` avec `d:"3d"` : mots appris par le chat du module 3D (synonymes de meubles, noms de couleurs), publiés à partir de 2 usagers.
+- `POST /api/incompris` : phrases incomprises, masquées sur l'appareil. `GET /api/incompris` avec l'en-tête `x-caso-cle` : seulement si la variable
+  `CASO_CLE_IA` est définie sur le serveur (Clever Cloud › Environment variables), et seulement les phrases envoyées par au moins 3 usagers. Fichier : `incompris.json`.
+
