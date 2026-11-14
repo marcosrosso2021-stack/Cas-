@@ -689,6 +689,10 @@ header .cso-tile{width:38px;height:38px}
 .st-f .btn{margin-top:20px}
 body.starting #hd{display:none}
 #m3d{position:fixed;inset:0;z-index:9000;background:var(--bg)}
+/* travail du module 3D poursuivi en arrière-plan : pastille de suivi, touchée pour y revenir */
+#m3d-pill{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 74px);z-index:8000;display:flex;align-items:center;gap:10px;max-width:calc(100vw - 32px);padding:10px 16px;border:0;border-radius:999px;background:var(--ink,#111);color:var(--bg,#fff);font:600 14px/1.2 inherit;box-shadow:0 6px 24px rgba(0,0,0,.18);cursor:pointer}
+#m3d-pill[hidden]{display:none}#m3d-pill span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#m3d-pill i{flex:none;width:14px;height:14px;border-radius:50%;border:2px solid rgba(127,127,127,.35);border-top-color:#ffc21a;animation:m3dsp .8s linear infinite}
+#m3d-pill.ok i{border:0;background:#ffc21a;animation:none}@keyframes m3dsp{to{transform:rotate(360deg)}}@media (prefers-reduced-motion:reduce){#m3d-pill i{animation:none}}
 #dvx{position:fixed;inset:0;z-index:8000;background:var(--bg)}
 #dvx iframe{position:absolute;left:0;right:0;top:env(safe-area-inset-top,0px);width:100%;height:calc(100% - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));border:0;background:var(--bg)}
 .ent-lg{display:flex;align-items:center;gap:12px;margin:4px 0 6px}
@@ -2307,28 +2311,33 @@ body.tr-on{overflow:hidden}
  <button onclick="tab('histo',this)"><span class="pill"><svg class="i"><use href="#i-archive"/></svg></span>Historique</button>
 </nav>
 
-<div id="m3d" hidden></div>
+<div id="m3d" hidden></div><button type="button" id="m3d-pill" hidden onclick="m3dOpen(M3D&&M3D.cli)"><i></i><span></span></button>
 <div id="dvx" hidden></div>
 <script>
 /* module casô 3D : artisan (depuis le chat) ou bricoleur (plein écran), dans une page à part pour garder la mémoire et les données séparées */
 /* module 3D : lib/m3d.html, chargé au premier usage (gardé hors ligne par sw.js) */
 let M3D_SRC=null;function m3dSrc(){if(M3D_SRC)return Promise.resolve(M3D_SRC);return fetch('lib/m3d.html').then(r=>{if(!r.ok)throw new Error('m3d '+r.status);return r.text()}).then(t=>M3D_SRC=t)}
 let M3D=null;
-function m3dOpen(cli){if(M3D)return;const m={cli:!!cli};M3D=m;$('m3d').hidden=false;
+function m3dOpen(cli){if(M3D){if(!M3D.bg)return;if(!!cli===M3D.cli){M3D.bg=false;M3D.ready=false;$('m3d').hidden=false;m3dPill();return}m3dClose(true)}const m={cli:!!cli};M3D=m;$('m3d').hidden=false;
  m3dSrc().then(src=>{if(M3D!==m)return;const f=document.createElement('iframe'),a=accountGet()||{};
-  f.setAttribute('allow','camera');f.title='casô 3D';
+  f.setAttribute('allow','camera; screen-wake-lock');f.title='casô 3D';
   f.srcdoc=cli?src.replace('const CLIENT=/*CLIENT*/false;',()=>'const CLIENT=true;'):src;
   f.onload=()=>{try{f.contentWindow.postMessage({source:'caso-app',type:'init',data:{lang:vlGet(),name:a.prenom||'',email:a.email||''}},'*')}catch(e){}};
   m.f=f;$('m3d').appendChild(f)}).catch(()=>{if(M3D===m){M3D=null;$('m3d').hidden=true}})}
-function m3dClose(){if(!M3D)return;if(M3D.f)M3D.f.remove();M3D=null;$('m3d').hidden=true}
+/* pendant un travail long du module (série de photos, maquette), le quitter le garde ouvert en arrière-plan : le calcul continue (sauf déconnexion) */
+function m3dClose(force){if(!M3D)return;if(M3D.busy&&!force){M3D.bg=true;$('m3d').hidden=true;m3dPill();return}if(M3D.f)M3D.f.remove();M3D=null;$('m3d').hidden=true;m3dPill()}
+function m3dPill(){const b=$('m3d-pill');if(!b)return;const on=!!(M3D&&M3D.bg&&(M3D.busy||M3D.ready));b.hidden=!on;if(!on)return;b.classList.toggle('ok',!M3D.busy);b.lastChild.textContent=M3D.busy?(M3D.lbl||'…')+(M3D.n?' · '+Math.min(M3D.n,M3D.done+1)+'/'+M3D.n:''):(M3D.readyLbl||'')}
 /* module 3D : préchargé quand le téléphone ne fait rien, pour qu'il s'ouvre vite (et hors ligne) */
 setTimeout(()=>{const go=()=>m3dSrc().catch(()=>{});window.requestIdleCallback?requestIdleCallback(go,{timeout:15000}):go()},8000);
 window.addEventListener('message',e=>{if(!M3D||!M3D.f||e.source!==M3D.f.contentWindow)return;const m=e.data;if(!m||m.source!=='caso-3d')return;
  if(m.type==='close'&&!M3D.cli){m3dClose();go('chat')}
+ /* travail long : étapes suivies ; « Continuer en arrière-plan » ramène à la conversation, la pastille montre l'étape en cours puis le résultat prêt */
+ else if(m.type==='busy'&&m.data){const d=m.data;M3D.busy=!!d.on;M3D.lbl=String(d.label||'').slice(0,80);M3D.done=+d.done||0;M3D.n=+d.n||0;if(!d.on){M3D.readyLbl=String(d.ready||'').slice(0,60);M3D.ready=!!M3D.bg}m3dPill()}
+ else if(m.type==='bg'&&M3D.busy&&!M3D.cli){M3D.bg=true;$('m3d').hidden=true;go('chat');m3dPill()}
  /* demande du chat Pro tapée dans le chat 3D (devis, client, rendez-vous…) : elle repart dans la conversation de casô */
  else if(m.type==='pro'&&!M3D.cli){const t=String(m.data&&m.data.text||'').trim();if(t){m3dClose();go('chat');chatSend(t)}}
  else if(m.type==='mode'&&M3D.cli&&m.data&&m.data.mode==='artisan'){m3dClose();modeOpen();modePick('artisan')}
- else if(m.type==='logout'&&M3D.cli){if(confirm(i18nT('Se déconnecter ? Tes données restent sur ce téléphone.'))){m3dClose();try{localStorage.setItem('caso_locked','1')}catch(x){}if(window.VAULT&&VAULT.on)VAULT.lockNow();else showLogin()}}
+ else if(m.type==='logout'&&M3D.cli){if(confirm(i18nT('Se déconnecter ? Tes données restent sur ce téléphone.'))){m3dClose(true);try{localStorage.setItem('caso_locked','1')}catch(x){}if(window.VAULT&&VAULT.on)VAULT.lockNow();else showLogin()}}
  else if(m.type==='addToChantier'&&!M3D.cli&&m.data&&m.data.projet){const L=db.maq3d=db.maq3d||[],id=m.data.projet.id||'';const o={id:id||uid(),at:Date.now(),d:m.data};const i=id?L.findIndex(x=>x.id===id):-1;if(i>=0)L[i]=o;else L.push(o);if(L.length>20)L.shift();save()}});
 </script>
 <script type="text/x-caso">
