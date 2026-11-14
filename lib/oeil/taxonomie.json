@@ -2,7 +2,7 @@
  "version": 1,
  "maj": "2026-11-14",
  "source": "Cahier des charges ŒIL 3D (Marcos) — familles 01 à 15",
- "notes": "Dimensions en mètres [largeur, profondeur, hauteur] ; null = selon la pièce. pose : sol | mur | plafond | pose (sur un autre élément) | integre (dans un mur). detr : catégories COCO panoptique du modèle DETR déjà présent ; owl : question OWLv2 (anglais). ref : repère de taille servant à caler l'échelle. Une classe sans règle est connue de la bibliothèque mais pas encore reconnue automatiquement.",
+ "notes": "Dimensions en mètres [largeur, profondeur, hauteur] ; null = selon la pièce. pose : sol | mur | plafond | pose (sur un autre élément) | integre (dans un mur). detr : catégories COCO panoptique du modèle DETR déjà présent ; owl : question OWLv2 (anglais). ref : repère de taille servant à caler l'échelle. Une classe sans règle est connue de la bibliothèque mais pas encore reconnue automatiquement. owlt : jetons CLIP de « a photo of » + owl (tokeniseur de Xenova/owlv2-base-patch16-ensemble, révision 3e255bc, celui du modèle de casô), prêts pour OWLv2.",
  "relations": [
   "pose_sol",
   "pose_sur",
@@ -170,7 +170,14 @@
         161
        ],
        "owl": "a staircase",
-       "lab": "Escalier béton"
+       "lab": "Escalier béton",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        22777
+       ]
       },
       {
        "id": "F01.structure.structures_metalliques",
@@ -407,7 +414,14 @@
        "ref": {
         "h": 2.04
        },
-       "lab": "Porte battantes"
+       "lab": "Porte battantes",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        2489
+       ]
       },
       {
        "id": "F03.portes.portes_coulissantes",
@@ -460,7 +474,15 @@
         2.15
        ],
        "owl": "a french window",
-       "lab": "Portes-fenêtre"
+       "lab": "Portes-fenêtre",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        3461,
+        4879
+       ]
       }
      ]
     },
@@ -484,7 +506,14 @@
         68
        ],
        "owl": "a window",
-       "lab": "Fenêtre PVC"
+       "lab": "Fenêtre PVC",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        4879
+       ]
       },
       {
        "id": "F03.fenetres.fenetres_aluminium",
@@ -548,7 +577,16 @@
         2.15
        ],
        "owl": "a sliding glass door",
-       "lab": "Baie vitrées"
+       "lab": "Baie vitrées",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        21468,
+        3313,
+        2489
+       ]
       },
       {
        "id": "F03.autres_ouvertures.verrieres",
@@ -576,7 +614,15 @@
        "sk": "other",
        "pose": "mur",
        "owl": "a roller shutter",
-       "lab": "Volet roulants"
+       "lab": "Volet roulants",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        12342,
+        33902
+       ]
       },
       {
        "id": "F03.autres_ouvertures.volets_battants",
@@ -1014,7 +1060,15 @@
        ],
        "owl": "an electrical panel",
        "z": 1.3,
-       "lab": "Tableau électrique"
+       "lab": "Tableau électrique",
+       "owlt": [
+        320,
+        1125,
+        539,
+        550,
+        12176,
+        3724
+       ]
       },
       {
        "id": "F06.electricite_et_eclairage.disjoncteurs",
@@ -1041,7 +1095,15 @@
        "ref": {
         "z": 1.1
        },
-       "lab": "Interrupteur"
+       "lab": "Interrupteur",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        1395,
+        5893
+       ]
       },
       {
        "id": "F06.electricite_et_eclairage.va_et_vient",
@@ -1068,7 +1130,15 @@
        "ref": {
         "z": 0.3
        },
-       "lab": "Prise électriques"
+       "lab": "Prise électriques",
+       "owlt": [
+        320,
+        1125,
+        539,
+        550,
+        12176,
+        16855
+       ]
       },
       {
        "id": "F06.electricite_et_eclairage.prises_usb",
@@ -1096,7 +1166,16 @@
        "sk": "other",
        "pose": "mur",
        "owl": "a cable conduit",
-       "lab": "Gaine"
+       "lab": "Gaine",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        7925,
+        40772,
+        585
+       ]
       },
       {
        "id": "F06.electricite_et_eclairage.cables",
@@ -1119,7 +1198,16 @@
         0.02
        ],
        "owl": "a recessed spotlight",
-       "lab": "Spot encastrés"
+       "lab": "Spot encastrés",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        1890,
+        1804,
+        7901
+       ]
       },
       {
        "id": "F06.electricite_et_eclairage.plafonniers",
@@ -1135,7 +1223,15 @@
         130
        ],
        "owl": "a ceiling light",
-       "lab": "Plafonnier"
+       "lab": "Plafonnier",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        12374,
+        1395
+       ]
       },
       {
        "id": "F06.electricite_et_eclairage.suspensions",
@@ -1143,7 +1239,15 @@
        "sk": "ceiling_light",
        "pose": "plafond",
        "owl": "a pendant lamp",
-       "lab": "Suspension"
+       "lab": "Suspension",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        12415,
+        10725
+       ]
       },
       {
        "id": "F06.electricite_et_eclairage.appliques",
@@ -1152,7 +1256,15 @@
        "pose": "mur",
        "owl": "a wall lamp",
        "z": 1.7,
-       "lab": "Applique"
+       "lab": "Applique",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        2569,
+        10725
+       ]
       },
       {
        "id": "F06.electricite_et_eclairage.rubans_led",
@@ -1175,7 +1287,15 @@
         0.05
        ],
        "owl": "a smoke detector",
-       "lab": "Détecteur de fumée"
+       "lab": "Détecteur de fumée",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        6664,
+        27689
+       ]
       },
       {
        "id": "F06.electricite_et_eclairage.eclairages_exterieurs",
@@ -1243,7 +1363,14 @@
        "sk": "other",
        "pose": "mur",
        "owl": "a faucet",
-       "lab": "Robinetterie"
+       "lab": "Robinetterie",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        44273
+       ]
       },
       {
        "id": "F07.canalisations.siphons",
@@ -1300,7 +1427,15 @@
         81
        ],
        "owl": "a kitchen sink",
-       "lab": "Évier"
+       "lab": "Évier",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        4485,
+        14551
+       ]
       },
       {
        "id": "F07.equipements_sanitaires.lavabos",
@@ -1319,7 +1454,15 @@
        "ref": {
         "h": 0.85
        },
-       "lab": "Lavabo"
+       "lab": "Lavabo",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        8470,
+        14551
+       ]
       },
       {
        "id": "F07.equipements_sanitaires.vasques",
@@ -1349,7 +1492,14 @@
         "h": 0.4,
         "mesure": "assise"
        },
-       "lab": "WC"
+       "lab": "WC",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        11071
+       ]
       },
       {
        "id": "F07.equipements_sanitaires.douches",
@@ -1362,7 +1512,14 @@
         2
        ],
        "owl": "a shower",
-       "lab": "Douche"
+       "lab": "Douche",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        7777
+       ]
       },
       {
        "id": "F07.equipements_sanitaires.receveurs",
@@ -1380,7 +1537,14 @@
         0.56
        ],
        "owl": "a bathtub",
-       "lab": "Baignoire"
+       "lab": "Baignoire",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        39942
+       ]
       },
       {
        "id": "F07.equipements_sanitaires.bidets",
@@ -1413,7 +1577,15 @@
         1
        ],
        "owl": "a water heater",
-       "lab": "Chauffe-eau"
+       "lab": "Chauffe-eau",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        1573,
+        23246
+       ]
       },
       {
        "id": "F07.equipements_sanitaires.ballons_d_eau_chaude",
@@ -1431,7 +1603,15 @@
         0.9
        ],
        "owl": "a towel radiator",
-       "lab": "Sèche-serviette"
+       "lab": "Sèche-serviette",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        15953,
+        39372
+       ]
       }
      ]
     }
@@ -1463,7 +1643,14 @@
        ],
        "owl": "a radiator",
        "z": 0.15,
-       "lab": "Radiateur électriques"
+       "lab": "Radiateur électriques",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        39372
+       ]
       },
       {
        "id": "F08.cvc.radiateurs_a_eau",
@@ -1476,7 +1663,14 @@
         0.6
        ],
        "owl": "a radiator",
-       "lab": "Radiateur à eau"
+       "lab": "Radiateur à eau",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        39372
+       ]
       },
       {
        "id": "F08.cvc.convecteurs",
@@ -1489,7 +1683,15 @@
         0.5
        ],
        "owl": "an electric heater",
-       "lab": "Convecteur"
+       "lab": "Convecteur",
+       "owlt": [
+        320,
+        1125,
+        539,
+        550,
+        5031,
+        23246
+       ]
       },
       {
        "id": "F08.cvc.planchers_chauffants",
@@ -1528,7 +1730,15 @@
        ],
        "owl": "an air conditioner",
        "z": 2.05,
-       "lab": "Climatisation split"
+       "lab": "Climatisation split",
+       "owlt": [
+        320,
+        1125,
+        539,
+        550,
+        1922,
+        31239
+       ]
       },
       {
        "id": "F08.cvc.climatisations_gainables",
@@ -1561,7 +1771,16 @@
        "sk": "other",
        "pose": "mur",
        "owl": "a cable conduit",
-       "lab": "Gaine"
+       "lab": "Gaine",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        7925,
+        40772,
+        585
+       ]
       },
       {
        "id": "F08.cvc.bouches_d_extraction",
@@ -1574,7 +1793,15 @@
         0.02
        ],
        "owl": "a ventilation grille",
-       "lab": "Bouche d'extraction"
+       "lab": "Bouche d'extraction",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        35066,
+        34748
+       ]
       },
       {
        "id": "F08.cvc.entrees_d_air",
@@ -1598,7 +1825,15 @@
        ],
        "owl": "a thermostat",
        "z": 1.5,
-       "lab": "Thermostat"
+       "lab": "Thermostat",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        42391,
+        536
+       ]
       },
       {
        "id": "F08.cvc.collecteurs",
@@ -1643,7 +1878,14 @@
         "h": 0.85
        },
        "minT": 0.8,
-       "lab": "Canapé"
+       "lab": "Canapé",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        15723
+       ]
       },
       {
        "id": "F09.salon.fauteuils",
@@ -1657,7 +1899,14 @@
        ],
        "owl": "an armchair",
        "minT": 0.7,
-       "lab": "Fauteuil"
+       "lab": "Fauteuil",
+       "owlt": [
+        320,
+        1125,
+        539,
+        550,
+        45757
+       ]
       },
       {
        "id": "F09.salon.tables_basses",
@@ -1670,7 +1919,15 @@
         0.42
        ],
        "owl": "a coffee table",
-       "lab": "Table basse"
+       "lab": "Table basse",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        2453,
+        2175
+       ]
       },
       {
        "id": "F09.salon.tables_a_manger",
@@ -1692,7 +1949,15 @@
         "h": 0.75
        },
        "minT": 0.6,
-       "lab": "Table"
+       "lab": "Table",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        8658,
+        2175
+       ]
       },
       {
        "id": "F09.salon.chaises",
@@ -1712,7 +1977,14 @@
         "h": 0.88
        },
        "minT": 0.42,
-       "lab": "Chaise"
+       "lab": "Chaise",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        4269
+       ]
       },
       {
        "id": "F09.salon.meubles_tv",
@@ -1725,7 +1997,15 @@
         0.5
        ],
        "owl": "a tv stand",
-       "lab": "Meuble TV"
+       "lab": "Meuble TV",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        1583,
+        2087
+       ]
       },
       {
        "id": "F09.salon.televisions",
@@ -1742,7 +2022,14 @@
        ],
        "owl": "a television",
        "minT": 0.08,
-       "lab": "Télévision"
+       "lab": "Télévision",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        8608
+       ]
       },
       {
        "id": "F09.salon.bibliotheques",
@@ -1759,7 +2046,15 @@
        ],
        "owl": "a bookcase",
        "minT": 0.3,
-       "lab": "Bibliothèque"
+       "lab": "Bibliothèque",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        2828,
+        2068
+       ]
       },
       {
        "id": "F09.salon.etageres",
@@ -1776,7 +2071,15 @@
        ],
        "owl": "a wall shelf",
        "minT": 0.25,
-       "lab": "Étagère"
+       "lab": "Étagère",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        2569,
+        10955
+       ]
       },
       {
        "id": "F09.salon.buffets",
@@ -1789,7 +2092,15 @@
         0.85
        ],
        "owl": "a sideboard",
-       "lab": "Buffet"
+       "lab": "Buffet",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        5869,
+        1972
+       ]
       },
       {
        "id": "F09.salon.consoles",
@@ -1811,7 +2122,14 @@
         131
        ],
        "owl": "a rug",
-       "lab": "Tapis"
+       "lab": "Tapis",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        19220
+       ]
       },
       {
        "id": "F09.salon.rideaux",
@@ -1828,7 +2146,14 @@
        ],
        "owl": "a curtain",
        "minT": 0.08,
-       "lab": "Rideau"
+       "lab": "Rideau",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        17223
+       ]
       }
      ]
     },
@@ -1848,7 +2173,15 @@
        ],
        "owl": "a wall cabinet",
        "z": 1.45,
-       "lab": "Meuble haut"
+       "lab": "Meuble haut",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        2569,
+        9937
+       ]
       },
       {
        "id": "F09.cuisine.meubles_bas",
@@ -1868,7 +2201,16 @@
        "ref": {
         "h": 0.9
        },
-       "lab": "Meuble bas"
+       "lab": "Meuble bas",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        4485,
+        4579,
+        9937
+       ]
       },
       {
        "id": "F09.cuisine.plans_de_travail",
@@ -1884,7 +2226,16 @@
         107
        ],
        "owl": "a kitchen countertop",
-       "lab": "Plan de travail"
+       "lab": "Plan de travail",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        4485,
+        10134,
+        1253
+       ]
       },
       {
        "id": "F09.cuisine.ilots",
@@ -1908,7 +2259,15 @@
        ],
        "owl": "a range hood",
        "z": 1.6,
-       "lab": "Hotte"
+       "lab": "Hotte",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        3818,
+        3222
+       ]
       },
       {
        "id": "F09.cuisine.plaques",
@@ -1921,7 +2280,15 @@
         0.05
        ],
        "owl": "a cooktop",
-       "lab": "Plaque"
+       "lab": "Plaque",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        9726,
+        1253
+       ]
       },
       {
        "id": "F09.cuisine.fours",
@@ -1938,7 +2305,14 @@
        ],
        "owl": "an oven",
        "minT": 0.55,
-       "lab": "Four"
+       "lab": "Four",
+       "owlt": [
+        320,
+        1125,
+        539,
+        550,
+        12579
+       ]
       },
       {
        "id": "F09.cuisine.micro_ondes",
@@ -1955,7 +2329,14 @@
        ],
        "owl": "a microwave",
        "minT": 0.35,
-       "lab": "Micro-ondes"
+       "lab": "Micro-ondes",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        24240
+       ]
       },
       {
        "id": "F09.cuisine.refrigerateurs",
@@ -1972,7 +2353,14 @@
        ],
        "owl": "a refrigerator",
        "minT": 0.6,
-       "lab": "Réfrigérateur"
+       "lab": "Réfrigérateur",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        36662
+       ]
       },
       {
        "id": "F09.cuisine.congelateurs",
@@ -1990,7 +2378,14 @@
         0.85
        ],
        "owl": "a dishwasher",
-       "lab": "Lave-vaisselle"
+       "lab": "Lave-vaisselle",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        40524
+       ]
       },
       {
        "id": "F09.cuisine.machines_a_cafe",
@@ -2003,7 +2398,15 @@
         0.35
        ],
        "owl": "a coffee machine",
-       "lab": "Machine à café"
+       "lab": "Machine à café",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        2453,
+        4169
+       ]
       },
       {
        "id": "F09.cuisine.credences",
@@ -2035,7 +2438,14 @@
         0.9,
         1.9
        ],
-       "lab": "Lit"
+       "lab": "Lit",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        2722
+       ]
       },
       {
        "id": "F09.chambre.matelas",
@@ -2048,7 +2458,14 @@
         0.2
        ],
        "owl": "a mattress",
-       "lab": "Matela"
+       "lab": "Matela",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        23438
+       ]
       },
       {
        "id": "F09.chambre.sommiers",
@@ -2076,7 +2493,14 @@
        ],
        "owl": "a wardrobe",
        "minT": 0.45,
-       "lab": "Armoire"
+       "lab": "Armoire",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        15020
+       ]
       },
       {
        "id": "F09.chambre.dressings",
@@ -2094,7 +2518,16 @@
         0.85
        ],
        "owl": "a chest of drawers",
-       "lab": "Commode"
+       "lab": "Commode",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        10563,
+        539,
+        38975
+       ]
       },
       {
        "id": "F09.chambre.tables_de_chevet",
@@ -2107,7 +2540,15 @@
         0.5
        ],
        "owl": "a nightstand",
-       "lab": "Table de chevet"
+       "lab": "Table de chevet",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        3870,
+        2087
+       ]
       },
       {
        "id": "F09.chambre.bureaux",
@@ -2127,7 +2568,14 @@
         "h": 0.75
        },
        "minT": 0.5,
-       "lab": "Bureau"
+       "lab": "Bureau",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        6550
+       ]
       },
       {
        "id": "F09.chambre.miroirs",
@@ -2145,7 +2593,14 @@
        ],
        "owl": "a mirror",
        "minT": 0.03,
-       "lab": "Miroir"
+       "lab": "Miroir",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        7220
+       ]
       }
      ]
     },
@@ -2401,7 +2856,15 @@
         146
        ],
        "owl": "a railing",
-       "lab": "Garde-corp"
+       "lab": "Garde-corp",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        559,
+        3299
+       ]
       },
       {
        "id": "F11.facades_et_exterieurs.rampes",
@@ -2553,7 +3016,15 @@
        ],
        "owl": "a potted plant",
        "minT": 0.3,
-       "lab": "Plante"
+       "lab": "Plante",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        48581,
+        3912
+       ]
       },
       {
        "id": "F12.terrain_et_jardin.massifs",
@@ -2773,7 +3244,16 @@
        "sk": "other",
        "pose": "mur",
        "owl": "a cable conduit",
-       "lab": "Gaine"
+       "lab": "Gaine",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        7925,
+        40772,
+        585
+       ]
       },
       {
        "id": "F13.materiaux.tuyaux",
@@ -2817,7 +3297,15 @@
         0.15
        ],
        "owl": "a wooden pallet",
-       "lab": "Palette"
+       "lab": "Palette",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        9057,
+        39057
+       ]
       },
       {
        "id": "F13.conditionnements.sacs",
@@ -2836,7 +3324,14 @@
        ],
        "owl": "a bag",
        "minT": 0.2,
-       "lab": "Sac"
+       "lab": "Sac",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        3365
+       ]
       },
       {
        "id": "F13.conditionnements.plaques",
@@ -2849,7 +3344,15 @@
         0.05
        ],
        "owl": "a cooktop",
-       "lab": "Plaque"
+       "lab": "Plaque",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        9726,
+        1253
+       ]
       },
       {
        "id": "F13.conditionnements.rouleaux",
@@ -2871,7 +3374,15 @@
        ],
        "owl": "a cardboard box",
        "minT": 0.25,
-       "lab": "Carton"
+       "lab": "Carton",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        19845,
+        2063
+       ]
       },
       {
        "id": "F13.conditionnements.materiaux_en_vrac",
@@ -3093,7 +3604,15 @@
         1.3
        ],
        "owl": "a cement mixer",
-       "lab": "Bétonnière"
+       "lab": "Bétonnière",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        4369,
+        17200
+       ]
       },
       {
        "id": "F14.machines.pompes_a_beton",
@@ -3122,7 +3641,13 @@
        "sk": "other",
        "pose": "sol",
        "owl": "scaffolding",
-       "lab": "Échafaudage"
+       "lab": "Échafaudage",
+       "owlt": [
+        320,
+        1125,
+        539,
+        41687
+       ]
       },
       {
        "id": "F14.equipements_de_chantier.echelles",
@@ -3130,7 +3655,14 @@
        "sk": "other",
        "pose": "sol",
        "owl": "a ladder",
-       "lab": "Échelle"
+       "lab": "Échelle",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        16637
+       ]
       },
       {
        "id": "F14.equipements_de_chantier.escabeaux",
@@ -3143,7 +3675,16 @@
         1.5
        ],
        "owl": "a stepladder",
-       "lab": "Escabeau"
+       "lab": "Escabeau",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        795,
+        841,
+        9300
+       ]
       },
       {
        "id": "F14.equipements_de_chantier.etais",
@@ -3156,7 +3697,15 @@
         null
        ],
        "owl": "a construction prop",
-       "lab": "Étai"
+       "lab": "Étai",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        4585,
+        16254
+       ]
       },
       {
        "id": "F14.equipements_de_chantier.treteaux",
@@ -3199,7 +3748,15 @@
        "sk": "box",
        "pose": "sol",
        "owl": "a skip container",
-       "lab": "Benne"
+       "lab": "Benne",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        14296,
+        14913
+       ]
       }
      ]
     }
@@ -3248,7 +3805,18 @@
        "nom": "Humidité",
        "sk": "defect",
        "owl": "a water stain on a wall",
-       "lab": "Humidité"
+       "lab": "Humidité",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        1573,
+        14603,
+        525,
+        320,
+        2569
+       ]
       },
       {
        "id": "F15.defauts.infiltrations",
@@ -3260,7 +3828,16 @@
        "nom": "Moisissures",
        "sk": "defect",
        "owl": "mold on a wall",
-       "lab": "Moisissure"
+       "lab": "Moisissure",
+       "owlt": [
+        320,
+        1125,
+        539,
+        21846,
+        525,
+        320,
+        2569
+       ]
       },
       {
        "id": "F15.defauts.salpetre",
@@ -3292,7 +3869,14 @@
        "nom": "Peinture écaillée",
        "sk": "defect",
        "owl": "peeling paint",
-       "lab": "Peinture écaillée"
+       "lab": "Peinture écaillée",
+       "owlt": [
+        320,
+        1125,
+        539,
+        48649,
+        5185
+       ]
       },
       {
        "id": "F15.defauts.carrelage_casse",
@@ -3366,7 +3950,16 @@
         0.5
        ],
        "owl": "a fire extinguisher",
-       "lab": "Extincteur"
+       "lab": "Extincteur",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        1769,
+        38567,
+        4510
+       ]
       },
       {
        "id": "F15.securite.signalisation",
@@ -3374,7 +3967,15 @@
        "sk": "plate",
        "pose": "mur",
        "owl": "a safety sign",
-       "lab": "Signalisation"
+       "lab": "Signalisation",
+       "owlt": [
+        320,
+        1125,
+        539,
+        320,
+        3406,
+        2292
+       ]
       },
       {
        "id": "F15.securite.barrieres_de_securite",
@@ -3397,7 +3998,16 @@
        "sk": "plate",
        "pose": "mur",
        "owl": "an emergency exit sign",
-       "lab": "Issue de secours"
+       "lab": "Issue de secours",
+       "owlt": [
+        320,
+        1125,
+        539,
+        550,
+        5897,
+        9374,
+        2292
+       ]
       }
      ]
     }
