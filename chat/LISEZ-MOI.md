@@ -197,3 +197,14 @@ Source du moteur et outils de traduction : le module « caso-ia » (moteur, cata
 - Bilan de toute l'IA chaque lundi : `node outils/ia/bilan.js` (commandes, métier, fautes, seuils dans `outils/ia/seuils.json`),
   puis `outils/chat/essai-appli.js` et `outils/ia/essai-3d.js` dans le navigateur.
 
+**Évolutions du 14 novembre 2026** :
+- Ouverture : le module 3D est dans `lib/m3d.html` (chargé au premier usage, préchargé au repos) et les traductions de l'interface dans
+  `i18n/ui-xx.json` (seule la langue choisie, gardée sur l'appareil, mise à jour en arrière-plan). `index.html` : 1 038 → 400 Ko compressé.
+- Bénéfice réel : « combien j'ai gagné chez Martin » → CA, achats, heures pointées au coût de l'heure (demandé une fois,
+  ou « mon heure me coûte 30 € »), bénéfice et %.
+- Dictée : nombres en lettres, « virgule », « 14 heures 30 », « huit heures et demie » (`B.dicte`, appelé par `vnMake`).
+- Relance des devis envoyés depuis 7 jours : [Relancer les devis] dans le rappel du matin, message prêt (SMS, WhatsApp, e-mail).
+- Pointage par la position, appli ouverte (iPhone, site web) : proposition d'arrivée sur un chantier du jour, de sortie quand on s'en éloigne ;
+  l'appli Android garde son pointage automatique en arrière-plan.
+- `outils/chat/fautes.js` : tirage stable (une graine par phrase).
+

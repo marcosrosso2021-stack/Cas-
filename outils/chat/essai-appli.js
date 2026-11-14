@@ -14,6 +14,8 @@ db.suppliers.push({id:'s1',nom:'Point P'},{id:'s2',nom:'Cedeo'});
 db.achats=[{id:'a1',four:'Point P',type:'facture',date:'2026-10-14',ttc:300,ht:250,cid:'c1',lines:[]}];
 db.hist.push({date:'2026-10-14',nom:'PLAQUE BA13 STD 2500x1200',four:'Point P',prix:8.95,unit:'u'},{date:'2026-10-02',nom:'Plaque BA13',four:'Cedeo',prix:9.4,unit:'u'},{date:'2026-10-14',nom:'Faïence',four:'Point P',prix:21,unit:'m²'});
 db.events.push({id:'e1',t:'rdv',d:d(-1),a:'10:00',b:'11:00',title:'Dupont',cid:'c2'});
+db.chantiers=db.chantiers||[];db.pts=db.pts||[];db.chantiers.push({id:'ch1',cid:'c1',nom:'Martin',adr:'3 rue Victor Hugo, Lyon'});
+{const t0=new Date('2026-10-21T08:00:00').getTime();db.pts.push({id:'t1',c:'ch1',p:'moi',t:'in',ts:t0},{id:'t2',c:'ch1',p:'moi',t:'out',ts:t0+8*36e5},{id:'t3',c:'ch1',p:'moi',t:'in',ts:t0+864e5},{id:'t4',c:'ch1',p:'moi',t:'out',ts:t0+864e5+8*36e5});}
 db.maq3d=[{id:'m1',at:Date.now(),d:{estimation:{lignes:[{poste:'Rebouchage de fissures',unite:'ml',quantite:3,prix_min:20,prix_max:40},{poste:'Peinture murs',unite:'m2',quantite:25,prix_min:15,prix_max:25}]}}}];save();})()`;
 /* [langue, phrases, textes attendus dans les réponses (dans l'ordre des phrases ; "" = pas de contrôle)] */
 const ESSAIS=[
@@ -23,6 +25,7 @@ const ESSAIS=[
  ["fr",["fais le même devis que Martin pour Dupont"],[/Dupont[\s\S]*Carrelage/]],
  ["fr",["où j'achète le BA13 le moins cher"],[/Point P 8,95/]],
  ["fr",["mon chantier le plus rentable"],[/rentables[\s\S]*Martin/]],
+ ["fr",["combien j'ai gagné chez Martin","mon heure me coûte 30 €","combien j'ai gagné chez Martin"],[/Martin : 900[\s\S]*marge[\s\S]*16 h[\s\S]*heure de travail/,/30 €/,/Martin : 900[\s\S]*16 h à 30[\s\S]*bénéfice 170[\s\S]*19 %/]],
  ["fr",["combien j'ai dépensé chez Point P en octobre"],[/300/]],
  ["fr",["combien de temps pour 25 m² de carrelage"],[/Environ \d+/]],
  ["fr",["salle de bain 6 m², dépose carrelage, pose faïence, receveur"],[/Faïence[\s\S]*Receveur de douche[\s\S]*gravats/]],
