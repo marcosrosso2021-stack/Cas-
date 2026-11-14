@@ -1290,7 +1290,16 @@ cat_aff|Affichage|Display|Visualização|Visualización|Visualizzazione|Afișare
 dz_t|Plan trop chargé pour cette image|Plan too detailed for this image|Planta demasiado carregada para esta imagem|Plano demasiado cargado para esta imagen|Pianta troppo carica per questa immagine|Plan prea încărcat pentru această imagine|Plan zbyt szczegółowy jak na ten obraz|Bu görüntü için plan çok yoğun|План слишком насыщен для этого изображения|المخطط مزدحم جدًا بالنسبة لهذه الصورة
 dz_d|Les murs y sont trop fins pour être lus sans erreur. Envoyez le PDF d'origine, ou recadrez une partie du bâtiment (une aile, un étage).|The walls are too thin to read without errors. Send the original PDF, or crop one part of the building (a wing, a floor).|As paredes são demasiado finas para serem lidas sem erros. Envie o PDF original ou recorte uma parte do edifício (uma ala, um piso).|Los muros son demasiado finos para leerlos sin errores. Envíe el PDF original o recorte una parte del edificio (un ala, una planta).|I muri sono troppo sottili per essere letti senza errori. Invii il PDF originale o ritagli una parte dell'edificio (un'ala, un piano).|Pereții sunt prea subțiri pentru a fi citiți fără erori. Trimiteți PDF-ul original sau decupați o parte a clădirii (o aripă, un etaj).|Ściany są zbyt cienkie, by odczytać je bez błędów. Wyślij oryginalny PDF albo przytnij część budynku (skrzydło, piętro).|Duvarlar hatasız okunamayacak kadar ince. Orijinal PDF'yi gönderin veya binanın bir bölümünü kırpın (bir kanat, bir kat).|Стены слишком тонкие, чтобы прочитать их без ошибок. Отправьте исходный PDF или обрежьте часть здания (крыло, этаж).|الجدران رفيعة جدًا لقراءتها دون أخطاء. أرسل ملف PDF الأصلي أو اقتصّ جزءًا من المبنى (جناحًا أو طابقًا).
 dz_crop|Recadrer une partie|Crop one part|Recortar uma parte|Recortar una parte|Ritagliare una parte|Decupați o parte|Przytnij część|Bir bölümü kırp|Обрезать часть|اقتصاص جزء
-dz_go|Continuer quand même|Continue anyway|Continuar mesmo assim|Continuar de todos modos|Continuare comunque|Continuați oricum|Kontynuuj mimo to|Yine de devam et|Всё равно продолжить|المتابعة على أي حال`;
+dz_go|Continuer quand même|Continue anyway|Continuar mesmo assim|Continuar de todos modos|Continuare comunque|Continuați oricum|Kontynuuj mimo to|Yine de devam et|Всё равно продолжить|المتابعة على أي حال
+dg_wl|lézarde (plus de 2 mm)|wide crack (over 2 mm)|fenda larga (mais de 2 mm)|grieta ancha (más de 2 mm)|lesione larga (oltre 2 mm)|fisură largă (peste 2 mm)|szeroka rysa (ponad 2 mm)|geniş çatlak (2 mm'den fazla)|широкая трещина (более 2 мм)|شق عريض (أكثر من 2 مم)
+dg_wn|largeur non mesurable sur la photo|width not measurable from the photo|largura não mensurável na fotografia|anchura no medible en la foto|larghezza non misurabile dalla foto|lățime nemăsurabilă pe fotografie|szerokości nie da się zmierzyć na zdjęciu|genişlik fotoğrafta ölçülemiyor|ширину нельзя измерить по фото|لا يمكن قياس العرض من الصورة
+dg_or_v|verticale|vertical|vertical|vertical|verticale|verticală|pionowa|dikey|вертикальная|عمودي
+dg_or_h|horizontale|horizontal|horizontal|horizontal|orizzontale|orizontală|pozioma|yatay|горизонтальная|أفقي
+dg_or_b|en biais|diagonal|na diagonal|en diagonal|obliqua|oblică|ukośna|çapraz|косая|مائل
+dg_or_bo|en biais, depuis l'angle d'une ouverture|diagonal, from the corner of an opening|na diagonal, a partir do canto de uma abertura|en diagonal, desde la esquina de un hueco|obliqua, dall'angolo di un'apertura|oblică, din colțul unui gol|ukośna, od narożnika otworu|çapraz, bir açıklığın köşesinden|косая, от угла проёма|مائل، من زاوية فتحة
+dg_pro|à faire voir par un professionnel|to be checked by a professional|a verificar por um profissional|a revisar por un profesional|da far verificare a un professionista|de verificat de un specialist|do sprawdzenia przez fachowca|bir uzmana gösterilmeli|показать специалисту|يجب أن يفحصها مختص
+ob_tuyau|Tuyaux visibles|Visible pipes|Tubos visíveis|Tuberías visibles|Tubi visibili|Țevi vizibile|Widoczne rury|Görünür borular|Видимые трубы|أنابيب ظاهرة
+rm_slope_m|Plafond en pente : mur bas de {h} m, pente de {a}° (mesurée sur la photo)|Sloped ceiling: low wall {h} m, slope {a}° (measured on the photo)|Teto inclinado: parede baixa de {h} m, inclinação de {a}° (medida na fotografia)|Techo inclinado: pared baja de {h} m, pendiente de {a}° (medida en la foto)|Soffitto inclinato: parete bassa di {h} m, pendenza di {a}° (misurata sulla foto)|Tavan înclinat: perete joasă de {h} m, pantă de {a}° (măsurată pe fotografie)|Skośny sufit: niska ściana {h} m, nachylenie {a}° (zmierzone na zdjęciu)|Eğimli tavan: alçak duvar {h} m, eğim {a}° (fotoğrafta ölçüldü)|Скошенный потолок: низкая стена {h} м, уклон {a}° (измерен по фото)|سقف مائل: جدار منخفض {h} م، ميل {a}° (مقيس على الصورة)`;
 for(const ln of src.trim().split('\n')){const p=ln.split('|');TR[p.shift()]=p}})();
 let LI=0,LC='fr';
 function t(k,o){const r=TR[k];let s=r?(r[LI]||r[0]):k;if(o)for(const x in o)s=s.split('{'+x+'}').join(o[x]);return s}
@@ -3444,7 +3453,7 @@ function rnvSt(k,p){const mq=S.rnv&&S.rnv.mq;if(!mq)return'';let s=mq.ok?'val':m
 /* fiches des anomalies, tirées des murs redressés (fissures, trous) ; image : le mur autour de l'anomalie, l'endroit entouré ;
    empreinte de l'endroit comparée aux exemples déjà jugés par l'usager */
 async function rnvDiag(R){const out=[];if(!R||!R.ph)return out;
-  for(const p of R.ph){if(!p||!p.img)continue;const items=[...(p.cr||[]).map(c=>({k:'fis',X:c[0],z:c[1],v:c[2]})),...(p.hl||[]).map(h=>({k:'trou',X:h[0],z:h[1],v:h[2],dk:h[3]}))];if(!items.length)continue;
+  for(const p of R.ph){if(!p||!p.img)continue;const items=[...(p.cr||[]).map(c=>({k:'fis',X:c[0],z:c[1],v:c[2],wl:c[3],or:c[4]})),...(p.hl||[]).map(h=>({k:'trou',X:h[0],z:h[1],v:h[2],dk:h[3]}))];if(!items.length)continue;
     const im=await new Promise(ok=>{const g=new Image();g.onload=()=>ok(g);g.onerror=()=>ok(null);g.src=p.img});if(!im)continue;
     const Hm=p.Hm||S.params.H,ppm=im.naturalHeight/Hm,wn=Math.max(1,S.walls.findIndex(w=>w.id===p.id)+1);
     for(const it of items){const half=it.k==='fis'?Math.max(0.25,it.v*0.7):Math.max(0.15,it.v*2.5),cx=it.X*ppm,cy=(Hm-it.z)*ppm,hp=half*ppm,N=160,c=document.createElement('canvas');c.width=c.height=N;const x=c.getContext('2d');
@@ -3453,7 +3462,7 @@ async function rnvDiag(R){const out=[];if(!R||!R.ph)return out;
       /* confiance : celle de la règle qui l'a repéré, jamais une gravité (trou : plus le creux est sombre, plus il est net ; fissure : jamais « élevée » sur une photo) */
       const conf=it.k==='trou'?(it.dk<0.28?3:it.dk<0.36?2:1):(it.v>=0.5?2:1);
       let f='';try{f=oeQ(oeFp(im,cx,cy,(it.k==='fis'?Math.max(0.12,it.v*0.6):Math.max(0.04,it.v*1.5))*ppm))}catch(e){}
-      out.push({k:it.k,w:wn,X:+it.X.toFixed(2),z:+it.z.toFixed(2),v:+it.v.toFixed(2),c:conf,img:c.toDataURL('image/jpeg',0.8),f})}}
+      out.push({k:it.k,w:wn,X:+it.X.toFixed(2),z:+it.z.toFixed(2),v:+it.v.toFixed(2),c:conf,img:c.toDataURL('image/jpeg',0.8),f,...(it.k==='fis'&&it.or?{wl:it.wl,or:it.or}:{})})}}
   try{oeLearn(out)}catch(e){}
   const o=k=>Math.max(0,DGK.indexOf(k));out.sort((a,b)=>o(dgBase(a))-o(dgBase(b))||a.w-b.w||a.X-b.X);return out}
 let RDG=null;
@@ -3470,7 +3479,7 @@ const DGI={y:'<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"
 function rnvDiagHtml(){const R=S.rnv;if(!R||!R.ph)return'';if(!(R.dg&&R.dgv===3)){rnvDiagGo();return''}if(!R.dg.length)return'';const cf=['dg_c1','dg_c2','dg_c3'],G=rnvDgGroups(R);
   const card=(i,n)=>{const d=R.dg[i],e=dgEff(d),mine=!!d.u&&e!=null,lab=d.u&&d.u!=='ok'&&!DGK.includes(d.u)?d.u:!d.u&&d.a&&!DGK.includes(d.a)?d.a:'non';
     const note=mine?t('dg_okd'):d.a&&!d.u?t('dg_auto'):t('dg_conf',{c:t(cf[d.c-1]||'dg_c1')});
-    return`<div class="rv-dg${e?'':' off'}">${d.img?`<img src="${d.img}" alt="">`:''}<div class="rv-dgb"><b>${t('dg_'+(e||dgBase(d)))}${n?' '+n:''}</b><p>${t('dg_pos',{w:d.w,x:fmt(d.X,2),z:fmt(d.z,2)})} · ${d.k==='fis'?t('dg_len',{v:fmt(d.v,2)}):t('dg_size',{v:Math.max(1,Math.round(d.v*112.8))})}</p><p class="note">${note}${e?' · '+t('dg_grav'):''}</p>`
+    return`<div class="rv-dg${e?'':' off'}">${d.img?`<img src="${d.img}" alt="">`:''}<div class="rv-dgb"><b>${t('dg_'+(e||dgBase(d)))}${n?' '+n:''}</b><p>${t('dg_pos',{w:d.w,x:fmt(d.X,2),z:fmt(d.z,2)})} · ${d.k==='fis'?t('dg_len',{v:fmt(d.v,2)}):t('dg_size',{v:Math.max(1,Math.round(d.v*112.8))})}</p>${e==='fis'&&d.or?`<p>${t(d.wl?'dg_wl':'dg_wn')} · ${t('dg_or_'+d.or)}</p>`:''}<p class="note">${note}${e?' · '+t(e==='fis'?'dg_pro':'dg_grav'):''}</p>`
       +(e?'':`<div class="rv-dgl"><span class="note">${t('dg_is')}</span>${['prise','inter','tache','non'].map(v=>`<button class="rv-c" data-dg="${i}" data-v="${v}" aria-pressed="${v===lab}">${t('dg_l'+v)}</button>`).join('')}</div>`)
       +`</div><div class="rv-dgv"><button class="rb" data-dg="${i}" data-v="y" aria-pressed="${mine}" aria-label="${t('dg_yes')}">${DGI.y}</button><button class="rb" data-dg="${i}" data-v="n" aria-pressed="${!e}" aria-label="${t('dg_no')}">${DGI.n}</button></div></div>`};
   /* contrôle et travaux possibles : une fois par type, sous ses fiches ; les fiches écartées à la fin */
@@ -3887,14 +3896,19 @@ const sfmCenter=c=>mv3(tr3(c.R),c.t.map(v=>-v));
    précédente, échelle donnée par les points déjà placés vus des deux photos ; points nouveaux seulement si l'angle de vue est assez ouvert */
 function sfmRun2(cvs,opt){opt=opt||{};const N=cvs.length,F=opt.F||cvs.map((cv,i)=>{if(opt.prog)try{opt.prog(0.5*i/N)}catch(e){}return sfFeat(cv,opt)}),fs=Array.isArray(opt.f)?opt.f:cvs.map(cv=>opt.f||Math.max(cv.width,cv.height)*0.8);
   const nrm=(i,k)=>[(F[i].xy[k*2]-F[i].W/2)/fs[i],(F[i].xy[k*2+1]-F[i].H/2)/fs[i]],I=[[1,0,0],[0,1,0],[0,0,1]],Z=[0,0,0];
-  const cams=new Array(N).fill(null),pts=[],obs=cvs.map(()=>new Map()),log=[],AF=new Array(N).fill(null);cams[0]={R:I,t:Z};let lastS=1;
+  const cams=new Array(N).fill(null),pts=[],obs=cvs.map(()=>new Map()),log=[],AF=new Array(N).fill(null);cams[0]={R:I,t:Z};let lastS=1,lastPar=0;
   const ang=(ca,cb,X)=>{const c1=sfmCenter(ca),c2=sfmCenter(cb),d1=nz3(X.map((v,q)=>v-c1[q])),d2=nz3(X.map((v,q)=>v-c2[q]));return Math.acos(Math.min(1,dt3(d1,d2)))*180/Math.PI};
-  for(let k=1;k<N;k++){if(opt.prog)try{opt.prog(0.5+0.5*k/N)}catch(e){}const j=k-1;if(!cams[j]){log.push({k,fail:'prec'});continue}const M=sfMatch(F[j],F[k]),P=M.map(m=>nrm(j,m[0])),Q=M.map(m=>nrm(k,m[1])),thr=(2.5/fs[k])**2;let ER,ps;
+  for(let k=1;k<N;k++){if(opt.prog)try{opt.prog(0.5+0.5*k/N)}catch(e){}const thr=(2.5/fs[k])**2,tried=[];let ER,ps,j=-1,M=[],P=[],Q=[];
+    // photo reliée à la précédente ; si cette paire ne tient pas (photo floue, trop tournée), à l'une des deux d'avant
+    const tryPair=j=>{const M=sfMatch(F[j],F[k]),P=M.map(m=>nrm(j,m[0])),Q=M.map(m=>nrm(k,m[1]));let ER,ps;
     // deux pistes : les images seules (matrice essentielle) et la rotation du téléphone comme point de départ ; chacune est affinée par les images, on garde celle qui explique le plus d'appariements
     const cand=[];{const EV=sfmRansacE(P,Q,thr,1500);if(EV&&EV.inl.length>=15){const p0=sfmPoseE(EV.E,EV.inl.map(i=>P[i]),EV.inl.map(i=>Q[i]));if(p0){const r=opt.refImg?sfmRefRT(p0.R,p0.t,P,Q,thr):null;cand.push(r&&r.inl.length>=EV.inl.length*0.9?{ER:{inl:r.inl},ps:{R:r.R,t:r.t},w:'img'}:{ER:EV,ps:p0,w:'img'})}}}
     if(opt.rot&&opt.rot[j]&&opt.rot[k]){const Rr=mm3(tr3(opt.rot[k]),opt.rot[j]),TR=sfmTransRansac(Rr,P,Q,(6/fs[k])**2,400);if(TR){const r=sfmRefRT(Rr,TR.t,P,Q,thr);if(r&&r.inl.length>=15)cand.push({ER:{inl:r.inl},ps:{R:r.R,t:r.t},w:'gyro'})}}
     if(cand.length){cand.sort((a,b)=>b.ER.inl.length-a.ER.inl.length);ER=cand[0].ER;ps=cand[0].ps;SFM.lastW=cand.map(c=>c.w+':'+c.ER.inl.length).join(' ')}
-    if(!ps){log.push({k,fail:'paire',m:M.length,inl:ER?ER.inl.length:0});continue}
+    return{M,P,Q,ER,ps}};
+    for(const jj of[k-1,k-2,k-3]){if(jj<0||!cams[jj])continue;const T=tryPair(jj);if(T.ps){j=jj;M=T.M;P=T.P;Q=T.Q;ER=T.ER;ps=T.ps;break}tried.push(jj+':'+T.M.length)}
+    if(!ps){log.push({k,fail:'paire',essais:tried.join(' ')});continue}
+    const par=(()=>{const v=[];for(const i of ER.inl){const p=P[i],q=Q[i],x=mv3(ps.R,[p[0],p[1],1]);if(x[2]>1e-6)v.push(Math.hypot(x[0]/x[2]-q[0],x[1]/x[2]-q[1]))}v.sort((a,b)=>a-b);return v.length?v[v.length>>1]:0})();if(j!==k-1)log.push({k,relie:j});
     // échelle : profondeur des points déjà placés (vus de la photo précédente) / profondeur trouvée avec un écart unité
     const rs=[];for(const i of ER.inl){const id=obs[j].get(M[i][0]);if(id==null)continue;const Xc=mv3(cams[j].R,pts[id].X).map((v,q)=>v+cams[j].t[q]),Xu=sfmTri(I,Z,ps.R,ps.t,P[i],Q[i]);if(!Xu||Xu[2]<=0||Xc[2]<=0)continue;rs.push(Xc[2]/Xu[2])}
     // échelle par les points déjà placés vus de cette photo (appariés avec les deux photos précédentes) : C_k = C_(k-1) + s·d
@@ -3905,15 +3919,19 @@ function sfmRun2(cvs,opt){opt=opt||{};const N=cvs.length,F=opt.F||cvs.map((cv,i)
         const q=Q[i],qw=mv3(tr3(Rk),[q[0],q[1],1]),u=cr3(qw,X.map((v,q2)=>v-Cj[q2])),w=cr3(qw,dW),ww=dt3(w,w);if(ww<1e-9)continue;const sv=dt3(u,w)/ww;if(sv>0)sd.push(sv)}}
     sd.sort((a,b)=>a-b);ss.sort((a,b)=>a-b);let s=lastS;{const ev=[];if(sd.length>=15)ev.push(sd[sd.length>>1]);if(ss.length>=6)ev.push(ss[ss.length>>1]);
       // on marche à peu près au même pas : avec deux mesures, la médiane des deux et du pas précédent ; avec une seule, bornée autour du pas précédent
-      if(k===1||!(lastS>0)){if(ev.length)s=ev[0]}else if(ev.length>=2){const v=[ev[0],ev[1],lastS].sort((a,b)=>a-b);s=v[1]}else if(ev.length===1)s=Math.min(2*lastS,Math.max(0.5*lastS,ev[0]));else if(rs.length>=6)s=rs[rs.length>>1];else if(k>1)log.push({k,note:'échelle supposée'})}lastS=s;rs.length=0;for(const v of ss)rs.push(v);
-    const R=mm3(ps.R,cams[j].R),t=mv3(ps.R,cams[j].t).map((v,q)=>v+s*ps.t[q]);cams[k]={R,t};let nn=0,kept=0;
+      if(k===1||!(lastS>0)){if(ev.length)s=ev[0]}else if(ev.length>=2){const v=[ev[0],ev[1],lastS].sort((a,b)=>a-b);s=v[1]}else if(ev.length===1)s=Math.min(2*lastS,Math.max(0.5*lastS,ev[0]));else if(rs.length>=6)s=rs[rs.length>>1];else if(k>1){log.push({k,note:'échelle supposée'});
+        // sans mesure : le pas suit le décalage des points une fois la rotation retirée (une photo prise en tournant sur place n'a presque pas bougé)
+        if(opt.par!==0&&lastPar>0)s=lastS*Math.min(2,par/lastPar)}}lastS=s;lastPar=par;rs.length=0;for(const v of ss)rs.push(v);
+    const R=sfmOrtho(mm3(ps.R,cams[j].R)),t=mv3(ps.R,cams[j].t).map((v,q)=>v+s*ps.t[q]);cams[k]={R,t};let nn=0,kept=0;
     for(const i of ER.inl){const a=M[i][0],b=M[i][1],id=obs[j].get(a);if(id!=null){if(!obs[k].has(b)){obs[k].set(b,id);pts[id].o.push([k,b]);kept++}continue}
       const X=sfmTri(cams[j].R,cams[j].t,R,t,P[i],Q[i]);if(!X)continue;const zj=dt3(cams[j].R[2],X)+cams[j].t[2],zk=dt3(R[2],X)+t[2];if(zj<=0||zk<=0)continue;if(ang(cams[j],cams[k],X)<(opt.minAng||1.5))continue;
       const id2=pts.length;pts.push({X,o:[[j,a],[k,b]]});obs[j].set(a,id2);obs[k].set(b,id2);nn++}
     // calage de la profondeur des deux photos sur tous les appariements de la paire, triangulés (beaucoup plus de points que les seuls suivis)
     if(opt.depth){const Sj=[],Sk=[];for(const i of ER.inl){const X=sfmTri(cams[j].R,cams[j].t,R,t,P[i],Q[i]);if(!X)continue;const zj=dt3(cams[j].R[2],X)+cams[j].t[2],zk=dt3(R[2],X)+t[2];if(!(zj>0&&zk>0))continue;if(ang(cams[j],cams[k],X)<1)continue;
         Sj.push([sfmDAt(opt.depth[j],F[j].xy[M[i][0]*2]/F[j].W,F[j].xy[M[i][0]*2+1]/F[j].H),1/zj]);Sk.push([sfmDAt(opt.depth[k],F[k].xy[M[i][1]*2]/F[k].W,F[k].xy[M[i][1]*2+1]/F[k].H),1/zk])}
-      if(!AF[j])AF[j]=sfmFitS(Sj);AF[k]=sfmFitS(Sk)||AF[k]}
+      if(!AF[j])AF[j]=sfmFitS(Sj);AF[k]=sfmFitS(Sk)||AF[k];
+      // photo prise en tournant sur place (trop peu de points triangulés) : sa profondeur est calée sur les points déjà placés qu'elle voit, sinon reprise de la précédente
+      if(!AF[k]){const Sk2=[];for(const i of ER.inl){const id=obs[k].get(M[i][1]);if(id==null)continue;const X=pts[id].X,zk=dt3(R[2],X)+t[2];if(zk>0)Sk2.push([sfmDAt(opt.depth[k],F[k].xy[M[i][1]*2]/F[k].W,F[k].xy[M[i][1]*2+1]/F[k].H),1/zk])}AF[k]=sfmFitS(Sk2)||(par<0.01&&AF[j]?{...AF[j]}:null)}}
     log.push({k,w:SFM.lastW,m:M.length,inl:ER.inl.length,ech:rs.length,dep:sd.length,nouv:nn,suivis:kept})}
   return{ok:cams.filter(Boolean).length>=2,cams,pts,F,fs,log,AF}}
 /* triangulation d'un point vu de plusieurs photos (DLT) */
@@ -3976,7 +3994,9 @@ function sfmBA(r,opt){opt=opt||{};const{cams,pts,F,fs}=r,N=cams.length,FO=!!opt.
   const GR=opt.grav,gk=GR?1/((opt.gravSig||0.3)*Math.PI/180):0;let gw=null;const gUpd=()=>{if(!GR)return;// la première photo, fixe, porte la verticale du repère
     const c0=cams.findIndex((c,i)=>c&&GR[i]);if(c0===0){gw=nz3(mv3(tr3(cams[0].R),GR[0]));return}let a=[0,0,0];for(let c=0;c<N;c++)if(cams[c]&&GR[c]){const v=mv3(tr3(cams[c].R),GR[c]);a=a.map((x,k)=>x+v[k])}gw=nz3(a)};gUpd();
   const gCost=()=>{let s=0;if(!GR)return 0;for(let c=0;c<N;c++)if(cams[c]&&GR[c]){const v=mv3(cams[c].R,gw);for(let k=0;k<3;k++){const e=gk*(v[k]-GR[c][k]);s+=e*e}}return s};
-  const cost=()=>{let s=gCost();P.forEach((p,i)=>{for(const[c,q]of ob[i]){const C=cams[c],v=mv3(C.R,p.X).map((x,k)=>x+C.t[k]);if(v[2]<=1e-6){s+=hub*hub;continue}const e=Math.hypot(v[0]/v[2]-q[0],v[1]/v[2]-q[1])*fs[c]*fsc;s+=e<hub?e*e:2*hub*e-hub*hub}});return s};
+  const RP=opt.rotPri&&opt.rotPri[0]?opt.rotPri:null,rk=1/((opt.rotSig||3)*Math.PI/180),rpRes=c=>{const E=mm3(cams[c].R,mm3(tr3(RP[0]),RP[c]));return[0.5*(E[2][1]-E[1][2]),0.5*(E[0][2]-E[2][0]),0.5*(E[1][0]-E[0][1])].map(v=>rk*v)};
+  const rpCost=()=>{let s=0;if(RP)for(let c=1;c<N;c++)if(cams[c]&&RP[c]){const r=rpRes(c);s+=r[0]*r[0]+r[1]*r[1]+r[2]*r[2]}return s};
+  const cost=()=>{let s=gCost()+rpCost();P.forEach((p,i)=>{for(const[c,q]of ob[i]){const C=cams[c],v=mv3(C.R,p.X).map((x,k)=>x+C.t[k]);if(v[2]<=1e-6){s+=hub*hub;continue}const e=Math.hypot(v[0]/v[2]-q[0],v[1]/v[2]-q[1])*fs[c]*fsc;s+=e<hub?e*e:2*hub*e-hub*hub}});return s};
   cost0=cost();let cur=cost0;
   for(let it=0;it<(opt.it||15);it++){const fo=6*nc,D=6*nc+(FO?1:0),U=[...Array(D)].map(()=>new Float64Array(D)),g=new Float64Array(D),Vs=[],Ws=[],gp=[];
     P.forEach((p,i)=>{const V=[[0,0,0],[0,0,0],[0,0,0]],gpp=[0,0,0],W=new Map();let obJf=null;
@@ -3990,6 +4010,8 @@ function sfmBA(r,opt){opt=opt||{};const{cams,pts,F,fs}=r,N=cams.length,FO=!!opt.
       for(let a=0;a<3;a++)V[a][a]*=1+lam,V[a][a]+=1e-12;Vs.push(V);Ws.push(W);gp.push(gpp)});
     if(GR){gUpd();for(let c=1;c<N;c++){if(ci[c]<0||!GR[c])continue;const v=mv3(cams[c].R,gw),r0=[0,1,2].map(k=>gk*(v[k]-GR[c][k])),J=[[0,v[2],-v[1]],[-v[2],0,v[0]],[v[1],-v[0],0]].map(row=>row.map(x=>x*gk)),o=6*ci[c];
         for(let a=0;a<3;a++){g[o+a]+=J[0][a]*r0[0]+J[1][a]*r0[1]+J[2][a]*r0[2];for(let b=0;b<3;b++)U[o+a][o+b]+=J[0][a]*J[0][b]+J[1][a]*J[1][b]+J[2][a]*J[2][b]}}}
+    // orientation donnée par le téléphone (relative à la première photo), tenue à quelques degrés près
+    if(RP)for(let c=1;c<N;c++){if(ci[c]<0||!RP[c])continue;const r0=rpRes(c),o=6*ci[c];for(let a2=0;a2<3;a2++){g[o+a2]+=rk*r0[a2];U[o+a2][o+a2]+=rk*rk}}
     for(let a=0;a<D;a++)U[a][a]=U[a][a]*(1+lam)+1e-12;
     // complément de Schur
     const Vi=Vs.map(V=>{const d=det3(V);if(Math.abs(d)<1e-30)return null;const c=(a,b)=>V[(a+1)%3][(b+1)%3]*V[(a+2)%3][(b+2)%3]-V[(a+1)%3][(b+2)%3]*V[(a+2)%3][(b+1)%3];return[0,1,2].map(a=>[0,1,2].map(b=>c(b,a)/d))});
@@ -4054,6 +4076,8 @@ function sfmScale(r,camH){const C=r.cams.filter(Boolean);let dn=[0,0,0];for(cons
   if(!best)return null;// moindres carrés sur les points du plan
   for(let rep=0;rep<2;rep++){const I=low.filter(X=>Math.abs(dt3(X,best.n)-best.d)<th);const m=[0,1,2].map(k=>I.reduce((s,X)=>s+X[k],0)/I.length),M=[[0,0,0],[0,0,0],[0,0,0]];for(const X of I)for(let i=0;i<3;i++)for(let j=0;j<3;j++)M[i][j]+=(X[i]-m[i])*(X[j]-m[j]);let n=sfmJacobi(M,3).vec[0];if(dt3(n,dn)<0)n=n.map(v=>-v);best={...best,n,d:dt3(m,n),k:I.length}}
   const fl=cc.map(c=>best.d-dt3(c,best.n)).sort((a,b)=>a-b)[cc.length>>1];return{s:camH/fl,down:best.n,floor:fl,n:best.k}}
+/* rotation remise d'aplomb (les produits successifs s'écartent peu à peu d'une vraie rotation) */
+function sfmOrtho(R){const a=nz3(R[0]),b0=R[1],d=dt3(a,b0),b=nz3(b0.map((v,i)=>v-d*a[i])),c=cr3(a,b);return[a,b,c]}
 
 /* --- sift.js --- */
 /* points caractéristiques invariants à l'échelle et à la rotation (méthode du SIFT de D. Lowe, 2004, libre de brevet depuis 2020 ; écrite ici, aucun code repris) */
@@ -4284,7 +4308,7 @@ return{sfmRun2,sfmBA,sfmLayout,sfmWalls,sfmGray,sfFeat}}
 const SERL=serLib();
 function serSfm(L,d,prog,F){let f=d.f,r=null,ba=null;F=F||d.imgs.map((g,i)=>{prog(0.2*i/d.imgs.length);return L.sfFeat(g,{ct:0.003,mx:1200,n:4000})});
   for(let pass=0;pass<2;pass++){r=L.sfmRun2(d.imgs,{F,f,rot:d.rot,ct:0.003,mx:1200,n:4000,prog:q=>prog(0.2+pass*0.4+Math.max(0,q-0.5)*0.7)});if(!r.ok||r.cams.filter(Boolean).length<6)return{ok:false};
-    ba=L.sfmBA(r,{it:30,grav:d.grav,gravSig:0.5,focal:true});const nf=r.fs[0];if(Math.abs(nf/f-1)<0.02)break;f=nf}
+    ba=L.sfmBA(r,{it:30,grav:d.grav,gravSig:0.5,focal:true,rotPri:d.rot,rotSig:1.5});const nf=r.fs[0];if(Math.abs(nf/f-1)<0.02)break;f=nf}
   return{ok:true,fs:r.fs,cams:r.cams,pts:r.pts.map(p=>({X:p.X,o:p.o,dead:p.dead})),F:r.F.map(x=>({n:x.n,xy:x.xy,W:x.W,H:x.H})),ba}}
 /* sur place (page qui interdit le calcul en arrière-plan) : les points de chaque photo un à un, en rendant la main entre deux */
 async function serSfmHere(L,d,prog){const F=[];for(let i=0;i<d.imgs.length;i++){prog(0.2*i/d.imgs.length);await tick();F.push(L.sfFeat(d.imgs[i],{ct:0.003,mx:1200,n:4000}))}await tick();return serSfm(L,d,prog,F)}
@@ -4342,7 +4366,7 @@ function serNoCam(){let el=$('#ser');if(!el){el=document.createElement('div');el
   $('#ser-x').onclick=serClose;$('#ser-in').addEventListener('change',async e=>{const fs=[...e.target.files].filter(f=>/^image\//.test(f.type||'image/')).sort((a,b)=>(a.lastModified-b.lastModified)||a.name.localeCompare(b.name,undefined,{numeric:true})).slice(0,36);e.target.value='';
     if(fs.length<10){toast(t('ser_fail'));return}serClose();busy(true,'ser_wk');{const bt=$('#busy-t');if(bt)bt.textContent=t('ser_wk',{p:0})}await tick();const shots=[];let f35=null;try{for(const f of fs){shots.push({cv:await rnvImg(f),R:null});if(f35==null)f35=await rnvExif(f)}}catch(err){}busy(false);
     if(shots.length<10){toast(t('ser_fail'));return}const c=shots[0].cv;await serRun(shots,f35?f35/43.27*Math.hypot(c.width,c.height):0.75*Math.max(c.width,c.height))})}
-async function rnvMake(){if(!RNV.walls.length)return;$('#rnv').hidden=true;busy(true,'b_an');await tick();
+async function rnvMake(){if(!RNV.walls.length)return;$('#rnv').hidden=true;busy(true,'b_an');await tick();RNV.sla=null;if(RNV.walls.some(w=>w.low))try{const A=rnvSlopeMeas();if(A)RNV.sla=A}catch(e){}if(V2.pend)await v2Wait(15000);
   try{const H=clamp(RNV.H,1.8,20),src=RNV.walls.slice(0,RMAX),Ls=src.map(w=>clamp(rnvLen(w),0.6,30));let MQ=null;try{MQ=rnvMq(src,Ls,H)}catch(e){}
     const walls=src.map((w,i)=>({o:rnvRect(w,Ls[i],rnvTops(i,Ls[i]),1200).o,L:Ls[i]})),tl=rnvBest(walls);for(const w of walls)delete w.o;
     const fl=rnvSample(src,'floor'),ce=rnvSample(src,'ceil'),ep=DEF.ep,k=100,m=80,G=(RDEP=src.length<2?rnvDepth(src[0],Ls[0],H):null,rnvPoly(src,Ls,ep,k,m));
@@ -4350,7 +4374,7 @@ async function rnvMake(){if(!RNV.walls.length)return;$('#rnv').hidden=true;busy(
     Object.assign(S,{src:null,corners:null,rect:null,rectURL:'',W:G.W,H:G.H,params:{...DEF,H},walls:G.ws,ops:[],lvl:null,eqs:[],scale:1/k,calib:null,cotes:{},roomNames:[{x:G.lx,y:G.ly,name}],finish:[],wallDef:null,floorDef:null,
       extCol:null,ext:null,roof:null,plans:null,planIdx:0,addingPlan:false,autoF:true,str:null,base3:null,example:false,pdf:null,sel3:null,ctxRoom:null,vb:null,m3:null});
     S.pset=new Set(['H']);uid=10;hist.u=[];hist.r=[];updUndo();try{rnvPlace(src,Ls,H,G)}catch(e){try{console.error(e)}catch(_){}}computeRooms();const f0=fl?nearFloor(fl):null;S.floorDef=f0;
-    S.rnv={id:Date.now().toString(36),H,kind:RNV.kind,walls,fl,ce,f0,before:false};if(MQ)S.rnv.mq=MQ;try{oeQRec(src)}catch(e){}if(RNV.Hset)try{oeAddH(H,S.rnv.id)}catch(e){}if(RNV.Hset&&RNV.serH&&src.some(w=>w.ser))try{oeAddCam(RNV.serCam*H/RNV.serH)}catch(e){}{const low=src.map((w,i)=>w.low&&G.ws[i]?G.ws[i].id:null).filter(Boolean);if(low.length)S.rnv.sl={low,h0:clamp(RNV.h0||1,0.3,H-0.3),a:SLA}}S.rnvFresh=true;rnvSetTile(S.rnv,tl);rnvSurf(S.rnv,src,Ls,H,G,tl);if(!S.rnv.sl)try{const bm=rnvBeamsAll(src,Ls,H,G);if(bm)S.rnv.bm=bm}catch(e){}S.rnv.hd=src.map(w=>w.h==null?null:Math.round(w.h));S.rnv.ctx=[].concat(...src.map(w=>w.ctx||[]));if(G.ws.length>src.length)S.rnv.virt=G.ws.slice(src.length).map(w=>w.id);if(src.length===1&&RDEP&&!S.rnv.sl)try{const sv=rnvSides(src[0],Ls[0],H,G,RDEP);if(sv)S.rnv.sv=sv}catch(e){try{console.error(e)}catch(_){}}
+    S.rnv={id:Date.now().toString(36),H,kind:RNV.kind,walls,fl,ce,f0,before:false};if(MQ)S.rnv.mq=MQ;try{oeQRec(src)}catch(e){}if(RNV.Hset)try{oeAddH(H,S.rnv.id)}catch(e){}if(RNV.Hset&&RNV.serH&&src.some(w=>w.ser))try{oeAddCam(RNV.serCam*H/RNV.serH)}catch(e){}{const low=src.map((w,i)=>w.low&&G.ws[i]?G.ws[i].id:null).filter(Boolean);if(low.length)S.rnv.sl={low,h0:clamp(RNV.h0||1,0.3,H-0.3),a:RNV.sla||SLA,...(RNV.sla?{am:1}:{})}}S.rnvFresh=true;rnvSetTile(S.rnv,tl);rnvSurf(S.rnv,src,Ls,H,G,tl);if(!S.rnv.sl)try{const bm=rnvBeamsAll(src,Ls,H,G);if(bm)S.rnv.bm=bm}catch(e){}S.rnv.hd=src.map(w=>w.h==null?null:Math.round(w.h));S.rnv.ctx=[].concat(...src.map(w=>w.ctx||[]));if(G.ws.length>src.length)S.rnv.virt=G.ws.slice(src.length).map(w=>w.id);if(src.length===1&&RDEP&&!S.rnv.sl)try{const sv=rnvSides(src[0],Ls[0],H,G,RDEP);if(sv)S.rnv.sv=sv}catch(e){try{console.error(e)}catch(_){}}
     if(src.length===1&&!S.rnv.sl)try{const rl=await rnvRelief(src[0],Ls[0],H,G.segs[0],G.k);if(rl){S.rnv.rl=rl;S.rnvRlCam=1}}catch(e){try{console.error(e)}catch(_){}}
     if(CLIENT){S.pid=newPid();S.pname=uniqName(name);S.chat=[];S.base3=snap3()}
     busy(false);$('#rnv').innerHTML='';
@@ -4625,6 +4649,7 @@ const VIS={p:null,ready:false},VURL={ort:'https://cdnjs.cloudflare.com/ajax/libs
 /* classes Objects365 utiles (numéros du modèle) -> équipements casô */
 /* objets qui renseignent sur la pièce (numéros du modèle Objects365) : [nom, type de pièce] */
 const VCTX={76:['lit','chambre'],51:['canape','sejour'],38:['tv','sejour'],134:['frigo','cuisine'],135:['four','cuisine'],150:['plaque','cuisine'],269:['plaque','cuisine'],311:['lavevaisselle','cuisine'],221:['lavelinge',null],10:['bureau','bureau'],160:['bureau','bureau'],178:['ballon','sport'],119:['ballon','sport'],187:['extincteur',null],139:['camera',null]};
+Object.assign(VCTX,{dtr_lit:['lit','chambre'],dtr_canape:['canape','sejour'],dtr_tv:['tv','sejour'],dtr_frigo:['frigo','cuisine'],dtr_four:['four','cuisine'],owl_pipe:['tuyau',null]});
 const VCLS={81:'socket',7:'light',109:'light',77:'water',82:'sink',154:'wc',192:'bath',302:'shower',176:'rad',84:'clim',202:'hood'};
 async function visModel(){try{const r=await fetch('lib/vision/model_quantized.onnx');if(r.ok)return new Uint8Array(await r.arrayBuffer())}catch(e){}
   let c=null;try{c=await caches.open('caso-vision');const m=await c.match(VURL.model);if(m)return new Uint8Array(await m.arrayBuffer())}catch(e){}
@@ -4640,6 +4665,95 @@ async function visRun(cv){if(!VIS.ready)return null;const V=await visLoad();if(!
   for(let q=0;q<Q;q++){let bk=0,bv=-1e9;for(let k=0;k<K;k++){const v=lg.data[q*K+k];if(v>bv){bv=v;bk=k}}const sc=1/(1+Math.exp(-bv));if(sc<0.35)continue;let k=VCLS[bk];if(!k){if(VCTX[bk])ctx.push(bk);const b2=bx.data.slice(q*4,q*4+4);obj.push([b2[0]*cv.width,b2[1]*cv.height,b2[2]*cv.width,b2[3]*cv.height]);continue}if(k==='sink'&&RNV.kind==='cuisine')k='evier';
     const b=bx.data.slice(q*4,q*4+4);out.push({k,sc,cx:b[0]*cv.width,cy:b[1]*cv.height,w:b[2]*cv.width,h:b[3]*cv.height})}
   out.sort((a,b)=>b.sc-a.sc);const keep=[];for(const p of out)if(!keep.some(q=>q.k===p.k&&Math.hypot(q.cx-p.cx,q.cy-p.cy)<Math.max(p.w,p.h)*0.6))keep.push(p);keep.ctx=ctx;keep.obj=obj;return keep}
+/* ---------- reconnaissance fine des photos, en arrière-plan, une photo après l'autre ----------
+   DETR panoptique (Facebook, Apache 2.0, environ 44 Mo) : ce qui, sur la photo, est meuble, lit, tissu, rideau ou filet (retiré du mur), et les objets de la pièce.
+   OWLv2 (Google, Apache 2.0, environ 155 Mo, dans casô seulement) : prises, interrupteurs, lampes même éteintes, tuyaux, radiateurs, sanitaires, décrits par des mots.
+   Les deux tournent dans le téléphone (ONNX Runtime Web), hors de l'écran (travail en arrière-plan), téléchargés une fois puis gardés ; copie locale dans lib/vision/ si elle existe.
+   Ils ne mesurent rien : ils disent seulement ce qu'il y a et où, sur la photo. */
+const V2={chain:Promise.resolve(),pend:0,ses:{}},
+  // version figée de chaque fichier et son empreinte : un fichier modifié sur le site est refusé
+  V2M={detr:{u:'https://huggingface.co/Xenova/detr-resnet-50-panoptic/resolve/ea24b2d4e0bfae31f0a1299ba3fb892a2df064de/onnx/model_quantized.onnx',f:'detr_quantized',h:'93abfec8b8abd77329f203726b231ee5e5d4c2d52c881a74ab1c1134d888c41d'},
+    owl:{u:'https://huggingface.co/Xenova/owlv2-base-patch16-ensemble/resolve/3e255bc9bf304b3358a8c1945c0a9514eefe7f10/onnx/model_quantized.onnx',f:'owlv2_quantized',h:'af8d6a041e4114b06eafabb03047350c7b8f136670a3f8afc7e73c5a74c2b24b'}};
+async function v2Ok(m,u8){try{const d=new Uint8Array(await crypto.subtle.digest('SHA-256',u8));return[...d].map(x=>x.toString(16).padStart(2,'0')).join('')===V2M[m].h}catch(e){return false}}
+async function v2Bytes(m){const b=await v2Get(m);if(!(await v2Ok(m,b))){try{const c=await caches.open('caso-vision');await c.delete(V2M[m].u)}catch(e){}throw new Error(m+' : empreinte différente')}return b}
+async function v2Get(m){const M=V2M[m];try{const r=await fetch('lib/vision/'+M.f+'.onnx');if(r.ok)return new Uint8Array(await r.arrayBuffer())}catch(e){}
+  // pages de démo : le modèle est joint en texte base64, en morceaux
+  try{const ps=[];for(let i=0;i<12;i++){const r=await fetch('lib/vision/'+M.f+'.b64.'+i+'.txt');if(!r.ok)break;const t=(await r.text()).trim(),b=atob(t),u=new Uint8Array(b.length);for(let j=0;j<b.length;j++)u[j]=b.charCodeAt(j);ps.push(u)}
+    if(ps.length){const n=ps.reduce((a,b)=>a+b.length,0),o=new Uint8Array(n);let k=0;for(const b of ps){o.set(b,k);k+=b.length}return o}}catch(e){}
+  let c=null;try{c=await caches.open('caso-vision');const h=await c.match(M.u);if(h)return new Uint8Array(await h.arrayBuffer())}catch(e){}
+  const r=await fetch(M.u);if(!r.ok)throw new Error(m+' '+r.status);const b=await r.arrayBuffer();try{if(c)await c.put(M.u,new Response(b))}catch(e){}return new Uint8Array(b)}
+async function v2Base(){const loc=await fetch('lib/vision/ort.wasm.min.js',{method:'HEAD'}).then(r=>r.ok).catch(()=>false);return new URL(loc?'lib/vision/':VURL.ort,document.baseURI).href}
+/* séance d'un modèle : dans un travail en arrière-plan (l'écran reste fluide) ; sinon, pour DETR seulement, sur place */
+function v2Sess(m){if(V2.ses[m])return V2.ses[m];V2.ses[m]=(async()=>{const base=await v2Base(),bytes=await v2Bytes(m);
+    try{// travail en arrière-plan de type module : ONNX Runtime y est importé sous sa forme module (l'autre forme échoue hors de la page)
+      // OWLv2 : la carte graphique (WebGPU) quand l'appareil en a une, sinon le processeur comme les autres
+      const gpu=m==='owl',lib=gpu?VURL.ort+'ort.webgpu.min.mjs':base+'ort.wasm.min.mjs',wb=gpu?VURL.ort:base;
+      const src=`import * as ort from '${lib}';let s=null;onmessage=async e=>{const d=e.data;try{if(d.init){ort.env.wasm.wasmPaths=d.base;ort.env.wasm.numThreads=1;let ep='wasm';
+          if(d.gpu&&self.navigator&&navigator.gpu)try{if(await navigator.gpu.requestAdapter()){s=await ort.InferenceSession.create(d.bytes,{executionProviders:['webgpu']});ep='webgpu'}}catch(err){s=null}
+          if(!s)s=await ort.InferenceSession.create(d.bytes,{executionProviders:['wasm']});postMessage({ok:1,ep});return}
+        const f={};for(const k in d.feeds){const x=d.feeds[k];f[k]=new ort.Tensor(x.t,x.d,x.s)}const o=await s.run(f),r={};for(const k of d.want)r[k]={d:o[k].data,s:o[k].dims};postMessage({r})}catch(err){postMessage({err:String(err&&err.message||err)})}};postMessage({ready:1})`;
+      const wk=new Worker(URL.createObjectURL(new Blob([src],{type:'text/javascript'})),{type:'module'});let q=Promise.resolve();
+      await new Promise((ok,ko)=>{wk.onmessage=e=>e.data.ready?ok():0;wk.onerror=e=>ko(e);setTimeout(()=>ko(new Error('ort module')),30000)});
+      const call=msg=>new Promise((ok,ko)=>{wk.onmessage=e=>e.data.err?ko(new Error(e.data.err)):ok(e.data);wk.onerror=e=>ko(e);wk.postMessage(msg)});
+      {const r=await call({init:1,base:wb,bytes,gpu});V2['ep_'+m]=r.ep}return{run:(feeds,want)=>(q=q.then(()=>call({feeds,want}).then(d=>d.r)))}}
+    catch(e){if(m!=='detr')throw e;if(!window.ort)await new Promise((ok,ko)=>{const s=document.createElement('script');s.src=base+'ort.wasm.min.js';s.crossOrigin='anonymous';s.onload=ok;s.onerror=()=>ko(new Error('ort'));document.head.appendChild(s)});
+      const ort=window.ort;ort.env.wasm.wasmPaths=base;ort.env.wasm.numThreads=1;const s=await ort.InferenceSession.create(bytes,{executionProviders:['wasm']});
+      return{run:async(feeds,want)=>{const f={};for(const k in feeds){const x=feeds[k];f[k]=new ort.Tensor(x.t,x.d,x.s)}const o=await s.run(f),r={};for(const k of want)r[k]={d:o[k].data,s:o[k].dims};return r}}}})().catch(e=>{V2.ses[m]=null;V2['err_'+m]=String(e&&e.message||e);return null});return V2.ses[m]}
+/* DETR : catégories COCO panoptique (numéros du modèle) utiles à casô */
+const DTRK=(()=>{const K={},put=(g,ids)=>{for(const i of ids)K[i]=g};put('wall',[171,175,176,177,199]);put('ceil',[186]);put('floor',[118,190,200]);put('door',[71,112]);put('win',[68,180,181]);
+  put('obj',[1,62,63,64,65,67,69,70,72,78,79,81,82,93,98,104,105,107,108,109,119,138,141,156,165,167,168,188,189]);return K})();
+// objets qui renseignent sur la pièce, comme ceux du modèle de reconnaissance
+const DTRC={65:'dtr_lit',63:'dtr_canape',72:'dtr_tv',82:'dtr_frigo',79:'dtr_four',78:'dtr_four'};
+/* photo réduite (grand côté 512 : au-delà, les masques du modèle exporté ne sont plus justes) -> boîtes des objets devant le mur, objets de la pièce */
+async function dtrRun(cv){const V=await v2Sess('detr');if(!V)return null;const W=cv.width,H=cv.height,s=512/Math.max(W,H),w=Math.max(32,Math.round(W*s/32)*32),h=Math.max(32,Math.round(H*s/32)*32);
+  const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.drawImage(cv,0,0,w,h);const d=x.getImageData(0,0,w,h).data,n=w*h,f=new Float32Array(3*n),M=[0.485,0.456,0.406],SD=[0.229,0.224,0.225];
+  for(let i=0;i<n;i++)for(let k=0;k<3;k++)f[k*n+i]=(d[i*4+k]/255-M[k])/SD[k];
+  // le modèle exporté attend un masque de 64 × 64 rempli de 1 (photo entière, sans bord ajouté)
+  const o=await V.run({pixel_values:{t:'float32',d:f,s:[1,3,h,w]},pixel_mask:{t:'int64',d:new BigInt64Array(4096).fill(1n),s:[1,64,64]}},['logits','pred_masks']);
+  const L=o.logits.d,Q=o.logits.s[1],NC=o.logits.s[2],MD=o.pred_masks.d,mh=o.pred_masks.s[2],mw=o.pred_masks.s[3],mn=mh*mw;
+  // même règle que la bibliothèque d'origine : requêtes sûres (0,7), chaque point à la requête la plus probable, part gagnée assez grande devant le masque propre
+  const keep=[];for(let q=0;q<Q;q++){let mx=-1e9;for(let k=0;k<NC;k++)mx=Math.max(mx,L[q*NC+k]);let se=0;for(let k=0;k<NC;k++)se+=Math.exp(L[q*NC+k]-mx);let bk=-1,bp=0;for(let k=0;k<NC-1;k++){const p=Math.exp(L[q*NC+k]-mx)/se;if(p>bp){bp=p;bk=k}}if(bp>0.7)keep.push({q,id:bk,sc:bp})}
+  const own=new Int16Array(mn).fill(-1),best=new Float32Array(mn);for(let j=0;j<keep.length;j++){const K=keep[j],off=K.q*mn;for(let i=0;i<mn;i++){const pr=K.sc/(1+Math.exp(-MD[off+i]));if(pr>best[i]){best[i]=pr;own[i]=j}}}
+  const seg=[];for(let j=0;j<keep.length;j++){const K=keep[j],off=K.q*mn;let a0=0,a1=0,x0=mw,y0=mh,x1=-1,y1=-1;for(let i=0;i<mn;i++){if(MD[off+i]>0)a0++;if(own[i]===j&&MD[off+i]>0){a1++;const xx=i%mw,yy=(i-xx)/mw;if(xx<x0)x0=xx;if(xx>x1)x1=xx;if(yy<y0)y0=yy;if(yy>y1)y1=yy}}
+    if(!a0||!a1||a1/a0<0.8)continue;seg.push({id:K.id,g:DTRK[K.id]||null,a:a1/mn,b:[x0/mw*W,y0/mh*H,(x1+1)/mw*W,(y1+1)/mh*H],own:j})}
+  return{seg,own,mw,mh,W,H}}
+/* ce que DETR apporte à un mur photographié (sa lecture de la matière n'est pas gardée : essais, des parpaings pris pour de la brique ou du carrelage) */
+function dtrUse(w,D){const obj=[],ctx=[];for(const s of D.seg){if(s.g==='obj'&&s.a>0.003){const b=s.b;obj.push([(b[0]+b[2])/2,(b[1]+b[3])/2,b[2]-b[0],b[3]-b[1]])}if(DTRC[s.id]&&s.a>0.003)ctx.push(DTRC[s.id])}
+  w.dtr={obj,ctx}}
+/* OWLv2 : questions fixes (mots déjà découpés par son vocabulaire), chaque boîte prend la question qui lui va le mieux */
+const OWLQ=[['socket',[320,1125,539,550,12176,16855]],['switch',[320,1125,539,320,1395,5893]],['light',[320,1125,539,320,12374,10725]],['light',[320,1125,539,320,2569,10725]],['pipe',[320,1125,539,320,10459]],
+  ['rad',[320,1125,539,320,39372]],['wc',[320,1125,539,320,11071]],['sink',[320,1125,539,320,14551]],['water',[320,1125,539,320,44273]],['cab',[320,1125,539,320,15020]]];
+async function owlRun(cv){const V=await v2Sess('owl');if(!V)return null;const nq=OWLQ.length,ids=new BigInt64Array(nq*16),am=new BigInt64Array(nq*16);
+  OWLQ.forEach(([,t],i)=>{const tk=[49406,...t,49407];tk.forEach((v,j)=>{ids[i*16+j]=BigInt(v);am[i*16+j]=1n})});
+  const W=cv.width,H=cv.height,Mx=Math.max(W,H),N=960,c=document.createElement('canvas');c.width=c.height=N;const x=c.getContext('2d');x.fillStyle='rgb(128,128,128)';x.fillRect(0,0,N,N);x.drawImage(cv,0,0,W*N/Mx,H*N/Mx);
+  const d=x.getImageData(0,0,N,N).data,n=N*N,f=new Float32Array(3*n),MU=[0.48145466,0.4578275,0.40821073],SD=[0.26862954,0.26130258,0.27577711];for(let i=0;i<n;i++)for(let k=0;k<3;k++)f[k*n+i]=(d[i*4+k]/255-MU[k])/SD[k];
+  const o=await V.run({input_ids:{t:'int64',d:ids,s:[nq,16]},pixel_values:{t:'float32',d:f,s:[1,3,N,N]},attention_mask:{t:'int64',d:am,s:[nq,16]}},['logits','pred_boxes']),lg=o.logits.d,bx=o.pred_boxes.d,P=o.logits.s[1],out=[];
+  // seuil 0,22 et une question nettement devant les autres (essais : lampes, interrupteur, gaines retrouvés, rien sur une pièce vide)
+  for(let p=0;p<P;p++){let bq=0,bs=-1,s2=-1;for(let q=0;q<nq;q++){const s=1/(1+Math.exp(-lg[p*nq+q]));if(s>bs){s2=bs;bs=s;bq=q}else if(s>s2)s2=s}if(bs<0.22||bs-s2<0.04)continue;
+    const cx=bx[p*4]*Mx,cy=bx[p*4+1]*Mx,bw=bx[p*4+2]*Mx,bh=bx[p*4+3]*Mx;if(cx<0||cy<0||cx>W||cy>H)continue;out.push({k:OWLQ[bq][0],sc:bs,cx,cy,w:bw,h:bh})}
+  out.sort((a,b)=>b.sc-a.sc);const keep=[];for(const r of out)if(!keep.some(k=>k.k===r.k&&Math.hypot(k.cx-r.cx,k.cy-r.cy)<Math.max(r.w,r.h)*0.5))keep.push(r);return keep.slice(0,30)}
+/* OWLv2 demande environ 1,7 Go de mémoire pendant son calcul (mesuré sur ordinateur) : sur iPhone et iPad, ou sur un appareil qui annonce moins de 8 Go,
+   l'onglet risquerait d'être fermé par le système en pleine prise de vue ; il n'y tourne donc pas */
+function v2OwlOk(){try{const ua=navigator.userAgent||'',ios=/iPhone|iPad|iPod/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1);if(ios)return false;const dm=navigator.deviceMemory;return!(dm&&dm<8)}catch(e){return false}}
+/* file d'attente : chaque photo de mur passe par DETR puis OWLv2 ; le repérage du mur est refait avec ce qu'ils ont vu */
+function v2Queue(w){if(w.v2)return;w.v2=1;V2.pend++;let dn=0;V2.chain=V2.chain.then(async()=>{try{
+      if(!RNV.walls.includes(w))return;try{const D=await dtrRun(w.cv);if(D)dtrUse(w,D)}catch(e){}V2.pend--;dn=1;
+      if(RNV.walls.includes(w)&&w.dtr){await rnvDetect(w);if(RNV.walls[RNV.cur]===w)try{rnvSvg()}catch(e){}}
+      // pas sur un mur recomposé d'une série (image assemblée, où ses boîtes sont peu sûres) : il ne sert qu'aux photos prises une à une
+      if(!RNV.walls.includes(w)||w.ser||!v2OwlOk())return;try{const O=await owlRun(w.cv);if(O)w.owl=O}catch(e){}
+      if(RNV.walls.includes(w)&&w.owl){await rnvDetect(w);if(RNV.walls[RNV.cur]===w)try{rnvSvg()}catch(e){}}}finally{if(!dn)V2.pend--}})}
+/* « Voir en 3D » : on attend DETR sur les photos (au plus `ms`) ; OWLv2, plus long, n'est pas attendu : ce qu'il a déjà vu sert, le reste servira à la prochaine construction */
+async function v2Wait(ms){const t0=Date.now();while(V2.pend>0&&Date.now()-t0<ms)await new Promise(r=>setTimeout(r,250))}
+/* ce qu'ils ont vu, ajouté au repérage d'un mur (pts : repères déjà trouvés ; model : le modèle de reconnaissance a tourné) */
+function v2Merge(w,pts,model){const D=w.dtr,O=w.owl;if(D)w.obj=(model?w.obj||[]:[]).concat(D.obj);if(D||O){w.ctx=model?(w.ctx||[]).filter(c=>c!=='owl_pipe'):[];const nm=c=>VCTX[c]&&VCTX[c][0];if(D)for(const c of D.ctx)if(!w.ctx.some(x=>nm(x)===nm(c)))w.ctx.push(c)}
+  // hauteur sur le mur d'un point de la photo (cadre du mur, hauteur sous plafond) : une prise ou un interrupteur n'est pas au plafond
+  let zAt=null;try{const L=rnvLen(w),H=RNV.H,hi=homography(w.q,[[0,0],[L,0],[L,H],[0,H]]);zAt=(x,y)=>H-hApply(hi,x,y)[1]}catch(e){}
+  if(O){const near=(k,x,y,r)=>pts.some(p=>(p.k===k||(k==='water'&&p.k==='sink')||(k==='sink'&&(p.k==='water'||p.k==='evier')))&&Math.hypot(p.x-x,p.y-y)<r);
+    if(O.some(o=>o.k==='pipe'))w.ctx.push('owl_pipe');for(const o of O){if(o.k==='cab'||o.k==='pipe')continue;const r=Math.max(o.w,o.h,0.02*Math.max(w.cv.width,w.cv.height));if(near(o.k,o.cx,o.cy,r))continue;
+      if(zAt&&(o.k==='socket'||o.k==='switch')){const z=zAt(o.cx,o.cy);if(!(z>=0.05&&z<=(o.k==='socket'?1.5:1.7)))continue}
+      // dans une porte ou une fenêtre repérée : pas une prise ni un interrupteur
+      if((o.k==='socket'||o.k==='switch')&&pts.some(p=>p.r&&(()=>{const xs=p.r.map(q=>q[0]),ys=p.r.map(q=>q[1]);return o.cx>Math.min(...xs)&&o.cx<Math.max(...xs)&&o.cy>Math.min(...ys)&&o.cy<Math.max(...ys)})()))continue;
+      const fl=['wc','sink'].includes(o.k);pts.push({k:o.k==='sink'&&RNV.kind==='cuisine'?'evier':o.k,x:o.cx,y:fl?o.cy+o.h*0.4:o.cy,auto:1})}}}
 /* ---------- éléments repérés sans modèle de reconnaissance ---------- */
 const rsMean=(A,w,h,r)=>{const s=rsBox(A,w,h,r),c=rsBox(new Float32Array(w*h).fill(1),w,h,r);for(let i=0;i<w*h;i++)s[i]/=c[i]||1;return s};
 /* lumières allumées : taches très claires, presque blanches, nettes et compactes, dont le cœur est saturé (une source de lumière « brûle » la photo ;
@@ -4690,7 +4804,13 @@ function rsCracks(d,W,Hh,IN,OUT,F,ppm,Hm,OPS,topY){const n=W*Hh,Y=new Float32Arr
   const out=[];lab.C.forEach((c,l)=>{const bw=c.x1-c.x0+1,bh=c.y1-c.y0+1;if(Math.max(bw,bh)<0.1*ppm||bw<0.015*ppm||bh<0.015*ppm)return;const len=bd[l]/2,th=c.n/Math.max(1,len);
     if(len<0.2*ppm||th>0.03*ppm||len<6*th)return;const mx=(c.x0+c.x1)/2,my=(c.y0+c.y1)/2;let sr=0,sg=0,sb=0,ns=0;for(let y=c.y0;y<=c.y1;y++)for(let x=c.x0;x<=c.x1;x++){const j=y*W+x;if(!B[j]||lab.Lb[j]!==l)continue;sr+=d[j*4];sg+=d[j*4+1];sb+=d[j*4+2];ns++}if(!ns||(Math.max(sr,sg,sb)-Math.min(sr,sg,sb))/Math.max(1,Math.max(sr,sg,sb))>0.25)return;
     if(c.y0<=topY(mx)+0.05*ppm||c.y1>=Hh-0.12*ppm||c.x0<=0.02*W||c.x1>=0.98*W)return;if(OPS.some(b=>c.x1>b[0]-0.05*ppm&&c.x0<b[2]+0.05*ppm&&c.y1>b[1]-0.05*ppm&&c.y0<b[3]+0.05*ppm))return;
-    out.push([+(mx/ppm).toFixed(2),+(Hm-my/ppm).toFixed(2),+(len/ppm).toFixed(2)])});
+    // épaisseur du trait (points sombres seuls, sans l'élargissement) et sens (axe principal des points)
+    let sx=0,sy=0,sxx=0,syy=0,sxy=0;for(let y=c.y0;y<=c.y1;y++)for(let x=c.x0;x<=c.x1;x++){const j=y*W+x;if(!B[j]||lab.Lb[j]!==l)continue;sx+=x;sy+=y;sxx+=x*x;syy+=y*y;sxy+=x*y}
+    const ax=sx/ns,ay=sy/ns,cxx=sxx/ns-ax*ax,cyy=syy/ns-ay*ay,cxy=sxy/ns-ax*ay,an=Math.abs(0.5*Math.atan2(2*cxy,cxx-cyy)*180/Math.PI),thr=ns/Math.max(1,len),mm=thr*1000/ppm;
+    // « lézarde » seulement si le trait fait au moins 2,5 points d'épaisseur et 4 mm vus : en dessous, la photo ne permet pas de dire
+    const wl=thr>=2.5&&mm>=4?1:0,cor=OPS.some(b=>[[b[0],b[1]],[b[2],b[1]],[b[0],b[3]],[b[2],b[3]]].some(([qx,qy])=>Math.min(Math.hypot(c.x0-qx,c.y0-qy),Math.hypot(c.x1-qx,c.y1-qy),Math.hypot(c.x0-qx,c.y1-qy),Math.hypot(c.x1-qx,c.y0-qy))<0.3*ppm));
+    const ori=an<20?'h':an>70?'v':cor?'bo':'b';
+    out.push([+(mx/ppm).toFixed(2),+(Hm-my/ppm).toFixed(2),+(len/ppm).toFixed(2),wl,ori])});
   return out}
 /* repérage d'un mur photographié : repères en coordonnées de la photo */
 async function rnvDetect(w){const L=rnvLen(w),H=RNV.H,pts=[],i=RNV.walls.indexOf(w);let R0=null,an=null;
@@ -4698,12 +4818,15 @@ async function rnvDetect(w){const L=rnvLen(w),H=RNV.H,pts=[],i=RNV.walls.indexOf
     const ops0=rnvOpenings(R0.o,L,R0.Hm,an);for(const g of rnvDoorEdges(R0.o,L,R0.Hm,an))if(!ops0.some(q=>g.X0<q.X1-0.05&&g.X1>q.X0+0.05))ops0.push(g);
     for(const g of ops0){const c=[[g.X0,R0.Hm-g.z0],[g.X1,R0.Hm-g.z0],[g.X1,R0.Hm-g.z1],[g.X0,R0.Hm-g.z1]].map(([x,y])=>hApply(R0.hm,x,y)),m=hApply(R0.hm,(g.X0+g.X1)/2,R0.Hm-(g.z0+g.z1)/2);pts.push({k:g.k,x:m[0],y:m[1],r:c,auto:1,X0:g.X0,X1:g.X1,z0:g.z0,z1:g.z1})}}catch(e){}
   const inOp=(X,z)=>pts.some(p=>p.r&&X>p.X0-0.1&&X<p.X1+0.1&&z>p.z0-0.1&&z<p.z1+0.1);let model=false;
-  try{const r=await visRun(w.cv);if(r){model=true;w.ctx=r.ctx||[];w.obj=r.obj||[];for(const p of r){const fl=['wc','bath','shower','sink','evier'].includes(p.k);pts.push({k:p.k,x:p.cx,y:fl?p.cy+p.h*0.4:p.cy,auto:1})}}}catch(e){}
-  if(!model&&R0)try{for(const s of rnvSmall(R0.o,L,R0.Hm,an)){if(inOp(s.X,s.z))continue;const[x,y]=hApply(R0.hm,s.X,R0.Hm-s.z);pts.push({k:s.k,x,y,auto:1})}}catch(e){}
-  if(!model&&R0)try{for(const s of rnvRads(R0.o,L,R0.Hm)){if(inOp(s.X,s.z))continue;const[x,y]=hApply(R0.hm,s.X,R0.Hm-s.z);pts.push({k:'rad',x,y,auto:1})}}catch(e){}
-  if(!model)try{for(const s of rnvLights(w,pts))pts.push({k:'light',x:s.x,y:s.y,auto:1})}catch(e){}
+  try{const r=await visRun(w.cv);if(r){model=true;w.ctx=r.ctx||[];w.obj=r.obj||[];for(const p of r){if(['socket','switch','light','rad'].includes(p.k))continue;const fl=['wc','bath','shower','sink','evier'].includes(p.k);pts.push({k:p.k,x:p.cx,y:fl?p.cy+p.h*0.4:p.cy,auto:1})}}}catch(e){}
+  if(R0)try{for(const s of rnvSmall(R0.o,L,R0.Hm,an)){if(inOp(s.X,s.z))continue;const[x,y]=hApply(R0.hm,s.X,R0.Hm-s.z);pts.push({k:s.k,x,y,auto:1})}}catch(e){}
+  if(R0)try{for(const s of rnvRads(R0.o,L,R0.Hm)){if(inOp(s.X,s.z))continue;const[x,y]=hApply(R0.hm,s.X,R0.Hm-s.z);pts.push({k:'rad',x,y,auto:1})}}catch(e){}
+  try{for(const s of rnvLights(w,pts))pts.push({k:'light',x:s.x,y:s.y,auto:1})}catch(e){}
+  try{v2Merge(w,pts,model)}catch(e){}
+  // mur recomposé d'une série : pas de lampe devinée (on peut en poser au doigt)
+  if(w.ser)for(let j=pts.length-1;j>=0;j--)if(pts[j].k==='light')pts.splice(j,1);
   for(const p of pts)if(p.r){delete p.X0;delete p.X1;delete p.z0;delete p.z1}
-  w.pts=pts.concat((w.pts||[]).filter(p=>!p.auto));
+  w.pts=pts.concat((w.pts||[]).filter(p=>!p.auto));try{v2Queue(w)}catch(e){}
   if(!VIS.ready)visLoad().then(V=>{if(V&&RNV.walls.includes(w))rnvDetect(w).then(()=>{if(RNV.walls[RNV.cur]===w)rnvSvg()})})}
 /* repères dessinés sur la photo */
 function rnvPtsSvg(w,r){return(w.pts||[]).map((p,j)=>`<g class="rv-pt" data-j="${j}">${p.r?`<polygon points="${p.r.map(q=>q.join(',')).join(' ')}" fill="none" stroke="${RPC[p.k]||'#30343a'}" stroke-width="${r*0.14}" stroke-dasharray="${r*0.5} ${r*0.3}"/>`:''}<circle cx="${p.x}" cy="${p.y}" r="${r}" fill="${RPC[p.k]||'#30343a'}" stroke="#fff" stroke-width="${r*0.18}"/><svg x="${p.x-r*0.62}" y="${p.y-r*0.62}" width="${r*1.24}" height="${r*1.24}" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${rptIc(p.k)}</svg></g>`).join('')}
@@ -4713,7 +4836,7 @@ function rnvPtTap(w,p){const r=Math.max(w.cv.width,w.cv.height)*0.028;
   const j=(w.pts||[]).findIndex(q=>Math.hypot(q.x-p.x,q.y-p.y)<r*1.3);if(j>=0){w.pts.splice(j,1);rnvSvg();toast(t('rp_rm'));return true}return false}
 /* repères -> équipements et ouvertures de la maquette, à leur place réelle (G : forme de la pièce, un segment par mur photographié) */
 function rnvPlace(walls,Ls,H,G){const k=G.k,PC={};
-  walls.forEach((w,i)=>{const sg=G.segs[i],wall=S.walls[i];if(!w||!w.pts||!w.pts.length||!sg||!wall)return;const Li=Ls[i],[tL,tR]=rnvTops(i,Li),pp=[[0,H-tL],[Li,H-tR],[Li,H],[0,H]],hi=homography(w.q,pp),sh=tL!==tR?rnvShapeAt(w.q,w.cv.width,w.cv.height,tL,tR,Li):null,P=rnvPose(w.q,w.cv.width,w.cv.height,Li,H,pp,sh&&sh.f),y0=H-Math.min(tL,tR),tg=Math.tan(SLA*Math.PI/180);
+  walls.forEach((w,i)=>{const sg=G.segs[i],wall=S.walls[i];if(!w||!w.pts||!w.pts.length||!sg||!wall)return;const Li=Ls[i],[tL,tR]=rnvTops(i,Li),pp=[[0,H-tL],[Li,H-tR],[Li,H],[0,H]],hi=homography(w.q,pp),sh=tL!==tR?rnvShapeAt(w.q,w.cv.width,w.cv.height,tL,tR,Li):null,P=rnvPose(w.q,w.cv.width,w.cv.height,Li,H,pp,sh&&sh.f),y0=H-Math.min(tL,tR),tg=Math.tan((RNV.sla||SLA)*Math.PI/180);
     const at=u=>[sg.A[0]+u*sg.L*k*sg.d[0],sg.A[1]+u*sg.L*k*sg.d[1]],e2=G.ep*k/2;
     for(const pt of w.pts){const[X,Yd]=hApply(hi,pt.x,pt.y),u=clamp(X/Li,0.02,0.98),[px,py]=at(u);
       if(pt.k==='door'||pt.k==='window'){const half=(pt.k==='door'?0.83:1.0)/2*k,c=wall.o==='h'?px:py,lo=wall.a+e2+0.05*k,hi2=wall.b-e2-0.05*k;let ca=c-half,cb=c+half,hz=null;
@@ -4774,9 +4897,23 @@ function rnvShape(q,W,H,hL,hR){const r=rnvShapeFn(q,W,H,hL,hR).solve();return r&
    On marque les murs « bas » (sous la pente) et leur hauteur. Le plafond descend vers chacun d'eux avec l'angle du toit (40° par défaut,
    « pente 45° » au chat) jusqu'à la hauteur basse ; ailleurs il reste à la hauteur sous plafond. Les murs voisins prennent un haut en biais. */
 const SLA=40;
+/* pente du toit mesurée sur la photo d'un mur voisin d'un mur bas : son haut monte en biais du mur bas jusqu'au plafond.
+   Pour chaque angle essayé, on suit la ligne qu'il donnerait sur le mur (redressé par ses coins) et on mesure l'écart de clarté de part et d'autre ;
+   l'angle retenu est celui où la ligne tombe sur la jonction mur / rampant. Rien si la jonction ne ressort pas nettement. */
+function rnvSlopeMeas(){const ws=RNV.walls,n=ws.length,h0=RNV.h0||1,H=RNV.H;if(!ws.some(w=>w.low)||!(H-h0>0.2))return null;const est=[];
+  ws.forEach((w,i)=>{if(w.low||!w.q||!w.cv)return;const lw=i>0?ws[i-1]:(n>=4?ws[n-1]:null),rw=i<n-1?ws[i+1]:(n>=4?ws[0]:null),a=!!(lw&&lw.low),b=!!(rw&&rw.low);if(a===b)return;
+    const L=rnvLen(w);if(!(L>0.5))return;const tL=a?h0:H,tR=a?H:h0,pp=[[0,H-tL],[L,H-tR],[L,H],[0,H]],hw=homography(pp,w.q),cv=w.cv,W=cv.width,Hc=cv.height;
+    const s0=Math.min(1,800/Math.max(W,Hc)),c=document.createElement('canvas');c.width=Math.round(W*s0);c.height=Math.round(Hc*s0);c.getContext('2d').drawImage(cv,0,0,c.width,c.height);
+    const d=c.getContext('2d').getImageData(0,0,c.width,c.height).data,cw=c.width,ch=c.height,lu=(x,y)=>{x=Math.round(x*s0);y=Math.round(y*s0);let s=0,k=0;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const xx=x+dx,yy=y+dy;if(xx<0||yy<0||xx>=cw||yy>=ch)continue;const j=(yy*cw+xx)*4;s+=0.299*d[j]+0.587*d[j+1]+0.114*d[j+2];k++}return k?s/k:null};
+    const sc=[];for(let A=15;A<=70;A+=0.5){const t=Math.tan(A*Math.PI/180),run=(H-h0)/t;if(run>0.95*L){sc.push([A,0]);continue}const v=[];
+      for(let s=0.1;s<=0.9;s+=0.04){const u=s*run,X=a?u:L-u,z=h0+t*u,dl=0.05,p1=hApply(hw,X,H-(z+dl)),p2=hApply(hw,X,H-(z-dl)),l1=lu(p1[0],p1[1]),l2=lu(p2[0],p2[1]);if(l1!=null&&l2!=null)v.push(Math.abs(l1-l2))}
+      v.sort((p,q)=>p-q);sc.push([A,v.length>=10?v[v.length>>1]:0])}
+    const best=sc.reduce((p,q)=>q[1]>p[1]?q:p,[0,0]),med=sc.map(x=>x[1]).sort((p,q)=>p-q)[sc.length>>1];
+    if(best[1]>=6&&best[1]>=2*Math.max(1,med))est.push(best[0])});
+  if(!est.length)return null;est.sort((p,q)=>p-q);return est[est.length>>1]}
 /* hauteurs des deux coins du haut du mur i pendant la prise de vue (L : largeur, si connue, pour un mur entièrement sous la pente) */
 function rnvTops(i,L){const ws=RNV.walls,n=ws.length,h0=RNV.h0||1,H=RNV.H,w=ws[i];if(!w)return[H,H];if(w.low)return[h0,h0];
-  const t=Math.tan(SLA*Math.PI/180),far=L?Math.min(H,h0+t*L):H,lw=i>0?ws[i-1]:(n>=4?ws[n-1]:null),rw=i<n-1?ws[i+1]:(n>=4?ws[0]:null),a=!!(lw&&lw.low),b=!!(rw&&rw.low);
+  const t=Math.tan((RNV.sla||SLA)*Math.PI/180),far=L?Math.min(H,h0+t*L):H,lw=i>0?ws[i-1]:(n>=4?ws[n-1]:null),rw=i<n-1?ws[i+1]:(n>=4?ws[0]:null),a=!!(lw&&lw.low),b=!!(rw&&rw.low);
   return a&&b?[h0,h0]:a?[h0,far]:b?[far,h0]:[H,H]}
 function rnvLen(w){if(w.Lm)return w.Lm;if(w.Lser)return w.Lser*RNV.H/(RNV.serH||RNV.H);const i=RNV.walls.indexOf(w),W=w.cv.width,Hc=w.cv.height,D=Math.max(W,Hc);let tp=i>=0?rnvTops(i):[RNV.H,RNV.H];if(tp[0]===tp[1]){let L=rectAR(w.q,W,Hc)*tp[0];try{const P=rnvPose(w.q,W,Hc,L,tp[0]);if(P&&P.fr&&P.Lf)L=P.Lf}catch(e){}return L}
   let L=null;for(let k=0;k<4;k++){const r=rnvShape(w.q,W,Hc,tp[0],tp[1]);if(!r||!(r.e<0.2)||!(r.f>0.45*D&&r.f<3.2*D))break;L=r.L;const t2=rnvTops(i,L);if(t2[0]===tp[0]&&t2[1]===tp[1])break;tp=t2}
@@ -5181,8 +5318,34 @@ function rnvDoorEdges(o,L,Hm,an){const Wo=o.width,Ho=o.height,ppm=Wo/L,d=o.getCo
 /* coins proposés : la nouvelle recherche (jonction du plafond), sinon l'ancienne */
 function rnvConvex(q){let s=0;for(let i=0;i<4;i++){const a=q[i],b=q[(i+1)%4],c=q[(i+2)%4],z=(b[0]-a[0])*(c[1]-b[1])-(b[1]-a[1])*(c[0]-b[0]);if(Math.abs(z)<1e-6)return false;if(!s)s=Math.sign(z);else if(Math.sign(z)!==s)return false}
   return q[0][0]<q[1][0]&&q[3][0]<q[2][0]&&q[0][1]<q[3][1]&&q[1][1]<q[2][1]}
+/* coin du mur caché par un grand meuble (armoire jusqu'en haut près de l'angle) : le côté du cadre s'est posé sur le bord du meuble.
+   Au-dessus du meuble, la jonction plafond / mur continue avec la couleur du mur jusqu'au vrai coin : on la suit, puis le côté est
+   reporté là, parallèle à l'autre côté du cadre ; le bas suit la ligne du sol prolongée. Rien ne bouge si le haut ne se voit pas. */
+function rnvHidCorner(cv,q){const W=cv.width,H=cv.height,d=cv.getContext('2d').getImageData(0,0,W,H).data,px=(x,y)=>{x=Math.round(x);y=Math.round(y);if(x<0||y<0||x>=W||y>=H)return null;const j=(y*W+x)*4;return[d[j],d[j+1],d[j+2]]};
+  const dist=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2]),avg=L=>{const v=L.filter(Boolean);if(v.length<3)return null;return[0,1,2].map(k=>{const s=v.map(p=>p[k]).sort((a,b)=>a-b);return s[s.length>>1]})};
+  const out=q.map(p=>p.slice()),dbg=[];
+  for(const side of[1,0]){// 1 : côté droit (coins 1 et 2), 0 : côté gauche (coins 0 et 3)
+    const T0=side?q[0]:q[1],T1=side?q[1]:q[0],B0=side?q[3]:q[2],B1=side?q[2]:q[3],dir=side?1:-1,hgt=Math.hypot(B1[0]-T1[0],B1[1]-T1[1]);if(hgt<40)continue;
+    const yTop=x=>T0[1]+(T1[1]-T0[1])*(x-T0[0])/((T1[0]-T0[0])||1),yBot=x=>B0[1]+(B1[1]-B0[1])*(x-B0[0])/((B1[0]-B0[0])||1);
+    const band=x=>{const yt=yTop(x),L=[];for(let k=0.03;k<=0.09;k+=0.02)L.push(px(x,yt+k*hgt));return avg(L)};
+    // couleur du mur sous la jonction, juste avant le coin trouvé
+    const ref=avg([...Array(8)].map((_,i)=>band(T1[0]-dir*(0.02*W+i*3))));if(!ref)continue;
+    // devant le coin trouvé, au milieu de la hauteur : autre chose que le mur (le meuble)
+    const mid=avg([...Array(6)].map((_,i)=>{const x=T1[0]+dir*(0.01*W+i*3),y=yTop(x)+0.5*(yBot(x)-yTop(x));return px(x,y)}));
+    const bandNext=avg([...Array(6)].map((_,i)=>band(T1[0]+dir*(0.01*W+i*3))));
+    if(!mid||!bandNext||dist(mid,ref)<40||dist(bandNext,ref)>22){dbg.push({side,skip:1,m:mid&&Math.round(dist(mid,ref)),b:bandNext&&Math.round(dist(bandNext,ref))});continue}
+    // on suit le haut du mur tant qu'il garde sa couleur
+    // la lumière change doucement le long du mur : la référence suit les derniers points gardés ; un saut franc est le coin
+    let x=T1[0],miss=0,last=T1[0],run=[ref];while(true){x+=dir*2;if(x<1||x>W-2)break;const b=band(x);if(!b){break}const rf=avg(run.slice(-10))||ref;if(dist(b,rf)<=14){miss=0;last=x;run.push(b)}else if(++miss>=5)break}
+    const dx=Math.abs(last-T1[0]);dbg.push({side,dx:Math.round(dx)});if(dx<0.03*W)continue;
+    // nouveau côté : vertical dans la pièce, donc dirigé vers le point de fuite des verticales (rencontre de l'autre côté du cadre et du bord du meuble, vertical lui aussi)
+    const o0=side?q[0]:q[1],o3=side?q[3]:q[2],nt=[last,yTop(last)],X=(a,b,c,e)=>{const d1=[b[0]-a[0],b[1]-a[1]],d2=[e[0]-c[0],e[1]-c[1]],den=d1[0]*d2[1]-d1[1]*d2[0];if(Math.abs(den)<1e-9)return null;const t=((c[0]-a[0])*d2[1]-(c[1]-a[1])*d2[0])/den;return[a[0]+t*d1[0],a[1]+t*d1[1]]};
+    const vp=X(o0,o3,T1,B1);let vx;if(vp&&Math.abs(vp[1]-nt[1])>2*H)vx=(vp[0]-nt[0])/(vp[1]-nt[1]);else vx=((o3[0]-o0[0])/((o3[1]-o0[1])||1)+(B1[0]-T1[0])/((B1[1]-T1[1])||1))/2;
+    let nb=[last,yBot(last)];for(let it=0;it<3;it++){nb=[nt[0]+vx*(nb[1]-nt[1]),yBot(nt[0]+vx*(nb[1]-nt[1]))]}
+    if(side){out[1]=nt;out[2]=nb}else{out[0]=nt;out[3]=nb}}
+  return{q:out,dbg}}
 let RQH=null,RQM=null;
-function rnvQuad(cv,Hm){RQH=null;RQM=null;let old=null;try{old=wallQuad(cv)}catch(e){}try{const r=wallQuad3(cv,Hm||RNV.H,old);if(r&&rnvConvex(r.q)){RQH=r.Hest;RQM={how:r.how,s:+(r.s||0).toFixed(2)};return r.q}}catch(e){}return old||[[cv.width*0.06,cv.height*0.06],[cv.width*0.94,cv.height*0.06],[cv.width*0.94,cv.height*0.94],[cv.width*0.06,cv.height*0.94]]}
+function rnvQuad(cv,Hm){RQH=null;RQM=null;let old=null;try{old=wallQuad(cv)}catch(e){}try{const r=wallQuad3(cv,Hm||RNV.H,old);if(r&&rnvConvex(r.q)){RQH=r.Hest;RQM={how:r.how,s:+(r.s||0).toFixed(2)};if(!/face/.test(r.how||''))try{const h=rnvHidCorner(cv,r.q);if(rnvConvex(h.q)&&h.dbg.some(x=>x.dx>0.03*cv.width)){RQM.hid=1;return h.q}}catch(e){}return r.q}}catch(e){}return old||[[cv.width*0.06,cv.height*0.06],[cv.width*0.94,cv.height*0.06],[cv.width*0.94,cv.height*0.94],[cv.width*0.06,cv.height*0.94]]}
 /* grands volumes (entrepôt, salle de sport) : hauteur sous plafond lue sur les photos, tant qu'elle n'a pas été saisie */
 function rnvAutoH(){if(RNV.Hset)return;const hs=RNV.walls.map(w=>w.Hest).filter(v=>v>3.3&&v<20).sort((a,b)=>a-b);if(hs.length&&hs.length*2>=RNV.walls.length)RNV.H=+hs[hs.length>>1].toFixed(1)}
 /* cadre de la photo élargi quand un coin du mur en sort (mur très haut, angle hors champ) */
@@ -5267,7 +5430,7 @@ function rnvSurfChips(){const R=S.rnv;if(!R)return'';const sf=[];if(R.fk)sf.push
 function rnvRoomSheet(){const Q=rnvQty(),R=S.rnv,rm=S.rooms[0],nm=(S.roomNames[0]&&S.roomNames[0].name)||'',lb=k=>RPT.some(r=>r[0]===k)?rptLb(k):t('e_'+k),chip=(k,n)=>n?`<span class="rv-c">${lb(k)} <b>×${n}</b></span>`:'';
   const grp=(ti,items)=>{const h=items.map(([k,n])=>chip(k,n)).join('');return h?`<div class="rv-g"><p class="lbl-m">${t(ti)}</p><div class="rv-cs">${h}</div></div>`:''};
   const kv=(k,v)=>`<div class="rv-kv"><span>${t(k)}</span><b>${v}</b></div>`,ked=(k,v,e,p)=>`<div class="rv-kv rv-ed" data-ed="${e}" role="button" tabindex="0"><span>${t(k)}${rnvSt(e==='h'?'H':'D',p)}</span><b>${v}</b></div>`,st=[],mq=R&&R.mq;
-  if(R&&R.sl)st.push(t('rm_slope',{h:fmt(R.sl.h0,2),a:R.sl.a}));
+  if(R&&R.sl)st.push(t(R.sl.am?'rm_slope_m':'rm_slope',{h:fmt(R.sl.h0,2),a:Math.round(R.sl.a)}));
   if(R&&R.hd)for(let i=1;i<R.hd.length;i++){const a=R.hd[i-1],b=R.hd[i];if(a==null||b==null)continue;const d=Math.abs(((b-a+540)%360)-180);if(Math.abs(d-90)>=8&&d>30&&d<150)st.push(t('rm_angle',{a:Math.round(180-d),i,j:i+1}))}
   const nv=S.walls.filter(rvVirt).length;if(nv)st.push(t('rm_virt',{n:nv}));
   const ctx={};for(const c of(R&&R.ctx)||[]){const o=VCTX[c];if(o)ctx[o[0]]=(ctx[o[0]]||0)+1}
@@ -6270,7 +6433,7 @@ function chatSendX(raw){if(!CLIENT&&!(S.chatPend&&S.chatPend.kind)){let pro=fals
   if(S.rnv&&/\b(inventaire|que contient la piece|qu y a t il dans la piece|inventory|inventario)\b/.test(txt)){rnvRoomSheet();say('bot',rnvSummary());return}
   // pente du plafond (rénovation) : angle, hauteur basse
   if(S.rnv&&S.rnv.sl){const ma=txt.match(/\b(pente|rampant|toit)\w*\s*(a|de|:)?\s*(\d{2})\s*(°|deg\w*)?/),mh=txt.match(/\b(hauteur basse|mur bas|bas de pente)\s*(a|de|:)?\s*(\d+(?:[.,]\d+)?)/);
-    if(ma&&+ma[3]>=15&&+ma[3]<=70){S.rnv.sl.a=+ma[3];rebuild3();say('bot',tl('chat_sl_a',{a:ma[3]}));if(CLIENT)saveProj();else saveArt();return}
+    if(ma&&+ma[3]>=15&&+ma[3]<=70){S.rnv.sl.a=+ma[3];delete S.rnv.sl.am;rebuild3();say('bot',tl('chat_sl_a',{a:ma[3]}));if(CLIENT)saveProj();else saveArt();return}
     if(mh){const v=parseFloat(mh[3].replace(',','.'));if(v>=0.3&&v<S.params.H){S.rnv.sl.h0=v;rebuild3();say('bot',tl('chat_sl_h',{h:fmt(v,2)}));if(CLIENT)saveProj();else saveArt();return}}}
   // pièce en photo : prise de vue, avant / après, dimensions
   if(S.rooms.length===1)S.ctxRoom=S.rooms[0];
