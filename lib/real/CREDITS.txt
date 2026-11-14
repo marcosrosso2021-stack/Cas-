@@ -13,3 +13,10 @@ Reconnaissance sur les photos (Rénovation : prises, lumières, eau, radiateurs,
 Lecture des murs sur les photos (Rénovation : bords et coins des murs)
 - Détecteur de lignes rapide (Fast Line Detector, J. H. Lee et al., 2014) d'OpenCV, opencv_contrib/modules/ximgproc/src/fast_line_detector.cpp, et filtre de Canny d'OpenCV (modules/imgproc), licence Apache 2.0 — https://github.com/opencv/opencv_contrib (commit b67a855) ; texte de la licence : ../opencv.LICENSE.
   Modifications : réécrits en JavaScript dans le module 3D (index.html, fonctions cvCanny et cvFLD) ; Canny en couleur (canal au plus fort gradient) ; segments utilisés pour caler les bords du mur photographié (rnvSnap).
+
+Rénovation par vidéo (novembre 2026)
+- jsfeat 0.0.8 (Eugene Zatepyakin), licence MIT : lib/jsfeat-min.js, lib/jsfeat.LICENSE.
+- Depth Anything V2 Metric Indoor Small (depth-anything/Depth-Anything-V2-Metric-Indoor-Small-hf, révision 8078d68a9c75),
+  converti en ONNX et quantifié pour casô : lib/vision/depth_metric_indoor_q.onnx.
+  Les auteurs n'indiquent pas de licence pour les modèles métriques (le modèle Small de base est sous Apache 2.0 ;
+  entraînement sur Hypersim, CC BY-SA 3.0) : à confirmer avant usage commercial.
