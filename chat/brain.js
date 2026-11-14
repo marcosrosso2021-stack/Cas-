@@ -204,7 +204,7 @@ function create(E,X,saved,opts){
   function buildEqLex(){VOC=null;}
   /* vocabulaire casô : corrections d'expressions (« rendez vous », « main d'oeuvre »…), abréviations SMS des 10 langues, nombres en lettres */
   var CORR=(X.corrFr||[]).map(function(x){var m=String(x[0]).match(/^\/([\s\S]*)\/(\w*)$/);try{return m?[new RegExp(m[1],m[2].indexOf("g")<0?m[2]+"g":m[2]),x[1]]:null;}catch(e){return null;}}).filter(Boolean);
-  function corrRaw(raw){var t=String(raw);CORR.forEach(function(c){t=t.replace(c[0],c[1]);});return t;}
+  function corrRaw(raw){var t=String(raw);CORR.forEach(function(c){t=t.replace(c[0],c[1]);});if(VIRG)t=t.replace(VIRG,"$1,$2");return t;}
   var ABR={};Object.keys(X.abbr||{}).forEach(function(l){var m={};(X.abbr[l]||[]).forEach(function(p){if(p[0]&&p[1]&&p[0]!==p[1]&&!/^\d+$/.test(p[0]))m[p[0]]=p[1];});ABR[l]=m;});
   function expandAbbr(n,L){var mp=Object.assign({},ABR.fr||{},L&&L!=="fr"?ABR[L]||{}:{}),t=n.split(" ");
     return t.map(function(w,i){var e=mp[w];if(e==null||/^\d/.test(w))return w;var ew=e.split(" ");if(ew[0]===w&&ew.slice(1).every(function(x,k){return t[i+1+k]===x;}))return w;return e;}).join(" ");}
@@ -223,7 +223,7 @@ function create(E,X,saved,opts){
         if(w==="et"&&(t[j+1]==="un"||t[j+1]==="une")&&cur>=20){cur+=1;j+=2;used+=2;continue;}
         if(w==="et"&&val(j+1)!=null&&val(j+1)<10){j++;continue;}
         if(x==null)break;
-        if(cur===0&&x<1000){cur=x;}else if(x===100){cur=(cur||1)*100;}else if(x===1000){total+=(cur||1)*1000;cur=0;}else if(x>=20&&cur>=60&&cur<100&&x<20){cur+=x;}else if(cur%100===0&&cur>0&&x<100){cur+=x;}else if(cur>=20&&cur<100&&cur%10===0&&x<20){cur+=x;}else if(cur===4&&x===20){cur=80;}else break;
+        if(cur===0&&x<1000){cur=x;}else if(x===100){cur=(cur||1)*100;}else if(x===1000){total+=(cur||1)*1000;cur=0;}else if(cur===10&&x>=7&&x<=9){cur+=x;}else if(cur>=60&&cur<100&&cur%20===0&&x>=10&&x<20){cur+=x;}else if(cur%100===0&&cur>0&&x<100){cur+=x;}else if(cur>=20&&cur<100&&cur%10===0&&x<20){cur+=x;}else if(cur===4&&x===20){cur=80;}else break;
         j++;used++;}
       var num=total+cur,next=t[j]||"";
       if(used>1||num>=10||UNITW.test(next)){out.push(String(num));i=j;}else{out.push(t[i]);i++;}
@@ -231,6 +231,24 @@ function create(E,X,saved,opts){
     return out.join(" ");
   }
   B.words2num=words2num;
+  /* phrase dictée : « 45 virgule 50 » -> 45,50 ; « jeudi 14 heures 30 » -> jeudi 14h30 ; « à 9 heures et demie » -> à 9h30 */
+  var PJ="a|vers|des|jusqu a|pour|lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche|demain|aujourd hui|apres demain|rdv|rendez vous";
+  function parle(p){return p.replace(/\b(\d+) (?:virgule|coma|virgula|virgola|virgula|przecinek|virgul|запятая|فاصله|comma) (\d+)\b/g,"$1.$2")
+    .replace(new RegExp("\\b("+PJ+") (\\d{1,2}) heures? (?:et )?(\\d{2})\\b","g"),"$1 $2h$3")
+    .replace(new RegExp("\\b("+PJ+") (\\d{1,2}) heures? et demie?\\b","g"),"$1 $2h30").replace(new RegExp("\\b("+PJ+") (\\d{1,2}) heures? et quart\\b","g"),"$1 $2h15")
+    .replace(new RegExp("\\b("+PJ+") (\\d{1,2}) heures? moins le quart\\b","g"),function(m,x,h){return x+" "+(+h-1)+"h45";})
+    .replace(/\b(\d+) heures? et demie?\b/g,"$1.5 heures").replace(/\b(\d+) heures? et quart\b/g,"$1.25 heures");}
+  var VIRG=/(\d+)\s+(?:virgule|coma|vírgula|virgola|virgulă|przecinek|virgül|запятая|فاصلة|comma)\s+(\d+)/gi;
+  B.parle=parle;
+  /* texte dicté (français) : les nombres en lettres deviennent des chiffres, le reste ne change pas
+     (« douze mètres carrés à quarante-cinq virgule cinquante » -> « 12 mètres carrés à 45,50 ») */
+  var NW=null;
+  B.dicte=function(raw){var t=String(raw||"");if(!NW){var ks=Object.keys(NUMS).filter(function(k){return k.indexOf(" ")<0;}).sort(function(a,b){return b.length-a.length;});
+      NW=new RegExp("(^|[^\\p{L}])((?:"+ks.join("|")+")(?:[\\s-]+(?:et[\\s-]+)?(?:"+ks.join("|")+"))*)(?=$|[^\\p{L}])","giu");}
+    t=t.replace(NW,function(m,pre,grp,off,str){var g=hn(grp).replace(/-/g," ");if(/^(un|une)$/.test(g))return m;var nx=(str.slice(off+m.length).match(/^\s+([\p{L}²³]+)/u)||[])[1]||"",
+      v=words2num((g+" "+hn(nx)).trim()).split(" ")[0];return /^\d+(?:\.\d+)?$/.test(v)?pre+v:m;});
+    t=t.replace(VIRG,"$1,$2").replace(/(\d{1,2}) heures? (?:et )?(\d{2})\b/gi,"$1h$2").replace(/(\d{1,2}) heures? et demie?\b/gi,function(m,h){return /(?:^|\s)(?:à|a|vers|est|lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche|demain)\s+$/i.test(t.slice(0,t.indexOf(m)))?h+"h30":h+",5 h";});
+    return t;};
   /* fautes de frappe sur les mots de commande (« poite » -> « pointe », « factue » -> « facture », « ntoe » -> « note ») ;
      les noms (majuscule, après « chez ») et les mots connus ne sont jamais touchés */
   var CMDW={},CMDS={},MOTSFR=new Set(String((X.cmdw||{}).frw||"").split(" "));Object.keys(X.cmdw||{}).forEach(function(l){if(l==="frw")return;CMDW[l]=String(X.cmdw[l]).split(" ").filter(Boolean);CMDS[l]=new Set(CMDW[l]);});var CMDALL=new Set();Object.keys(CMDW).forEach(function(l){CMDW[l].forEach(function(w){CMDALL.add(w);});});
@@ -262,7 +280,7 @@ function create(E,X,saved,opts){
       if(w.length<=5&&best.length===w.length&&w.split("").sort().join("")!==best.split("").sort().join(""))return w;if(root.CMDFIX_LOG)root.CMDFIX_LOG.push(w+">"+best);return best;}).join(" ");}
   B.translate=function(raw0){var raw=corrRaw(raw0),n=hn(raw),a=E.analyze(raw),hint=function(a){return LANG!=="fr"&&(!a.lang||a.lang==="fr"||a.lang==="perso")?LANG:a.lang;},L=detectLang(n,hint(a));n=expandAbbr(n,L);var n0=n;n=cmdFix(n,raw,L,a);
     /* mot corrigé : relire la phrase corrigée (langue et vocabulaire) */
-    if(n!==n0){var a2=E.analyze(n);a2.text=a.text;a2.fixes=a.fixes.concat(a2.fixes||[]);a=a2;L=detectLang(n,hint(a));}n=n.replace(/\bq est ce\b/g,"qu est ce").replace(/\bja i\b/g,"j ai");if(L==="fr")n=words2num(n);var p=toFr(n,L);p=vocabFr(p,a,L);p=applyLex(p);if(S.mode==="artisan")p=p.replace(/^(?:(?:j ai |on a |il y a |j ai recu )?(?:une |la |nouvelle )?)demande de devis\b/,"nouveau devis");/* artisan : « demande de devis de Dupont » (bricoleur : demander un devis à un artisan) */if(L!=="fr")p=words2num(p);return {n:n,p:p,lang:L,a:a};};
+    if(n!==n0){var a2=E.analyze(n);a2.text=a.text;a2.fixes=a.fixes.concat(a2.fixes||[]);a=a2;L=detectLang(n,hint(a));}n=n.replace(/\bq est ce\b/g,"qu est ce").replace(/\bja i\b/g,"j ai");if(L==="fr")n=words2num(n);n=parle(n);var p=toFr(n,L);p=vocabFr(p,a,L);p=applyLex(p);p=parle(p);if(S.mode==="artisan")p=p.replace(/^(?:(?:j ai |on a |il y a |j ai recu )?(?:une |la |nouvelle )?)demande de devis\b/,"nouveau devis");/* artisan : « demande de devis de Dupont » (bricoleur : demander un devis à un artisan) */if(L!=="fr")p=words2num(p);return {n:n,p:p,lang:L,a:a};};
 
   /* ---------- entités ---------- */
   var POSREF=/\b(pres d(?:u|e la|e l|es|e)|sous|devant|a cote d(?:u|e la|e l|es|e)|en face d(?:u|e la|e l|es|e)|contre)\s+(?:la |le |l |les )?([\p{L}]+(?: [\p{L}]+)?)/gu;

@@ -2992,7 +2992,8 @@ function vnWakeToggle(on){
 }
 function vnMake(){
  const txt=($('vnTxt').value||$('chatIn').value).trim();$('vnTxt').value='';if(!txt){$('chatIn').focus();return}
- if($('chatLog')){chatSend(txt);return}
+ /* dictée : les nombres dits en lettres deviennent des chiffres (« quarante-cinq virgule cinquante » -> 45,50), puis comme une phrase tapée */
+ if($('chatLog')){let t2=txt;try{if(window.casoPont&&casoPont.ready&&casoPont.B.dicte&&(VN.lang||'fr')==='fr')t2=casoPont.B.dicte(txt)}catch(e){}chatSend(t2);return}
  const R=parseNote(txt,db.prices,VN.lang);VN.last=R;
  const det=vlDetect(vnAfter(txt));
  if(det&&det.l!==VN.lang&&det.score>=3){vnSetLang(det.l);toast(vlT(12).replace('{l}',VL_DEF[det.l].n))}
