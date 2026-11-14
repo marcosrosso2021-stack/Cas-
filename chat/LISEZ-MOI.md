@@ -109,6 +109,26 @@ message l'attend au plus 4 s.
   exemples dans les 10 langues) et `outils/chat/essai-appli.js` (essais dans l'appli). `node outils/chat/controle.js --base`
   enregistre une nouvelle référence après un changement voulu.
 
+**Étapes du 11 novembre 2026** (`intel.js`) :
+- « le client de jeudi » avec plusieurs clients ou aucun ce jour-là : le chat le dit (« Le jeudi 5 novembre : Martin, Petit. Lequel ? »), on répond par le nom.
+- « ajoute une marge de 10 % » (« sur la fourniture », « sur la main d'œuvre ») : prix des lignes augmentés, annulable.
+- « devis pour Martin carrelage… » : le client reste Martin ; « dépose carrelage » ne prend plus le prix du carrelage ;
+  « carrelage 14 m² et main d'oeuvre 8 h » donne deux lignes ; « à », « de », « la » ne font plus passer une phrase pour de l'anglais.
+- Apprendre du geste : après « Je n'ai pas compris », l'écran ouvert à la main juste après est retenu pour cette phrase, en proposition.
+- « fais le devis de la rénovation » : l'estimation de la Rénovation (postes cochés, quantités) devient un devis, avec les prix de Mes services
+  quand ils correspondent, sinon le milieu de la fourchette indicative (TTC → HT, TVA 10 %), signalé.
+- À l'ouverture du chat (une fois par jour) : une ligne de rappel (rendez-vous du jour, devis envoyés depuis 7 jours, factures en retard).
+- Devis signé (30 derniers jours) : « facture d'acompte de 30 % et 3 j de chantier au planning à partir du lundi 16 ? » [Oui] →
+  les jours sont bloqués au planning et la facture d'acompte s'ouvre.
+- Message d'un client collé (« Bonjour, je suis disponible jeudi à 14h30… Cordialement, Mme Petit ») → « Rendez-vous jeudi 14h30 avec Mme Petit ? » [Oui].
+- Facture fournisseur : « ↑ Colle carrelage C2 25 kg : +13 % (13,20 € → 14,90 €) » quand le prix monte de 5 % ou plus chez ce fournisseur.
+- Mini modèle : `outils/mini` et `.github/workflows/mini-semaine.yml` le réentraînent chaque lundi avec les phrases apprises par plusieurs usagers.
+- Plus rapide : le chat ne teste une règle de traduction que si le texte contient ses mots (`peut`, `motsRequis`) et ne construit
+  ses regex qu'au premier usage (`rxOf`, `LazyRe`, `B.prechauffer` quand le téléphone ne fait rien) ; seules les réponses dans la
+  langue de l'appli sont chargées à l'ouverture (les 8 autres ensuite) ; le module Devis se précharge après le chat. Mêmes
+  traductions qu'avant sur 2 026 phrases des 10 langues. Téléphone lent simulé (processeur ÷ 6) : 1re réponse 15,2 s → 3,5 s,
+  3e réponse 11,3 s → 1,8 s, chat prêt 3,6 s → 2,5 s.
+
 **Toutes les fonctions de l'appli par le chat** (10 langues, fautes et tournures libres ; moteur : `brain/p8app.js`,
 intentions `app.*` ; exécution : `pont.js` → `appFaire` / `autreFaire`) :
 - Compte et réglages : langue de l'appli (« mets l'appli en anglais »), mon compte, code de secours, déconnexion
