@@ -27,6 +27,9 @@ jobs:
       - name: Phrases de contrôle et exemples traduits
         run: node outils/chat/controle.js
 
+      - name: Fautes de frappe dans les 10 langues
+        run: node outils/chat/fautes.js
+
       - name: Navigateur pour l'essai dans l'appli
         run: |
           npm install --no-save playwright@1.63.0

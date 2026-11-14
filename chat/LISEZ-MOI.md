@@ -106,7 +106,8 @@ message l'attend au plus 4 s.
   ce que l'usager a appris lui-même passe avant ; un « non » l'efface chez lui. Serveur : `window.CASO_APPRIS`
   (défaut https://api.caso.fr).
 - **Contrôle chaque semaine** : `.github/workflows/chat-semaine.yml` lance `outils/chat/controle.js` (363 phrases de contrôle,
-  exemples dans les 10 langues) et `outils/chat/essai-appli.js` (essais dans l'appli). `node outils/chat/controle.js --base`
+  exemples dans les 10 langues), `outils/chat/fautes.js` (une faute de frappe sur 100 phrases par langue, seuil 80 % compris)
+  et `outils/chat/essai-appli.js` (essais dans l'appli). `node outils/chat/controle.js --base`
   enregistre une nouvelle référence après un changement voulu.
 
 **Étapes du 11 novembre 2026** (`intel.js`) :
@@ -165,3 +166,22 @@ Quand rien n'est compris : « Je n'ai pas compris. », sans phrase d'exemple ; l
 
 Le chat garde seulement ce qu'il apprend, sous la clé `caso_ia` (et `caso_ia_mini` pour le mini modèle).
 Source du moteur et outils de traduction : le module « caso-ia » (moteur, catalogues, contrôles).
+
+**Fautes de frappe dans les 10 langues (11 novembre 2026)** :
+- Le correcteur connaît aussi le vocabulaire de chaque langue (règles de traduction : « radidor » → radiador, « portta » → porta),
+  corrige aussi le russe et l'arabe, et relit la phrase après correction (langue et mots).
+- Un mot seul que rien ne reconnaît est lu dans la langue de l'appli.
+- Avec une faute, compris dans les 9 autres langues : 42 à 67 % avant, 87 à 98 % après. Français (phrases artisan) : 56 → 62 sur 74.
+- « annlue » → annule ; « spuer », « parfiat » → politesse ; « șterge clientul Paul » (et la même phrase dans les autres langues) supprime la fiche.
+- Mode Artisan : « demande de devis (de Dupont) » ouvre un nouveau devis, dans les 10 langues. En mode Bricoleur, la phrase garde son sens
+  (demander un devis à un artisan).
+
+**Questions du métier (13 novembre 2026)** (`brain/p8me.js` du moteur) :
+- Réponses fixes, vérifiées sur les textes en vigueur le 13 novembre 2026, dans les 10 langues. Ce n'est pas une conversation libre.
+- TVA (10 %, 5,5 %, 20 %, mention à la place de l'attestation depuis 2025), garanties (décennale, parfait achèvement, bon fonctionnement),
+  rétractation et paiement interdit 7 jours (contrat signé chez le client), acompte, devis obligatoire (dépannage), délais de paiement
+  entre professionnels, retenue de garantie, autoliquidation, sections de câble (NF C 15-100), pentes d'évacuation, séchage d'une chape.
+- Calculs : dalle de béton (surface et épaisseur), parpaings, nombre de carreaux d'un format, m³ ↔ litres, « combien fait 12 m² à 45 € ».
+- « tva à 10 % » avec une phrase de réglage (un nombre et %) reste un réglage du devis : la TVA des lignes du devis ouvert change
+  (avant, casô ajoutait une ligne « Tva 10 u »).
+
