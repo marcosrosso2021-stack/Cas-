@@ -223,3 +223,9 @@ Source du moteur et outils de traduction : le module « caso-ia » (moteur, cata
 - un devis avec une quantité manquante n'est pas envoyé (même règle que pour un prix manquant) ; la vérification du devis le signale ;
 - la rénovation (œil 3D) mise sur un devis est celle du client du devis : une rénovation liée à personne est d'abord proposée (« La mettre sur le devis de Dupont ? »), puis reste liée à ce client (`db.maq3d[].cli`) ; celle d'un autre client n'est jamais prise. Les mesures d'une pièce ne viennent plus d'une maquette d'un autre client.
 - essai : `outils/chat/essai-fiabilite.js` (navigateur, chaque semaine).
+
+**Plusieurs actions dans une phrase (15 nov. 2026)** — `intel.js` :
+- « nouveau devis pour Dupont et ajoute du carrelage » : la commande d'abord, puis la description sur le devis qu'elle vient d'ouvrir (le moteur prenait « ajoute du carrelage » pour la maquette 3D). « pour le chantier Martin, … » donne le client au morceau qui suit ;
+- « Pour le chantier Martin, ajoute la rénovation de la salle de bain, prévois une douche italienne, remplace le carrelage, calcule les surfaces et prépare un devis » : lignes Douche italienne et Carrelage sur le devis de Martin, surface demandée ; « prépare un devis », « calcule les surfaces », « la rénovation de … » disent quoi faire, ce ne sont pas des lignes ;
+- les lignes vont toujours sur le devis du client nommé (son brouillon, sinon un nouveau devis), jamais sur le devis ouvert d'un autre client ni sur un devis déjà envoyé ;
+- un service enregistré n'est plus pris pour un autre (« douche italienne » ≠ « receveur de douche »).
