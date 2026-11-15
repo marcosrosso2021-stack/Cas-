@@ -55,7 +55,7 @@ async function run(b,sc){
       R.etapes.push('vidéo analysée en '+Math.round(R.t.reconstruction/1000)+' s');}
     else if(media==='photos'){await clic('#b-room');const ins=await F.evaluate(()=>[...document.querySelectorAll('input[type=file]')].filter(i=>i.offsetParent||i.closest('label')&&i.closest('label').offsetParent).map(i=>i.id+':'+i.accept));
       R.entrees_fichier=ins;const imgIn=ins.map(x=>x.split(':')).find(([id,a])=>/image/.test(a)&&id!=='in-file');
-      if(imgIn){await F.setInputFiles('#'+imgIn[0],[1,3,5,7,9].map(i=>path.join(D,'photo_'+i+'.png')));await sleep(4000);R.etapes.push('photos données à #'+imgIn[0])}
+      if(imgIn){const t=Date.now();await F.setInputFiles('#'+imgIn[0],[1,3,5,7,9].map(i=>path.join(D,'photo_'+i+'.png')));const wb=async()=>{for(let k=0;k<300;k++){await sleep(1000);if(!(await F.evaluate(()=>{const b=document.getElementById('busy');return b&&!b.hidden})))break}};await wb();if(await clic('#rv-go'))await wb();R.t.reconstruction=Date.now()-t;R.etapes.push('photos données à #'+imgIn[0]+', puis le bouton de création')}
       else R.etapes.push('aucune entrée ne prend des photos ici (entrées : '+ins.join(', ')+')');}
     else if(media==='plan'){const t=Date.now();await F.setInputFiles('#in-file',path.join(D,'plan_main.jpg'));const seen=[];
       for(let k=0;k<25;k++){await sleep(1500);const s=await F.evaluate(()=>{const S=window.__m3dS,b=document.getElementById('busy');return{sc:S.screen,busy:b&&!b.hidden,scale:S.scale}});

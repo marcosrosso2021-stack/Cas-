@@ -51,7 +51,7 @@ function chk(R){const sc=R.scenario,A=R.avant||{},B=(R.m3d&&R.m3d.apres)||{},rep
     case 'style':case 'style_budget':case 'light':T(finishChg||added>0?1:!NONE.test(txt)&&txt.length>30?0.4:0,finishChg?'finitions changées':'rien appliqué');break;
     default:T(!NONE.test(txt)&&rep.length&&new RegExp(sc.kw.source,'i').test(txt)?0.6:0,'réponse : '+txt.slice(0,80));}
   // appli principale : réponses fondées sur les données de test (rendez-vous, clients, adresses)
-  if(sc.sec==='main'){const q=/^Tu veux|c'est un client ou un fournisseur/i.test(txt.trim());const M={planning_map:/(rue|avenue|boulevard|place)[\s\S]*(rue|avenue|boulevard|place)/i,route:/(ordre|trajet|itin|km)/i,planning:/Martin[\s\S]*(carrel|Victor Hugo)|(carrel|Victor Hugo)[\s\S]*Martin/i,materials:/fa[iï]ence|colle|joint/i,history:/photo|mesure|aucun/i,projects:/(Martin|Dupont|Petit|Bernard|Leroy)[\s\S]*(Martin|Dupont|Petit|Bernard|Leroy)[\s\S]*(Martin|Dupont|Petit|Bernard|Leroy)/,slot:/(demain|dimanche 15)[^/]*\b([7-9]|1[01]) ?h/i,time:/\d+ ?h[\s\S]*(Martin|Dupont|Bernard|Leroy|Petit)/i,summary:/(Martin|Dupont|Petit)[\s\S]*(Martin|Dupont|Petit)/,chantier:/r[ée]alis|termin/i}[g];if(M){T(!NONE.test(txt)&&!q&&M.test(txt)?1:!NONE.test(txt)&&!q&&txt.length>30?0.3:0,'réponse : '+txt.slice(0,100))}}
+  if(sc.sec==='main'){const q=/^Tu veux|c'est un client ou un fournisseur/i.test(txt.trim());const M={planning_map:/(rue|avenue|boulevard|place)[\s\S]*(rue|avenue|boulevard|place)/i,route:/(ordre|trajet|itin|km)/i,planning:/Martin[\s\S]*(carrel|Victor Hugo)|(carrel|Victor Hugo)[\s\S]*Martin/i,materials:/fa[iï]ence|colle|joint/i,history:/photo|mesure|aucun/i,projects:/(Martin|Dupont|Petit|Bernard|Leroy)[\s\S]*(Martin|Dupont|Petit|Bernard|Leroy)[\s\S]*(Martin|Dupont|Petit|Bernard|Leroy)/,slot:/(cr[ée]neau|libre)[\s\S]{0,80}?\b\d{1,2} ?h/i,time:/\d+ ?h[\s\S]*(Martin|Dupont|Bernard|Leroy|Petit)/i,summary:/(Martin|Dupont|Petit)[\s\S]*(Martin|Dupont|Petit)/,chantier:/r[ée]alis|termin/i}[g];if(M){T(!NONE.test(txt)&&!q&&M.test(txt)?1:!NONE.test(txt)&&!q&&txt.length>30?0.3:0,'réponse : '+txt.slice(0,100))}}
   if(false){const data=/Martin|Dupont|Petit|Bernard|Leroy|rue|avenue|boulevard|place|\d{1,2} ?h|\d{1,2}:\d{2}/.test(txt);T(!NONE.test(txt)&&data?(g==='planning_map'&&!/carte|map|itin/i.test(txt)?0.5:g==='route'&&!/ordre|trajet|km|d[ée]placement/i.test(txt)?0.5:1):0,'réponse : '+txt.slice(0,100))}
   return{ok,note,txt,rep}}
 function score(R){const sc=R.scenario,C=chk(R),txt=C.txt,B=(R.m3d&&R.m3d.apres)||{};const m=sc.media.split(':')[0];
@@ -71,6 +71,7 @@ function score(R){const sc=R.scenario,C=chk(R),txt=C.txt,B=(R.m3d&&R.m3d.apres)|
     let s=15*f1;if(sc.but==='inventory_elec')s=15*ELEC_NEED.filter(n=>found.has(n)).length/ELEC_NEED.length;if(sc.but==='defects')s=C.ok>=1&&!/fissure|humidit|tache/i.test(txt.replace(/aucun[^.]*|pas de[^.]*/gi,''))?15:0;
     pts.reconnaissance=[Math.round(s),15];}
   else if(m==='plan'&&R.plan&&R.plan.etat){const n=(R.plan.etat.piece||[]).length;pts.reconnaissance=[Math.round(15*Math.min(n,4)/Math.max(n,4)),15];}
+  else if(m==='photos'&&(B.walls||0)>=3)pts.reconnaissance=null;/* photos traitées : pas d'inventaire de référence par photo, non mesuré */
   else if(m==='photos'||(m==='video'&&!R.reco))pts.reconnaissance=[0,15];
   else pts.reconnaissance=null;
   // géométrie : seulement là où la vérité terrain existe (le plan dessiné)
