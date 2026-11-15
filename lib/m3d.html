@@ -6659,7 +6659,9 @@ function orCompare(){const cur=S.rnv&&S.rnv.vid;const P=projList().filter(p=>p.i
   const add=B.filter((b,i)=>!used.has(i)).map(b=>b.n),fp0=(()=>{let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;for(const w of o.d.walls){const ax=w.o==='h'?[w.a,w.b]:[w.p,w.p],ay=w.o==='h'?[w.p,w.p]:[w.a,w.b];x0=Math.min(x0,...ax);x1=Math.max(x1,...ax);y0=Math.min(y0,...ay);y1=Math.max(y1,...ay)}return[(x1-x0)*sc0,(y1-y0)*sc0]})(),d=rnvQty().dims;
   const L=[`Ajoutés : ${orList(add)||'aucun'}`,`Retirés : ${orList(gone)||'aucun'}`,`Déplacés de plus de 30 cm : ${mv.join(', ')||'aucun'}`];if(d)L.push(`Dimensions : ${fmt(fp0[0],2)} × ${fmt(fp0[1],2)} m → ${fmt(d[0],2)} × ${fmt(d[1],2)} m`);
   L.push('Les défauts ne sont pas encore comparés d\'une visite à l\'autre.');return tl('or_cmp',{n:o.name,d:new Date(o.at).toLocaleDateString(loc()),l:L.join('¶')})}
-function oeilRoute(raw){let tr0=null;try{tr0=toFr(String(raw));S.orTr0={k:String(raw),v:tr0}}catch(e){}if(tr0&&tr0.lang)S.chatLang=tr0.lang;const r0=nrm(tr0&&tr0.lang&&tr0.lang!=='fr'&&tr0.txt?tr0.txt:String(raw)).replace(/['’`´]/g,' ').replace(/[?!.;:]/g,' ').replace(/\s+/g,' ').trim(),r=' '+r0+' ',has=re=>re.test(r);
+function oeilRoute(raw){let tr0=null;const fw=(nrm(String(raw)).match(/(^|[^a-z])(je|j|tu|nous|vous|les|des|une|mon|ma|mes|cette|ces|pour|dans|est|et|du|au|aux|sur|avec|qui|pas|voudrais|veux|peux|moi)(?=$|[^a-z])/g)||[]).length;
+  if(fw>=2)tr0={lang:'fr'};/* phrase française : pas de traduction (jusqu'à 2 s sur les longues phrases) */
+  else try{tr0=toFr(String(raw));S.orTr0={k:String(raw),v:tr0}}catch(e){}if(tr0&&tr0.lang)S.chatLang=tr0.lang;const r0=nrm(tr0&&tr0.lang&&tr0.lang!=='fr'&&tr0.txt?tr0.txt:String(raw)).replace(/['’`´]/g,' ').replace(/[?!.;:]/g,' ').replace(/\s+/g,' ').trim(),r=' '+r0+' ',has=re=>re.test(r);
   const prevN=S.orEqN0;S.orEqN0=S.eqs.length;const M=orModel(),ans=x=>{say('me',raw);S.rawMsg=raw;say('bot',x);return true};
   // suites de conversation
   if(S.orLast&&S.orLast.k==='srf'&&/^ ?(et )?(le |les |la )?(plafond|murs?|sol|volume)s? ?$/.test(r0))return ans(orSurfaces(r));
