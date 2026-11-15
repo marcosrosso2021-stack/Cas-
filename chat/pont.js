@@ -104,9 +104,12 @@ var IC={oeil:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-
   ok:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'};
 P.IC=IC;P.tr=function(t,a){return P.B?P.B.tr(t,a):t;};
 function devisDe(id){return (db.quotes||[]).filter(function(x){return x.id===id;})[0]||(q&&q.id===id?q:null);}
-function carte(id){var o=devisDe(id);if(!o)return "";var t=totals(o),manque=o.lines.some(function(l){return l.pu==null||l.pu==="";}),B=P.B,st=o.status;
+/* ligne sans quantité (surface ou longueur pas encore mesurée) : rien n'est compté ni envoyé tant qu'elle n'est pas remplie */
+function qteInc(l){return !!(l&&l.label&&!(+l.qty>0)&&!/^(forfait)$/i.test(String(l.unit||"")));}
+function sansQte(o){return (o.lines||[]).some(qteInc);}P.qteInc=qteInc;
+function carte(id){var o=devisDe(id);if(!o)return "";var t=totals(o),manque=o.lines.some(function(l){return l.pu==null||l.pu==="";})||sansQte(o),B=P.B,st=o.status;
   var h='<div class="pcard" data-qid="'+e(o.id)+'" dir="ltr" data-noi18n><div class="pc-h"><b>'+e(o.client||"")+'</b>'+(o.modele?'<span>'+e(o.modele)+'</span>':'')+'<i>'+e(o.num||"")+'</i></div>';
-  o.lines.forEach(function(l){var x=nombre(l.pu);h+='<div class="pc-l'+(x==null?' miss':'')+'"><span>'+e(l.label)+'</span><span>'+e(B.fnumFr(+l.qty||0)+" "+(l.unit||""))+'</span><span>'+(x==null?"prix ?":e(B.eurFr(x*(+l.qty||0))))+'</span></div>';});
+  o.lines.forEach(function(l){var x=nombre(l.pu);var qi=qteInc(l);h+='<div class="pc-l'+(x==null||qi?' miss':'')+'"><span>'+e(l.label)+'</span><span>'+e((qi?"?":B.fnumFr(+l.qty||0))+" "+(l.unit||""))+'</span><span>'+(x==null?"prix ?":e(B.eurFr(x*(+l.qty||0))))+'</span></div>';});
   h+='<div class="pc-t"><span>'+e(B.eurFr(t.ht))+' HT</span><b>'+e(B.eurFr(t.ttc))+' TTC</b></div><div class="pc-f">';
   if(st==="envoye"||st==="accepte"||st==="paye"||st==="refuse")h+='<span class="pc-st '+(st==="refuse"?"bad":st==="envoye"?"warn":"ok")+'">'+e(st==="envoye"?P.tr("en cours de signature"):P.B.trw(STATUT[st]))+'</span>';
   else h+='<button type="button" class="pc-ic pc-oeil" title="'+e(P.tr("Voir le devis"))+'" aria-label="'+e(P.tr("Voir le devis"))+'" onclick="casoPont.voir(\''+e(o.id)+'\')">'+IC.oeil+'</button><button type="button" class="pc-ic pc-env" title="'+e(P.tr("Envoyer au client"))+'" aria-label="'+e(P.tr("Envoyer au client"))+'"'+(manque?' disabled':'')+' onclick="casoPont.envoyer(\''+e(o.id)+'\')">'+IC.envoi+'</button>';
@@ -344,6 +347,7 @@ function dire(t){CHAT.m.push({who:"bot",html:'<p data-noi18n dir="auto">'+e(t)+'
 function majCarte(id){CHAT.m.forEach(function(m){if(m.who==="bot"&&m.html&&m.html.indexOf('data-qid="'+id+'"')>=0)m.html=m.html.replace(/<!--carte-->[\s\S]*?<!--\/carte-->/,"<!--carte-->"+carte(id)+"<!--/carte-->");});chatSave();chatRender(false);}
 P.envoyer=function(id){var o=devisDe(id);if(!o)return;
   if(o.lines.some(function(l){return l.pu==null||l.pu==="";})){dire(P.tr("Il manque des prix sur ce devis : je ne l’envoie pas."));return;}
+  if(sansQte(o)){dire(P.tr("Il manque des quantités sur ce devis : je ne l’envoie pas."));return;}
   if(o.sign&&o.sign.st==="signed"){toast(i18nT("Ce devis est déjà signé par le client."));return;}
   var img=typeof sgSigImg==="function"?sgSigImg():null;
   if(q.id!==o.id){q=JSON.parse(JSON.stringify(o));CHAT.qid=q.id;fillForm();}

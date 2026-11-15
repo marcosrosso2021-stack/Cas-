@@ -216,3 +216,10 @@ Source du moteur et outils de traduction : le module « caso-ia » (moteur, cata
 - « c'est quoi un ragréage », « ragréage avant le parquet », « ordre des travaux » : seuls les ordres admis partout sont donnés, sinon « pas d'ordre fixe » ;
 - volume d'une dalle donnée en longueur × largeur (moteur, `brain/p8me.js`) ;
 - historique : chaque enregistrement note qui a changé quoi et quand (`caso_journal` dans le téléphone, 400 dernières), avec la phrase du chat qui l'a provoqué ; la fiche modifiée garde le prénom de son auteur (`by`) pour l'équipe. « historique », « qui a modifié le devis de Martin ».
+
+**Rien d'inventé, rien d'un autre client (15 nov. 2026)** — `intel.js`, `pont.js`, `parseNote` (index.html) :
+- une ligne dite sans quantité (« mettre du carrelage », « prévoir les plinthes ») n'est plus comptée 1 m² : elle reste à préciser, le chat le dit, et la réponse suivante (« 20 m² », « 4 m sur 3,5 m ») la calcule. Un article à l'unité (« un receveur ») compte toujours 1 ;
+- « il faut refaire le sol chez Martin, mettre du carrelage et prévoir les plinthes » et « ajoute du carrelage et des plinthes au devis de Martin » donnent des lignes de devis (plus de « maquette 3D », plus de plinthes perdues), dans les 10 langues ;
+- un devis avec une quantité manquante n'est pas envoyé (même règle que pour un prix manquant) ; la vérification du devis le signale ;
+- la rénovation (œil 3D) mise sur un devis est celle du client du devis : une rénovation liée à personne est d'abord proposée (« La mettre sur le devis de Dupont ? »), puis reste liée à ce client (`db.maq3d[].cli`) ; celle d'un autre client n'est jamais prise. Les mesures d'une pièce ne viennent plus d'une maquette d'un autre client.
+- essai : `outils/chat/essai-fiabilite.js` (navigateur, chaque semaine).

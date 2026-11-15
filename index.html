@@ -2329,7 +2329,7 @@ window.addEventListener('message',e=>{if(!M3D||!M3D.f||e.source!==M3D.f.contentW
  else if(m.type==='pro'&&!M3D.cli){const t=String(m.data&&m.data.text||'').trim();if(t){m3dClose();go('chat');chatSend(t)}}
  else if(m.type==='mode'&&M3D.cli&&m.data&&m.data.mode==='artisan'){m3dClose();modeOpen();modePick('artisan')}
  else if(m.type==='logout'&&M3D.cli){if(confirm(i18nT('Se déconnecter ? Tes données restent sur ce téléphone.'))){m3dClose();try{localStorage.setItem('caso_locked','1')}catch(x){}if(window.VAULT&&VAULT.on)VAULT.lockNow();else showLogin()}}
- else if(m.type==='addToChantier'&&!M3D.cli&&m.data&&m.data.projet){const L=db.maq3d=db.maq3d||[],id=m.data.projet.id||'';const o={id:id||uid(),at:Date.now(),d:m.data};const i=id?L.findIndex(x=>x.id===id):-1;if(i>=0)L[i]=o;else L.push(o);if(L.length>20)L.shift();save()}});
+ else if(m.type==='addToChantier'&&!M3D.cli&&m.data&&m.data.projet){const L=db.maq3d=db.maq3d||[],id=m.data.projet.id||'';const o={id:id||uid(),at:Date.now(),d:m.data};const i=id?L.findIndex(x=>x.id===id):-1;/* le client lié à la maquette reste lié quand elle est réenregistrée */if(i>=0){if(L[i].cli)o.cli=L[i].cli;L[i]=o}else L.push(o);if(L.length>20)L.shift();save()}});
 </script>
 <script type="text/x-caso">
 const $=id=>document.getElementById(id);
@@ -2904,10 +2904,12 @@ function parseNote(raw,prices,lang){
    label=rest.length>=3?rest:before;
    if(!label||label.length<3){R.remarques.push(O(c.replace(/^(?:remarque|note)\s*:?\s*/,"")));continue}
   }else if(/\bforfait\b/.test(c)){qty=1;unit='forfait';label=c.replace(/\b(?:un|le)?\s*forfait\s*(?:de\s|d'|pour\s)?\s*/,'').trim()||c}
-  else{const p=vnMatch(c,prices);if(p){qty=1;label=c}else{R.remarques.push(O(c.replace(/^(?:remarque|note)\s*:?\s*/,"")));continue}}
+  else{const p=vnMatch(c,prices);if(p){qty=null;label=c}else{R.remarques.push(O(c.replace(/^(?:remarque|note)\s*:?\s*/,"")));continue}}
   label=label.replace(/\b(?:s'il te plait|voila|c'est tout)\b/g,'').replace(/\s+/g,' ').trim();
   const p=vnMatch(label,prices);
-  const ln={label:p?p.nom:O(label),qty:qty||1,unit:unit||(p?p.unit:'u'),pu:p?p.prix:0,tva:p?p.tva:20,ok:!!p};
+  const un0=unit||(p?p.unit:'u'),qInc=qty==null&&!/^(u|unite|piece|forfait|ens|lot)?$/.test(vnNorm(un0||''));
+  /* quantité non dite : rien n'est inventé pour une surface ou une longueur (« du carrelage ») ; « une douche » compte pour 1 */
+  const ln={label:p?p.nom:O(label),qty:qInc?null:(qty||1),unit:un0,pu:p?p.prix:0,tva:p?p.tva:20,ok:!!p};if(qInc)ln.warn='Quantité à préciser';
   if(p&&unit&&p.unit&&vnNorm(p.unit)!==vnNorm(unit)&&!(unit==='ml'&&vnNorm(p.unit)==='m')){
    if(unit==='jour'&&p.unit==='h'){ln.warn=fmtN(ln.qty)+' jour(s) comptés '+fmtN(ln.qty*8)+' h (8 h par jour)';ln.qty*=8;ln.unit='h'}
    else if(unit==='h'&&p.unit==='jour'){ln.warn=fmtN(ln.qty)+' h comptées '+fmtN(ln.qty/8)+' jour(s)';ln.qty=Math.round(ln.qty/8*100)/100;ln.unit='jour'}
@@ -2932,7 +2934,7 @@ function vnReportHtml(R){
  if(R.travaux.length){
   let ht=0;
   h+=`<div class="vn-sec"><h3>Travaux</h3>`+R.travaux.map(l=>{const tt=l.qty*l.pu;ht+=tt;
-   return `<div class="vn-l"><div><b>${esc(l.label)}</b><span class="mut"> ${fmtN(l.qty)} ${esc(l.unit)}${l.pu?' × '+eur(l.pu):''}</span>${l.ok||l.warn?'':'<div class="vn-w">Pas dans tes prix : prix à remplir</div>'}${l.warn?'<div class="vn-w">'+esc(l.warn)+'</div>':''}</div><b>${l.pu?eur(tt):'–'}</b></div>`}).join('')
+   return `<div class="vn-l"><div><b>${esc(l.label)}</b><span class="mut"> ${l.qty==null?'':fmtN(l.qty)+' '}${esc(l.unit)}${l.pu?' × '+eur(l.pu):''}</span>${l.ok||l.warn?'':'<div class="vn-w">Pas dans tes prix : prix à remplir</div>'}${l.warn?'<div class="vn-w">'+esc(l.warn)+'</div>':''}</div><b>${l.pu&&l.qty!=null?eur(tt):'–'}</b></div>`}).join('')
    +`<div class="tot"><span>Estimation HT</span><b>${eur(ht)}</b></div></div>`;
  }
  if(R.remarques.length)h+=`<div class="vn-sec"><h3>Remarques</h3><ul>${li(R.remarques)}</ul></div>`;
@@ -3016,7 +3018,7 @@ function vnApply(){
 }
 function vnCopy(){const R=VN.last;if(!R)return;
  const t=['Note casô '+dFR(),R.client&&'Client : '+R.client,R.tel&&'Tél : '+R.tel,R.adr&&'Chantier : '+R.adr,
- R.travaux.length&&'Travaux :\n'+R.travaux.map(l=>'- '+l.label+' : '+fmtN(l.qty)+' '+l.unit).join('\n'),
+ R.travaux.length&&'Travaux :\n'+R.travaux.map(l=>'- '+l.label+' : '+(l.qty==null?'? ':fmtN(l.qty)+' ')+l.unit).join('\n'),
  R.remarques.length&&'Remarques :\n'+R.remarques.map(x=>'- '+x).join('\n'),R.todo.length&&'À faire :\n'+R.todo.map(x=>'- '+x).join('\n')].filter(Boolean).join('\n');
  (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('Rapport copié.'),()=>{$('vnTxt').value=t;$('vnTxt').select()})}
 function toast(m){let t=$('toast');if(!t){t=document.createElement('div');t.id='toast';t.setAttribute('role','status');document.body.appendChild(t)}t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),2600)}
@@ -3802,7 +3804,7 @@ function chatSend(text){
  if(R.travaux.length){any=true;
   q.lines=q.lines.filter(l=>l.label||l.pu);
   R.travaux.forEach(l=>q.lines.push({label:l.label,qty:l.qty,unit:l.unit,pu:l.pu,tva:l.tva}));
-  out.push(`<div class="msg-lines">`+R.travaux.map(l=>`<div class="ml"><div><b data-noi18n lang="fr">${esc(l.label)}</b><div class="mut" data-noi18n>${fmtN(l.qty)} ${esc(l.unit)}${l.pu?' × '+eur(l.pu):''}</div>${l.ok||l.warn?'':'<div class="vn-w">Pas dans tes prix : prix à remplir</div>'}${l.warn?'<div class="vn-w">'+esc(l.warn)+'</div>':''}</div><b>${l.pu?eur(l.qty*l.pu):''}</b></div>`).join('')+`</div>`);
+  out.push(`<div class="msg-lines">`+R.travaux.map(l=>`<div class="ml"><div><b data-noi18n lang="fr">${esc(l.label)}</b><div class="mut" data-noi18n>${l.qty==null?'':fmtN(l.qty)+' '}${esc(l.unit)}${l.pu?' × '+eur(l.pu):''}</div>${l.ok||l.warn?'':'<div class="vn-w">Pas dans tes prix : prix à remplir</div>'}${l.warn?'<div class="vn-w">'+esc(l.warn)+'</div>':''}</div><b>${l.pu&&l.qty!=null?eur(l.qty*l.pu):''}</b></div>`).join('')+`</div>`);
   const vf=window.casoPont&&casoPont.verifier?casoPont.verifier(q):'';if(vf)out.push(vf)}
  if(cand)R.remarques=R.remarques.filter(x=>vnNorm(x)!==vnNorm(cand));
  if(R.remarques.length)out.push(`<p class="mut"><b>Remarques</b> : <span data-noi18n dir="auto">${esc(R.remarques.join(' · '))}</span></p>`);
@@ -4990,7 +4992,7 @@ function prAddLine(t,x){const p=prFind(x.name);CHAT.m.push({who:'me',text:t});
  const l={label:p?p.nom:x.name.charAt(0).toUpperCase()+x.name.slice(1),qty:1,unit:x.unit||(p&&p.unit)||'forfait',pu:x.prix,tva:p&&p.tva!=null?+p.tva:20};
  q.lines=q.lines.filter(y=>y.label||y.pu);q.lines.push(l);fillForm();store();
  const tt=totals(q),diff=p&&+p.prix!==x.prix;
- CHAT.m.push({who:'bot',undo:before,html:`<div class="msg-lines"><div class="ml"><div><b data-noi18n lang="fr">${esc(l.label)}</b><div class="mut" data-noi18n>${fmtN(l.qty)} ${esc(l.unit)} × ${eur(l.pu)}</div></div><b>${eur(l.qty*l.pu)}</b></div></div><div class="msg-tot"><span>Total du devis</span><b>${eur(tt.ttc)} TTC</b></div>`+
+ CHAT.m.push({who:'bot',undo:before,html:`<div class="msg-lines"><div class="ml"><div><b data-noi18n lang="fr">${esc(l.label)}</b><div class="mut" data-noi18n>${l.qty==null?'':fmtN(l.qty)+' '}${esc(l.unit)} × ${eur(l.pu)}</div></div><b>${eur(l.qty*l.pu)}</b></div></div><div class="msg-tot"><span>Total du devis</span><b>${eur(tt.ttc)} TTC</b></div>`+
   `<div class="msg-act">${diff?`<button class="btn sm sec" onclick="prSave(this,'${p.id}',${x.prix})"><svg class="i"><use href="#i-tag"/></svg><span>Garder ce prix dans Mes services</span></button>`:''}${!p?`<button class="btn sm sec" data-n="${esc(l.label)}" data-u="${esc(l.unit)}" onclick="prSave(this,'',${x.prix})"><svg class="i"><use href="#i-tag"/></svg><span>Ajouter à Mes services</span></button>`:''}<button class="btn sm sec" onclick="go('edit')"><svg class="i"><use href="#i-quote"/></svg>Voir le devis</button><button class="btn sm" onclick="goSign()"><svg class="i"><use href="#i-pen"/></svg>Valider le devis</button></div>`});
  chatSave();chatRender(true);return true}
 function prSave(btn,id,prix){let p=id&&(db.prices||[]).find(x=>x.id===id);
@@ -5032,7 +5034,7 @@ function svcAdd(btn){const box=btn.closest('.svc-box');if(!box)return;const add=
  readForm();const before=JSON.stringify(q);q.lines=q.lines.filter(l=>l.label||l.pu);add.forEach(l=>q.lines.push(l));fillForm();store();
  const last=[...CHAT.m].reverse().find(m=>m.who==='bot'&&m.html&&m.html.includes('svc-box'));if(last)last.html=last.html.replace(/<!--sg-->[\s\S]*?<!--\/sg-->/,'');
  const tt=totals(q);
- CHAT.m.push({who:'bot',undo:before,html:`<div class="msg-lines">`+add.map(l=>`<div class="ml"><div><b data-noi18n lang="fr">${esc(l.label)}</b><div class="mut" data-noi18n>${fmtN(l.qty)} ${esc(l.unit)} × ${eur(l.pu)}</div></div><b>${eur(l.qty*l.pu)}</b></div>`).join('')+`</div><div class="msg-tot"><span>Total du devis</span><b>${eur(tt.ttc)} TTC</b></div><div class="msg-act"><button class="btn sm sec" onclick="go('edit')"><svg class="i"><use href="#i-quote"/></svg>Voir le devis</button><button class="btn sm" onclick="goSign()"><svg class="i"><use href="#i-pen"/></svg>Valider le devis</button></div>`});
+ CHAT.m.push({who:'bot',undo:before,html:`<div class="msg-lines">`+add.map(l=>`<div class="ml"><div><b data-noi18n lang="fr">${esc(l.label)}</b><div class="mut" data-noi18n>${l.qty==null?'':fmtN(l.qty)+' '}${esc(l.unit)} × ${eur(l.pu)}</div></div><b>${eur(l.qty*l.pu)}</b></div>`).join('')+`</div><div class="msg-tot"><span>Total du devis</span><b>${eur(tt.ttc)} TTC</b></div><div class="msg-act"><button class="btn sm sec" onclick="go('edit')"><svg class="i"><use href="#i-quote"/></svg>Voir le devis</button><button class="btn sm" onclick="goSign()"><svg class="i"><use href="#i-pen"/></svg>Valider le devis</button></div>`});
  chatSave();chatRender(true)}
 function agQuote(cid,eid){
  const c=db.clients.find(x=>x.id===cid);if(!c)return;const ev=db.events.find(e=>e.id===eid);

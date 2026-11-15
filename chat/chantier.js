@@ -150,15 +150,18 @@ function donnees(c){var k=cle(c.nom),auj=aujourdhui();
   var passe=EV.filter(function(x){return !x.rr&&x.d<auj;}).sort(function(a,b){return String(b.d).localeCompare(String(a.d));});
   var avenir=EV.map(function(x){return {e:x,d:occ(x)};}).filter(function(x){return x.d&&x.d>=auj;}).sort(function(a,b){return String(a.d).localeCompare(String(b.d));});
   var PL=(db.plans||[]).filter(function(x){return x&&x.cid===c.id;});
+  /* rénovations (œil 3D) liées à ce client — jamais celles d'un autre */
+  var M3=(db.maq3d||[]).filter(function(x){return x&&x.cli&&cle(x.cli)===k&&x.d&&x.d.estimation;}).sort(function(a,b){return (b.at||0)-(a.at||0);});
   var ach=(db.achats||[]).filter(function(a){return a.cid===c.id&&a.type!=="devis";}).reduce(function(s,a){return s+achatHT(a);},0);
   var facQ={};F.forEach(function(f){if(f.qid)facQ[f.qid]=1;});
   var aFac=Q.filter(function(o){return /^(accepte|signe)$/.test(o.status||"")&&!facQ[o.id];});
   var du=F.filter(function(f){return f.num&&f.kind!=="avoir";}).reduce(function(s,f){try{return s+Math.max(0,faDue(f));}catch(x){return s;}},0);
-  return {Q:Q,F:F,passe:passe,avenir:avenir,PL:PL,ach:ach,h:heures(c.id),aFac:aFac,du:du};}
+  return {Q:Q,F:F,passe:passe,avenir:avenir,PL:PL,M3:M3,ach:ach,h:heures(c.id),aFac:aFac,du:du};}
 function lQ(o){var tt=0;try{tt=totals(o).ttc;}catch(x){}return ml(T("Devis {0}",[o.num||""]).trim(),[o.date?dFR(o.date):"",T(ETDV[o.status||"brouillon"]||o.status||"")].filter(Boolean).join(" · "),E(tt)+" TTC","casoPont.voir('"+e(o.id)+"')");}
 function lF(f){var tt=0;try{tt=faTot(f).ttc;}catch(x){}return ml(T("Facture {0}",[f.num||""]).trim(),[f.date?dFR(f.date):"",T(ETFA[etatFa(f)]||"")].filter(Boolean).join(" · "),E(tt)+" TTC",typeof faShow==="function"?"faShow('"+e(f.id)+"')":"");}
 function lE(x,d){return ml(jour(d),[heure(x),x.title||"",x.adr||""].filter(Boolean).join(" · "),"",typeof agOpen==="function"?"agOpen('"+e(d)+"')":"");}
 function lP(x){return ml(T("Plan {0}",[x.nom||""]).trim(),x.date?dFR(new Date(x.date).toISOString()):"","",typeof plOpen==="function"?"plOpen('"+e(x.id)+"','chat')":"");}
+function lM(x){var es=x.d.estimation,n=(es.lignes||[]).length,mi=+es.total_min||0,ma=+es.total_max||0;return ml(T("Rénovation 3D"),[x.at?dFR(x.at):"",T("{0} postes",[n])].filter(Boolean).join(" · "),mi||ma?E(mi)+" – "+E(ma):"","");}
 function lignesTravaux(Q){var L=[];Q.filter(function(o){return /^(accepte|signe|paye)$/.test(o.status||"");}).forEach(function(o){(o.lines||[]).forEach(function(l){if(l.label&&L.indexOf(l.label)<0)L.push(l.label);});});return L;}
 function photos(c,D){var I=[];D.PL.forEach(function(x){if(x.th)I.push({src:x.th,clic:typeof plOpen==="function"?"plOpen('"+e(x.id)+"','chat')":""});});
   D.Q.forEach(function(o){var im=o.cv&&o.cv.imgs||{};Object.keys(im).forEach(function(k){if(/^data:image\//.test(im[k]||""))I.push({src:im[k],clic:"casoPont.voir('"+e(o.id)+"')"});});});
@@ -167,14 +170,14 @@ function derniereModif(c){var k=cle(c.nom),L=jLit();for(var i=L.length-1;i>=0;i-
 function fiche(t,c,mode){langue();TOUR.t=null;var D=donnees(c),h=[],tete='<p dir="auto"><b>'+e(T("Chantier {0}",[c.nom]))+'</b>'+(c.adr?'<br><span class="mut">'+e(c.adr)+'</span>':'')+'</p>';
   if(mode==="photos"){var I=photos(c,D);if(!I.length){bulle(t,p(T("Pas de photo pour {0}.",[c.nom])));return true;}
     bulle(t,tete+'<div style="display:flex;flex-wrap:wrap;gap:6px">'+I.map(function(x){return '<img src="'+e(x.src)+'" alt="" style="width:72px;height:72px;object-fit:cover;border-radius:8px'+(x.clic?';cursor:pointer" onclick="'+x.clic:'')+'">';}).join("")+'</div>');return true;}
-  if(mode==="docs"){h.push(bloc("Devis",D.Q.slice(0,6).map(lQ)),bloc("Factures",D.F.slice(0,6).map(lF)),bloc("Plans",D.PL.slice(0,6).map(lP)));}
+  if(mode==="docs"){h.push(bloc("Devis",D.Q.slice(0,6).map(lQ)),bloc("Factures",D.F.slice(0,6).map(lF)),bloc("Plans",D.PL.slice(0,6).map(lP)),bloc("Rénovations 3D",D.M3.slice(0,3).map(lM)));}
   else if(mode==="fait"){h.push(bloc("Travaux faits",lignesTravaux(D.Q).slice(0,8).map(function(l){return ml(l,"","","");})),bloc("Derniers passages",D.passe.slice(0,5).map(function(x){return lE(x,x.d);})));
     if(D.h>=0.5)h.push(p(T("Heures pointées : {0} h",[N(D.h)])));if(D.F.length)h.push(bloc("Factures",D.F.slice(0,4).map(lF)));}
   else if(mode==="reste"){h.push(bloc("Prochains rendez-vous",D.avenir.slice(0,3).map(function(x){return lE(x.e,x.d);})));
     if(D.aFac.length)h.push(bloc("Reste à facturer",D.aFac.map(lQ)));if(D.du>0.005)h.push(p(T("Reste dû : {0}",[E(D.du)])));}
   else{/* fiche complète, rapport */
     h.push(bloc("Prochains rendez-vous",D.avenir.slice(0,2).map(function(x){return lE(x.e,x.d);})),bloc("Derniers passages",D.passe.slice(0,2).map(function(x){return lE(x,x.d);})),
-      bloc("Devis",D.Q.slice(0,4).map(lQ)),bloc("Factures",D.F.slice(0,4).map(lF)),bloc("Plans",D.PL.slice(0,4).map(lP)));
+      bloc("Devis",D.Q.slice(0,4).map(lQ)),bloc("Factures",D.F.slice(0,4).map(lF)),bloc("Plans",D.PL.slice(0,4).map(lP)),bloc("Rénovations 3D",D.M3.slice(0,2).map(lM)));
     var ch=[];if(D.h>=0.5)ch.push(T("Heures pointées : {0} h",[N(D.h)]));if(D.ach>0.005)ch.push(T("Achats : {0} HT",[E(D.ach)]));
     if(D.aFac.length)ch.push(T("Reste à facturer : {0} HT",[E(D.aFac.reduce(function(s,o){try{return s+totals(o).ht;}catch(x){return s;}},0))]));
     if(D.du>0.005)ch.push(T("Reste dû : {0}",[E(D.du)]));var dm=derniereModif(c);if(dm)ch.push(dm);
