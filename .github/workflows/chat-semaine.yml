@@ -44,6 +44,12 @@ jobs:
           sleep 1
           node outils/chat/essai-chantier.js http://localhost:8767/index.html
 
+      - name: Essai des quantités à préciser et des rénovations par client
+        run: |
+          (python3 -m http.server 8767 >/dev/null 2>&1 &) || true
+          sleep 1
+          node outils/chat/essai-fiabilite.js http://localhost:8767/index.html
+
       - name: Essai du chat du module 3D
         run: |
           (python3 -m http.server 8767 >/dev/null 2>&1 &) || true
