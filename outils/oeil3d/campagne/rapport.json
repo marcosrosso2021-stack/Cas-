@@ -7,7 +7,7 @@
   "donnees": "video",
   "compris": true,
   "execute": true,
-  "score": 91,
+  "score": 89,
   "statut": "réussi",
   "pts": {
    "comprehension": [
@@ -23,12 +23,12 @@
     10
    ],
    "reconnaissance": [
-    11,
+    12,
     15
    ],
    "geometrie": null,
    "qualite3d": [
-    11,
+    10,
     15
    ],
    "coherence": [
@@ -40,7 +40,7 @@
     5
    ],
    "ux": [
-    5,
+    4,
     5
    ]
   },
@@ -48,34 +48,33 @@
   "reponse": "Ambiance moderne : Murs, Chambre : blanc #F2F2F0 Sol, Chambre : Carrelage gris 60×60 / J'ai gardé : mon lit.",
   "suite": "C'est fait : Sol, Chambre : Parquet chêne clair",
   "annule": "J'ai annulé la dernière modification.",
-  "t_total": 181399,
-  "t_reco": 159842,
-  "t_chat": 3701,
+  "t_total": 251513,
+  "t_reco": 226158,
+  "t_chat": 4774,
   "detection": {
-   "prec": 0.9565217391304348,
-   "rec": 0.625,
-   "f1": 0.7560137457044673,
+   "prec": 1,
+   "rec": 0.6875,
+   "f1": 0.8148148148148148,
    "trouves": [
     "plafonnier",
     "panneau mural",
     "lit",
-    "table",
     "rideau",
+    "table",
     "chaise",
     "réfrigérateur",
-    "micro-ondes",
     "poteau",
+    "poubelle",
+    "carton",
     "fenêtre"
    ],
-   "faux": [
-    "Coussin"
-   ]
+   "faux": []
   },
   "geometrie": null,
   "erreurs": [],
   "etapes": [
    "section reno ouverte",
-   "vidéo analysée en 160 s"
+   "vidéo analysée en 226 s"
   ]
  },
  {
@@ -124,8 +123,8 @@
   "reponse": "Pour cette demande, il me faut d'abord la pièce. Filmez-la avec la vidéo de la Rénovation (tournez lentement sur vous-même, ou marchez le long des murs), ou choisissez au même endroit une photo de face de chaque mur. Je reconstruis ensuite ",
   "suite": "Pour « enlève le meuble tv », il me faut d'abord la pièce. Filmez-la avec la vidéo de la Rénovation (tournez lentement sur vous-même, ou marchez le long des mur",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 12762,
-  "t_chat": 3585,
+  "t_total": 14879,
+  "t_chat": 3814,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -142,7 +141,7 @@
   "donnees": "absent:vidéo de cuisine",
   "compris": true,
   "execute": false,
-  "score": 46,
+  "score": 47,
   "statut": "échec",
   "pts": {
    "comprehension": [
@@ -172,7 +171,7 @@
     5
    ],
    "ux": [
-    3,
+    4,
     5
    ]
   },
@@ -180,8 +179,8 @@
   "reponse": "Pour cette demande, il me faut d'abord la pièce. Filmez-la avec la vidéo de la Rénovation (tournez lentement sur vous-même, ou marchez le long des murs), ou choisissez au même endroit une photo de face de chaque mur. Je reconstruis ensuite ",
   "suite": "Je ne trouve pas de îlot central dans la maquette.",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 13024,
-  "t_chat": 4167,
+  "t_total": 15039,
+  "t_chat": 3324,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -236,8 +235,8 @@
   "reponse": "Pour cette demande, il me faut d'abord la pièce. Filmez-la avec la vidéo de la Rénovation (tournez lentement sur vous-même, ou marchez le long des murs), ou choisissez au même endroit une photo de face de chaque mur. Je reconstruis ensuite ",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 11952,
-  "t_chat": 3297,
+  "t_total": 12581,
+  "t_chat": 3243,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -254,7 +253,7 @@
   "donnees": "video",
   "compris": true,
   "execute": true,
-  "score": 78,
+  "score": 84,
   "statut": "partiel",
   "pts": {
    "comprehension": [
@@ -270,12 +269,12 @@
     10
    ],
    "reconnaissance": [
-    11,
+    13,
     15
    ],
    "geometrie": null,
    "qualite3d": [
-    8,
+    11,
     15
    ],
    "coherence": [
@@ -295,34 +294,34 @@
   "reponse": "Je ne trouve pas de placard / armoire dans la maquette.",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 174790,
-  "t_reco": 155868,
-  "t_chat": 3673,
+  "t_total": 236917,
+  "t_reco": 217350,
+  "t_chat": 3593,
   "detection": {
-   "prec": 0.9565217391304348,
-   "rec": 0.625,
-   "f1": 0.7560137457044673,
+   "prec": 1,
+   "rec": 0.75,
+   "f1": 0.8571428571428571,
    "trouves": [
     "plafonnier",
     "panneau mural",
     "lit",
-    "table",
     "rideau",
+    "table",
     "chaise",
     "réfrigérateur",
     "micro-ondes",
     "poteau",
+    "poubelle",
+    "carton",
     "fenêtre"
    ],
-   "faux": [
-    "Coussin"
-   ]
+   "faux": []
   },
   "geometrie": null,
   "erreurs": [],
   "etapes": [
    "section reno ouverte",
-   "vidéo analysée en 156 s"
+   "vidéo analysée en 217 s"
   ]
  },
  {
@@ -333,7 +332,7 @@
   "donnees": "absent:vidéo de plusieurs pièces",
   "compris": true,
   "execute": false,
-  "score": 46,
+  "score": 47,
   "statut": "échec",
   "pts": {
    "comprehension": [
@@ -363,7 +362,7 @@
     5
    ],
    "ux": [
-    3,
+    4,
     5
    ]
   },
@@ -371,8 +370,8 @@
   "reponse": "Pour cette demande, il me faut d'abord la pièce. Filmez-la avec la vidéo de la Rénovation (tournez lentement sur vous-même, ou marchez le long des murs), ou choisissez au même endroit une photo de face de chaque mur. Je reconstruis ensuite ",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 10703,
-  "t_chat": 4174,
+  "t_total": 12047,
+  "t_chat": 3360,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -389,7 +388,7 @@
   "donnees": "video",
   "compris": true,
   "execute": true,
-  "score": 89,
+  "score": 93,
   "statut": "réussi",
   "pts": {
    "comprehension": [
@@ -405,12 +404,12 @@
     10
    ],
    "reconnaissance": [
-    11,
+    12,
     15
    ],
    "geometrie": null,
    "qualite3d": [
-    11,
+    13,
     15
    ],
    "coherence": [
@@ -430,34 +429,33 @@
   "reponse": "C'est fait : Sol, Chambre : Parquet chêne clair",
   "suite": "C'est fait : Sol, Chambre : Parquet chêne foncé",
   "annule": "J'ai annulé la dernière modification.",
-  "t_total": 183898,
-  "t_reco": 161307,
-  "t_chat": 4128,
+  "t_total": 238389,
+  "t_reco": 214269,
+  "t_chat": 4356,
   "detection": {
-   "prec": 0.9583333333333334,
-   "rec": 0.625,
-   "f1": 0.756578947368421,
+   "prec": 1,
+   "rec": 0.6875,
+   "f1": 0.8148148148148148,
    "trouves": [
     "plafonnier",
     "panneau mural",
     "lit",
-    "table",
     "rideau",
+    "table",
     "chaise",
     "réfrigérateur",
     "micro-ondes",
-    "poteau",
+    "poubelle",
+    "carton",
     "fenêtre"
    ],
-   "faux": [
-    "Coussin"
-   ]
+   "faux": []
   },
   "geometrie": null,
   "erreurs": [],
   "etapes": [
    "section reno ouverte",
-   "vidéo analysée en 161 s"
+   "vidéo analysée en 214 s"
   ]
  },
  {
@@ -506,8 +504,8 @@
   "reponse": "Pour cette demande, il me faut d'abord la pièce. Filmez-la avec la vidéo de la Rénovation (tournez lentement sur vous-même, ou marchez le long des murs), ou choisissez au même endroit une photo de face de chaque mur. Je reconstruis ensuite ",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 10850,
-  "t_chat": 3939,
+  "t_total": 12012,
+  "t_chat": 3072,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -524,7 +522,7 @@
   "donnees": "video",
   "compris": true,
   "execute": false,
-  "score": 46,
+  "score": 51,
   "statut": "échec",
   "pts": {
    "comprehension": [
@@ -540,12 +538,12 @@
     10
    ],
    "reconnaissance": [
-    10,
+    12,
     15
    ],
    "geometrie": null,
    "qualite3d": [
-    6,
+    8,
     15
    ],
    "coherence": [
@@ -565,13 +563,13 @@
   "reponse": "C'est fait : Ajout : Placard / armoire",
   "suite": "",
   "annule": "J'ai annulé la dernière modification.",
-  "t_total": 185906,
-  "t_reco": 165250,
-  "t_chat": 4480,
+  "t_total": 236083,
+  "t_reco": 213802,
+  "t_chat": 4609,
   "detection": {
    "prec": 1,
-   "rec": 0.5,
-   "f1": 0.6666666666666666,
+   "rec": 0.6875,
+   "f1": 0.8148148148148148,
    "trouves": [
     "plafonnier",
     "panneau mural",
@@ -580,6 +578,9 @@
     "table",
     "chaise",
     "réfrigérateur",
+    "micro-ondes",
+    "poubelle",
+    "carton",
     "fenêtre"
    ],
    "faux": []
@@ -588,7 +589,7 @@
   "erreurs": [],
   "etapes": [
    "section reno ouverte",
-   "vidéo analysée en 165 s"
+   "vidéo analysée en 214 s"
   ]
  },
  {
@@ -599,7 +600,7 @@
   "donnees": "video",
   "compris": true,
   "execute": true,
-  "score": 75,
+  "score": 81,
   "statut": "partiel",
   "pts": {
    "comprehension": [
@@ -615,12 +616,12 @@
     10
    ],
    "reconnaissance": [
-    11,
+    13,
     15
    ],
    "geometrie": null,
    "qualite3d": [
-    7,
+    10,
     15
    ],
    "coherence": [
@@ -640,34 +641,36 @@
   "reponse": "C'est fait : Ajout : Lit simple Ajout : Bibliothèque Ajout : Tapis",
   "suite": "C'est fait : Ajout : Bibliothèque",
   "annule": "J'ai annulé la dernière modification.",
-  "t_total": 191710,
-  "t_reco": 167416,
-  "t_chat": 4527,
+  "t_total": 230244,
+  "t_reco": 205491,
+  "t_chat": 4298,
   "detection": {
    "prec": 0.95,
-   "rec": 0.625,
-   "f1": 0.753968253968254,
+   "rec": 0.75,
+   "f1": 0.838235294117647,
    "trouves": [
     "plafonnier",
     "panneau mural",
     "lit",
-    "rideau",
     "table",
+    "rideau",
     "chaise",
     "réfrigérateur",
     "micro-ondes",
     "poteau",
+    "poubelle",
+    "carton",
     "fenêtre"
    ],
    "faux": [
-    "Sac"
+    "Coussin"
    ]
   },
   "geometrie": null,
   "erreurs": [],
   "etapes": [
    "section reno ouverte",
-   "vidéo analysée en 167 s"
+   "vidéo analysée en 205 s"
   ]
  },
  {
@@ -678,7 +681,7 @@
   "donnees": "absent:vidéo de toute une maison",
   "compris": true,
   "execute": false,
-  "score": 46,
+  "score": 47,
   "statut": "échec",
   "pts": {
    "comprehension": [
@@ -708,7 +711,7 @@
     5
    ],
    "ux": [
-    3,
+    4,
     5
    ]
   },
@@ -716,8 +719,8 @@
   "reponse": "Pour cette demande, il me faut d'abord la pièce. Filmez-la avec la vidéo de la Rénovation (tournez lentement sur vous-même, ou marchez le long des murs), ou choisissez au même endroit une photo de face de chaque mur. Je reconstruis ensuite ",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 11459,
-  "t_chat": 4484,
+  "t_total": 11684,
+  "t_chat": 2769,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -769,11 +772,11 @@
    ]
   },
   "note": "pas d'extension",
-  "reponse": "Pour cette demande, il me faut d'abord la maison. Dans Construction, ajoutez la photo ou le PDF de son plan (un croquis à la main suffit), ou partez de la maison exemple.",
+  "reponse": "Pour cette demande, il me faut d'abord la maison. Dans Construction, ajoutez la photo ou le PDF de son plan (un croquis à la main suffit), ou partez de la maison exemple — ou décrivez-la : « dessine une maison de plain-pied avec trois chamb",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 9817,
-  "t_chat": 3344,
+  "t_total": 10380,
+  "t_chat": 1611,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -790,7 +793,7 @@
   "donnees": "absent:vidéo des combles",
   "compris": true,
   "execute": false,
-  "score": 46,
+  "score": 47,
   "statut": "échec",
   "pts": {
    "comprehension": [
@@ -820,16 +823,16 @@
     5
    ],
    "ux": [
-    3,
+    4,
     5
    ]
   },
   "note": "pas de maquette",
-  "reponse": "Pour cette demande, il me faut d'abord la maison. Dans Construction, ajoutez la photo ou le PDF de son plan (un croquis à la main suffit), ou partez de la maison exemple.",
+  "reponse": "Pour cette demande, il me faut d'abord la maison. Dans Construction, ajoutez la photo ou le PDF de son plan (un croquis à la main suffit), ou partez de la maison exemple — ou décrivez-la : « dessine une maison de plain-pied avec trois chamb",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 11498,
-  "t_chat": 4993,
+  "t_total": 11033,
+  "t_chat": 2659,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -846,7 +849,7 @@
   "donnees": "absent:vidéo du garage",
   "compris": true,
   "execute": false,
-  "score": 46,
+  "score": 47,
   "statut": "échec",
   "pts": {
    "comprehension": [
@@ -876,7 +879,7 @@
     5
    ],
    "ux": [
-    3,
+    4,
     5
    ]
   },
@@ -884,8 +887,8 @@
   "reponse": "Pour cette demande, il me faut d'abord la pièce. Filmez-la avec la vidéo de la Rénovation (tournez lentement sur vous-même, ou marchez le long des murs), ou choisissez au même endroit une photo de face de chaque mur. Je reconstruis ensuite ",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 11267,
-  "t_chat": 4524,
+  "t_total": 12661,
+  "t_chat": 3730,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -937,11 +940,11 @@
    ]
   },
   "note": "extérieur inchangé",
-  "reponse": "Pour « Je voudrais construire une terrasse en bois devant ma maison », il me faut d'abord la maison. Dans Construction, ajoutez la photo ou le PDF de son plan (un croquis à la main suffit), ou partez de la maison exemple.",
+  "reponse": "Pour « Je voudrais construire une terrasse en bois devant ma maison », il me faut d'abord la maison. Dans Construction, ajoutez la photo ou le PDF de son plan (un croquis à la main suffit), ou partez de la maison exemple — ou décrivez-la : ",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 10140,
-  "t_chat": 3722,
+  "t_total": 10122,
+  "t_chat": 1608,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -958,7 +961,7 @@
   "donnees": "absent:photos du jardin",
   "compris": true,
   "execute": false,
-  "score": 46,
+  "score": 47,
   "statut": "échec",
   "pts": {
    "comprehension": [
@@ -988,16 +991,16 @@
     5
    ],
    "ux": [
-    3,
+    4,
     5
    ]
   },
   "note": "extérieur inchangé",
-  "reponse": "Pour cette demande, il me faut d'abord la maison. Dans Construction, ajoutez la photo ou le PDF de son plan (un croquis à la main suffit), ou partez de la maison exemple.",
+  "reponse": "Pour cette demande, il me faut d'abord la maison. Dans Construction, ajoutez la photo ou le PDF de son plan (un croquis à la main suffit), ou partez de la maison exemple — ou décrivez-la : « dessine une maison de plain-pied avec trois chamb",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 12212,
-  "t_chat": 4262,
+  "t_total": 9846,
+  "t_chat": 1610,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -1049,11 +1052,11 @@
    ]
   },
   "note": "extérieur inchangé",
-  "reponse": "Pour « Je veux moderniser la façade de ma maison sans modifier les fenêtres », il me faut d'abord la maison. Dans Construction, ajoutez la photo ou le PDF de son plan (un croquis à la main suffit), ou partez de la maison exemple.",
+  "reponse": "Pour « Je veux moderniser la façade de ma maison sans modifier les fenêtres », il me faut d'abord la maison. Dans Construction, ajoutez la photo ou le PDF de son plan (un croquis à la main suffit), ou partez de la maison exemple — ou décriv",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 9983,
-  "t_chat": 3599,
+  "t_total": 10085,
+  "t_chat": 1608,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -1105,11 +1108,11 @@
    ]
   },
   "note": "toiture inchangée",
-  "reponse": "Pour cette demande, il me faut d'abord la maison. Dans Construction, ajoutez la photo ou le PDF de son plan (un croquis à la main suffit), ou partez de la maison exemple.",
+  "reponse": "Pour cette demande, il me faut d'abord la maison. Dans Construction, ajoutez la photo ou le PDF de son plan (un croquis à la main suffit), ou partez de la maison exemple — ou décrivez-la : « dessine une maison de plain-pied avec trois chamb",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 10049,
-  "t_chat": 3531,
+  "t_total": 10325,
+  "t_chat": 1612,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -1126,7 +1129,7 @@
   "donnees": "absent:vidéo de visite",
   "compris": true,
   "execute": false,
-  "score": 46,
+  "score": 47,
   "statut": "échec",
   "pts": {
    "comprehension": [
@@ -1156,7 +1159,7 @@
     5
    ],
    "ux": [
-    3,
+    4,
     5
    ]
   },
@@ -1164,8 +1167,8 @@
   "reponse": "Pour cette demande, il me faut d'abord la pièce. Filmez-la avec la vidéo de la Rénovation (tournez lentement sur vous-même, ou marchez le long des murs), ou choisissez au même endroit une photo de face de chaque mur. Je reconstruis ensuite ",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 11155,
-  "t_chat": 4626,
+  "t_total": 11859,
+  "t_chat": 3412,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -1182,7 +1185,7 @@
   "donnees": "absent:photos avant et après",
   "compris": true,
   "execute": true,
-  "score": 64,
+  "score": 66,
   "statut": "partiel",
   "pts": {
    "comprehension": [
@@ -1212,7 +1215,7 @@
     5
    ],
    "ux": [
-    3,
+    4,
     5
    ]
   },
@@ -1220,8 +1223,8 @@
   "reponse": "Pour comparer, il faut deux visites enregistrées de la même pièce. Filmez-la maintenant, puis refilmez-la plus tard : je comparerai les éléments (ajoutés, retirés, déplacés) et les dimensions.",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 11413,
-  "t_chat": 4825,
+  "t_total": 11395,
+  "t_chat": 2758,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -1238,7 +1241,7 @@
   "donnees": "absent:vidéo de salle de bain",
   "compris": true,
   "execute": false,
-  "score": 46,
+  "score": 47,
   "statut": "échec",
   "pts": {
    "comprehension": [
@@ -1268,7 +1271,7 @@
     5
    ],
    "ux": [
-    3,
+    4,
     5
    ]
   },
@@ -1276,8 +1279,8 @@
   "reponse": "C’est un travail pour l’œil 3D. Ouvrez la Maquette 3D, partie Rénovation : filmez la pièce ou le chantier (ou choisissez une photo de face de chaque mur), puis reposez votre question dans son chat. Je vous donnerai alors les éléments, les s",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 13324,
-  "t_chat": 4768,
+  "t_total": 13102,
+  "t_chat": 2823,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -1292,354 +1295,6 @@
   "cat": "C",
   "titre": "Peintre",
   "demande": "Voici une pièce. Je voudrais connaître la surface totale des murs à peindre.",
-  "donnees": "video",
-  "compris": true,
-  "execute": true,
-  "score": 91,
-  "statut": "réussi",
-  "pts": {
-   "comprehension": [
-    15,
-    15
-   ],
-   "besoin": [
-    10,
-    10
-   ],
-   "outils": [
-    10,
-    10
-   ],
-   "reconnaissance": [
-    11,
-    15
-   ],
-   "geometrie": null,
-   "qualite3d": [
-    11,
-    15
-   ],
-   "coherence": [
-    10,
-    10
-   ],
-   "incertitudes": [
-    5,
-    5
-   ],
-   "ux": [
-    5,
-    5
-   ]
-  },
-  "note": "valeurs : 26.8",
-  "reponse": "Pour la maquette 3D, ajoute d’abord le plan. Plan 3D / Murs : 26,8 m² (portes et fenêtres déduites, 1 ouverture) Valeurs estimées depuis la vidéo (pas encore mesurées au mètre).",
-  "suite": "Plafond : 27,7 m² Valeurs estimées depuis la vidéo (pas encore mesurées au mètre).",
-  "annule": "Il n'y a rien à annuler.",
-  "t_total": 197310,
-  "t_reco": 174213,
-  "t_chat": 3598,
-  "detection": {
-   "prec": 1,
-   "rec": 0.5625,
-   "f1": 0.72,
-   "trouves": [
-    "plafonnier",
-    "panneau mural",
-    "lit",
-    "rideau",
-    "table",
-    "chaise",
-    "réfrigérateur",
-    "poteau",
-    "fenêtre"
-   ],
-   "faux": []
-  },
-  "geometrie": null,
-  "erreurs": [],
-  "etapes": [
-   "chat principal : 1 réponse(s)",
-   "section reno ouverte",
-   "vidéo analysée en 174 s"
-  ]
- },
- {
-  "id": 23,
-  "cat": "C",
-  "titre": "Plaquiste",
-  "demande": "Je dois créer une cloison de séparation dans cette pièce. Montre-moi où la placer et estime les matériaux nécessaires.",
-  "donnees": "video",
-  "compris": true,
-  "execute": true,
-  "score": 76,
-  "statut": "partiel",
-  "pts": {
-   "comprehension": [
-    15,
-    15
-   ],
-   "besoin": [
-    7,
-    10
-   ],
-   "outils": [
-    10,
-    10
-   ],
-   "reconnaissance": [
-    11,
-    15
-   ],
-   "geometrie": null,
-   "qualite3d": [
-    7,
-    15
-   ],
-   "coherence": [
-    5,
-    10
-   ],
-   "incertitudes": [
-    5,
-    5
-   ],
-   "ux": [
-    5,
-    5
-   ]
-  },
-  "note": "pas de cloison",
-  "reponse": "C’est un travail pour l’œil 3D. Ouvrez la Maquette 3D, partie Rénovation : filmez la pièce ou le chantier (ou choisissez une photo de face de chaque mur), puis reposez votre question dans son chat. Je vous donnerai alors les éléments, les s",
-  "suite": "",
-  "annule": "Il n'y a rien à annuler.",
-  "t_total": 190759,
-  "t_reco": 169897,
-  "t_chat": 3452,
-  "detection": {
-   "prec": 1,
-   "rec": 0.5625,
-   "f1": 0.72,
-   "trouves": [
-    "plafonnier",
-    "panneau mural",
-    "lit",
-    "rideau",
-    "table",
-    "chaise",
-    "réfrigérateur",
-    "poteau",
-    "fenêtre"
-   ],
-   "faux": []
-  },
-  "geometrie": null,
-  "erreurs": [],
-  "etapes": [
-   "chat principal : 1 réponse(s)",
-   "section reno ouverte",
-   "vidéo analysée en 170 s"
-  ]
- },
- {
-  "id": 24,
-  "cat": "C",
-  "titre": "Plombier",
-  "demande": "Identifie les équipements sanitaires et les canalisations visibles sur cette vidéo.",
-  "donnees": "absent:vidéo de salle de bain ou cuisine",
-  "compris": true,
-  "execute": true,
-  "score": 76,
-  "statut": "réussi",
-  "pts": {
-   "comprehension": [
-    15,
-    15
-   ],
-   "besoin": [
-    10,
-    10
-   ],
-   "outils": [
-    10,
-    10
-   ],
-   "reconnaissance": null,
-   "geometrie": null,
-   "qualite3d": [
-    0,
-    15
-   ],
-   "coherence": [
-    10,
-    10
-   ],
-   "incertitudes": [
-    5,
-    5
-   ],
-   "ux": [
-    3,
-    5
-   ]
-  },
-  "note": "réponse : C’est un travail pour l’œil 3D. Ouvrez la Maquette 3D, partie Rénovation : filme",
-  "reponse": "C’est un travail pour l’œil 3D. Ouvrez la Maquette 3D, partie Rénovation : filmez la pièce ou le chantier (ou choisissez une photo de face de chaque mur), puis reposez votre question dans son chat. Je vous donnerai alors les éléments, les s",
-  "suite": "",
-  "annule": "Il n'y a rien à annuler.",
-  "t_total": 14447,
-  "t_chat": 4943,
-  "detection": null,
-  "geometrie": null,
-  "erreurs": [],
-  "etapes": [
-   "chat principal : 1 réponse(s)",
-   "section reno ouverte",
-   "donnée adaptée indisponible : vidéo de salle de bain ou cuisine"
-  ]
- },
- {
-  "id": 25,
-  "cat": "C",
-  "titre": "Électricien",
-  "demande": "Identifie toutes les prises, interrupteurs et points lumineux de cette pièce.",
-  "donnees": "video",
-  "compris": true,
-  "execute": true,
-  "score": 86,
-  "statut": "réussi",
-  "pts": {
-   "comprehension": [
-    15,
-    15
-   ],
-   "besoin": [
-    10,
-    10
-   ],
-   "outils": [
-    10,
-    10
-   ],
-   "reconnaissance": [
-    8,
-    15
-   ],
-   "geometrie": null,
-   "qualite3d": [
-    11,
-    15
-   ],
-   "coherence": [
-    10,
-    10
-   ],
-   "incertitudes": [
-    5,
-    5
-   ],
-   "ux": [
-    4,
-    5
-   ]
-  },
-  "note": "réponse : C’est un travail pour l’œil 3D. Ouvrez la Maquette 3D, partie Rénovation : filme",
-  "reponse": "C’est un travail pour l’œil 3D. Ouvrez la Maquette 3D, partie Rénovation : filmez la pièce ou le chantier (ou choisissez une photo de face de chaque mur), puis reposez votre question dans son chat. Je vous donnerai alors les éléments, les s",
-  "suite": "",
-  "annule": "Il n'y a rien à annuler.",
-  "t_total": 193540,
-  "t_reco": 173494,
-  "t_chat": 4048,
-  "detection": {
-   "prec": 0.9565217391304348,
-   "rec": 0.625,
-   "f1": 0.7560137457044673,
-   "trouves": [
-    "plafonnier",
-    "panneau mural",
-    "lit",
-    "table",
-    "rideau",
-    "chaise",
-    "réfrigérateur",
-    "micro-ondes",
-    "poteau",
-    "fenêtre"
-   ],
-   "faux": [
-    "Coussin"
-   ]
-  },
-  "geometrie": null,
-  "erreurs": [],
-  "etapes": [
-   "chat principal : 1 réponse(s)",
-   "section reno ouverte",
-   "vidéo analysée en 173 s"
-  ]
- },
- {
-  "id": 26,
-  "cat": "C",
-  "titre": "Menuisier",
-  "demande": "Je veux remplacer cette porte par une porte coulissante. Montre-moi comment elle s'intégrerait.",
-  "donnees": "absent:vidéo montrant la porte",
-  "compris": true,
-  "execute": false,
-  "score": 46,
-  "statut": "échec",
-  "pts": {
-   "comprehension": [
-    8,
-    15
-   ],
-   "besoin": [
-    6,
-    10
-   ],
-   "outils": [
-    10,
-    10
-   ],
-   "reconnaissance": null,
-   "geometrie": null,
-   "qualite3d": [
-    0,
-    15
-   ],
-   "coherence": [
-    0,
-    10
-   ],
-   "incertitudes": [
-    5,
-    5
-   ],
-   "ux": [
-    3,
-    5
-   ]
-  },
-  "note": "ouvertures inchangées",
-  "reponse": "Pour la maquette 3D, ajoute d’abord le plan. Plan 3D / Pour cette demande, il me faut d'abord la pièce. Filmez-la avec la vidéo de la Rénovation (tournez lentement sur vous-même, ou marchez le long des murs), ou choisissez au même endroit u",
-  "suite": "",
-  "annule": "Il n'y a rien à annuler.",
-  "t_total": 14438,
-  "t_chat": 5016,
-  "detection": null,
-  "geometrie": null,
-  "erreurs": [],
-  "etapes": [
-   "chat principal : 1 réponse(s)",
-   "section reno ouverte",
-   "donnée adaptée indisponible : vidéo montrant la porte"
-  ]
- },
- {
-  "id": 27,
-  "cat": "C",
-  "titre": "Maçon",
-  "demande": "Analyse ce mur et estime ses dimensions pour préparer mon intervention.",
   "donnees": "video",
   "compris": true,
   "execute": true,
@@ -1680,31 +1335,31 @@
     5
    ]
   },
-  "note": "valeurs : 2.56, 2.56, 2.56, 2.56, 4.6",
-  "reponse": "C’est un travail pour l’œil 3D. Ouvrez la Maquette 3D, partie Rénovation : filmez la pièce ou le chantier (ou choisissez une photo de face de chaque mur), puis reposez votre question dans son chat. Je vous donnerai alors les éléments, les s",
-  "suite": "",
+  "note": "valeurs : 29.8",
+  "reponse": "Pour la maquette 3D, ajoute d’abord le plan. Plan 3D / Murs : 29,8 m² (portes et fenêtres déduites, 1 ouverture(s)) Valeurs estimées depuis la vidéo (pas encore mesurées au mètre).",
+  "suite": "Plafond : 31,2 m² Valeurs estimées depuis la vidéo (pas encore mesurées au mètre).",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 192599,
-  "t_reco": 171327,
-  "t_chat": 3532,
+  "t_total": 233967,
+  "t_reco": 210438,
+  "t_chat": 1636,
   "detection": {
-   "prec": 0.9523809523809523,
+   "prec": 0.9473684210526315,
    "rec": 0.625,
-   "f1": 0.7547169811320755,
+   "f1": 0.7531380753138075,
    "trouves": [
     "plafonnier",
     "panneau mural",
     "lit",
-    "table",
     "rideau",
+    "table",
     "chaise",
     "réfrigérateur",
-    "micro-ondes",
-    "poteau",
+    "poubelle",
+    "carton",
     "fenêtre"
    ],
    "faux": [
-    "Coussin"
+    "Sac"
    ]
   },
   "geometrie": null,
@@ -1712,7 +1367,359 @@
   "etapes": [
    "chat principal : 1 réponse(s)",
    "section reno ouverte",
-   "vidéo analysée en 171 s"
+   "vidéo analysée en 210 s"
+  ]
+ },
+ {
+  "id": 23,
+  "cat": "C",
+  "titre": "Plaquiste",
+  "demande": "Je dois créer une cloison de séparation dans cette pièce. Montre-moi où la placer et estime les matériaux nécessaires.",
+  "donnees": "video",
+  "compris": true,
+  "execute": true,
+  "score": 81,
+  "statut": "partiel",
+  "pts": {
+   "comprehension": [
+    15,
+    15
+   ],
+   "besoin": [
+    7,
+    10
+   ],
+   "outils": [
+    10,
+    10
+   ],
+   "reconnaissance": [
+    12,
+    15
+   ],
+   "geometrie": null,
+   "qualite3d": [
+    10,
+    15
+   ],
+   "coherence": [
+    5,
+    10
+   ],
+   "incertitudes": [
+    5,
+    5
+   ],
+   "ux": [
+    5,
+    5
+   ]
+  },
+  "note": "pas de cloison",
+  "reponse": "C’est un travail pour l’œil 3D. Ouvrez la Maquette 3D, partie Rénovation : filmez la pièce ou le chantier (ou choisissez une photo de face de chaque mur), puis reposez votre question dans son chat. Je vous donnerai alors les éléments, les s",
+  "suite": "",
+  "annule": "Il n'y a rien à annuler.",
+  "t_total": 233709,
+  "t_reco": 212007,
+  "t_chat": 1633,
+  "detection": {
+   "prec": 1,
+   "rec": 0.6875,
+   "f1": 0.8148148148148148,
+   "trouves": [
+    "plafonnier",
+    "panneau mural",
+    "lit",
+    "rideau",
+    "table",
+    "chaise",
+    "réfrigérateur",
+    "micro-ondes",
+    "poubelle",
+    "carton",
+    "fenêtre"
+   ],
+   "faux": []
+  },
+  "geometrie": null,
+  "erreurs": [],
+  "etapes": [
+   "chat principal : 1 réponse(s)",
+   "section reno ouverte",
+   "vidéo analysée en 212 s"
+  ]
+ },
+ {
+  "id": 24,
+  "cat": "C",
+  "titre": "Plombier",
+  "demande": "Identifie les équipements sanitaires et les canalisations visibles sur cette vidéo.",
+  "donnees": "absent:vidéo de salle de bain ou cuisine",
+  "compris": true,
+  "execute": true,
+  "score": 77,
+  "statut": "réussi",
+  "pts": {
+   "comprehension": [
+    15,
+    15
+   ],
+   "besoin": [
+    10,
+    10
+   ],
+   "outils": [
+    10,
+    10
+   ],
+   "reconnaissance": null,
+   "geometrie": null,
+   "qualite3d": [
+    0,
+    15
+   ],
+   "coherence": [
+    10,
+    10
+   ],
+   "incertitudes": [
+    5,
+    5
+   ],
+   "ux": [
+    4,
+    5
+   ]
+  },
+  "note": "réponse : C’est un travail pour l’œil 3D. Ouvrez la Maquette 3D, partie Rénovation : filme",
+  "reponse": "C’est un travail pour l’œil 3D. Ouvrez la Maquette 3D, partie Rénovation : filmez la pièce ou le chantier (ou choisissez une photo de face de chaque mur), puis reposez votre question dans son chat. Je vous donnerai alors les éléments, les s",
+  "suite": "",
+  "annule": "Il n'y a rien à annuler.",
+  "t_total": 13715,
+  "t_chat": 2788,
+  "detection": null,
+  "geometrie": null,
+  "erreurs": [],
+  "etapes": [
+   "chat principal : 1 réponse(s)",
+   "section reno ouverte",
+   "donnée adaptée indisponible : vidéo de salle de bain ou cuisine"
+  ]
+ },
+ {
+  "id": 25,
+  "cat": "C",
+  "titre": "Électricien",
+  "demande": "Identifie toutes les prises, interrupteurs et points lumineux de cette pièce.",
+  "donnees": "video",
+  "compris": true,
+  "execute": true,
+  "score": 89,
+  "statut": "réussi",
+  "pts": {
+   "comprehension": [
+    15,
+    15
+   ],
+   "besoin": [
+    10,
+    10
+   ],
+   "outils": [
+    10,
+    10
+   ],
+   "reconnaissance": [
+    8,
+    15
+   ],
+   "geometrie": null,
+   "qualite3d": [
+    13,
+    15
+   ],
+   "coherence": [
+    10,
+    10
+   ],
+   "incertitudes": [
+    5,
+    5
+   ],
+   "ux": [
+    5,
+    5
+   ]
+  },
+  "note": "réponse : C’est un travail pour l’œil 3D. Ouvrez la Maquette 3D, partie Rénovation : filme",
+  "reponse": "C’est un travail pour l’œil 3D. Ouvrez la Maquette 3D, partie Rénovation : filmez la pièce ou le chantier (ou choisissez une photo de face de chaque mur), puis reposez votre question dans son chat. Je vous donnerai alors les éléments, les s",
+  "suite": "",
+  "annule": "Il n'y a rien à annuler.",
+  "t_total": 236137,
+  "t_reco": 215663,
+  "t_chat": 1629,
+  "detection": {
+   "prec": 1,
+   "rec": 0.75,
+   "f1": 0.8571428571428571,
+   "trouves": [
+    "plafonnier",
+    "panneau mural",
+    "lit",
+    "rideau",
+    "table",
+    "chaise",
+    "réfrigérateur",
+    "micro-ondes",
+    "poteau",
+    "poubelle",
+    "carton",
+    "fenêtre"
+   ],
+   "faux": []
+  },
+  "geometrie": null,
+  "erreurs": [],
+  "etapes": [
+   "chat principal : 1 réponse(s)",
+   "section reno ouverte",
+   "vidéo analysée en 216 s"
+  ]
+ },
+ {
+  "id": 26,
+  "cat": "C",
+  "titre": "Menuisier",
+  "demande": "Je veux remplacer cette porte par une porte coulissante. Montre-moi comment elle s'intégrerait.",
+  "donnees": "absent:vidéo montrant la porte",
+  "compris": true,
+  "execute": false,
+  "score": 47,
+  "statut": "échec",
+  "pts": {
+   "comprehension": [
+    8,
+    15
+   ],
+   "besoin": [
+    6,
+    10
+   ],
+   "outils": [
+    10,
+    10
+   ],
+   "reconnaissance": null,
+   "geometrie": null,
+   "qualite3d": [
+    0,
+    15
+   ],
+   "coherence": [
+    0,
+    10
+   ],
+   "incertitudes": [
+    5,
+    5
+   ],
+   "ux": [
+    4,
+    5
+   ]
+  },
+  "note": "ouvertures inchangées",
+  "reponse": "Pour la maquette 3D, ajoute d’abord le plan. Plan 3D / Pour cette demande, il me faut d'abord la pièce. Filmez-la avec la vidéo de la Rénovation (tournez lentement sur vous-même, ou marchez le long des murs), ou choisissez au même endroit u",
+  "suite": "",
+  "annule": "Il n'y a rien à annuler.",
+  "t_total": 14084,
+  "t_chat": 3047,
+  "detection": null,
+  "geometrie": null,
+  "erreurs": [],
+  "etapes": [
+   "chat principal : 1 réponse(s)",
+   "section reno ouverte",
+   "donnée adaptée indisponible : vidéo montrant la porte"
+  ]
+ },
+ {
+  "id": 27,
+  "cat": "C",
+  "titre": "Maçon",
+  "demande": "Analyse ce mur et estime ses dimensions pour préparer mon intervention.",
+  "donnees": "video",
+  "compris": true,
+  "execute": true,
+  "score": 95,
+  "statut": "réussi",
+  "pts": {
+   "comprehension": [
+    15,
+    15
+   ],
+   "besoin": [
+    10,
+    10
+   ],
+   "outils": [
+    10,
+    10
+   ],
+   "reconnaissance": [
+    12,
+    15
+   ],
+   "geometrie": null,
+   "qualite3d": [
+    14,
+    15
+   ],
+   "coherence": [
+    10,
+    10
+   ],
+   "incertitudes": [
+    5,
+    5
+   ],
+   "ux": [
+    5,
+    5
+   ]
+  },
+  "note": "valeurs : 2.65, 2.65, 2.65, 2.65, 4.6",
+  "reponse": "C’est un travail pour l’œil 3D. Ouvrez la Maquette 3D, partie Rénovation : filmez la pièce ou le chantier (ou choisissez une photo de face de chaque mur), puis reposez votre question dans son chat. Je vous donnerai alors les éléments, les s",
+  "suite": "",
+  "annule": "Il n'y a rien à annuler.",
+  "t_total": 230623,
+  "t_reco": 209669,
+  "t_chat": 1639,
+  "detection": {
+   "prec": 1,
+   "rec": 0.6875,
+   "f1": 0.8148148148148148,
+   "trouves": [
+    "plafonnier",
+    "panneau mural",
+    "lit",
+    "rideau",
+    "table",
+    "chaise",
+    "réfrigérateur",
+    "micro-ondes",
+    "poubelle",
+    "carton",
+    "fenêtre"
+   ],
+   "faux": []
+  },
+  "geometrie": null,
+  "erreurs": [],
+  "etapes": [
+   "chat principal : 1 réponse(s)",
+   "section reno ouverte",
+   "vidéo analysée en 210 s"
   ]
  },
  {
@@ -1761,8 +1768,8 @@
   "reponse": "C’est un travail pour l’œil 3D. Ouvrez la Maquette 3D, partie Rénovation : filmez la pièce ou le chantier (ou choisissez une photo de face de chaque mur), puis reposez votre question dans son chat. Je vous donnerai alors les éléments, les s",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 12901,
-  "t_chat": 3915,
+  "t_total": 13365,
+  "t_chat": 2786,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -1780,7 +1787,7 @@
   "donnees": "absent:photos de façade",
   "compris": true,
   "execute": false,
-  "score": 46,
+  "score": 47,
   "statut": "échec",
   "pts": {
    "comprehension": [
@@ -1810,16 +1817,16 @@
     5
    ],
    "ux": [
-    3,
+    4,
     5
    ]
   },
   "note": "valeur donnée, mais pas la surface demandée : Pour la maquette 3D, ajoute d’abord le plan. Plan 3D / Pour ",
-  "reponse": "Pour la maquette 3D, ajoute d’abord le plan. Plan 3D / Pour cette demande, il me faut d'abord la maison. Dans Construction, ajoutez la photo ou le PDF de son plan (un croquis à la main suffit), ou partez de la maison exemple.",
+  "reponse": "Pour la maquette 3D, ajoute d’abord le plan. Plan 3D / Pour cette demande, il me faut d'abord la maison. Dans Construction, ajoutez la photo ou le PDF de son plan (un croquis à la main suffit), ou partez de la maison exemple — ou décrivez-l",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 12359,
-  "t_chat": 4143,
+  "t_total": 12971,
+  "t_chat": 3063,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -1837,7 +1844,7 @@
   "donnees": "video",
   "compris": true,
   "execute": true,
-  "score": 91,
+  "score": 94,
   "statut": "réussi",
   "pts": {
    "comprehension": [
@@ -1853,12 +1860,12 @@
     10
    ],
    "reconnaissance": [
-    11,
+    12,
     15
    ],
    "geometrie": null,
    "qualite3d": [
-    11,
+    13,
     15
    ],
    "coherence": [
@@ -1874,17 +1881,17 @@
     5
    ]
   },
-  "note": "valeurs : 26.9, 28.5",
+  "note": "valeurs : 28.8, 30.1",
   "reponse": "C’est un travail pour l’œil 3D. Ouvrez la Maquette 3D, partie Rénovation : filmez la pièce ou le chantier (ou choisissez une photo de face de chaque mur), puis reposez votre question dans son chat. Je vous donnerai alors les éléments, les s",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 191408,
-  "t_reco": 170026,
-  "t_chat": 3612,
+  "t_total": 221001,
+  "t_reco": 200658,
+  "t_chat": 1686,
   "detection": {
    "prec": 1,
-   "rec": 0.5625,
-   "f1": 0.72,
+   "rec": 0.6875,
+   "f1": 0.8148148148148148,
    "trouves": [
     "plafonnier",
     "panneau mural",
@@ -1894,6 +1901,8 @@
     "chaise",
     "réfrigérateur",
     "micro-ondes",
+    "poubelle",
+    "carton",
     "fenêtre"
    ],
    "faux": []
@@ -1903,7 +1912,7 @@
   "etapes": [
    "chat principal : 1 réponse(s)",
    "section reno ouverte",
-   "vidéo analysée en 170 s"
+   "vidéo analysée en 201 s"
   ]
  },
  {
@@ -1914,7 +1923,7 @@
   "donnees": "video",
   "compris": true,
   "execute": true,
-  "score": 65,
+  "score": 68,
   "statut": "partiel",
   "pts": {
    "comprehension": [
@@ -1935,7 +1944,7 @@
    ],
    "geometrie": null,
    "qualite3d": [
-    8,
+    11,
     15
    ],
    "coherence": [
@@ -1955,13 +1964,13 @@
   "reponse": "Aucune fissure repérée sur les 2 murs photographiés.",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 191532,
-  "t_reco": 172265,
-  "t_chat": 3234,
+  "t_total": 213153,
+  "t_reco": 194350,
+  "t_chat": 1654,
   "detection": {
    "prec": 1,
-   "rec": 0.5625,
-   "f1": 0.72,
+   "rec": 0.6875,
+   "f1": 0.8148148148148148,
    "trouves": [
     "plafonnier",
     "panneau mural",
@@ -1970,7 +1979,9 @@
     "table",
     "chaise",
     "réfrigérateur",
-    "micro-ondes",
+    "poteau",
+    "poubelle",
+    "carton",
     "fenêtre"
    ],
    "faux": []
@@ -1979,7 +1990,7 @@
   "erreurs": [],
   "etapes": [
    "section reno ouverte",
-   "vidéo analysée en 172 s"
+   "vidéo analysée en 194 s"
   ]
  },
  {
@@ -1990,7 +2001,7 @@
   "donnees": "video",
   "compris": true,
   "execute": true,
-  "score": 65,
+  "score": 66,
   "statut": "partiel",
   "pts": {
    "comprehension": [
@@ -2011,7 +2022,7 @@
    ],
    "geometrie": null,
    "qualite3d": [
-    8,
+    9,
     15
    ],
    "coherence": [
@@ -2031,13 +2042,13 @@
   "reponse": "Aucune tache repérée (humidité ou autre) sur les 2 murs photographiés.",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 197486,
-  "t_reco": 179108,
-  "t_chat": 3356,
+  "t_total": 207985,
+  "t_reco": 190086,
+  "t_chat": 1624,
   "detection": {
    "prec": 1,
-   "rec": 0.5,
-   "f1": 0.6666666666666666,
+   "rec": 0.75,
+   "f1": 0.8571428571428571,
    "trouves": [
     "plafonnier",
     "panneau mural",
@@ -2046,6 +2057,10 @@
     "table",
     "chaise",
     "réfrigérateur",
+    "micro-ondes",
+    "poteau",
+    "poubelle",
+    "carton",
     "fenêtre"
    ],
    "faux": []
@@ -2054,7 +2069,7 @@
   "erreurs": [],
   "etapes": [
    "section reno ouverte",
-   "vidéo analysée en 179 s"
+   "vidéo analysée en 190 s"
   ]
  },
  {
@@ -2065,7 +2080,7 @@
   "donnees": "video",
   "compris": true,
   "execute": true,
-  "score": 65,
+  "score": 67,
   "statut": "partiel",
   "pts": {
    "comprehension": [
@@ -2086,7 +2101,7 @@
    ],
    "geometrie": null,
    "qualite3d": [
-    8,
+    10,
     15
    ],
    "coherence": [
@@ -2106,13 +2121,13 @@
   "reponse": "Aucune fissure repérée sur les 2 murs photographiés.¶Aucun trou repéré sur les 2 murs photographiés.¶Aucune tache repérée (humidité ou autre) sur les 2 murs photographiés.",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 194731,
-  "t_reco": 176389,
-  "t_chat": 3304,
+  "t_total": 209880,
+  "t_reco": 191676,
+  "t_chat": 1621,
   "detection": {
    "prec": 1,
-   "rec": 0.625,
-   "f1": 0.7692307692307693,
+   "rec": 0.6875,
+   "f1": 0.8148148148148148,
    "trouves": [
     "plafonnier",
     "panneau mural",
@@ -2122,7 +2137,8 @@
     "chaise",
     "réfrigérateur",
     "micro-ondes",
-    "poteau",
+    "poubelle",
+    "carton",
     "fenêtre"
    ],
    "faux": []
@@ -2131,7 +2147,7 @@
   "erreurs": [],
   "etapes": [
    "section reno ouverte",
-   "vidéo analysée en 176 s"
+   "vidéo analysée en 192 s"
   ]
  },
  {
@@ -2142,7 +2158,7 @@
   "donnees": "video",
   "compris": true,
   "execute": true,
-  "score": 65,
+  "score": 64,
   "statut": "partiel",
   "pts": {
    "comprehension": [
@@ -2163,7 +2179,7 @@
    ],
    "geometrie": null,
    "qualite3d": [
-    8,
+    7,
     15
    ],
    "coherence": [
@@ -2183,13 +2199,13 @@
   "reponse": "Je ne sais pas encore reconnaître le carrelage cassé : vérifiez sur place.",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 188337,
-  "t_reco": 168832,
-  "t_chat": 3439,
+  "t_total": 217387,
+  "t_reco": 199498,
+  "t_chat": 1628,
   "detection": {
-   "prec": 0.9565217391304348,
-   "rec": 0.625,
-   "f1": 0.7560137457044673,
+   "prec": 0.9545454545454546,
+   "rec": 0.75,
+   "f1": 0.84,
    "trouves": [
     "plafonnier",
     "panneau mural",
@@ -2200,6 +2216,8 @@
     "réfrigérateur",
     "micro-ondes",
     "poteau",
+    "poubelle",
+    "carton",
     "fenêtre"
    ],
    "faux": [
@@ -2210,7 +2228,7 @@
   "erreurs": [],
   "etapes": [
    "section reno ouverte",
-   "vidéo analysée en 169 s"
+   "vidéo analysée en 199 s"
   ]
  },
  {
@@ -2221,7 +2239,7 @@
   "donnees": "video",
   "compris": true,
   "execute": false,
-  "score": 35,
+  "score": 38,
   "statut": "échec",
   "pts": {
    "comprehension": [
@@ -2242,7 +2260,7 @@
    ],
    "geometrie": null,
    "qualite3d": [
-    6,
+    8,
     15
    ],
    "coherence": [
@@ -2262,31 +2280,36 @@
   "reponse": "Je ne sais pas encore reconnaître la peinture écaillée ou abîmée : vérifiez sur place.",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 190670,
-  "t_reco": 171014,
-  "t_chat": 3724,
+  "t_total": 215337,
+  "t_reco": 197051,
+  "t_chat": 1630,
   "detection": {
-   "prec": 1,
-   "rec": 0.5625,
-   "f1": 0.72,
+   "prec": 0.9523809523809523,
+   "rec": 0.75,
+   "f1": 0.8391608391608391,
    "trouves": [
     "plafonnier",
     "panneau mural",
     "lit",
-    "rideau",
     "table",
+    "rideau",
     "chaise",
     "réfrigérateur",
     "micro-ondes",
+    "poteau",
+    "poubelle",
+    "carton",
     "fenêtre"
    ],
-   "faux": []
+   "faux": [
+    "Coussin"
+   ]
   },
   "geometrie": null,
   "erreurs": [],
   "etapes": [
    "section reno ouverte",
-   "vidéo analysée en 171 s"
+   "vidéo analysée en 197 s"
   ]
  },
  {
@@ -2297,7 +2320,7 @@
   "donnees": "video",
   "compris": true,
   "execute": true,
-  "score": 65,
+  "score": 68,
   "statut": "partiel",
   "pts": {
    "comprehension": [
@@ -2318,7 +2341,7 @@
    ],
    "geometrie": null,
    "qualite3d": [
-    8,
+    11,
     15
    ],
    "coherence": [
@@ -2338,13 +2361,13 @@
   "reponse": "Je ne sais pas encore reconnaître les défauts des fenêtres : vérifiez sur place.",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 192254,
-  "t_reco": 173520,
-  "t_chat": 3878,
+  "t_total": 210278,
+  "t_reco": 191342,
+  "t_chat": 1641,
   "detection": {
    "prec": 1,
-   "rec": 0.5,
-   "f1": 0.6666666666666666,
+   "rec": 0.6875,
+   "f1": 0.8148148148148148,
    "trouves": [
     "plafonnier",
     "panneau mural",
@@ -2353,6 +2376,9 @@
     "table",
     "chaise",
     "réfrigérateur",
+    "micro-ondes",
+    "poubelle",
+    "carton",
     "fenêtre"
    ],
    "faux": []
@@ -2361,7 +2387,7 @@
   "erreurs": [],
   "etapes": [
    "section reno ouverte",
-   "vidéo analysée en 174 s"
+   "vidéo analysée en 191 s"
   ]
  },
  {
@@ -2372,7 +2398,7 @@
   "donnees": "absent:photos de façade",
   "compris": true,
   "execute": false,
-  "score": 46,
+  "score": 47,
   "statut": "échec",
   "pts": {
    "comprehension": [
@@ -2402,16 +2428,16 @@
     5
    ],
    "ux": [
-    3,
+    4,
     5
    ]
   },
   "note": "pas de diagnostic",
-  "reponse": "Pour cette demande, il me faut d'abord la maison. Dans Construction, ajoutez la photo ou le PDF de son plan (un croquis à la main suffit), ou partez de la maison exemple.",
+  "reponse": "Pour cette demande, il me faut d'abord la maison. Dans Construction, ajoutez la photo ou le PDF de son plan (un croquis à la main suffit), ou partez de la maison exemple — ou décrivez-la : « dessine une maison de plain-pied avec trois chamb",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 10541,
-  "t_chat": 4106,
+  "t_total": 12145,
+  "t_chat": 2654,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -2428,7 +2454,7 @@
   "donnees": "absent:vidéo sous l'évier",
   "compris": true,
   "execute": true,
-  "score": 64,
+  "score": 66,
   "statut": "partiel",
   "pts": {
    "comprehension": [
@@ -2458,7 +2484,7 @@
     5
    ],
    "ux": [
-    3,
+    4,
     5
    ]
   },
@@ -2466,8 +2492,8 @@
   "reponse": "Pour « Identifie les éventuelles fuites visibles sous mon évier », il me faut d'abord la pièce. Filmez-la avec la vidéo de la Rénovation (tournez lentement sur vous-même, ou marchez le long des murs), ou choisissez au même endroit une photo",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 10735,
-  "t_chat": 4112,
+  "t_total": 10767,
+  "t_chat": 2519,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -2484,7 +2510,7 @@
   "donnees": "absent:photos de toiture",
   "compris": true,
   "execute": false,
-  "score": 46,
+  "score": 47,
   "statut": "échec",
   "pts": {
    "comprehension": [
@@ -2514,16 +2540,16 @@
     5
    ],
    "ux": [
-    3,
+    4,
     5
    ]
   },
   "note": "pas de diagnostic",
-  "reponse": "Pour « Analyse ma toiture et indique les éléments qui semblent endommagés », il me faut d'abord la maison. Dans Construction, ajoutez la photo ou le PDF de son plan (un croquis à la main suffit), ou partez de la maison exemple.",
+  "reponse": "Pour « Analyse ma toiture et indique les éléments qui semblent endommagés », il me faut d'abord la maison. Dans Construction, ajoutez la photo ou le PDF de son plan (un croquis à la main suffit), ou partez de la maison exemple — ou décrivez",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 11317,
-  "t_chat": 4768,
+  "t_total": 11396,
+  "t_chat": 2698,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -2540,7 +2566,7 @@
   "donnees": "absent:deux vidéos à 6 mois d'intervalle",
   "compris": true,
   "execute": true,
-  "score": 64,
+  "score": 66,
   "statut": "partiel",
   "pts": {
    "comprehension": [
@@ -2570,7 +2596,7 @@
     5
    ],
    "ux": [
-    3,
+    4,
     5
    ]
   },
@@ -2578,8 +2604,8 @@
   "reponse": "Pour comparer, il faut deux visites enregistrées de la même pièce. Filmez-la maintenant, puis refilmez-la plus tard : je comparerai les éléments (ajoutés, retirés, déplacés) et les dimensions.",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 10892,
-  "t_chat": 4465,
+  "t_total": 11305,
+  "t_chat": 2786,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -2596,7 +2622,7 @@
   "donnees": "absent:vidéo de chantier",
   "compris": true,
   "execute": true,
-  "score": 76,
+  "score": 77,
   "statut": "réussi",
   "pts": {
    "comprehension": [
@@ -2626,7 +2652,7 @@
     5
    ],
    "ux": [
-    3,
+    4,
     5
    ]
   },
@@ -2634,8 +2660,8 @@
   "reponse": "C’est un travail pour l’œil 3D. Ouvrez la Maquette 3D, partie Rénovation : filmez la pièce ou le chantier (ou choisissez une photo de face de chaque mur), puis reposez votre question dans son chat. Je vous donnerai alors les éléments, les s",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 13160,
-  "t_chat": 4447,
+  "t_total": 13171,
+  "t_chat": 2749,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -2688,8 +2714,8 @@
   "reponse": "C’est un travail pour l’œil 3D. Ouvrez la Maquette 3D, partie Rénovation : filmez la pièce ou le chantier (ou choisissez une photo de face de chaque mur), puis reposez votre question dans son chat. Je vous donnerai alors les éléments, les s",
   "suite": "",
   "annule": "",
-  "t_total": 5126,
-  "t_chat": 1313,
+  "t_total": 5099,
+  "t_chat": 1311,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -2705,7 +2731,7 @@
   "donnees": "absent:photos de chantier à deux dates",
   "compris": true,
   "execute": true,
-  "score": 64,
+  "score": 66,
   "statut": "partiel",
   "pts": {
    "comprehension": [
@@ -2735,7 +2761,7 @@
     5
    ],
    "ux": [
-    3,
+    4,
     5
    ]
   },
@@ -2743,8 +2769,8 @@
   "reponse": "vendredi 20/11, 08:00–12:00 : Chantier Petit - finitions Petit · 0633333333 8 avenue Foch, Paris — voir sur la carte Devis : D2026-002 (accepte) / Pour comparer, il faut deux visites enregistrées de la même pièce. Filmez-la maintenant, puis",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 13610,
-  "t_chat": 4947,
+  "t_total": 12898,
+  "t_chat": 2548,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -2762,7 +2788,7 @@
   "donnees": "absent:vidéo de chantier",
   "compris": true,
   "execute": true,
-  "score": 76,
+  "score": 77,
   "statut": "réussi",
   "pts": {
    "comprehension": [
@@ -2792,7 +2818,7 @@
     5
    ],
    "ux": [
-    3,
+    4,
     5
    ]
   },
@@ -2800,8 +2826,8 @@
   "reponse": "C’est un travail pour l’œil 3D. Ouvrez la Maquette 3D, partie Rénovation : filmez la pièce ou le chantier (ou choisissez une photo de face de chaque mur), puis reposez votre question dans son chat. Je vous donnerai alors les éléments, les s",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 13555,
-  "t_chat": 4946,
+  "t_total": 12872,
+  "t_chat": 2575,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -2819,7 +2845,7 @@
   "donnees": "absent:vidéo de chantier",
   "compris": true,
   "execute": true,
-  "score": 76,
+  "score": 77,
   "statut": "réussi",
   "pts": {
    "comprehension": [
@@ -2849,7 +2875,7 @@
     5
    ],
    "ux": [
-    3,
+    4,
     5
    ]
   },
@@ -2857,8 +2883,8 @@
   "reponse": "C’est un travail pour l’œil 3D. Ouvrez la Maquette 3D, partie Rénovation : filmez la pièce ou le chantier (ou choisissez une photo de face de chaque mur), puis reposez votre question dans son chat. Je vous donnerai alors les éléments, les s",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 13834,
-  "t_chat": 5268,
+  "t_total": 13577,
+  "t_chat": 3014,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -2876,7 +2902,7 @@
   "donnees": "absent:vidéo de chantier",
   "compris": false,
   "execute": false,
-  "score": 11,
+  "score": 13,
   "statut": "échec",
   "pts": {
    "comprehension": [
@@ -2906,7 +2932,7 @@
     5
    ],
    "ux": [
-    3,
+    4,
     5
    ]
   },
@@ -2914,8 +2940,8 @@
   "reponse": "« Identifie » : c'est un client ou un fournisseur ? Client Fournisseur Remarques : Identifie les cloisons qui sont déjà posées et celles qui restent à réaliser / Pour cette demande, il me faut d'abord la pièce. Filmez-la avec la vidéo de la",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 12801,
-  "t_chat": 4119,
+  "t_total": 13176,
+  "t_chat": 3007,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -2933,7 +2959,7 @@
   "donnees": "absent:vidéo de chantier",
   "compris": true,
   "execute": true,
-  "score": 76,
+  "score": 77,
   "statut": "réussi",
   "pts": {
    "comprehension": [
@@ -2963,7 +2989,7 @@
     5
    ],
    "ux": [
-    3,
+    4,
     5
    ]
   },
@@ -2971,8 +2997,8 @@
   "reponse": "C’est un travail pour l’œil 3D. Ouvrez la Maquette 3D, partie Rénovation : filmez la pièce ou le chantier (ou choisissez une photo de face de chaque mur), puis reposez votre question dans son chat. Je vous donnerai alors les éléments, les s",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 13353,
-  "t_chat": 4791,
+  "t_total": 13144,
+  "t_chat": 2925,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -2990,7 +3016,7 @@
   "donnees": "absent:vidéo de chantier",
   "compris": true,
   "execute": true,
-  "score": 66,
+  "score": 67,
   "statut": "partiel",
   "pts": {
    "comprehension": [
@@ -3020,7 +3046,7 @@
     5
    ],
    "ux": [
-    3,
+    4,
     5
    ]
   },
@@ -3028,8 +3054,8 @@
   "reponse": "Pour la maquette 3D, ajoute d’abord le plan. Plan 3D / Pour « Identifie les zones de stockage et les zones de circulation », il me faut d'abord la pièce. Filmez-la avec la vidéo de la Rénovation (tournez lentement sur vous-même, ou marchez ",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 13872,
-  "t_chat": 5304,
+  "t_total": 12723,
+  "t_chat": 2393,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -3047,7 +3073,7 @@
   "donnees": "video",
   "compris": true,
   "execute": true,
-  "score": 89,
+  "score": 96,
   "statut": "réussi",
   "pts": {
    "comprehension": [
@@ -3063,12 +3089,12 @@
     10
    ],
    "reconnaissance": [
-    11,
+    13,
     15
    ],
    "geometrie": null,
    "qualite3d": [
-    11,
+    14,
     15
    ],
    "coherence": [
@@ -3080,43 +3106,43 @@
     5
    ],
    "ux": [
-    4,
+    5,
     5
    ]
   },
-  "note": "maquette créée (4 murs, 23 éléments captés)",
+  "note": "maquette créée (4 murs, 18 éléments captés)",
   "reponse": "C’est un travail pour l’œil 3D. Ouvrez la Maquette 3D, partie Rénovation : filmez la pièce ou le chantier (ou choisissez une photo de face de chaque mur), puis reposez votre question dans son chat. Je vous donnerai alors les éléments, les s",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 193512,
-  "t_reco": 173576,
-  "t_chat": 4136,
+  "t_total": 213840,
+  "t_reco": 193097,
+  "t_chat": 1651,
   "detection": {
-   "prec": 0.9565217391304348,
-   "rec": 0.625,
-   "f1": 0.7560137457044673,
+   "prec": 1,
+   "rec": 0.75,
+   "f1": 0.8571428571428571,
    "trouves": [
     "plafonnier",
     "panneau mural",
     "lit",
-    "table",
     "rideau",
+    "table",
     "chaise",
     "réfrigérateur",
     "micro-ondes",
     "poteau",
+    "poubelle",
+    "carton",
     "fenêtre"
    ],
-   "faux": [
-    "Coussin"
-   ]
+   "faux": []
   },
   "geometrie": null,
   "erreurs": [],
   "etapes": [
    "chat principal : 1 réponse(s)",
    "section reno ouverte",
-   "vidéo analysée en 174 s"
+   "vidéo analysée en 193 s"
   ]
  },
  {
@@ -3127,7 +3153,7 @@
   "donnees": "absent:vidéo de chantier",
   "compris": false,
   "execute": false,
-  "score": 11,
+  "score": 13,
   "statut": "échec",
   "pts": {
    "comprehension": [
@@ -3157,7 +3183,7 @@
     5
    ],
    "ux": [
-    3,
+    4,
     5
    ]
   },
@@ -3165,8 +3191,8 @@
   "reponse": "« Identifie » : c'est un client ou un fournisseur ? Client Fournisseur Remarques : Identifie les équipements de sécurité visibles et les éventuels risques apparents / Pour cette demande, il me faut d'abord la pièce. Filmez-la avec la vidéo ",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 13530,
-  "t_chat": 4533,
+  "t_total": 14639,
+  "t_chat": 2882,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -3219,8 +3245,8 @@
   "reponse": "Vos lieux de travail la semaine prochaine : lundi 16/11 08:00 — Martin : 3 rue Victor Hugo, Lyon mardi 17/11 08:00 — Dupont : 12 rue des Lilas, Marseille mercredi 18/11 09:00 — Bernard : 25 boulevard Gambetta, Nice jeudi 19/11 08:00 — Leroy",
   "suite": "",
   "annule": "",
-  "t_total": 5105,
-  "t_chat": 1313,
+  "t_total": 5093,
+  "t_chat": 1312,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -3277,9 +3303,9 @@
   "reponse": "Maquette 3D",
   "suite": "",
   "annule": "",
-  "t_total": 97207,
-  "t_reco": 75265,
-  "t_chat": 1803,
+  "t_total": 97768,
+  "t_reco": 80332,
+  "t_chat": 1372,
   "detection": null,
   "geometrie": null,
   "erreurs": [
@@ -3335,7 +3361,7 @@
   "reponse": "Vos lieux de travail la semaine prochaine : lundi 16/11 08:00 — Martin : 3 rue Victor Hugo, Lyon mardi 17/11 08:00 — Dupont : 12 rue des Lilas, Marseille mercredi 18/11 09:00 — Bernard : 25 boulevard Gambetta, Nice jeudi 19/11 08:00 — Leroy",
   "suite": "",
   "annule": "",
-  "t_total": 20645,
+  "t_total": 18649,
   "t_chat": 1311,
   "detection": null,
   "geometrie": null,
@@ -3387,8 +3413,8 @@
   "reponse": "lundi 16/11, 08:00–17:00 : Chantier Martin - carrelage salle de bain Martin · 0611111111 3 rue Victor Hugo, Lyon — voir sur la carte Devis : D2026-001 (accepte)",
   "suite": "",
   "annule": "",
-  "t_total": 5146,
-  "t_chat": 1339,
+  "t_total": 5100,
+  "t_chat": 1312,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -3439,8 +3465,8 @@
   "reponse": "Chantier Dupont - faïence cuisine (Dupont) — d'après le devis (aucun devis) : Aucun matériau dans le devis.",
   "suite": "",
   "annule": "",
-  "t_total": 5119,
-  "t_chat": 1313,
+  "t_total": 5183,
+  "t_chat": 1310,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -3491,8 +3517,8 @@
   "reponse": "La semaine dernière, vous êtes intervenu chez : Petit. mercredi 4/11 : Chantier Petit - peinture séjour — 8 avenue Foch, Paris Photos et mesures : je ne trouve rien d’enregistré pour ce chantier dans casô. Les maquettes 3D filmées sont dans",
   "suite": "",
   "annule": "",
-  "t_total": 5069,
-  "t_chat": 1311,
+  "t_total": 5141,
+  "t_chat": 1317,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -3543,8 +3569,8 @@
   "reponse": "Cette semaine : 3 interventions, 2 chantiers, 9 h prévues. mardi 10/11 08:00–12:00 : Chantier Martin — 3 rue Victor Hugo, Lyon jeudi 12/11 14:00–18:00 : Chantier Dupont — 12 rue des Lilas, Marseille samedi 14/11 10:00–11:00 : Dupont — 12 ru",
   "suite": "",
   "annule": "",
-  "t_total": 5454,
-  "t_chat": 1314,
+  "t_total": 5141,
+  "t_chat": 1318,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -3595,8 +3621,8 @@
   "reponse": "Prochain créneau le matin : mercredi 18/11 de 8 h à 9 h. lundi 16/11 : pas de créneau libre le matin. Déjà prévu ce jour-là : 08:00 Chantier Martin - carrelage salle de bain Dites « ajoute un rendez-vous lundi à 8 h chez … » pour le réserve",
   "suite": "",
   "annule": "",
-  "t_total": 5034,
-  "t_chat": 1312,
+  "t_total": 5149,
+  "t_chat": 1313,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -3647,7 +3673,7 @@
   "reponse": "Temps prévu cette semaine : 9 h Martin : 4 h Dupont : 5 h",
   "suite": "",
   "annule": "",
-  "t_total": 5115,
+  "t_total": 5054,
   "t_chat": 1311,
   "detection": null,
   "geometrie": null,
@@ -3699,8 +3725,8 @@
   "reponse": "Cette semaine : 3 interventions, 2 chantiers, 9 h prévues. mardi 10/11 08:00–12:00 : Chantier Martin — 3 rue Victor Hugo, Lyon jeudi 12/11 14:00–18:00 : Chantier Dupont — 12 rue des Lilas, Marseille samedi 14/11 10:00–11:00 : Dupont — 12 ru",
   "suite": "",
   "annule": "",
-  "t_total": 5063,
-  "t_chat": 1318,
+  "t_total": 5177,
+  "t_chat": 1314,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -3754,9 +3780,9 @@
   "reponse": "Voilà.",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 101226,
-  "t_reco": 75971,
-  "t_chat": 10498,
+  "t_total": 96213,
+  "t_reco": 72780,
+  "t_chat": 7992,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -3811,8 +3837,8 @@
   "reponse": "Pour comparer, il faut deux visites enregistrées de la même pièce. Filmez-la maintenant, puis refilmez-la plus tard : je comparerai les éléments (ajoutés, retirés, déplacés) et les dimensions.",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 11777,
-  "t_chat": 3404,
+  "t_total": 11551,
+  "t_chat": 2918,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -3867,8 +3893,8 @@
   "reponse": "Pour « Je voudrais transformer cet appartement en deux logements indépendants », il me faut d'abord la pièce. Filmez-la avec la vidéo de la Rénovation (tournez lentement sur vous-même, ou marchez le long des murs), ou choisissez au même end",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 10025,
-  "t_chat": 3514,
+  "t_total": 10541,
+  "t_chat": 1612,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -3885,7 +3911,7 @@
   "donnees": "video",
   "compris": true,
   "execute": true,
-  "score": 92,
+  "score": 94,
   "statut": "réussi",
   "pts": {
    "comprehension": [
@@ -3901,12 +3927,12 @@
     10
    ],
    "reconnaissance": [
-    12,
+    13,
     15
    ],
    "geometrie": null,
    "qualite3d": [
-    11,
+    12,
     15
    ],
    "coherence": [
@@ -3922,36 +3948,40 @@
     5
    ]
   },
-  "note": "valeurs : 76.6",
-  "reponse": "Volume : 76,6 m³ Valeurs estimées depuis la vidéo (pas encore mesurées au mètre).",
+  "note": "valeurs : 77.4",
+  "reponse": "Volume : 77,4 m³ Valeurs estimées depuis la vidéo (pas encore mesurées au mètre).",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 192693,
-  "t_reco": 172878,
-  "t_chat": 3718,
+  "t_total": 232654,
+  "t_reco": 212999,
+  "t_chat": 1627,
   "detection": {
-   "prec": 1,
-   "rec": 0.625,
-   "f1": 0.7692307692307693,
+   "prec": 0.9523809523809523,
+   "rec": 0.75,
+   "f1": 0.8391608391608391,
    "trouves": [
     "plafonnier",
     "panneau mural",
     "lit",
-    "rideau",
     "table",
+    "rideau",
     "chaise",
     "réfrigérateur",
     "micro-ondes",
     "poteau",
+    "poubelle",
+    "carton",
     "fenêtre"
    ],
-   "faux": []
+   "faux": [
+    "Coussin"
+   ]
   },
   "geometrie": null,
   "erreurs": [],
   "etapes": [
    "section reno ouverte",
-   "vidéo analysée en 173 s"
+   "vidéo analysée en 213 s"
   ]
  },
  {
@@ -3997,8 +4027,8 @@
   "reponse": "« Voici » : c'est un client ou un fournisseur ? Client Fournisseur Remarques : Voici une annonce immobilière et des photos À faire : Identifie les travaux potentiels à prévoir Voir le devis",
   "suite": "",
   "annule": "",
-  "t_total": 5599,
-  "t_chat": 1544,
+  "t_total": 5394,
+  "t_chat": 1547,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -4014,7 +4044,7 @@
   "donnees": "absent:vidéo d'appartement vide",
   "compris": true,
   "execute": true,
-  "score": 66,
+  "score": 67,
   "statut": "partiel",
   "pts": {
    "comprehension": [
@@ -4044,7 +4074,7 @@
     5
    ],
    "ux": [
-    3,
+    4,
     5
    ]
   },
@@ -4052,8 +4082,8 @@
   "reponse": "Pour cette demande, il me faut d'abord la pièce. Filmez-la avec la vidéo de la Rénovation (tournez lentement sur vous-même, ou marchez le long des murs), ou choisissez au même endroit une photo de face de chaque mur. Je reconstruis ensuite ",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 12580,
-  "t_chat": 5219,
+  "t_total": 10931,
+  "t_chat": 2572,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -4070,7 +4100,7 @@
   "donnees": "absent:vidéo du local",
   "compris": true,
   "execute": false,
-  "score": 46,
+  "score": 47,
   "statut": "échec",
   "pts": {
    "comprehension": [
@@ -4100,7 +4130,7 @@
     5
    ],
    "ux": [
-    3,
+    4,
     5
    ]
   },
@@ -4108,8 +4138,8 @@
   "reponse": "Pour cette demande, il me faut d'abord la pièce. Filmez-la avec la vidéo de la Rénovation (tournez lentement sur vous-même, ou marchez le long des murs), ou choisissez au même endroit une photo de face de chaque mur. Je reconstruis ensuite ",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 12129,
-  "t_chat": 4725,
+  "t_total": 10056,
+  "t_chat": 1610,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -4164,8 +4194,8 @@
   "reponse": "Pour « Je voudrais transformer cet ancien commerce en appartement », il me faut d'abord la pièce. Filmez-la avec la vidéo de la Rénovation (tournez lentement sur vous-même, ou marchez le long des murs), ou choisissez au même endroit une pho",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 10208,
-  "t_chat": 3725,
+  "t_total": 9946,
+  "t_chat": 1613,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -4182,7 +4212,7 @@
   "donnees": "absent:photos d'immeuble",
   "compris": true,
   "execute": false,
-  "score": 46,
+  "score": 47,
   "statut": "échec",
   "pts": {
    "comprehension": [
@@ -4212,16 +4242,16 @@
     5
    ],
    "ux": [
-    3,
+    4,
     5
    ]
   },
   "note": "pas de maquette",
-  "reponse": "Pour cette demande, il me faut d'abord la maison. Dans Construction, ajoutez la photo ou le PDF de son plan (un croquis à la main suffit), ou partez de la maison exemple.",
+  "reponse": "Pour cette demande, il me faut d'abord la maison. Dans Construction, ajoutez la photo ou le PDF de son plan (un croquis à la main suffit), ou partez de la maison exemple — ou décrivez-la : « dessine une maison de plain-pied avec trois chamb",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 13102,
-  "t_chat": 4957,
+  "t_total": 10167,
+  "t_chat": 1607,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -4238,7 +4268,7 @@
   "donnees": "absent:médias de deux maisons",
   "compris": true,
   "execute": true,
-  "score": 64,
+  "score": 66,
   "statut": "partiel",
   "pts": {
    "comprehension": [
@@ -4268,7 +4298,7 @@
     5
    ],
    "ux": [
-    3,
+    4,
     5
    ]
   },
@@ -4276,8 +4306,8 @@
   "reponse": "Pour comparer, il faut deux visites enregistrées de la même pièce. Filmez-la maintenant, puis refilmez-la plus tard : je comparerai les éléments (ajoutés, retirés, déplacés) et les dimensions.",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 10905,
-  "t_chat": 4188,
+  "t_total": 12236,
+  "t_chat": 2659,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -4293,30 +4323,30 @@
   "demande": "Dessine-moi une maison de plain-pied avec trois chambres et un garage.",
   "donnees": "none",
   "compris": true,
-  "execute": false,
-  "score": 24,
-  "statut": "échec",
+  "execute": true,
+  "score": 97,
+  "statut": "réussi",
   "pts": {
    "comprehension": [
-    8,
+    15,
     15
    ],
    "besoin": [
-    0,
+    10,
     10
    ],
    "outils": [
-    0,
+    10,
     10
    ],
    "reconnaissance": null,
    "geometrie": null,
    "qualite3d": [
-    0,
+    15,
     15
    ],
    "coherence": [
-    0,
+    10,
     10
    ],
    "incertitudes": [
@@ -4324,16 +4354,16 @@
     5
    ],
    "ux": [
-    4,
+    3,
     5
    ]
   },
-  "note": "aucune maquette sans plan",
-  "reponse": "Je ne dessine pas encore une maison sans plan. Ajoutez un croquis de plan (photo ou PDF) dans Construction, ou partez de la maison exemple et modifiez-la en me parlant.",
+  "note": "maquette créée",
+  "reponse": "Maison dessinée d'après votre description : 8 pièces, environ 137 m² habitables (garage non compris), 17,50 × 9,50 m hors tout. Chambre 1 13,2 m², Chambre 2 13,2 m², Chambre 3 13,2 m², Salle de bain 10,4 m², WC 7,2 m², Séjour 56,6 m², Cuisi",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 9977,
-  "t_chat": 3487,
+  "t_total": 30911,
+  "t_chat": 18617,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -4394,9 +4424,9 @@
   "reponse": "Je ne connais pas encore « plan dessine ». Pouvez-vous le dire autrement ? (ex. canapé, lit, table, douche)",
   "suite": "Je n'ai pas bien compris. Pouvez-vous le dire autrement ?",
   "annule": "J'ai annulé la dernière modification.",
-  "t_total": 39919,
-  "t_reco": 19799,
-  "t_chat": 3626,
+  "t_total": 42673,
+  "t_reco": 21598,
+  "t_chat": 3996,
   "detection": null,
   "geometrie": {
    "largeur": 10,
@@ -4424,20 +4454,20 @@
   "demande": "Je veux déplacer la cuisine pour la mettre dans cette pièce. Est-ce possible d'étudier cette configuration ?",
   "donnees": "plan",
   "compris": true,
-  "execute": false,
-  "score": 58,
-  "statut": "échec",
+  "execute": true,
+  "score": 88,
+  "statut": "réussi",
   "pts": {
    "comprehension": [
-    8,
+    15,
     15
    ],
    "besoin": [
-    4,
+    10,
     10
    ],
    "outils": [
-    6,
+    10,
     10
    ],
    "reconnaissance": [
@@ -4449,11 +4479,11 @@
     15
    ],
    "qualite3d": [
-    10,
+    15,
     15
    ],
    "coherence": [
-    3,
+    10,
     10
    ],
    "incertitudes": [
@@ -4461,17 +4491,17 @@
     5
    ],
    "ux": [
-    4,
+    5,
     5
    ]
   },
   "note": "maquette depuis le plan",
-  "reponse": "Je ne trouve pas de meuble bas de cuisine dans la maquette.",
+  "reponse": "Les murs, portes, fenêtres et hauteurs sont modifiés par votre artisan. J'ai ajouté votre demande à votre prochain envoi (bouton avion). Pour la lui transmettre maintenant, dites « envoie à mon artisan ».",
   "suite": "",
   "annule": "J'ai annulé la dernière modification.",
-  "t_total": 34096,
-  "t_reco": 17398,
-  "t_chat": 5266,
+  "t_total": 39287,
+  "t_reco": 22550,
+  "t_chat": 1640,
   "detection": null,
   "geometrie": {
    "largeur": 10,
@@ -4500,7 +4530,7 @@
   "donnees": "absent:vidéo d'une pièce de 20 m²",
   "compris": true,
   "execute": false,
-  "score": 51,
+  "score": 53,
   "statut": "échec",
   "pts": {
    "comprehension": [
@@ -4530,7 +4560,7 @@
     5
    ],
    "ux": [
-    3,
+    4,
     5
    ]
   },
@@ -4538,8 +4568,8 @@
   "reponse": "C’est un travail pour l’œil 3D. Ouvrez la Maquette 3D, partie Rénovation : filmez la pièce ou le chantier (ou choisissez une photo de face de chaque mur), puis reposez votre question dans son chat. Je vous donnerai alors les éléments, les s",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 16107,
-  "t_chat": 6078,
+  "t_total": 13258,
+  "t_chat": 2875,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -4557,7 +4587,7 @@
   "donnees": "video",
   "compris": true,
   "execute": false,
-  "score": 48,
+  "score": 52,
   "statut": "échec",
   "pts": {
    "comprehension": [
@@ -4578,7 +4608,7 @@
    ],
    "geometrie": null,
    "qualite3d": [
-    5,
+    9,
     15
    ],
    "coherence": [
@@ -4590,7 +4620,7 @@
     5
    ],
    "ux": [
-    5,
+    4,
     5
    ]
   },
@@ -4598,13 +4628,13 @@
   "reponse": "Quelle couleur ?",
   "suite": "Les murs, portes, fenêtres et hauteurs sont modifiés par votre artisan. J'ai ajouté votre demande à votre prochain envoi (bouton avion).",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 209365,
-  "t_reco": 186320,
-  "t_chat": 3916,
+  "t_total": 236286,
+  "t_reco": 214112,
+  "t_chat": 4088,
   "detection": {
    "prec": 1,
-   "rec": 0.625,
-   "f1": 0.7692307692307693,
+   "rec": 0.6875,
+   "f1": 0.8148148148148148,
    "trouves": [
     "plafonnier",
     "panneau mural",
@@ -4614,7 +4644,8 @@
     "chaise",
     "réfrigérateur",
     "micro-ondes",
-    "poteau",
+    "poubelle",
+    "carton",
     "fenêtre"
    ],
    "faux": []
@@ -4623,7 +4654,7 @@
   "erreurs": [],
   "etapes": [
    "section reno ouverte",
-   "vidéo analysée en 186 s"
+   "vidéo analysée en 214 s"
   ]
  },
  {
@@ -4672,8 +4703,8 @@
   "reponse": "Pour « Transforme ce bureau en deux espaces de travail séparés », il me faut d'abord la pièce. Filmez-la avec la vidéo de la Rénovation (tournez lentement sur vous-même, ou marchez le long des murs), ou choisissez au même endroit une photo ",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 11295,
-  "t_chat": 4679,
+  "t_total": 11266,
+  "t_chat": 4658,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -4690,7 +4721,7 @@
   "donnees": "video",
   "compris": true,
   "execute": true,
-  "score": 89,
+  "score": 91,
   "statut": "réussi",
   "pts": {
    "comprehension": [
@@ -4706,12 +4737,12 @@
     10
    ],
    "reconnaissance": [
-    11,
+    13,
     15
    ],
    "geometrie": null,
    "qualite3d": [
-    11,
+    10,
     15
    ],
    "coherence": [
@@ -4731,13 +4762,13 @@
   "reponse": "Ambiance moderne : Murs, Chambre : blanc #F2F2F0 Sol, Chambre : Carrelage gris 60×60",
   "suite": "",
   "annule": "J'ai annulé la dernière modification.",
-  "t_total": 198070,
-  "t_reco": 177767,
-  "t_chat": 5890,
+  "t_total": 226005,
+  "t_reco": 206941,
+  "t_chat": 4140,
   "detection": {
-   "prec": 0.9565217391304348,
-   "rec": 0.625,
-   "f1": 0.7560137457044673,
+   "prec": 0.9545454545454546,
+   "rec": 0.75,
+   "f1": 0.84,
    "trouves": [
     "plafonnier",
     "panneau mural",
@@ -4748,6 +4779,8 @@
     "réfrigérateur",
     "micro-ondes",
     "poteau",
+    "poubelle",
+    "carton",
     "fenêtre"
    ],
    "faux": [
@@ -4758,7 +4791,7 @@
   "erreurs": [],
   "etapes": [
    "section reno ouverte",
-   "vidéo analysée en 178 s"
+   "vidéo analysée en 207 s"
   ]
  },
  {
@@ -4807,8 +4840,8 @@
   "reponse": "Pour la maquette 3D, ajoute d’abord le plan. Plan 3D / Pour « Crée une extension avec une grande baie vitrée donnant sur le jardin », il me faut d'abord la maison. Dans Construction, ajoutez la photo ou le PDF de son plan (un croquis à la m",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 11830,
-  "t_chat": 3540,
+  "t_total": 11707,
+  "t_chat": 1610,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -4864,8 +4897,8 @@
   "reponse": "Pour comparer, il faut deux visites enregistrées de la même pièce. Filmez-la maintenant, puis refilmez-la plus tard : je comparerai les éléments (ajoutés, retirés, déplacés) et les dimensions.",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 9765,
-  "t_chat": 3354,
+  "t_total": 10091,
+  "t_chat": 1607,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -4882,7 +4915,7 @@
   "donnees": "plan",
   "compris": true,
   "execute": false,
-  "score": 64,
+  "score": 65,
   "statut": "échec",
   "pts": {
    "comprehension": [
@@ -4918,7 +4951,7 @@
     5
    ],
    "ux": [
-    4,
+    5,
     5
    ]
   },
@@ -4926,9 +4959,9 @@
   "reponse": "Tu veux : ouvrir la maquette 3D en vue intérieure ? / 3 variantes prêtes, la 1re est appliquée : 1. disposition actuelle 2. meubles en miroir (gauche ↔ droite) 3. meubles en miroir (avant ↔ arrière) Dites « variante 2 »… pour passer de l'un",
   "suite": "",
   "annule": "J'ai annulé la dernière modification.",
-  "t_total": 37462,
-  "t_reco": 18326,
-  "t_chat": 5620,
+  "t_total": 36889,
+  "t_reco": 16498,
+  "t_chat": 3121,
   "detection": null,
   "geometrie": {
    "largeur": 10,
@@ -4958,7 +4991,7 @@
   "donnees": "plan",
   "compris": true,
   "execute": true,
-  "score": 81,
+  "score": 82,
   "statut": "partiel",
   "pts": {
    "comprehension": [
@@ -4994,7 +5027,7 @@
     5
    ],
    "ux": [
-    4,
+    5,
     5
    ]
   },
@@ -5002,9 +5035,9 @@
   "reponse": "La maquette montre l'état actuel : 9 murs, 9,80 × 7,93 m, 2,50 m sous plafond. Éléments captés : Tableau ×5, Table de chevet ×5, Tapis ×4, Plante ×4, Lit double ×3, Placard / armoire ×3, Commode ×3, Canapé, Table basse, Meuble TV, Fauteuil,",
   "suite": "",
   "annule": "J'ai annulé la dernière modification.",
-  "t_total": 34562,
-  "t_reco": 20248,
-  "t_chat": 4146,
+  "t_total": 34998,
+  "t_reco": 20072,
+  "t_chat": 1716,
   "detection": null,
   "geometrie": {
    "largeur": 10,
@@ -5033,7 +5066,7 @@
   "donnees": "photos",
   "compris": true,
   "execute": true,
-  "score": 91,
+  "score": 93,
   "statut": "réussi",
   "pts": {
    "comprehension": [
@@ -5063,7 +5096,7 @@
     5
    ],
    "ux": [
-    4,
+    5,
     5
    ]
   },
@@ -5071,9 +5104,9 @@
   "reponse": "Non captés : prise. Ces petits éléments ne sont pas encore reconnus dans la vidéo ; vous pouvez les ajouter en le disant (« ajoute une prise »).",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 101497,
-  "t_reco": 78496,
-  "t_chat": 5220,
+  "t_total": 103872,
+  "t_reco": 81444,
+  "t_chat": 1653,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -5087,507 +5120,6 @@
   "cat": "I",
   "titre": "Zones manquantes",
   "demande": "J'ai filmé ma maison, mais certaines zones ne sont pas visibles. Identifie ce qui manque pour terminer le modèle.",
-  "donnees": "video",
-  "compris": true,
-  "execute": true,
-  "score": 91,
-  "statut": "réussi",
-  "pts": {
-   "comprehension": [
-    15,
-    15
-   ],
-   "besoin": [
-    10,
-    10
-   ],
-   "outils": [
-    10,
-    10
-   ],
-   "reconnaissance": [
-    11,
-    15
-   ],
-   "geometrie": null,
-   "qualite3d": [
-    11,
-    15
-   ],
-   "coherence": [
-    10,
-    10
-   ],
-   "incertitudes": [
-    5,
-    5
-   ],
-   "ux": [
-    5,
-    5
-   ]
-  },
-  "note": "notes : [\"Échelle calée sur des objets de taille connue (chaise, table).\",\"Ce qui est ju",
-  "reponse": "Ce qui manque pour terminer la maquette : le mur derrière vous. Refilmez en montrant ces zones.",
-  "suite": "",
-  "annule": "Il n'y a rien à annuler.",
-  "t_total": 194675,
-  "t_reco": 176146,
-  "t_chat": 3465,
-  "detection": {
-   "prec": 0.9473684210526315,
-   "rec": 0.5625,
-   "f1": 0.7058823529411765,
-   "trouves": [
-    "plafonnier",
-    "panneau mural",
-    "lit",
-    "rideau",
-    "table",
-    "chaise",
-    "réfrigérateur",
-    "micro-ondes",
-    "fenêtre"
-   ],
-   "faux": [
-    "Sac"
-   ]
-  },
-  "geometrie": null,
-  "erreurs": [],
-  "etapes": [
-   "section reno ouverte",
-   "vidéo analysée en 176 s"
-  ]
- },
- {
-  "id": 84,
-  "cat": "I",
-  "titre": "Meuble caché",
-  "demande": "Voici une photo avec un meuble partiellement caché. Reconnais ce qui est visible sans inventer les parties cachées.",
-  "donnees": "photos",
-  "compris": true,
-  "execute": true,
-  "score": 91,
-  "statut": "réussi",
-  "pts": {
-   "comprehension": [
-    15,
-    15
-   ],
-   "besoin": [
-    10,
-    10
-   ],
-   "outils": [
-    10,
-    10
-   ],
-   "reconnaissance": null,
-   "geometrie": null,
-   "qualite3d": [
-    15,
-    15
-   ],
-   "coherence": [
-    10,
-    10
-   ],
-   "incertitudes": [
-    0,
-    5
-   ],
-   "ux": [
-    4,
-    5
-   ]
-  },
-  "note": "maquette créée (4 murs, 0 éléments captés)",
-  "reponse": "1 éléments captés : Climatiseur.",
-  "suite": "",
-  "annule": "Il n'y a rien à annuler.",
-  "t_total": 97756,
-  "t_reco": 77505,
-  "t_chat": 4850,
-  "detection": null,
-  "geometrie": null,
-  "erreurs": [],
-  "etapes": [
-   "section reno ouverte",
-   "photos données à #rv-vid, puis le bouton de création"
-  ]
- },
- {
-  "id": 85,
-  "cat": "I",
-  "titre": "Mesure laser",
-  "demande": "J'ai pris une photo avec mon téléphone et une mesure laser de la largeur du mur. Le mur du fond mesure 4,60 m. Utilise cette référence pour améliorer les dimensions du modèle.",
-  "donnees": "video",
-  "compris": true,
-  "execute": true,
-  "score": 91,
-  "statut": "réussi",
-  "pts": {
-   "comprehension": [
-    15,
-    15
-   ],
-   "besoin": [
-    10,
-    10
-   ],
-   "outils": [
-    10,
-    10
-   ],
-   "reconnaissance": [
-    11,
-    15
-   ],
-   "geometrie": null,
-   "qualite3d": [
-    11,
-    15
-   ],
-   "coherence": [
-    10,
-    10
-   ],
-   "incertitudes": [
-    5,
-    5
-   ],
-   "ux": [
-    5,
-    5
-   ]
-  },
-  "note": "dimensions [4.75,6.55] → [4.8,6.55]",
-  "reponse": "Plan calibré au laser / Maquette calée sur votre mesure : mur 1 = 4,60 m. La pièce fait maintenant 4,60 × 6,35 m.",
-  "suite": "",
-  "annule": "J'ai annulé la dernière modification.",
-  "t_total": 205331,
-  "t_reco": 182921,
-  "t_chat": 3869,
-  "detection": {
-   "prec": 1,
-   "rec": 0.5625,
-   "f1": 0.72,
-   "trouves": [
-    "plafonnier",
-    "panneau mural",
-    "lit",
-    "rideau",
-    "table",
-    "chaise",
-    "réfrigérateur",
-    "micro-ondes",
-    "fenêtre"
-   ],
-   "faux": []
-  },
-  "geometrie": null,
-  "erreurs": [],
-  "etapes": [
-   "chat principal : 1 réponse(s)",
-   "section reno ouverte",
-   "vidéo analysée en 183 s"
-  ]
- },
- {
-  "id": 86,
-  "cat": "I",
-  "titre": "Pièce chargée",
-  "demande": "Voici une pièce avec beaucoup de meubles et de décorations. Je veux une reconstruction détaillée.",
-  "donnees": "video",
-  "compris": true,
-  "execute": true,
-  "score": 87,
-  "statut": "réussi",
-  "pts": {
-   "comprehension": [
-    15,
-    15
-   ],
-   "besoin": [
-    10,
-    10
-   ],
-   "outils": [
-    10,
-    10
-   ],
-   "reconnaissance": [
-    10,
-    15
-   ],
-   "geometrie": null,
-   "qualite3d": [
-    10,
-    15
-   ],
-   "coherence": [
-    10,
-    10
-   ],
-   "incertitudes": [
-    5,
-    5
-   ],
-   "ux": [
-    4,
-    5
-   ]
-  },
-  "note": "maquette créée (4 murs, 26 éléments captés)",
-  "reponse": "La maquette montre l'état actuel : 4 murs, 7,01 × 9,85 m, 3,28 m sous plafond. Éléments captés : Lumière ×6, Poteau ×6, Table ×4, Chaise ×4, Réfrigérateur ×3, Lit, Micro-ondes, Coussin. Mesures estimées depuis la vidéo, à confirmer au mètre",
-  "suite": "",
-  "annule": "Il n'y a rien à annuler.",
-  "t_total": 202523,
-  "t_reco": 183602,
-  "t_chat": 4154,
-  "detection": {
-   "prec": 0.9615384615384616,
-   "rec": 0.5,
-   "f1": 0.6578947368421052,
-   "trouves": [
-    "plafonnier",
-    "table",
-    "chaise",
-    "lit",
-    "réfrigérateur",
-    "micro-ondes",
-    "poteau",
-    "fenêtre"
-   ],
-   "faux": [
-    "Coussin"
-   ]
-  },
-  "geometrie": null,
-  "erreurs": [],
-  "etapes": [
-   "section reno ouverte",
-   "vidéo analysée en 184 s"
-  ]
- },
- {
-  "id": 87,
-  "cat": "I",
-  "titre": "Chantier positions réelles",
-  "demande": "Transforme cette vidéo de chantier en modèle 3D et conserve les objets à leur position réelle.",
-  "donnees": "video",
-  "compris": true,
-  "execute": true,
-  "score": 78,
-  "statut": "partiel",
-  "pts": {
-   "comprehension": [
-    15,
-    15
-   ],
-   "besoin": [
-    7,
-    10
-   ],
-   "outils": [
-    10,
-    10
-   ],
-   "reconnaissance": [
-    11,
-    15
-   ],
-   "geometrie": null,
-   "qualite3d": [
-    8,
-    15
-   ],
-   "coherence": [
-    5,
-    10
-   ],
-   "incertitudes": [
-    5,
-    5
-   ],
-   "ux": [
-    5,
-    5
-   ]
-  },
-  "note": "maquette créée (4 murs, 24 éléments captés)",
-  "reponse": "C’est un travail pour l’œil 3D. Ouvrez la Maquette 3D, partie Rénovation : filmez la pièce ou le chantier (ou choisissez une photo de face de chaque mur), puis reposez votre question dans son chat. Je vous donnerai alors les éléments, les s",
-  "suite": "",
-  "annule": "J'ai annulé la dernière modification.",
-  "t_total": 214329,
-  "t_reco": 192685,
-  "t_chat": 3964,
-  "detection": {
-   "prec": 0.9583333333333334,
-   "rec": 0.625,
-   "f1": 0.756578947368421,
-   "trouves": [
-    "plafonnier",
-    "panneau mural",
-    "lit",
-    "table",
-    "rideau",
-    "chaise",
-    "réfrigérateur",
-    "micro-ondes",
-    "poteau",
-    "fenêtre"
-   ],
-   "faux": [
-    "Coussin"
-   ]
-  },
-  "geometrie": null,
-  "erreurs": [],
-  "etapes": [
-   "chat principal : 1 réponse(s)",
-   "section reno ouverte",
-   "vidéo analysée en 193 s"
-  ]
- },
- {
-  "id": 88,
-  "cat": "I",
-  "titre": "Changements 2 vidéos",
-  "demande": "J'ai deux vidéos prises à des dates différentes. Identifie les changements de position des objets et les travaux réalisés.",
-  "donnees": "absent:deux vidéos à deux dates",
-  "compris": true,
-  "execute": true,
-  "score": 64,
-  "statut": "partiel",
-  "pts": {
-   "comprehension": [
-    15,
-    15
-   ],
-   "besoin": [
-    7,
-    10
-   ],
-   "outils": [
-    10,
-    10
-   ],
-   "reconnaissance": null,
-   "geometrie": null,
-   "qualite3d": [
-    0,
-    15
-   ],
-   "coherence": [
-    5,
-    10
-   ],
-   "incertitudes": [
-    5,
-    5
-   ],
-   "ux": [
-    3,
-    5
-   ]
-  },
-  "note": "comparaison impossible sans les deux jeux de données",
-  "reponse": "Pour comparer, il faut deux visites enregistrées de la même pièce. Filmez-la maintenant, puis refilmez-la plus tard : je comparerai les éléments (ajoutés, retirés, déplacés) et les dimensions.",
-  "suite": "",
-  "annule": "Il n'y a rien à annuler.",
-  "t_total": 10678,
-  "t_chat": 4159,
-  "detection": null,
-  "geometrie": null,
-  "erreurs": [],
-  "etapes": [
-   "section reno ouverte",
-   "donnée adaptée indisponible : deux vidéos à deux dates"
-  ]
- },
- {
-  "id": 89,
-  "cat": "I",
-  "titre": "Objets sélectionnables",
-  "demande": "Reconstruis cette pièce et donne-moi la possibilité de sélectionner chaque objet pour connaître ses caractéristiques.",
-  "donnees": "video",
-  "compris": true,
-  "execute": true,
-  "score": 78,
-  "statut": "partiel",
-  "pts": {
-   "comprehension": [
-    15,
-    15
-   ],
-   "besoin": [
-    7,
-    10
-   ],
-   "outils": [
-    10,
-    10
-   ],
-   "reconnaissance": [
-    11,
-    15
-   ],
-   "geometrie": null,
-   "qualite3d": [
-    8,
-    15
-   ],
-   "coherence": [
-    6,
-    10
-   ],
-   "incertitudes": [
-    5,
-    5
-   ],
-   "ux": [
-    4,
-    5
-   ]
-  },
-  "note": "réponse : Touchez un élément dans la maquette pour le sélectionner. Voici leurs fiches : L",
-  "reponse": "Touchez un élément dans la maquette pour le sélectionner. Voici leurs fiches : Lumière : 0,82 × 0,27 × 0,07 m (estimee) Miroir : 0,33 × 0,13 × 1,07 m (estimee) Lit : 0,90 × 1,90 × 0,65 m (supposee) Rideau : 0,23 × 0,12 × 1,85 m (estimee) Ta",
-  "suite": "",
-  "annule": "Il n'y a rien à annuler.",
-  "t_total": 200627,
-  "t_reco": 182381,
-  "t_chat": 4114,
-  "detection": {
-   "prec": 1,
-   "rec": 0.5625,
-   "f1": 0.72,
-   "trouves": [
-    "plafonnier",
-    "panneau mural",
-    "lit",
-    "rideau",
-    "table",
-    "chaise",
-    "réfrigérateur",
-    "poteau",
-    "fenêtre"
-   ],
-   "faux": []
-  },
-  "geometrie": null,
-  "erreurs": [],
-  "etapes": [
-   "section reno ouverte",
-   "vidéo analysée en 182 s"
-  ]
- },
- {
-  "id": 90,
-  "cat": "I",
-  "titre": "Vider les meubles",
-  "demande": "Je veux supprimer virtuellement tous les meubles et conserver uniquement la structure architecturale.",
   "donnees": "video",
   "compris": true,
   "execute": true,
@@ -5607,7 +5139,517 @@
     10
    ],
    "reconnaissance": [
+    13,
+    15
+   ],
+   "geometrie": null,
+   "qualite3d": [
+    12,
+    15
+   ],
+   "coherence": [
+    10,
+    10
+   ],
+   "incertitudes": [
+    5,
+    5
+   ],
+   "ux": [
+    5,
+    5
+   ]
+  },
+  "note": "notes : [\"Échelle calée sur des objets de taille connue (chaise, table).\",\"Ce qui est ju",
+  "reponse": "Ce qui manque pour terminer la maquette : le mur derrière vous. Refilmez en montrant ces zones.",
+  "suite": "",
+  "annule": "Il n'y a rien à annuler.",
+  "t_total": 224388,
+  "t_reco": 204639,
+  "t_chat": 1678,
+  "detection": {
+   "prec": 0.9523809523809523,
+   "rec": 0.75,
+   "f1": 0.8391608391608391,
+   "trouves": [
+    "plafonnier",
+    "panneau mural",
+    "lit",
+    "table",
+    "rideau",
+    "chaise",
+    "réfrigérateur",
+    "micro-ondes",
+    "poteau",
+    "poubelle",
+    "carton",
+    "fenêtre"
+   ],
+   "faux": [
+    "Coussin"
+   ]
+  },
+  "geometrie": null,
+  "erreurs": [],
+  "etapes": [
+   "section reno ouverte",
+   "vidéo analysée en 205 s"
+  ]
+ },
+ {
+  "id": 84,
+  "cat": "I",
+  "titre": "Meuble caché",
+  "demande": "Voici une photo avec un meuble partiellement caché. Reconnais ce qui est visible sans inventer les parties cachées.",
+  "donnees": "photos",
+  "compris": true,
+  "execute": true,
+  "score": 93,
+  "statut": "réussi",
+  "pts": {
+   "comprehension": [
+    15,
+    15
+   ],
+   "besoin": [
+    10,
+    10
+   ],
+   "outils": [
+    10,
+    10
+   ],
+   "reconnaissance": null,
+   "geometrie": null,
+   "qualite3d": [
+    15,
+    15
+   ],
+   "coherence": [
+    10,
+    10
+   ],
+   "incertitudes": [
+    0,
+    5
+   ],
+   "ux": [
+    5,
+    5
+   ]
+  },
+  "note": "maquette créée (4 murs, 0 éléments captés)",
+  "reponse": "1 éléments captés : Climatiseur.",
+  "suite": "",
+  "annule": "Il n'y a rien à annuler.",
+  "t_total": 104608,
+  "t_reco": 82664,
+  "t_chat": 1654,
+  "detection": null,
+  "geometrie": null,
+  "erreurs": [],
+  "etapes": [
+   "section reno ouverte",
+   "photos données à #rv-vid, puis le bouton de création"
+  ]
+ },
+ {
+  "id": 85,
+  "cat": "I",
+  "titre": "Mesure laser",
+  "demande": "J'ai pris une photo avec mon téléphone et une mesure laser de la largeur du mur. Le mur du fond mesure 4,60 m. Utilise cette référence pour améliorer les dimensions du modèle.",
+  "donnees": "video",
+  "compris": true,
+  "execute": true,
+  "score": 94,
+  "statut": "réussi",
+  "pts": {
+   "comprehension": [
+    15,
+    15
+   ],
+   "besoin": [
+    10,
+    10
+   ],
+   "outils": [
+    10,
+    10
+   ],
+   "reconnaissance": [
+    12,
+    15
+   ],
+   "geometrie": null,
+   "qualite3d": [
+    13,
+    15
+   ],
+   "coherence": [
+    10,
+    10
+   ],
+   "incertitudes": [
+    5,
+    5
+   ],
+   "ux": [
+    5,
+    5
+   ]
+  },
+  "note": "dimensions [4.75,6.55] → [4.8,6.55]",
+  "reponse": "Plan calibré au laser / Maquette calée sur votre mesure : mur 1 = 4,60 m. La pièce fait maintenant 4,60 × 6,35 m.",
+  "suite": "",
+  "annule": "J'ai annulé la dernière modification.",
+  "t_total": 244484,
+  "t_reco": 221282,
+  "t_chat": 1972,
+  "detection": {
+   "prec": 1,
+   "rec": 0.6875,
+   "f1": 0.8148148148148148,
+   "trouves": [
+    "plafonnier",
+    "panneau mural",
+    "lit",
+    "rideau",
+    "table",
+    "chaise",
+    "réfrigérateur",
+    "micro-ondes",
+    "poubelle",
+    "carton",
+    "fenêtre"
+   ],
+   "faux": []
+  },
+  "geometrie": null,
+  "erreurs": [],
+  "etapes": [
+   "chat principal : 1 réponse(s)",
+   "section reno ouverte",
+   "vidéo analysée en 221 s"
+  ]
+ },
+ {
+  "id": 86,
+  "cat": "I",
+  "titre": "Pièce chargée",
+  "demande": "Voici une pièce avec beaucoup de meubles et de décorations. Je veux une reconstruction détaillée.",
+  "donnees": "video",
+  "compris": true,
+  "execute": true,
+  "score": 95,
+  "statut": "réussi",
+  "pts": {
+   "comprehension": [
+    15,
+    15
+   ],
+   "besoin": [
+    10,
+    10
+   ],
+   "outils": [
+    10,
+    10
+   ],
+   "reconnaissance": [
+    12,
+    15
+   ],
+   "geometrie": null,
+   "qualite3d": [
+    14,
+    15
+   ],
+   "coherence": [
+    10,
+    10
+   ],
+   "incertitudes": [
+    5,
+    5
+   ],
+   "ux": [
+    5,
+    5
+   ]
+  },
+  "note": "maquette créée (4 murs, 17 éléments captés)",
+  "reponse": "La maquette montre l'état actuel : 4 murs, 4,45 × 6,25 m, 2,71 m sous plafond. Éléments captés : Lumière ×5, Rideau ×2, Table ×2, Chaise ×2, Poubelle ×2, Miroir, Lit, Réfrigérateur, Carton. Mesures estimées depuis la vidéo, à confirmer au m",
+  "suite": "",
+  "annule": "Il n'y a rien à annuler.",
+  "t_total": 232184,
+  "t_reco": 213294,
+  "t_chat": 1648,
+  "detection": {
+   "prec": 1,
+   "rec": 0.625,
+   "f1": 0.7692307692307693,
+   "trouves": [
+    "plafonnier",
+    "panneau mural",
+    "lit",
+    "rideau",
+    "table",
+    "chaise",
+    "réfrigérateur",
+    "poubelle",
+    "carton",
+    "fenêtre"
+   ],
+   "faux": []
+  },
+  "geometrie": null,
+  "erreurs": [],
+  "etapes": [
+   "section reno ouverte",
+   "vidéo analysée en 213 s"
+  ]
+ },
+ {
+  "id": 87,
+  "cat": "I",
+  "titre": "Chantier positions réelles",
+  "demande": "Transforme cette vidéo de chantier en modèle 3D et conserve les objets à leur position réelle.",
+  "donnees": "video",
+  "compris": true,
+  "execute": true,
+  "score": 82,
+  "statut": "partiel",
+  "pts": {
+   "comprehension": [
+    15,
+    15
+   ],
+   "besoin": [
+    7,
+    10
+   ],
+   "outils": [
+    10,
+    10
+   ],
+   "reconnaissance": [
+    13,
+    15
+   ],
+   "geometrie": null,
+   "qualite3d": [
+    10,
+    15
+   ],
+   "coherence": [
+    5,
+    10
+   ],
+   "incertitudes": [
+    5,
+    5
+   ],
+   "ux": [
+    5,
+    5
+   ]
+  },
+  "note": "maquette créée (4 murs, 20 éléments captés)",
+  "reponse": "C’est un travail pour l’œil 3D. Ouvrez la Maquette 3D, partie Rénovation : filmez la pièce ou le chantier (ou choisissez une photo de face de chaque mur), puis reposez votre question dans son chat. Je vous donnerai alors les éléments, les s",
+  "suite": "",
+  "annule": "J'ai annulé la dernière modification.",
+  "t_total": 234661,
+  "t_reco": 212226,
+  "t_chat": 3925,
+  "detection": {
+   "prec": 0.95,
+   "rec": 0.75,
+   "f1": 0.838235294117647,
+   "trouves": [
+    "plafonnier",
+    "panneau mural",
+    "lit",
+    "table",
+    "rideau",
+    "chaise",
+    "réfrigérateur",
+    "micro-ondes",
+    "poteau",
+    "poubelle",
+    "carton",
+    "fenêtre"
+   ],
+   "faux": [
+    "Coussin"
+   ]
+  },
+  "geometrie": null,
+  "erreurs": [],
+  "etapes": [
+   "chat principal : 1 réponse(s)",
+   "section reno ouverte",
+   "vidéo analysée en 212 s"
+  ]
+ },
+ {
+  "id": 88,
+  "cat": "I",
+  "titre": "Changements 2 vidéos",
+  "demande": "J'ai deux vidéos prises à des dates différentes. Identifie les changements de position des objets et les travaux réalisés.",
+  "donnees": "absent:deux vidéos à deux dates",
+  "compris": true,
+  "execute": true,
+  "score": 66,
+  "statut": "partiel",
+  "pts": {
+   "comprehension": [
+    15,
+    15
+   ],
+   "besoin": [
+    7,
+    10
+   ],
+   "outils": [
+    10,
+    10
+   ],
+   "reconnaissance": null,
+   "geometrie": null,
+   "qualite3d": [
+    0,
+    15
+   ],
+   "coherence": [
+    5,
+    10
+   ],
+   "incertitudes": [
+    5,
+    5
+   ],
+   "ux": [
+    4,
+    5
+   ]
+  },
+  "note": "comparaison impossible sans les deux jeux de données",
+  "reponse": "Pour comparer, il faut deux visites enregistrées de la même pièce. Filmez-la maintenant, puis refilmez-la plus tard : je comparerai les éléments (ajoutés, retirés, déplacés) et les dimensions.",
+  "suite": "",
+  "annule": "Il n'y a rien à annuler.",
+  "t_total": 12913,
+  "t_chat": 3657,
+  "detection": null,
+  "geometrie": null,
+  "erreurs": [],
+  "etapes": [
+   "section reno ouverte",
+   "donnée adaptée indisponible : deux vidéos à deux dates"
+  ]
+ },
+ {
+  "id": 89,
+  "cat": "I",
+  "titre": "Objets sélectionnables",
+  "demande": "Reconstruis cette pièce et donne-moi la possibilité de sélectionner chaque objet pour connaître ses caractéristiques.",
+  "donnees": "video",
+  "compris": true,
+  "execute": true,
+  "score": 84,
+  "statut": "partiel",
+  "pts": {
+   "comprehension": [
+    15,
+    15
+   ],
+   "besoin": [
+    7,
+    10
+   ],
+   "outils": [
+    10,
+    10
+   ],
+   "reconnaissance": [
+    12,
+    15
+   ],
+   "geometrie": null,
+   "qualite3d": [
     11,
+    15
+   ],
+   "coherence": [
+    6,
+    10
+   ],
+   "incertitudes": [
+    5,
+    5
+   ],
+   "ux": [
+    5,
+    5
+   ]
+  },
+  "note": "réponse : Touchez un élément dans la maquette pour le sélectionner. Voici leurs fiches : L",
+  "reponse": "Touchez un élément dans la maquette pour le sélectionner. Voici leurs fiches : Lumière : 0,80 × 0,27 × 0,07 m (estimée) Miroir : 0,32 × 0,12 × 1,05 m (estimée) Lit : 0,90 × 1,90 × 0,65 m (supposée) Rideau : 0,24 × 0,12 × 1,81 m (estimée) Ta",
+  "suite": "",
+  "annule": "Il n'y a rien à annuler.",
+  "t_total": 224710,
+  "t_reco": 205637,
+  "t_chat": 1621,
+  "detection": {
+   "prec": 1,
+   "rec": 0.6875,
+   "f1": 0.8148148148148148,
+   "trouves": [
+    "plafonnier",
+    "panneau mural",
+    "lit",
+    "rideau",
+    "table",
+    "chaise",
+    "réfrigérateur",
+    "micro-ondes",
+    "poubelle",
+    "carton",
+    "fenêtre"
+   ],
+   "faux": []
+  },
+  "geometrie": null,
+  "erreurs": [],
+  "etapes": [
+   "section reno ouverte",
+   "vidéo analysée en 206 s"
+  ]
+ },
+ {
+  "id": 90,
+  "cat": "I",
+  "titre": "Vider les meubles",
+  "demande": "Je veux supprimer virtuellement tous les meubles et conserver uniquement la structure architecturale.",
+  "donnees": "video",
+  "compris": true,
+  "execute": true,
+  "score": 98,
+  "statut": "réussi",
+  "pts": {
+   "comprehension": [
+    15,
+    15
+   ],
+   "besoin": [
+    10,
+    10
+   ],
+   "outils": [
+    10,
+    10
+   ],
+   "reconnaissance": [
+    13,
     15
    ],
    "geometrie": null,
@@ -5624,21 +5666,21 @@
     5
    ],
    "ux": [
-    4,
+    5,
     5
    ]
   },
-  "note": "19 → 0 éléments",
-  "reponse": "J'ai retiré les 19 meubles : il reste la structure (murs, portes, fenêtres, plafond). Dites « annule » pour les remettre.",
+  "note": "18 → 0 éléments",
+  "reponse": "J'ai retiré les 18 meubles : il reste la structure (murs, portes, fenêtres, plafond). Dites « annule » pour les remettre.",
   "suite": "Meubles remis.",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 214955,
-  "t_reco": 192952,
-  "t_chat": 4728,
+  "t_total": 221873,
+  "t_reco": 199831,
+  "t_chat": 1910,
   "detection": {
-   "prec": 0.9473684210526315,
-   "rec": 0.5625,
-   "f1": 0.7058823529411765,
+   "prec": 1,
+   "rec": 0.75,
+   "f1": 0.8571428571428571,
    "trouves": [
     "plafonnier",
     "panneau mural",
@@ -5648,17 +5690,18 @@
     "chaise",
     "réfrigérateur",
     "micro-ondes",
+    "poteau",
+    "poubelle",
+    "carton",
     "fenêtre"
    ],
-   "faux": [
-    "Sac"
-   ]
+   "faux": []
   },
   "geometrie": null,
   "erreurs": [],
   "etapes": [
    "section reno ouverte",
-   "vidéo analysée en 193 s"
+   "vidéo analysée en 200 s"
   ]
  },
  {
@@ -5669,7 +5712,7 @@
   "donnees": "photos",
   "compris": true,
   "execute": true,
-  "score": 77,
+  "score": 79,
   "statut": "partiel",
   "pts": {
    "comprehension": [
@@ -5699,7 +5742,7 @@
     5
    ],
    "ux": [
-    4,
+    5,
     5
    ]
   },
@@ -5707,9 +5750,9 @@
   "reponse": "Trois idées pour cette pièce (bureau, 13 m²) : 1. Rafraîchir : « murs blancs et parquet clair » 2. Rangement : « ajoute une bibliothèque » 3. Plus d'espace : « autre disposition » pour déplacer les meubles Dites l'idée qui vous plaît.",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 108716,
-  "t_reco": 85559,
-  "t_chat": 5470,
+  "t_total": 103353,
+  "t_reco": 80539,
+  "t_chat": 1642,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -5726,7 +5769,7 @@
   "donnees": "video",
   "compris": true,
   "execute": true,
-  "score": 89,
+  "score": 95,
   "statut": "réussi",
   "pts": {
    "comprehension": [
@@ -5742,12 +5785,12 @@
     10
    ],
    "reconnaissance": [
-    11,
+    13,
     15
    ],
    "geometrie": null,
    "qualite3d": [
-    11,
+    13,
     15
    ],
    "coherence": [
@@ -5759,7 +5802,7 @@
     5
    ],
    "ux": [
-    4,
+    5,
     5
    ]
   },
@@ -5767,168 +5810,13 @@
   "reponse": "Pour la lumière sans tout changer : murs passés en blanc, la couleur qui renvoie le plus la lumière. Ensuite, si vous voulez : « plafond blanc », ou « ajoute un point lumineux ».",
   "suite": "",
   "annule": "J'ai annulé la dernière modification.",
-  "t_total": 213825,
-  "t_reco": 192206,
-  "t_chat": 4881,
+  "t_total": 226579,
+  "t_reco": 206512,
+  "t_chat": 3876,
   "detection": {
-   "prec": 0.9473684210526315,
-   "rec": 0.5625,
-   "f1": 0.7058823529411765,
-   "trouves": [
-    "plafonnier",
-    "panneau mural",
-    "lit",
-    "rideau",
-    "table",
-    "chaise",
-    "réfrigérateur",
-    "micro-ondes",
-    "fenêtre"
-   ],
-   "faux": [
-    "Sac"
-   ]
-  },
-  "geometrie": null,
-  "erreurs": [],
-  "etapes": [
-   "section reno ouverte",
-   "vidéo analysée en 192 s"
-  ]
- },
- {
-  "id": 93,
-  "cat": "J",
-  "titre": "Moderne petit budget",
-  "demande": "Fais-moi quelque chose de moderne avec un petit budget.",
-  "donnees": "video",
-  "compris": true,
-  "execute": true,
-  "score": 91,
-  "statut": "réussi",
-  "pts": {
-   "comprehension": [
-    15,
-    15
-   ],
-   "besoin": [
-    10,
-    10
-   ],
-   "outils": [
-    10,
-    10
-   ],
-   "reconnaissance": [
-    12,
-    15
-   ],
-   "geometrie": null,
-   "qualite3d": [
-    11,
-    15
-   ],
-   "coherence": [
-    10,
-    10
-   ],
-   "incertitudes": [
-    5,
-    5
-   ],
-   "ux": [
-    4,
-    5
-   ]
-  },
-  "note": "finitions changées",
-  "reponse": "Ambiance moderne : Murs, Chambre : blanc #F2F2F0 Sol, Chambre : Carrelage gris 60×60 / Deux solutions pour cette pièce (prix indicatifs pose comprise, à confirmer par un devis) : 1. Rafraîchir (peinture murs et plafond) : 1 390–2 220 € 2. R",
-  "suite": "",
-  "annule": "J'ai annulé la dernière modification.",
-  "t_total": 210310,
-  "t_reco": 187739,
-  "t_chat": 4703,
-  "detection": {
-   "prec": 1,
-   "rec": 0.625,
-   "f1": 0.7692307692307693,
-   "trouves": [
-    "plafonnier",
-    "panneau mural",
-    "lit",
-    "rideau",
-    "table",
-    "chaise",
-    "réfrigérateur",
-    "micro-ondes",
-    "poteau",
-    "fenêtre"
-   ],
-   "faux": []
-  },
-  "geometrie": null,
-  "erreurs": [],
-  "etapes": [
-   "section reno ouverte",
-   "vidéo analysée en 188 s"
-  ]
- },
- {
-  "id": 94,
-  "cat": "J",
-  "titre": "Réorganiser",
-  "demande": "Je veux garder absolument tous mes meubles, mais changer l'organisation de la pièce.",
-  "donnees": "video",
-  "compris": true,
-  "execute": true,
-  "score": 89,
-  "statut": "réussi",
-  "pts": {
-   "comprehension": [
-    15,
-    15
-   ],
-   "besoin": [
-    10,
-    10
-   ],
-   "outils": [
-    10,
-    10
-   ],
-   "reconnaissance": [
-    11,
-    15
-   ],
-   "geometrie": null,
-   "qualite3d": [
-    11,
-    15
-   ],
-   "coherence": [
-    10,
-    10
-   ],
-   "incertitudes": [
-    5,
-    5
-   ],
-   "ux": [
-    4,
-    5
-   ]
-  },
-  "note": "meubles déplacés",
-  "reponse": "Autre disposition : vos 23 meubles sont tous gardés, placés en miroir dans la pièce. Redites-le pour une autre disposition, « annule » pour revenir.",
-  "suite": "",
-  "annule": "J'ai annulé la dernière modification.",
-  "t_total": 213616,
-  "t_reco": 193679,
-  "t_chat": 4999,
-  "detection": {
-   "prec": 0.9565217391304348,
-   "rec": 0.625,
-   "f1": 0.7560137457044673,
+   "prec": 0.95,
+   "rec": 0.75,
+   "f1": 0.838235294117647,
    "trouves": [
     "plafonnier",
     "panneau mural",
@@ -5939,6 +5827,8 @@
     "réfrigérateur",
     "micro-ondes",
     "poteau",
+    "poubelle",
+    "carton",
     "fenêtre"
    ],
    "faux": [
@@ -5949,18 +5839,18 @@
   "erreurs": [],
   "etapes": [
    "section reno ouverte",
-   "vidéo analysée en 194 s"
+   "vidéo analysée en 207 s"
   ]
  },
  {
-  "id": 95,
+  "id": 93,
   "cat": "J",
-  "titre": "5 matériaux",
-  "demande": "Je voudrais voir ce mur dans cinq matériaux différents.",
+  "titre": "Moderne petit budget",
+  "demande": "Fais-moi quelque chose de moderne avec un petit budget.",
   "donnees": "video",
   "compris": true,
   "execute": true,
-  "score": 91,
+  "score": 93,
   "statut": "réussi",
   "pts": {
    "comprehension": [
@@ -5981,7 +5871,168 @@
    ],
    "geometrie": null,
    "qualite3d": [
+    12,
+    15
+   ],
+   "coherence": [
+    10,
+    10
+   ],
+   "incertitudes": [
+    5,
+    5
+   ],
+   "ux": [
+    5,
+    5
+   ]
+  },
+  "note": "finitions changées",
+  "reponse": "Ambiance moderne : Murs, Chambre : blanc #F2F2F0 Sol, Chambre : Carrelage gris 60×60 / Deux solutions pour cette pièce (prix indicatifs pose comprise, à confirmer par un devis) : 1. Rafraîchir (peinture murs et plafond) : 1 520–2 430 € 2. R",
+  "suite": "",
+  "annule": "J'ai annulé la dernière modification.",
+  "t_total": 230160,
+  "t_reco": 209405,
+  "t_chat": 3991,
+  "detection": {
+   "prec": 0.95,
+   "rec": 0.6875,
+   "f1": 0.7977099236641221,
+   "trouves": [
+    "plafonnier",
+    "panneau mural",
+    "lit",
+    "rideau",
+    "table",
+    "chaise",
+    "réfrigérateur",
+    "micro-ondes",
+    "poubelle",
+    "carton",
+    "fenêtre"
+   ],
+   "faux": [
+    "Sac"
+   ]
+  },
+  "geometrie": null,
+  "erreurs": [],
+  "etapes": [
+   "section reno ouverte",
+   "vidéo analysée en 209 s"
+  ]
+ },
+ {
+  "id": 94,
+  "cat": "J",
+  "titre": "Réorganiser",
+  "demande": "Je veux garder absolument tous mes meubles, mais changer l'organisation de la pièce.",
+  "donnees": "video",
+  "compris": true,
+  "execute": true,
+  "score": 93,
+  "statut": "réussi",
+  "pts": {
+   "comprehension": [
+    15,
+    15
+   ],
+   "besoin": [
+    10,
+    10
+   ],
+   "outils": [
+    10,
+    10
+   ],
+   "reconnaissance": [
+    13,
+    15
+   ],
+   "geometrie": null,
+   "qualite3d": [
     11,
+    15
+   ],
+   "coherence": [
+    10,
+    10
+   ],
+   "incertitudes": [
+    5,
+    5
+   ],
+   "ux": [
+    5,
+    5
+   ]
+  },
+  "note": "meubles déplacés",
+  "reponse": "Autre disposition : vos 19 meubles sont tous gardés, placés en miroir dans la pièce. Redites-le pour une autre disposition, « annule » pour revenir.",
+  "suite": "",
+  "annule": "J'ai annulé la dernière modification.",
+  "t_total": 229844,
+  "t_reco": 209242,
+  "t_chat": 2249,
+  "detection": {
+   "prec": 0.9473684210526315,
+   "rec": 0.75,
+   "f1": 0.8372093023255814,
+   "trouves": [
+    "plafonnier",
+    "panneau mural",
+    "lit",
+    "rideau",
+    "table",
+    "chaise",
+    "réfrigérateur",
+    "micro-ondes",
+    "poteau",
+    "carton",
+    "poubelle",
+    "fenêtre"
+   ],
+   "faux": [
+    "Sac"
+   ]
+  },
+  "geometrie": null,
+  "erreurs": [],
+  "etapes": [
+   "section reno ouverte",
+   "vidéo analysée en 209 s"
+  ]
+ },
+ {
+  "id": 95,
+  "cat": "J",
+  "titre": "5 matériaux",
+  "demande": "Je voudrais voir ce mur dans cinq matériaux différents.",
+  "donnees": "video",
+  "compris": true,
+  "execute": true,
+  "score": 94,
+  "statut": "réussi",
+  "pts": {
+   "comprehension": [
+    15,
+    15
+   ],
+   "besoin": [
+    10,
+    10
+   ],
+   "outils": [
+    10,
+    10
+   ],
+   "reconnaissance": [
+    13,
+    15
+   ],
+   "geometrie": null,
+   "qualite3d": [
+    13,
     15
    ],
    "coherence": [
@@ -5998,16 +6049,16 @@
    ]
   },
   "note": "7 option(s) dans la réponse, une finition appliquée",
-  "reponse": "5 variantes prêtes, la 1re est appliquée : 1. murs en brique 2. murs en bois 3. murs en pierre 4. murs en béton ciré 5. murs papier peint Dites « variante 2 »… pour passer de l'une à l'autre.",
+  "reponse": "5 variantes prêtes, la 1re est appliquée : 1. murs en brique 2. murs en bois 3. murs en pierre 4. murs en béton ciré 5. murs en papier peint Dites « variante 2 »… pour passer de l'une à l'autre.",
   "suite": "",
   "annule": "J'ai annulé la dernière modification.",
-  "t_total": 218402,
-  "t_reco": 196547,
-  "t_chat": 4379,
+  "t_total": 225755,
+  "t_reco": 205655,
+  "t_chat": 4306,
   "detection": {
    "prec": 1,
-   "rec": 0.625,
-   "f1": 0.7692307692307693,
+   "rec": 0.75,
+   "f1": 0.8571428571428571,
    "trouves": [
     "plafonnier",
     "panneau mural",
@@ -6018,6 +6069,8 @@
     "réfrigérateur",
     "micro-ondes",
     "poteau",
+    "poubelle",
+    "carton",
     "fenêtre"
    ],
    "faux": []
@@ -6026,7 +6079,7 @@
   "erreurs": [],
   "etapes": [
    "section reno ouverte",
-   "vidéo analysée en 197 s"
+   "vidéo analysée en 206 s"
   ]
  },
  {
@@ -6037,7 +6090,7 @@
   "donnees": "absent:vidéo du logement",
   "compris": true,
   "execute": true,
-  "score": 67,
+  "score": 69,
   "statut": "partiel",
   "pts": {
    "comprehension": [
@@ -6049,13 +6102,13 @@
     10
    ],
    "outils": [
-    10,
+    0,
     10
    ],
    "reconnaissance": null,
    "geometrie": null,
    "qualite3d": [
-    0,
+    12,
     15
    ],
    "coherence": [
@@ -6067,16 +6120,16 @@
     5
    ],
    "ux": [
-    4,
+    3,
     5
    ]
   },
-  "note": "réponse : Pour cette demande, il me faut d'abord la pièce. Filmez-la avec la vidéo de la R",
-  "reponse": "Pour cette demande, il me faut d'abord la pièce. Filmez-la avec la vidéo de la Rénovation (tournez lentement sur vous-même, ou marchez le long des murs), ou choisissez au même endroit une photo de face de chaque mur. Je reconstruis ensuite ",
+  "note": "réponse : Maison dessinée d'après votre description : 7 pièces, environ 159 m² habitables ",
+  "reponse": "Maison dessinée d'après votre description : 7 pièces, environ 159 m² habitables (garage non compris), 16,00 × 9,90 m hors tout. Chambre 1 15,8 m², Chambre 2 15,8 m², Chambre 3 15,8 m², Salle de bain 14,1 m², WC 8,8 m², Séjour 66,0 m², Cuisi",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 10136,
-  "t_chat": 3573,
+  "t_total": 29060,
+  "t_chat": 17317,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -6093,7 +6146,7 @@
   "donnees": "video",
   "compris": true,
   "execute": true,
-  "score": 91,
+  "score": 93,
   "statut": "réussi",
   "pts": {
    "comprehension": [
@@ -6109,7 +6162,7 @@
     10
    ],
    "reconnaissance": [
-    11,
+    13,
     15
    ],
    "geometrie": null,
@@ -6131,16 +6184,16 @@
    ]
   },
   "note": "",
-  "reponse": "Deux solutions pour cette pièce (prix indicatifs pose comprise, à confirmer par un devis) : 1. Rafraîchir (peinture murs et plafond) : 1 480–2 360 € 2. Rénover (préparation, peinture, nouveau sol, plinthes) : 3 380–9 230 €",
+  "reponse": "Deux solutions pour cette pièce (prix indicatifs pose comprise, à confirmer par un devis) : 1. Rafraîchir (peinture murs et plafond) : 1 480–2 360 € 2. Rénover (préparation, peinture, nouveau sol, plinthes) : 3 380–9 220 €",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 214587,
-  "t_reco": 195295,
-  "t_chat": 3443,
+  "t_total": 225048,
+  "t_reco": 205235,
+  "t_chat": 3776,
   "detection": {
    "prec": 1,
-   "rec": 0.5625,
-   "f1": 0.72,
+   "rec": 0.75,
+   "f1": 0.8571428571428571,
    "trouves": [
     "plafonnier",
     "panneau mural",
@@ -6150,6 +6203,9 @@
     "chaise",
     "réfrigérateur",
     "micro-ondes",
+    "poteau",
+    "carton",
+    "poubelle",
     "fenêtre"
    ],
    "faux": []
@@ -6158,7 +6214,7 @@
   "erreurs": [],
   "etapes": [
    "section reno ouverte",
-   "vidéo analysée en 195 s"
+   "vidéo analysée en 205 s"
   ]
  },
  {
@@ -6207,9 +6263,9 @@
   "reponse": "Je ne connais pas encore « objets ». Pouvez-vous le dire autrement ? (ex. canapé, lit, table, douche)",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 106629,
-  "t_reco": 82215,
-  "t_chat": 5777,
+  "t_total": 102534,
+  "t_reco": 79494,
+  "t_chat": 5187,
   "detection": null,
   "geometrie": null,
   "erreurs": [],
@@ -6226,7 +6282,7 @@
   "donnees": "video",
   "compris": true,
   "execute": true,
-  "score": 91,
+  "score": 92,
   "statut": "réussi",
   "pts": {
    "comprehension": [
@@ -6242,12 +6298,12 @@
     10
    ],
    "reconnaissance": [
-    11,
+    13,
     15
    ],
    "geometrie": null,
    "qualite3d": [
-    11,
+    10,
     15
    ],
    "coherence": [
@@ -6263,35 +6319,40 @@
     5
    ]
   },
-  "note": "projet enregistré (pmwhmmsk4)",
-  "reponse": "La maquette montre l'état actuel : 4 murs, 4,50 × 6,25 m, 2,67 m sous plafond. Éléments captés : Lumière ×4, Chaise ×4, Rideau ×3, Table ×3, Miroir, Lit, Réfrigérateur, Micro-ondes. Mesures estimées depuis la vidéo, à confirmer au mètre.",
+  "note": "projet enregistré (pmwhth8u3)",
+  "reponse": "La maquette montre l'état actuel : 4 murs, 4,70 × 6,55 m, 2,59 m sous plafond. Éléments captés : Lumière ×4, Poteau ×3, Poubelle ×3, Table ×2, Chaise ×2, Carton ×2, Miroir, Lit, Coussin, Rideau, Réfrigérateur, Micro-ondes. Mesures estimées ",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 190126,
-  "t_reco": 171189,
-  "t_chat": 3251,
+  "t_total": 223977,
+  "t_reco": 205638,
+  "t_chat": 1636,
   "detection": {
-   "prec": 1,
-   "rec": 0.5625,
-   "f1": 0.72,
+   "prec": 0.9545454545454546,
+   "rec": 0.75,
+   "f1": 0.84,
    "trouves": [
     "plafonnier",
     "panneau mural",
     "lit",
-    "rideau",
     "table",
+    "rideau",
     "chaise",
     "réfrigérateur",
     "micro-ondes",
+    "poteau",
+    "poubelle",
+    "carton",
     "fenêtre"
    ],
-   "faux": []
+   "faux": [
+    "Coussin"
+   ]
   },
   "geometrie": null,
   "erreurs": [],
   "etapes": [
    "section reno ouverte",
-   "vidéo analysée en 171 s"
+   "vidéo analysée en 206 s"
   ]
  },
  {
@@ -6302,7 +6363,7 @@
   "donnees": "video",
   "compris": true,
   "execute": true,
-  "score": 91,
+  "score": 94,
   "statut": "réussi",
   "pts": {
    "comprehension": [
@@ -6318,12 +6379,12 @@
     10
    ],
    "reconnaissance": [
-    11,
+    12,
     15
    ],
    "geometrie": null,
    "qualite3d": [
-    11,
+    13,
     15
    ],
    "coherence": [
@@ -6339,17 +6400,17 @@
     5
    ]
   },
-  "note": "maquette créée (4 murs, 18 éléments captés)",
-  "reponse": "La maquette montre l'état actuel : 4 murs, 4,55 × 6,35 m, 2,64 m sous plafond. Éléments captés : Lumière ×4, Chaise ×4, Rideau ×3, Table ×3, Miroir, Lit, Réfrigérateur, Micro-ondes. Mesures estimées depuis la vidéo, à confirmer au mètre.",
+  "note": "maquette créée (4 murs, 19 éléments captés)",
+  "reponse": "La maquette montre l'état actuel : 4 murs, 4,55 × 6,30 m, 2,74 m sous plafond. Éléments captés : Lumière ×5, Chaise ×3, Rideau ×2, Table ×2, Poubelle ×2, Miroir, Lit, Réfrigérateur, Micro-ondes, Carton. Mesures estimées depuis la vidéo, à c",
   "suite": "",
   "annule": "Il n'y a rien à annuler.",
-  "t_total": 185587,
-  "t_reco": 167302,
-  "t_chat": 3993,
+  "t_total": 207933,
+  "t_reco": 189620,
+  "t_chat": 1623,
   "detection": {
    "prec": 1,
-   "rec": 0.5625,
-   "f1": 0.72,
+   "rec": 0.6875,
+   "f1": 0.8148148148148148,
    "trouves": [
     "plafonnier",
     "panneau mural",
@@ -6359,6 +6420,8 @@
     "chaise",
     "réfrigérateur",
     "micro-ondes",
+    "poubelle",
+    "carton",
     "fenêtre"
    ],
    "faux": []
@@ -6367,7 +6430,7 @@
   "erreurs": [],
   "etapes": [
    "section reno ouverte",
-   "vidéo analysée en 167 s"
+   "vidéo analysée en 190 s"
   ]
  }
 ]
