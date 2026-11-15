@@ -229,3 +229,5 @@ Source du moteur et outils de traduction : le module « caso-ia » (moteur, cata
 - « Pour le chantier Martin, ajoute la rénovation de la salle de bain, prévois une douche italienne, remplace le carrelage, calcule les surfaces et prépare un devis » : lignes Douche italienne et Carrelage sur le devis de Martin, surface demandée ; « prépare un devis », « calcule les surfaces », « la rénovation de … » disent quoi faire, ce ne sont pas des lignes ;
 - les lignes vont toujours sur le devis du client nommé (son brouillon, sinon un nouveau devis), jamais sur le devis ouvert d'un autre client ni sur un devis déjà envoyé ;
 - un service enregistré n'est plus pris pour un autre (« douche italienne » ≠ « receveur de douche »).
+- « crée le client Bernard et ajoute de la faïence » : la ligne va sur un devis de Bernard, et « 12 m² » juste après la calcule ;
+- « envoie le devis de Martin », « appelle Martin et envoie-lui le devis » : le devis de Martin pas encore envoyé (celui ouvert d'abord, sinon le plus récent), même si un autre devis est ouvert ; aucun → « Je ne trouve pas de devis à envoyer pour Martin » (`pont.js`).

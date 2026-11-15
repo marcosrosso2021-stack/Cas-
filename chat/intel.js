@@ -39,6 +39,7 @@ P.clientDans=function(t){try{return B().clientDans(t);}catch(x){return null;}};
 /* « rendez-vous mardi 9h » après « crée le client Dupont » : le rendez-vous est pour Dupont */
 P.avecClient=function(t,nom,lg){try{if(!B().sansClient(t))return t;}catch(x){return t;}
   if(lg==="tr")return t+" "+nom+" için";if(lg==="ar")return t+" لـ"+nom;return t+" "+(POUR[lg]||"pour")+" "+nom;};
+P.avecClientForce=function(t,nom,lg){if(lg==="tr")return t+" "+nom+" için";if(lg==="ar")return t+" لـ"+nom;return t+" "+(POUR[lg]||"pour")+" "+nom;};
 /* « non » après une action du chat : la phrase ne refera plus la même chose, la suivante lui apprend ce qui était voulu */
 P.refuser=function(){try{var r=B().refuser();garder();return r;}catch(x){return false;}};
 function garder(){try{P.garderIA&&P.garderIA();}catch(x){}}
@@ -165,14 +166,16 @@ function lire(t,force){var c=fr(t),s=c.p;if(B().isQuestion&&B().isQuestion(t))re
 /* « salle de bain 6 m², dépose carrelage… » ou « ajoute du carrelage et des plinthes au devis de Martin » : une seule demande, pas plusieurs */
 var dec0=P.decoupe;P.decoupe=function(t){try{if(P.ready&&typeof db!=="undefined"&&typeof q!=="undefined"){if(lire(t))return null;var m=melange(t);if(m)return m;}}catch(x){}return dec0(t);};
 /* « nouveau devis pour Dupont et ajoute du carrelage » : la commande d'abord, puis la description pour le devis (le moteur la prenait pour la maquette 3D) */
-function melange(t){var s=fr(t).p;if(!(clientDe(t)||/\bdevis\b/.test(s)))return null;
+function melange(t){var s=fr(t).p,nv=String(t).match(/\b(?:client|cliente|klient|müşteri|клиент|عميل)\s+(\p{Lu}[\p{L}'’-]+)/u),nc=clientDe(t)||(nv?nv[1]:null);if(!(nc||/\bdevis\b/.test(s)))return null;
   var M=String(t).split(/\s*(?:[,;]|\s(?:et|puis|ensuite|and|then|y|e|și|i|ve|и|و|poi|potem|sonra|затем|ثم)\s)\s*/i).filter(function(x){return x.trim();});if(M.length<2)return null;
   /* « pour le chantier Martin » seul : il dit le client du morceau qui suit */
-  var nc=clientDe(t),N0=new RegExp("^(?:pour|chez|sur)?\\s*(?:le |la |l )?(?:chantier|client|devis)?\\s*(?:de |d )?"+(nc?hn(nc):"\\uffff")+"$");
+  var N0=new RegExp("^(?:pour|chez|sur)?\\s*(?:le |la |l )?(?:chantier|client|devis)?\\s*(?:de |d )?"+(nc?hn(nc):"\\uffff")+"$");
   var K=M.map(function(x){return N0.test(hn(fr(x).p))?"n":lire(x,true)?"d":"c";});if(K.indexOf("d")<0||K.indexOf("c")<0)return null;
   var out=[],dsc=[],att="";M.forEach(function(x,i){if(K[i]==="n"){att+=(att?" ":"")+x+",";return;}
     if(K[i]==="d"){var j=out.length-1;if(j>=0&&K[i-1]==="d"&&!att)out[j]+=", "+x;else{out.push((att?att+" ":"")+x);dsc.push(out.length-1);}}else out.push((att?att+" ":"")+x);att="";});
   if(att)return null;
+  /* la description garde le client de la phrase (« crée le client Bernard et ajoute de la faïence » : sur le devis de Bernard) */
+  if(nc){var lg=fr(t).lang||"fr";dsc.forEach(function(i){if((" "+hn(out[i])+" ").indexOf(" "+hn(nc)+" ")<0)out[i]=P.avecClient?P.avecClientForce(out[i],nc,lg):out[i];});}
   PARTS={at:Date.now(),L:dsc.map(function(i){return hn(out[i]);})};return out;}
 P.decrire=function(t){langue();if(!P.ready||typeof db==="undefined"||typeof q==="undefined")return false;
   if(suite(t,fr(t).p))return true;
