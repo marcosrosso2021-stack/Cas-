@@ -6593,7 +6593,12 @@ const ORT={
  or_idea:["Trois idées pour cette pièce ({k}, {a} m²) :¶{l}¶Dites l'idée qui vous plaît.","Three ideas for this room ({k}, {a} m²):¶{l}¶Say the one you like."],
  or_pmr:["Points d'accessibilité vus dans la maquette :¶{l}¶Repères : portes de 0,90 m de passage, cercle libre de 1,50 m dans chaque pièce, pas de marche. À faire vérifier par un professionnel.","Accessibility points seen in the model:¶{l}¶Guides: 0.90 m door openings, 1.50 m free circle in each room, no steps. To be checked by a professional."],
  or_nodraw:["Je ne dessine pas encore une maison sans plan. Ajoutez un croquis de plan (photo ou PDF) dans Construction, ou partez de la maison exemple et modifiez-la en me parlant.","I can't draw a house without a plan yet. Add a plan sketch (photo or PDF) in Construction, or start from the example house and change it by talking to me."]};
-for(const k in ORT)TR[k]=ORT[k];
+Object.assign(ORT,{gen_n:['Ma maison','My house'],
+ gen_ok:['Maison dessinée d\'après votre description : {n} pièces, environ {a} m² habitables (garage non compris), {w} × {d} m hors tout.¶{l}¶C\'est une première proposition de plain-pied : dites ce qu\'il faut changer (« agrandis le séjour », « ajoute une fenêtre », « mets du parquet »).','House drawn from your description: {n} rooms, {a} m² of living space, {w} × {d} m.¶{l}¶This is a first single-storey proposal: tell me what to change.'],
+ gen_et:['Je ne dessine pas encore d\'étage : la maison est de plain-pied.','I can\'t draw an upper floor yet: the house is single-storey.'],
+ gen_ext:['Extension ajoutée : {a} m² ({w} × {d} m), accolée au mur de droite, avec une porte vers la maison{b}. À valider : implantation, règles d\'urbanisme (déclaration préalable ou permis selon la surface) et structure.','Extension added: {a} m² ({w} × {d} m), against the right-hand wall, with a door into the house{b}. To check: siting, planning rules and structure.'],
+ gen_baie:[' et une grande baie vitrée',' and a large glazed bay']});
+ORT.or_send=['Pour la lui transmettre maintenant, dites « envoie à mon artisan ».','To send it now, say "send to my tradesperson".'];for(const k in ORT)TR[k]=ORT[k];
 function orRun(cmd){const n=S.chat.length,b=String(snap());S.orIn=1;S.orSilent=1;try{chatSendX(cmd)}catch(e){try{console.error(e)}catch(_){}}S.orIn=0;S.orSilent=0;S.chatPend=null;
   const msgs=S.chat.slice(n).filter(m=>m.who==='bot').map(m=>m.txt);S.chat.length=n;return{ch:String(snap())!==b,msgs}}
 const orModel=()=>S.walls.length>=3&&!!S.scale;
@@ -6670,13 +6675,21 @@ function oeilRoute(raw){let tr0=null;const fw=(nrm(String(raw)).match(/(^|[^a-z]
   if(/\bplus (large|grand|long|petit|etroit)e?s?\b/.test(r0)&&r0.length<40&&S.eqs.length>(prevN||0)){const e=S.eqs[S.eqs.length-1],k=/petit|etroit/.test(r0)?0.8:1.25,D=eqDims(e);pushHist();e.sw=[+(D[0]*k).toFixed(2),D[1]];rebuild3();return ans(`${orName(e)} : ${k>1?'agrandi':'réduit'}, ${fmt(e.sw[0],2)} m de large.`)}
   // demandes qui ont besoin d'une maison entière ou de l'extérieur
   const ext=has(/\b(facade|toiture|toit|tuiles?|terrasse|piscine|jardin|extension|combles|maison (complete|entiere)|immeuble)\b/);
-  if(has(/\b(dessine|cree|imagine|concois)\w* (moi )?(une |un )?(maison|plain pied|villa)\b/)&&!M)return ans(tl('or_nodraw'));
+  if(has(/\b(dessine|cree|creer|imagine|concois|fais|construi\w*)\w* (moi )?(une |un )?(maison|plain pied|villa|pavillon)\b/)||has(/\bmaison (de )?plain pied\b/)&&has(/\bchambres?\b/)){say('me',raw);S.rawMsg=raw;genHouse(raw);return true}
   if(has(/\b(compar\w*|avant .{0,40}apres|evolution|changements?|differences?)\b/)&&!has(/\bcout|prix|budget|devis\b/))return ans(M?orCompare():tl('or_two'));
+  if(!M&&has(/\b(pmr|accessib\w*|fauteuil roulant|mobilite reduite|difficultes? a se deplacer)\b/)&&has(/\b(maison|logement)\b/)){say('me',raw);S.rawMsg=raw;genHouse(raw+' plain pied pmr');return true}
   if(!M){const q=r0.length>70?'cette demande':'« '+String(raw).trim().replace(/[.?!]+$/,'')+' »';
     if(ext||has(/\bplan\b/))return ans(tl('or_plan',{q}));
     if(has(/\b(video|photos?|filme|visite|piece|chambre|salon|cuisine|salle de bain|garage|appartement|maison|mur|plafond|sol|carrelage|chantier|bureau|local|commerce|meubles?|fissure|humidit|degrad|fuite|surface|m2|inventaire|identifie|reconnais|analyse|reconstru|maquette|3d|variante|propositions?|amenag|cloison|renov|moderne|lumineu|idees?|budget|baignoire|douche|dressing|placard|ajout\w*|mets|met|plac\w*|enlev\w*|retir\w*|supprim\w*|pein\w*|repein\w*|remplac\w*|transform\w*|install\w*|meubl\w*)\b/))return ans(tl('or_film',{q}));
     return false}
   // la maquette existe
+  if(has(/\bextension\b/)&&!CLIENT){const m=genExtension(r);if(m)return ans(m)}
+  // mode Artisan : « ajoute une fenêtre sur ce mur » = la commande d'ouverture habituelle ; « déplacer la cuisine » = dire dans quelle pièce
+  if(!CLIENT&&has(/\b(ajout\w*|cree\w*|perc\w*|mets?|place)\b.{0,30}\b(fenetre|porte(?! manteau)|baie|velux)s?\b/)){const c=String(raw).replace(/\b(je (voudrais|veux|souhaite)|pourrais-tu|peux-tu)\s*/gi,'').replace(/\s*(sur|dans) (ce|cette) (mur|piece)\b.*$/i,'').replace(/[.?!]+$/,'');const o=orRun(c);if(o.ch||o.msgs.length)return ans(o.msgs.join('¶')||'C\'est fait.')}
+  if(!CLIENT&&has(/\b(deplac\w*|mettre|installer|transfer\w*) (la |le )?(cuisine|salle de bain|salle d eau)\b/)){const k=has(/cuisine/)?'cuisine':'salle de bain',L=S.rooms.map(q=>q.name).filter(n=>!new RegExp(k,'i').test(nrm(n)));return ans(`Dans quelle pièce mettre la ${k} ? Dites par exemple « transforme ${L[0]?L[0].toLowerCase():'la chambre'} en ${k} ».${L.length?' Pièces : '+L.join(', ')+'.':''}`)}
+  // mode Bricoleur : la structure reste à l'artisan (choix du 15 novembre) ; la demande est gardée pour le prochain envoi
+  if(CLIENT&&(has(/\b(ajout\w*|cree\w*|creer|perc\w*|agrandi\w*|elargi\w*|retreci\w*|supprim\w*|enlev\w*|abat\w*|deplac\w*|bouch\w*|condamn\w*|ouvr\w*)\b.{0,40}\b(fenetres?|portes? (?!manteau)|portes?$|baies?( vitrees?)?|velux|murs?|cloisons?|ouvertures?|escaliers?|extensions?|veranda)\b/)||has(/\b(deplac\w*|mettre|installer|transfer\w*) (la |le |ma |mon )?(cuisine|salle de bain|salle d eau|wc|toilettes)\b/))&&!has(/\b(meubles?|couleur|peinture|papier|carrelage|parquet)\b/)){
+    S.asks=(S.asks||[]).concat(String(raw)).slice(-10);return ans(tl('chat_art2')+' '+tl('or_send'))}
   if(/(parquet|carrel|moquette|lino|peint|\bmurs? (en |blanc|beige|gris|bleu|vert)|\bsol\b)/.test(r0)&&!/\bplus (fonce|sombre|clair)/.test(r0))S.orFin=String(raw);
   if(has(/\b(manque|manquent|pas visibles?|non vus?|zones? (non|pas))\b/))return ans(orMissing());
   if(has(/\b(caracteristiques?|selectionn\w*|fiches?)\b/))return ans(orInventory(r));
@@ -7439,7 +7452,67 @@ function makeExample(){const PW=1100,PH=780,pc=document.createElement('canvas');
 function furnishExample(){const R=n=>S.rooms.find(r=>nrm(r.name).includes(n));const sj=R('sejour'),ch=R('chambre'),sb=R('salle');
   for(const[r,ts]of[[sj,['sofa','coffee','rug','tv','table','plant','lamp2','light']],[ch,['bed','night','night','ward','light']],[sb,['wc','sink','shower','towel','light']]]){if(!r)continue;const have=new Set(S.eqs.filter(e=>e.type&&labelAt(e.x,e.y)===r.lab).map(e=>e.type));for(const ty of ts){if(have.has(ty)&&ty!=='light')continue;if(ty==='night'){const bed=S.eqs.find(q=>q.type==='bed'&&labelAt(q.x,q.y)===r.lab);if(bed)nightBy(bed,r);continue}placeIn(r,ty)}}}
 
-function exampleSetup(){const top=S.walls.filter(w=>w.o==='h'&&lenPx(w)>S.W*0.6).sort((a,b)=>a.p-b.p)[0];if(top){setScaleFrom(top,9.0);computeRooms()}
+/* ---------- maison décrite en phrases, sans plan (15 novembre) ----------
+   Le plan est dessiné comme celui de la maison exemple, puis lu par la même analyse : murs, pièces, 3D et devis viennent du même chemin. */
+function genParse(txt){const r=' '+nrm(String(txt))+' ',N={un:1,une:1,deux:2,trois:3,quatre:4,cinq:5,six:6};const m=/\b(\d|un|une|deux|trois|quatre|cinq|six) chambres?\b/.exec(r);
+  return{ch:m?Math.min(6,+m[1]||N[m[1]]||3):3,garage:/\bgarage\b/.test(r),wc:true,etage:/\b(etage|r ?\+ ?1|duplex)\b/.test(r),pmr:/\b(pmr|accessib|fauteuil|mobilite reduite|difficultes? a se deplacer)\b/.test(r)}}
+function genLayout(G){const L=[],chW=G.pmr?3.6:3.3,sdbW=G.pmr?3.2:2.6,wcW=G.pmr?2:1.8,back=G.pmr?4.4:4,front=5.5;
+  let x=0;for(let i=0;i<G.ch;i++){L.push({n:G.ch>1?'Chambre '+(i+1):'Chambre',x,y:0,w:chW,h:back,k:'chambre'});x+=chW}
+  L.push({n:'Salle de bain',x,y:0,w:sdbW,h:back,k:'sdb'});x+=sdbW;L.push({n:'WC',x,y:0,w:wcW,h:back,k:'wc'});x+=wcW;const W0=x;
+  const cu=Math.min(4,Math.max(3,W0*0.3));L.push({n:'Séjour',x:0,y:back,w:W0-cu,h:front,k:'sejour'});L.push({n:'Cuisine',x:W0-cu,y:back,w:cu,h:front,k:'cuisine'});
+  if(G.garage)L.push({n:'Garage',x:W0,y:0,w:3.2,h:back+front,k:'garage'});
+  return{rooms:L,W:W0+(G.garage?3.2:0),D:back+front,W0,back,front}}
+function makeHouse(Y,G){const PW=1100,PH=780,pc=document.createElement('canvas');pc.width=PW;pc.height=PH;const x=pc.getContext('2d');x.fillStyle='#fbfbf6';x.fillRect(0,0,PW,PH);
+  const U=Math.min(100,880/Y.W,560/Y.D),O=[(PW-Y.W*U)/2,(PH-Y.D*U)/2+10],P=(a,b)=>[O[0]+a*U,O[1]+b*U];let seed=11;const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647};
+  x.strokeStyle='#23272d';x.lineCap='round';x.lineJoin='round';
+  const line=(p,q,wd=3.4)=>{x.lineWidth=wd;x.beginPath();const n=Math.max(2,Math.round(Math.hypot(q[0]-p[0],q[1]-p[1])/22));let off=0;const nx=-(q[1]-p[1]),ny=q[0]-p[0],nl=Math.hypot(nx,ny)||1;
+    for(let i=0;i<=n;i++){const tt=i/n;off=clamp(off+(rnd()-0.5)*1.2,-1.8,1.8);const px=p[0]+(q[0]-p[0])*tt+nx/nl*off,py=p[1]+(q[1]-p[1])*tt+ny/nl*off;i?x.lineTo(px,py):x.moveTo(px,py)}x.stroke()};
+  const dw=G.pmr?1:0.9,walls=[];const B=Y.back,D=Y.D,W0=Y.W0,R=Y.rooms;
+  // murs extérieurs, avec fenêtres (w) et porte d'entrée (d)
+  const top={o:'h',p:0,a:0,b:Y.W,ops:[]},bot={o:'h',p:D,a:0,b:Y.W,ops:[]},lef={o:'v',p:0,a:0,b:D,ops:[[B+1.2,B+2.6,'w']]},rig={o:'v',p:Y.W,a:0,b:D,ops:[]};
+  for(const r of R.filter(r=>r.k==='chambre'))top.ops.push([r.x+r.w/2-0.6,r.x+r.w/2+0.6,'w']);
+  const sj=R.find(r=>r.k==='sejour'),cu=R.find(r=>r.k==='cuisine'),ga=R.find(r=>r.k==='garage');
+  bot.ops.push([sj.x+0.8,sj.x+0.8+dw,'d',-1],[sj.x+sj.w/2+0.3,sj.x+sj.w/2+2.1,'w'],[cu.x+cu.w/2-0.6,cu.x+cu.w/2+0.6,'w']);
+  walls.push(top,bot,lef,rig);
+  // cloisons : bande des chambres, séparations, cuisine, garage ; une porte par pièce
+  const band={o:'h',p:B,a:0,b:W0,ops:[]};for(const r of R.filter(r=>r.y===0&&r.k!=='garage')){const d=Math.min(dw,r.w-0.9),x0=r.w<2.2?r.x+(r.w-d)/2:r.x+0.35;band.ops.push([x0,x0+d,'d',-1])}walls.push(band);
+  for(const r of R.filter(r=>r.y===0&&r.k!=='garage').slice(1))walls.push({o:'v',p:r.x,a:0,b:B,ops:[]});
+  walls.push({o:'v',p:cu.x,a:B,b:D,ops:[]});if(ga)walls.push({o:'v',p:W0,a:0,b:D,ops:[[B+1,B+1+dw,'d',-1]]});
+  Y.walls=walls;for(const w of walls){w.ops.sort((p,q)=>p[0]-q[0]);let s=w.a;const pt=v=>w.o==='h'?P(v,w.p):P(w.p,v);
+    for(const o of w.ops){line(pt(s-0.05),pt(o[0]));s=o[1];
+      if(o[2]==='w'){const tq=(v,dd)=>w.o==='h'?P(v,w.p+dd):P(w.p+dd,v);line(tq(o[0],-0.07),tq(o[0],0.07),2.4);line(tq(o[1],-0.07),tq(o[1],0.07),2.4)}
+      else{const Ld=o[1]-o[0],sd=o[3],h=pt(o[0]),leaf=w.o==='h'?P(o[0],w.p+sd*Ld*0.92):P(w.p+sd*Ld*0.92,o[0]);line(h,leaf,2.2);x.lineWidth=1.8;x.beginPath();const rr=Ld*U*0.95;
+        const a0=w.o==='h'?(sd>0?Math.PI/2:-Math.PI/2):(sd>0?0:Math.PI),a1=w.o==='h'?0:Math.PI/2;x.arc(h[0],h[1],rr,Math.min(a0,a1),Math.max(a0,a1));x.stroke()}}
+    line(pt(s),pt(w.b+0.05))}
+  x.fillStyle='#2a2f36';x.textAlign='center';const f=Math.round(Math.max(16,Math.min(26,U*0.3)));x.font=`italic ${f}px "Segoe Print","Bradley Hand","Marker Felt","Comic Sans MS",cursive`;
+  const T=(s,a,b,rot=0)=>{const[px,py]=P(a,b);x.save();x.translate(px,py);x.rotate(rot);x.fillText(s,0,0);x.restore()};
+  T(String(Y.W.toFixed(2)).replace('.',','),Y.W/2,-0.25);T(String(D.toFixed(2)).replace('.',','),-0.32,D/2,-Math.PI/2);
+  for(const r of R)T(r.k==='sdb'?'SdB':r.n,r.x+r.w/2,r.y+r.h/2+0.1);
+  const W=1200,H=900,ph=document.createElement('canvas');ph.width=W;ph.height=H;const c=ph.getContext('2d');const gr=c.createLinearGradient(0,0,W,H);gr.addColorStop(0,'#5d4a3b');gr.addColorStop(1,'#3e3128');c.fillStyle=gr;c.fillRect(0,0,W,H);
+  const quad=[[150,100],[1080,120],[1100,810],[125,795]];warpInto(pc,homography(quad,[[0,0],[PW,0],[PW,PH],[0,PH]]),ph);return ph}
+function genSetup(){const Y=S.genSpec.Y,top=S.walls.filter(w=>w.o==='h'&&lenPx(w)>S.W*0.5).sort((a,b)=>a.p-b.p)[0];if(!top)return;setScaleFrom(top,Y.W);
+  const k=lenPx(top)/Y.W,ox=Math.min(top.a,top.b),oy=top.p;
+  // la géométrie dessinée est connue : murs et ouvertures exacts (la lecture du plan fusionne parfois les petites pièces)
+  if(Y.walls){const P=(w,v)=>(w.o==='h'?ox:oy)+v*k;S.walls=[];S.ops=[];S.eqs=[];S.cotes={};for(const w of Y.walls){const nw={id:nid('mur'),o:w.o,p:w.o==='h'?oy+w.p*k:ox+w.p*k,a:P(w,w.a),b:P(w,w.b),conf:null};S.walls.push(nw);
+    for(const o of w.ops)S.ops.push({id:nid('ouv'),wallId:nw.id,c0:P(w,o[0]),c1:P(w,o[1]),type:o[2]==='w'?'window':'door',conf:1,...(o[2]==='w'?{}:{side:o[3]||1})})}}
+  computeRooms();S.roomNames=[];for(const r of Y.rooms)S.roomNames.push({x:ox+(r.x+r.w/2)*k,y:oy+(r.y+r.h/2)*k,name:r.n});computeRooms()}
+function genFurnish(){const F={chambre:['bed','night','ward','light'],sejour:['sofa','coffee','tv','table','light'],cuisine:['kitchen','fridge','light'],sdb:['shower','sink','light'],wc:['wc'],garage:['light']};
+  for(const r0 of S.genSpec.Y.rooms){const r=S.rooms.find(q=>q.name===r0.n);if(!r)continue;for(const ty of F[r0.k]||[]){try{if(ty==='night'){const bed=S.eqs.find(q=>q.type==='bed'&&labelAt(q.x,q.y)===r.lab);if(bed)nightBy(bed,r);continue}placeIn(r,ty)}catch(e){}}}}
+async function genHouse(txt){const G=genParse(txt),Y=genLayout(G);closeDrawer();closeSheet();try{const e=$('#rnv');if(e)e.hidden=true}catch(_){}busy(true,'b_an');await tick();S.pdf=null;S.genSpec={G,Y};
+  try{setSource(makeHouse(Y,G),true);await analyse(true);genFurnish()}catch(e){try{console.error(e)}catch(_){}}finally{S.genSpec=null;busy(false)}
+  S.plans=null;S.planIdx=0;S.addingPlan=false;S.base3=snap3();S.chat=[];if(CLIENT){S.pid=newPid();S.pname=uniqName(t('gen_n'))}hist.u=[];hist.r=[];updUndo();if(S.screen==='3d'&&T3){build3D();draw3();ui3()}else go('3d');setTitle();try{saveProj()}catch(e){}
+  const A=S.rooms.filter(r=>!/garage/i.test(r.name)).reduce((a,r)=>a+r.areaPx*S.scale*S.scale,0);
+  say('bot',tl('gen_ok',{n:S.rooms.length,a:fmt(A,0),w:fmt(Y.W,2),d:fmt(Y.D,2),l:Y.rooms.map(r=>`${r.n} ${fmt(r.w*r.h,1)} m²`).join(', ')})+(G.etage?'¶'+tl('gen_et'):''))}
+/* extension : un volume rectangulaire accolé au mur extérieur le plus libre, avec une ouverture vers la maison (mode Artisan) */
+function genExtension(txt){const r=' '+nrm(String(txt))+' ',m=/(\d+(?:[.,]\d+)?)\s*(m2|m²|metres? carres?)/.exec(r),A=m?parseFloat(m[1].replace(',','.')):20,baie=/\bbaie\b/.test(r),fp=footprint();if(!fp||!S.scale)return null;
+  const sc=S.scale,Hm=(fp.y1-fp.y0)*sc,dep=Math.min(Hm,Math.max(3,Math.sqrt(A))),wid=A/dep,x1=fp.x1,y0=fp.y0+((fp.y1-fp.y0)-dep/sc)/2,px=v=>v/sc;
+  pushHist();const nw=[{id:nid('mur'),o:'h',p:y0,a:x1,b:x1+px(wid)},{id:nid('mur'),o:'h',p:y0+px(dep),a:x1,b:x1+px(wid)},{id:nid('mur'),o:'v',p:x1+px(wid),a:y0,b:y0+px(dep)}];
+  for(const w of nw)S.walls.push(w);const host=S.walls.filter(w=>w.o==='v'&&Math.abs(w.p-x1)<px(0.3)&&w.a<=y0+px(dep/2)&&w.b>=y0+px(dep/2))[0];
+  if(host){const c=y0+px(dep/2);S.ops.push({id:nid('ouv'),wallId:host.id,c0:c-px(0.45),c1:c+px(0.45),type:'door'})}
+  const out=nw[2];S.ops.push({id:nid('ouv'),wallId:out.id,c0:out.a+px(dep*(baie?0.15:0.35)),c1:out.b-px(dep*(baie?0.15:0.35)),type:'window',...(baie?{wh:2.15,al:0.05}:{})});
+  computeRooms();const nr=S.rooms.find(q=>q.cx>x1);if(nr)S.roomNames.push({x:nr.cx,y:nr.cy,name:'Extension'});computeRooms();rebuild3();
+  return tl('gen_ext',{a:fmt(wid*dep,1),w:fmt(wid,2),d:fmt(dep,2),b:baie?tl('gen_baie'):''})}
+function exampleSetup(){if(S.genSpec){genSetup();return}const top=S.walls.filter(w=>w.o==='h'&&lenPx(w)>S.W*0.6).sort((a,b)=>a.p-b.p)[0];if(top){setScaleFrom(top,9.0);computeRooms()}
   [...S.rooms].sort((a,b)=>b.areaPx-a.areaPx).forEach((r,i)=>{const n=['Séjour','Chambre','Salle de bain'][i];if(n)S.roomNames.push({x:r.cx,y:r.cy,name:n})});computeRooms()}
 $('#b-example').addEventListener('click',async()=>{if(CLIENT)return exampleProject();busy(true,'b_an');await tick();S.pdf=null;setSource(makeExample(),true);await analyse()});
 
