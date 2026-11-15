@@ -1788,9 +1788,11 @@ function create(E,X,saved,opts){
   function parseMetier(c){var p=" "+c.p+" ",q=METQ.test(p)||METQ2.test(c.p)||/\?\s*$/.test(c.raw),m;
     /* calculs */
     if(/\b(combien|calcule|quantite|il me faut|il faut|prevoir|volume)\b/.test(p)||q){
-      /* dalle / béton : surface et épaisseur */
-      if(/\b(dalle|beton|chape)\b/.test(p)&&(m=p.match(/(\d+(?:[.,]\d+)?)\s*(?:m2|m²|metres? carres?)/))){var ep=p.match(/(\d+(?:[.,]\d+)?)\s*(?:cm|centimetres?)\b/);
-        if(ep)return [C("metier","calcul",{k:"beton",surface:metNum(m[1]),ep:metNum(ep[1])})];}
+      /* dalle / béton : surface (ou longueur × largeur) et épaisseur */
+      if(/\b(dalle|beton|chape)\b/.test(p)){var ep=p.match(/(\d+(?:[.,]\d+)?)\s*(?:cm|centimetres?)\b/);
+        if(ep&&(m=p.match(/(\d+(?:[.,]\d+)?)\s*(?:m2|m²|metres? carres?)/)))return [C("metier","calcul",{k:"beton",surface:metNum(m[1]),ep:metNum(ep[1])})];
+        if(ep&&(m=p.replace(ep[0]," ").match(/(\d+(?:[.,]\d+)?)\s*(?:m|metres?)?\s*(?:x|par|sur|\*|×)\s*(\d+(?:[.,]\d+)?)\s*(?:m|metres?)?(?![\d.,])/)))
+          return [C("metier","calcul",{k:"beton",surface:metNum(m[1])*metNum(m[2]),l:metNum(m[1]),w:metNum(m[2]),ep:metNum(ep[1])})];}
       if(/\b(parpaings?|blocs?|agglos?|moellons?)\b/.test(p)&&(m=p.match(/(\d+(?:[.,]\d+)?)\s*(?:m2|m²|metres? carres?)/)))return [C("metier","calcul",{k:"parpaing",surface:metNum(m[1])})];
       if(/\b(carreaux|carreau|dalles)\b/.test(p)&&(m=p.match(/\b(\d{1,3})\s*(?:x|par|\*)\s*(\d{1,3})\b/))){var sf=p.replace(m[0]," ").match(/(\d+(?:[.,]\d+)?)\s*(?:m2|m²|metres? carres?)/);
         if(sf)return [C("metier","calcul",{k:"carreaux",surface:metNum(sf[1]),l:+m[1],h:+m[2]})];}
@@ -1809,6 +1811,7 @@ function create(E,X,saved,opts){
     if(a.k==="elec"&&a.a&&ELEC[a.a])return R(tr("Disjoncteur de {0} A : câble de {1} en cuivre (NF C 15-100).",[a.a,ELEC[a.a]]));
     return R(tr(t));};
   X_["metier.calcul"]=function(a){var f=function(x,d){return fnum(Math.round(x*Math.pow(10,d||0))/Math.pow(10,d||0));};
+    if(a.k==="beton"&&a.l){var v2=a.surface*a.ep/100;return R(tr("Dalle de {0} × {1} m ({2} m²) en {3} cm : {4} m³ de béton, soit environ {5} sacs de ciment de 35 kg, {6} t de sable, {7} t de gravier et {8} L d’eau (dosage 350 kg/m³).",[f(a.l,2),f(a.w,2),f(a.surface,1),f(a.ep,1),f(v2,2),Math.ceil(v2*10),f(v2*0.7,1),f(v2*1.1,1),Math.ceil(v2*175)]));}
     if(a.k==="beton"){var v=a.surface*a.ep/100;return R(tr("Dalle de {0} m² en {1} cm : {2} m³ de béton, soit environ {3} sacs de ciment de 35 kg, {4} t de sable, {5} t de gravier et {6} L d’eau (dosage 350 kg/m³).",[f(a.surface,1),f(a.ep,1),f(v,2),Math.ceil(v*10),f(v*0.7,1),f(v*1.1,1),Math.ceil(v*175)]));}
     if(a.k==="parpaing")return R(tr("Mur de {0} m² : environ {1} parpaings de 20 × 50 cm (10 au m², 5 % de casse en plus).",[f(a.surface,1),Math.ceil(a.surface*10*1.05)]));
     if(a.k==="carreaux"){var n=Math.ceil(a.surface*1.1/(a.l*a.h/10000));return R(tr("{0} m² en carreaux de {1} × {2} cm : {3} carreaux, avec 10 % de coupes.",[f(a.surface,1),a.l,a.h,n]));}
