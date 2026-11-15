@@ -1085,7 +1085,7 @@ rv_t|Mur {n}|Wall {n}|Parede {n}|Pared {n}|Parete {n}|Perete {n}|Ściana {n}|Duv
 rv_first|Photographier un mur|Take a photo of a wall|Fotografar uma parede|Fotografiar una pared|Fotografa una parete|Fotografiați un perete|Zrób zdjęcie ściany|Bir duvarın fotoğrafını çekin|Сфотографировать стену|صوّر جدارًا
 rv_tip|Un mur par photo, de face, du sol au plafond. Tournez vers la droite pour le suivant.|One wall per photo, straight on, floor to ceiling. Turn right for the next one.|Uma parede por foto, de frente, do chão ao teto. Vire à direita para a seguinte.|Una pared por foto, de frente, del suelo al techo. Gire a la derecha para la siguiente.|Una parete per foto, di fronte, dal pavimento al soffitto. Girate a destra per la successiva.|Un perete pe poză, din față, de la podea la tavan. Întoarceți-vă spre dreapta pentru următorul.|Jedna ściana na zdjęcie, na wprost, od podłogi do sufitu. Obróć się w prawo do następnej.|Her fotoğrafta bir duvar, karşıdan, yerden tavana. Sonraki için sağa dönün.|Одна стена на фото, прямо, от пола до потолка. Для следующей повернитесь вправо.|جدار واحد في كل صورة، من الأمام، من الأرض إلى السقف. استدر يمينًا للجدار التالي.
 vid_b|Filmer la pièce|Film the room|Filmar a divisão|Filmar la habitación|Filmare la stanza|Filmați camera|Nagraj pomieszczenie|Odayı çekin|Снимите комнату|صوّر الغرفة بالفيديو
-vid_tip|Tournez lentement sur vous-même, en montrant les murs du sol au plafond.|Turn slowly on the spot, showing the walls from floor to ceiling.|Rode devagar sobre si mesmo, mostrando as paredes do chão ao teto.|Gire despacio sobre sí mismo, mostrando las paredes del suelo al techo.|Ruotate lentamente su voi stessi, mostrando le pareti dal pavimento al soffitto.|Rotiți-vă încet pe loc, arătând pereții de la podea la tavan.|Obracaj się powoli w miejscu, pokazując ściany od podłogi do sufitu.|Olduğunuz yerde yavaşça dönün, duvarları yerden tavana gösterin.|Медленно поворачивайтесь на месте, показывая стены от пола до потолка.|استدر ببطء في مكانك، مع إظهار الجدران من الأرض إلى السقف.
+vid_tip|Tournez lentement sur vous-même en montrant les murs du sol au plafond. Ou choisissez une photo de face de chaque mur.|Turn slowly on the spot, showing the walls from floor to ceiling. Or pick one straight-on photo of each wall.|Rode devagar sobre si mesmo, mostrando as paredes do chão ao teto. Ou escolha uma foto de frente de cada parede.|Gire despacio sobre sí mismo, mostrando las paredes del suelo al techo. O elija una foto de frente de cada pared.|Ruotate lentamente su voi stessi, mostrando le pareti dal pavimento al soffitto. Oppure scegliete una foto frontale di ogni parete.|Rotiți-vă încet pe loc, arătând pereții de la podea la tavan. Sau alegeți câte o fotografie din față a fiecărui perete.|Obracaj się powoli, pokazując ściany od podłogi do sufitu. Albo wybierz zdjęcie każdej ściany na wprost.|Duvarları yerden tavana göstererek yavaşça kendi etrafınızda dönün. Ya da her duvarın karşıdan bir fotoğrafını seçin.|Медленно поворачивайтесь, показывая стены от пола до потолка. Или выберите фото каждой стены анфас.|استدر ببطء وأنت تُظهر الجدران من الأرض إلى السقف. أو اختر صورة أمامية لكل جدار.
 vst_read|Lecture de la vidéo ({i} sur {n})…|Reading the video ({i} of {n})…|Leitura do vídeo ({i} de {n})…|Lectura del vídeo ({i} de {n})…|Lettura del video ({i} di {n})…|Citirea videoclipului ({i} din {n})…|Odczyt wideo ({i} z {n})…|Video okunuyor ({i}/{n})…|Чтение видео ({i} из {n})…|قراءة الفيديو ({i} من {n})…
 vst_dep|Profondeur de chaque vue ({i} sur {n})…|Depth of each view ({i} of {n})…|Profundidade de cada vista ({i} de {n})…|Profundidad de cada vista ({i} de {n})…|Profondità di ogni vista ({i} di {n})…|Adâncimea fiecărei vederi ({i} din {n})…|Głębia każdego widoku ({i} z {n})…|Her görünümün derinliği ({i}/{n})…|Глубина каждого вида ({i} из {n})…|عمق كل لقطة ({i} من {n})…
 vst_seg|Murs, sol, plafond et objets ({i} sur {n})…|Walls, floor, ceiling and objects ({i} of {n})…|Paredes, chão, teto e objetos ({i} de {n})…|Paredes, suelo, techo y objetos ({i} de {n})…|Pareti, pavimento, soffitto e oggetti ({i} di {n})…|Pereți, podea, tavan și obiecte ({i} din {n})…|Ściany, podłoga, sufit i przedmioty ({i} z {n})…|Duvarlar, zemin, tavan ve nesneler ({i}/{n})…|Стены, пол, потолок и предметы ({i} из {n})…|الجدران والأرضية والسقف والأشياء ({i} من {n})…
@@ -3275,7 +3275,7 @@ function rnvSvg(){const w=RNV.walls[RNV.cur],sv=$('#rv-sv');if(!w||!sv)return;co
   const iw=$('#rv-w');if(iw&&document.activeElement!==iw)iw.value=fmt(rnvLen(w),2)}
 function rnvRender(){const el=$('#rnv');if(!el)return;const w=RNV.walls[RNV.cur],n=RNV.walls.length;
   el.innerHTML=`<div class="rv-bar"><button class="rb" id="rv-x" aria-label="${t('close')}">${svgI('<path d="M6 6l12 12M18 6 6 18"/>')}</button><b>${w?t('rv_t',{n:RNV.cur+1}):t('rv_b')}</b></div>
-  <div class="rv-st">${w?`<svg id="rv-sv" viewBox="${rnvVB(w)}" preserveAspectRatio="xMidYMid meet"></svg>`:`<div class="rv-0w"><label class="rv-0"><input class="sr" type="file" accept="video/*" id="rv-vid">${svgI('<rect x="3" y="6.5" width="12.5" height="11" rx="2"/><path d="m15.5 10.5 5-3v9l-5-3z"/>','i rv-ic')}<b>${t('vid_b')}</b><span>${t('vid_tip')}</span></label></div>`}</div>
+  <div class="rv-st">${w?`<svg id="rv-sv" viewBox="${rnvVB(w)}" preserveAspectRatio="xMidYMid meet"></svg>`:`<div class="rv-0w"><label class="rv-0"><input class="sr" type="file" accept="video/*,image/*" multiple id="rv-vid">${svgI('<rect x="3" y="6.5" width="12.5" height="11" rx="2"/><path d="m15.5 10.5 5-3v9l-5-3z"/>','i rv-ic')}<b>${t('vid_b')}</b><span>${t('vid_tip')}</span></label></div>`}</div>
   ${w?`<div class="rv-pan"><p class="rv-h">${RNV.tool?t('rp_tap'):t(w.ser?'rv_hs':'rv_h')}${!RNV.tool&&w.ql?' '+t('rv_ql'):''}</p><div class="rv-tools">${RPT.map(([k,c])=>`<button data-pt="${k}" aria-pressed="${RNV.tool===k}" style="--c:${c}"><i>${svgI(rptIc(k))}</i><span>${rptLb(k)}</span></button>`).join('')}</div>
   <div class="rv-row"><label>${t('rv_w')}<input id="rv-w" inputmode="decimal" autocomplete="off"><span>m</span></label><label>${t('rv_hh')}<input id="rv-hh" inputmode="decimal" autocomplete="off" value="${fmt(RNV.H,2)}"><span>m</span></label><select id="rv-k" aria-label="${t('rk_t')}">${RKIND.map(k=>`<option value="${k}"${k===RNV.kind?' selected':''}>${esc(t('rk_'+k.replace(/ /g,'_')))}</option>`).join('')}</select></div>
   <div class="rv-turn"><span>${t('rv_low')}</span><button data-low="1" aria-pressed="${!!(w&&w.low)}">${svgI('<path d="M3 20h18"/><path d="M4 20V12l8-7 8 7v8"/><path d="M4 12h4"/>')}</button></div>
@@ -3290,7 +3290,7 @@ function rnvRender(){const el=$('#rnv');if(!el)return;const w=RNV.walls[RNV.cur]
   el.querySelectorAll('[data-tn]').forEach(b=>b.onclick=()=>{const w2=RNV.walls[RNV.cur];if(w2){w2.turn=+b.dataset.tn;rnvRender()}});
   el.querySelectorAll('[data-pt]').forEach(b=>b.onclick=()=>{RNV.tool=RNV.tool===b.dataset.pt?null:b.dataset.pt;rnvRender()});
   if($('#rv-ser'))$('#rv-ser').onclick=serOpen;
-  if($('#rv-vid'))$('#rv-vid').addEventListener('change',e=>{const f=e.target.files[0];e.target.value='';if(f)vidStart(f)});
+  if($('#rv-vid'))$('#rv-vid').addEventListener('change',e=>{const fs=[...e.target.files];e.target.value='';const v=fs.find(f=>/^video\//.test(f.type||''));if(v)vidStart(v);else if(fs.length)rnvAdd(fs)});
   if(!w)return;rnvSvg();const sv=$('#rv-sv');let drag=null;const pt=e=>{const p=sv.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(sv.getScreenCTM().inverse())};
   sv.addEventListener('pointerdown',e=>{const p=pt(e);if(rnvPtTap(w,p))return;let bi=-1,bd=1e9;w.q.forEach((c,i)=>{const d=Math.hypot(c[0]-p.x,c[1]-p.y);if(d<bd){bd=d;bi=i}});if(bd<Math.max(w.cv.width,w.cv.height)*0.18){drag=bi;sv.setPointerCapture(e.pointerId)}});
   sv.addEventListener('pointermove',e=>{if(drag===null)return;const p=pt(e);if(!w.qm&&!w.qa)w.qa=w.q.map(c=>c.slice());w.qm=1;w.ql=0;w.q[drag]=[clamp(p.x,-w.cv.width,2*w.cv.width),clamp(p.y,-2*w.cv.height,2*w.cv.height)];rnvSvg()});
@@ -3324,7 +3324,7 @@ function vidFurnish(spec,k0){const fp=footprint();if(!fp||!S.scale||!spec||!spec
     if(op.type==='door')op.dh=+clamp(o.height||2.04,1.8,Hh-0.05).toFixed(2);else{op.al=+clamp(o.sill||0.9,0,Hh-0.6).toFixed(2);op.wh=+clamp(o.height||1.2,0.4,Hh-op.al-0.03).toFixed(2)}
     S.ops.push(op);n++}
   // base d'apprentissage de l'œil 3D : ce qui a été créé (pour comparer avec les corrections), graphe de scène
-  if(S.rnv){S.rnv.vid={at:Date.now(),orig,graphe:spec.graphe||null}}
+  if(S.rnv){S.rnv.vid={at:Date.now(),orig,graphe:spec.graphe||null,seen:spec.room&&spec.room.seen||null,notes:(spec.notes||[]).slice(0,8)}}
   if(window.__vdebug){window.__m3dS=S;window.__vidLearn=vidLearn}
   try{const L=oe3Get();for(const o of orig)L.n[o.cls]=(L.n[o.cls]||0)+1;oe3Put(L)}catch(e){}
   try{build3D();draw3()}catch(e){}try{if(CLIENT)saveProj();else saveArt()}catch(e){}return n}
@@ -3360,7 +3360,7 @@ async function vidSfm(cvs,f0){const imgs=cvs.map(cv=>{const G=SERL.sfmGray(cv,12
     w.onmessage=e=>{const d=e.data;if(!d.done)return;w.terminate();URL.revokeObjectURL(u);d.err?ko(new Error(d.err)):ok(d.r)};w.onerror=e=>{w.terminate();ko(e)};w.postMessage(job)})}
   catch(e){try{r=await serSfmHere(SERL,job,()=>{})}catch(_){r=null}}return r&&r.ok?r:null}
 let VIDP=null;function vidStart(f){if(!VIDP)VIDP=new Promise((ok,ko)=>{const e=document.createElement('script');e.src='lib/vid3d.js';e.onload=ok;e.onerror=()=>{VIDP=null;ko(new Error('vid3d'))};document.head.appendChild(e)});
-  VIDP.then(()=>window.vidRun(f,{RNV,busy,busyStep,tick,t,toast,fmt,rnvDetect,rnvRender,rnvMake,v2Sess,vidFurnish,oe3:oe3Get(),vidSfm,owlRun,owlOk:()=>{try{return v2OwlOk()}catch(e){return false}}})).catch(()=>toast(t('vid_fail')))}
+  VIDP.then(()=>window.vidRun(f,{RNV,busy,busyStep,tick,t,toast,fmt,rnvDetect,rnvRender,rnvMake,v2Sess,vidFurnish,oe3:oe3Get(),vidSfm,owlRun,owlOk:async()=>{/* OWLv2 seulement avec une vraie carte graphique (WebGPU) : sur le processeur, il ajoute 9 min et plus d'erreurs qu'il n'en corrige (essai du 15 novembre) */try{if(!v2OwlOk()||!navigator.gpu)return false;return !!(await navigator.gpu.requestAdapter())}catch(e){return false}}})).catch(()=>toast(t('vid_fail')))}
 /* couleur du sol (sous la jonction mur / sol) et du plafond, lues sur les photos */
 function rnvSample(ws,where){const A=[[],[],[]];for(const w of ws){const cv=w.cv,c=cv.getContext('2d'),fl=where==='floor',a=fl?w.q[3]:w.q[0],e=fl?w.q[2]:w.q[1],dy=(fl?1:-1)*cv.height;
     for(let i=1;i<=12;i++)for(const f of[0.02,0.04,0.07,0.1,0.13]){const tt=i/13,x=a[0]+(e[0]-a[0])*tt,y=a[1]+(e[1]-a[1])*tt+dy*f;if(x<0||y<0||x>=cv.width||y>=cv.height)continue;const p=c.getImageData(x|0,y|0,1,1).data;for(let k=0;k<3;k++)A[k].push(p[k])}}
@@ -4832,21 +4832,29 @@ async function v2Get(m){const M=V2M[m];try{const r=await fetch('lib/vision/'+M.f
   const r=await fetch(M.u);if(!r.ok)throw new Error(m+' '+r.status);const b=await r.arrayBuffer();try{if(c)await c.put(M.u,new Response(b))}catch(e){}return new Uint8Array(b)}
 async function v2Base(){const loc=await fetch('lib/vision/ort.wasm.min.js',{method:'HEAD'}).then(r=>r.ok).catch(()=>false);return new URL(loc?'lib/vision/':VURL.ort,document.baseURI).href}
 /* séance d'un modèle : dans un travail en arrière-plan (l'écran reste fluide) ; sinon, pour DETR seulement, sur place */
-function v2Sess(m){if(V2.ses[m])return V2.ses[m];V2.ses[m]=(async()=>{const base=await v2Base(),bytes=await v2Bytes(m);
-    try{// travail en arrière-plan de type module : ONNX Runtime y est importé sous sa forme module (l'autre forme échoue hors de la page)
-      // OWLv2 : la carte graphique (WebGPU) quand l'appareil en a une, sinon le processeur comme les autres
-      const gpu=m==='owl',lib=gpu?VURL.ort+'ort.webgpu.min.mjs':base+'ort.wasm.min.mjs',wb=gpu?VURL.ort:base;
-      const src=`import * as ort from '${lib}';let s=null;onmessage=async e=>{const d=e.data;try{if(d.init){ort.env.wasm.wasmPaths=d.base;ort.env.wasm.numThreads=1;let ep='wasm';
+function v2Sess(m){if(V2.ses[m])return V2.ses[m];if(V2['err_'+m]&&V2['fail_'+m]>=2)return Promise.resolve(null);
+  V2.ses[m]=(async()=>{const base=await v2Base(),bytes=await v2Bytes(m);
+    // OWLv2 : la carte graphique (WebGPU) quand l'appareil en a une, sinon le processeur comme les autres
+    const gpu=m==='owl',wb=gpu?VURL.ort:base;
+    const body=`let s=null;onmessage=async e=>{const d=e.data;try{if(d.init){ort.env.wasm.wasmPaths=d.base;ort.env.wasm.numThreads=1;let ep='wasm';
           if(d.gpu&&self.navigator&&navigator.gpu)try{if(await navigator.gpu.requestAdapter()){s=await ort.InferenceSession.create(d.bytes,{executionProviders:['webgpu']});ep='webgpu'}}catch(err){s=null}
           if(!s)s=await ort.InferenceSession.create(d.bytes,{executionProviders:['wasm']});postMessage({ok:1,ep});return}
         const f={};for(const k in d.feeds){const x=d.feeds[k];f[k]=new ort.Tensor(x.t,x.d,x.s)}const o=await s.run(f),r={};for(const k of d.want)r[k]={d:o[k].data,s:o[k].dims};postMessage({r})}catch(err){postMessage({err:String(err&&err.message||err)})}};postMessage({ready:1})`;
-      const wk=new Worker(URL.createObjectURL(new Blob([src],{type:'text/javascript'})),{type:'module'});let q=Promise.resolve();
-      await new Promise((ok,ko)=>{wk.onmessage=e=>e.data.ready?ok():0;wk.onerror=e=>ko(e);setTimeout(()=>ko(new Error('ort module')),30000)});
+    // travail en arrière-plan : forme classique d'abord (la seule que la règle de sécurité de casô laisse charger depuis le CDN),
+    // forme module ensuite, puis en dernier recours sur la page elle-même
+    const forms=[{src:`importScripts('${gpu?VURL.ort+'ort.webgpu.min.js':base+'ort.wasm.min.js'}');`+body,o:{}},
+                 {src:`import * as ort from '${gpu?VURL.ort+'ort.webgpu.min.mjs':base+'ort.wasm.min.mjs'}';`+body,o:{type:'module'}}];
+    for(const F of forms){let wk=null;try{
+      wk=new Worker(URL.createObjectURL(new Blob([F.src],{type:'text/javascript'})),F.o);let q=Promise.resolve();
+      await new Promise((ok,ko)=>{wk.onmessage=e=>e.data.ready?ok():0;wk.onerror=e=>{e.preventDefault&&e.preventDefault();ko(new Error('ort'))};setTimeout(()=>ko(new Error('ort délai')),30000)});
       const call=msg=>new Promise((ok,ko)=>{wk.onmessage=e=>e.data.err?ko(new Error(e.data.err)):ok(e.data);wk.onerror=e=>ko(e);wk.postMessage(msg)});
-      {const r=await call({init:1,base:wb,bytes,gpu});V2['ep_'+m]=r.ep}return{run:(feeds,want)=>(q=q.then(()=>call({feeds,want}).then(d=>d.r)))}}
-    catch(e){if(m!=='detr')throw e;if(!window.ort)await new Promise((ok,ko)=>{const s=document.createElement('script');s.src=base+'ort.wasm.min.js';s.crossOrigin='anonymous';s.onload=ok;s.onerror=()=>ko(new Error('ort'));document.head.appendChild(s)});
-      const ort=window.ort;ort.env.wasm.wasmPaths=base;ort.env.wasm.numThreads=1;const s=await ort.InferenceSession.create(bytes,{executionProviders:['wasm']});
-      return{run:async(feeds,want)=>{const f={};for(const k in feeds){const x=feeds[k];f[k]=new ort.Tensor(x.t,x.d,x.s)}const o=await s.run(f),r={};for(const k of want)r[k]={d:o[k].data,s:o[k].dims};return r}}}})().catch(e=>{V2.ses[m]=null;V2['err_'+m]=String(e&&e.message||e);return null});return V2.ses[m]}
+      {const r=await call({init:1,base:wb,bytes,gpu});V2['ep_'+m]=r.ep}V2['err_'+m]='';return{run:(feeds,want)=>(q=q.then(()=>call({feeds,want}).then(d=>d.r)))}}
+      catch(e){try{wk&&wk.terminate()}catch(_){}}}
+    if(!window.ort)await new Promise((ok,ko)=>{const s=document.createElement('script');s.src=base+'ort.wasm.min.js';s.crossOrigin='anonymous';s.onload=ok;s.onerror=()=>ko(new Error('ort'));document.head.appendChild(s)});
+    const ort=window.ort;ort.env.wasm.wasmPaths=base;ort.env.wasm.numThreads=1;const s=await ort.InferenceSession.create(bytes,{executionProviders:['wasm']});V2['ep_'+m]='wasm (page)';V2['err_'+m]='';
+    return{run:async(feeds,want)=>{const f={};for(const k in feeds){const x=feeds[k];f[k]=new ort.Tensor(x.t,x.d,x.s)}const o=await s.run(f),r={};for(const k of want)r[k]={d:o[k].data,s:o[k].dims};return r}}})()
+    // un échec est retenu : au deuxième, le modèle n'est plus rechargé (150 Mo pour OWLv2) jusqu'au prochain lancement
+    .catch(e=>{V2.ses[m]=null;V2['err_'+m]=String(e&&e.message||e);V2['fail_'+m]=(V2['fail_'+m]||0)+1;return null});return V2.ses[m]}
 /* DETR : catégories COCO panoptique (numéros du modèle) utiles à casô */
 const DTRK=(()=>{const K={},put=(g,ids)=>{for(const i of ids)K[i]=g};put('wall',[171,175,176,177,199]);put('ceil',[186]);put('floor',[118,190,200]);put('door',[71,112]);put('win',[68,180,181]);
   put('obj',[1,62,63,64,65,67,69,70,72,78,79,81,82,93,98,104,105,107,108,109,119,138,141,156,165,167,168,188,189]);return K})();
@@ -6551,8 +6559,151 @@ function after(h0,msgs){const li0=LI;LI=Math.max(0,LANGS.findIndex(l=>l[0]===(S.
 /* cœur de l'IA de casô : le chat de l'appli relit la phrase (10 langues, fautes) quand le chat 3D ne l'a pas comprise */
 function coeur3d(raw){if(S.cRetry||!raw)return null;try{const P=window.parent!==window&&window.parent.casoPont;if(!P||!P.ready||!P.B)return null;
   const c=P.B.translate(String(raw)),p=c&&c.p;if(!p||nrm(p)===nrm(raw)||nrm(p)===nrm(toFr(raw).txt))return null;S.cLang=LANGS.some(l=>l[0]===c.lang)?c.lang:(S.chatLang||LC);return p}catch(e){return null}}
+/* ---------- Œil 3D : aiguillage par intention (15 novembre) ----------
+   Avant la recherche d'un nom de meuble : on comprend ce que la personne veut faire (rénover, mesurer, diagnostiquer,
+   comparer, inventorier, proposer des variantes, vider, réorganiser…). Rien de reconnu → la suite habituelle du chat. */
+const ORT={
+ or_film:["Pour {q}, il me faut d'abord la pièce. Filmez-la avec la vidéo de la Rénovation (tournez lentement sur vous-même, ou marchez le long des murs), ou choisissez au même endroit une photo de face de chaque mur. Je reconstruis ensuite la maquette et je reprends votre demande.","For {q}, I first need the room. Film it with the Renovation video (turn slowly, or walk along the walls), or pick one straight-on photo of each wall in the same place. I'll rebuild the model and pick up your request."],
+ or_plan:["Pour {q}, il me faut d'abord la maison. Dans Construction, ajoutez la photo ou le PDF de son plan (un croquis à la main suffit), ou partez de la maison exemple.","For {q}, I first need the house. In Construction, add a photo or PDF of its plan (a hand sketch is fine), or start from the example house."],
+ or_two:["Pour comparer, il faut deux visites enregistrées de la même pièce. Filmez-la maintenant, puis refilmez-la plus tard : je comparerai les éléments (ajoutés, retirés, déplacés) et les dimensions.","To compare, I need two saved visits of the same room. Film it now, then again later: I'll compare the elements (added, removed, moved) and the dimensions."],
+ or_cmp:["Comparaison avec « {n} » ({d}) :¶{l}","Comparison with « {n} » ({d}):¶{l}"],
+ or_state:["La maquette montre l'état actuel : {w}.¶Éléments captés : {l}.¶Mesures estimées depuis la vidéo, à confirmer au mètre.","The model shows the current state: {w}.¶Captured elements: {l}.¶Measurements estimated from the video, to be confirmed with a tape."],
+ or_srf:["{l}¶{s}","{l}¶{s}"],
+ or_est:["Valeurs estimées depuis la vidéo (pas encore mesurées au mètre).","Values estimated from the video (not measured yet)."],
+ or_dg:["{l}¶Fiche avec la photo de chaque défaut ouverte.","{l}¶Sheet with a photo of each defect opened."],
+ or_dg0:["{k} sur les {n} murs photographiés.","{k} on the {n} photographed walls."],
+ or_dgx:["Je ne sais pas encore reconnaître {k} : vérifiez sur place.","I can't recognise {k} yet: check on site."],
+ or_dglim:["Je repère les fissures, les trous et les taches sur les murs. Pas encore : la peinture écaillée, le carrelage cassé, les défauts des fenêtres ni les fuites.","I spot cracks, holes and stains on the walls. Not yet: flaking paint, broken tiles, window defects or leaks."],
+ or_inv:["{n} éléments captés : {l}.","{n} captured elements: {l}."],
+ or_inv0:["Non captés : {k}. Ces petits éléments ne sont pas encore reconnus dans la vidéo ; vous pouvez les ajouter en le disant (« ajoute une prise »).","Not captured: {k}. These small items aren't recognised in the video yet; you can add them by saying so (\"add a socket\")."],
+ or_invx:["Je ne reconnais pas encore {k}.","I can't recognise {k} yet."],
+ or_sel:["Touchez un élément dans la maquette pour le sélectionner. Voici leurs fiches :¶{l}","Tap an element in the model to select it. Their sheets:¶{l}"],
+ or_var:["{n} variantes prêtes, la 1re est appliquée :¶{l}¶Dites « variante 2 »… pour passer de l'une à l'autre.","{n} variants ready, the 1st is applied:¶{l}¶Say \"variant 2\"… to switch."],
+ or_varn:["Variante {i} : {l}.","Variant {i}: {l}."],
+ or_empty:["J'ai retiré les {n} meubles : il reste la structure (murs, portes, fenêtres, plafond). Dites « annule » pour les remettre.","I removed the {n} pieces of furniture: the structure remains. Say \"undo\" to bring them back."],
+ or_empty0:["Il n'y a pas de meuble à retirer.","There's no furniture to remove."],
+ or_mir:["Autre disposition : vos {n} meubles sont tous gardés, placés en miroir dans la pièce. Redites-le pour une autre disposition, « annule » pour revenir.","Another layout: all your {n} pieces are kept, mirrored in the room. Say it again for another layout, \"undo\" to go back."],
+ or_keep:["J'ai gardé : {l}.","I kept: {l}."],
+ or_miss:["Ce qui manque pour terminer la maquette : {l}. Refilmez en montrant ces zones.","Missing to finish the model: {l}. Film again showing these areas."],
+ or_miss0:["Les quatre murs, le sol et le plafond ont été vus.","All four walls, the floor and the ceiling were seen."],
+ or_wall:["{l}¶Longueurs estimées. Dites « le mur 1 mesure 4,60 m » pour caler la maquette sur une vraie mesure.","{l}¶Estimated lengths. Say \"wall 1 is 4.60 m\" to fit the model to a real measurement."],
+ or_cal:["Maquette calée sur votre mesure : mur {w} = {v} m. La pièce fait maintenant {a} × {b} m.","Model fitted to your measurement: wall {w} = {v} m. The room is now {a} × {b} m."],
+ or_clo:["Cloison proposée au milieu de la pièce, parallèle au mur {w} : {l} m de long, {h} m de haut, {s} m².¶Quantités (cloison 72 mm, une plaque BA13 de chaque côté, chutes 10 % comprises) : {p} plaques de 1,20 × 2,50 m, {r} rails et {m} montants de 3 m, {s} m² d'isolant, {b} m de bande. À confirmer sur place.","Partition proposed in the middle of the room, parallel to wall {w}: {l} m long, {h} m high, {s} m².¶Quantities (72 mm partition, one plasterboard each side, 10% waste): {p} boards 1.20 × 2.50 m, {r} tracks and {m} studs of 3 m, {s} m² insulation, {b} m tape. To confirm on site."],
+ or_cost:["Deux solutions pour cette pièce (prix indicatifs pose comprise, à confirmer par un devis) :¶1. Rafraîchir (peinture murs et plafond) : {a} €¶2. Rénover (préparation, peinture, nouveau sol, plinthes) : {b} €","Two options for this room (indicative prices incl. labour, to confirm with a quote):¶1. Refresh (walls and ceiling paint): {a} €¶2. Renovate (prep, paint, new floor, skirting): {b} €"],
+ or_idea:["Trois idées pour cette pièce ({k}, {a} m²) :¶{l}¶Dites l'idée qui vous plaît.","Three ideas for this room ({k}, {a} m²):¶{l}¶Say the one you like."],
+ or_pmr:["Points d'accessibilité vus dans la maquette :¶{l}¶Repères : portes de 0,90 m de passage, cercle libre de 1,50 m dans chaque pièce, pas de marche. À faire vérifier par un professionnel.","Accessibility points seen in the model:¶{l}¶Guides: 0.90 m door openings, 1.50 m free circle in each room, no steps. To be checked by a professional."],
+ or_nodraw:["Je ne dessine pas encore une maison sans plan. Ajoutez un croquis de plan (photo ou PDF) dans Construction, ou partez de la maison exemple et modifiez-la en me parlant.","I can't draw a house without a plan yet. Add a plan sketch (photo or PDF) in Construction, or start from the example house and change it by talking to me."]};
+for(const k in ORT)TR[k]=ORT[k];
+function orRun(cmd){const n=S.chat.length,b=String(snap());S.orIn=1;S.orSilent=1;try{chatSendX(cmd)}catch(e){try{console.error(e)}catch(_){}}S.orIn=0;S.orSilent=0;S.chatPend=null;
+  const msgs=S.chat.slice(n).filter(m=>m.who==='bot').map(m=>m.txt);S.chat.length=n;return{ch:String(snap())!==b,msgs}}
+const orModel=()=>S.walls.length>=3&&!!S.scale;
+const orFurn=e=>{if(e.type==='vcap')return!['ceiling_light','curtain','pillar','lamp'].includes(e.vcls);const d=EQ.find(x=>x.k===e.type);return!!d&&['chamb','sejour','agen','cuis'].includes(d.g)&&d.m!=='ceil'};
+const orName=e=>e.lab||tName(e.type);
+const orList=a=>{const c={};for(const x of a)c[x]=(c[x]||0)+1;return Object.entries(c).sort((p,q)=>q[1]-p[1]).map(([k,n])=>n>1?k+' ×'+n:k).join(', ')};
+function orSurfaces(r){const Q=rnvQty(),est=S.rnv&&S.rnv.vid&&!(S.rnv.mq&&S.rnv.mq.ok),L=[],w=k=>new RegExp('\\b('+k+')').test(r);let any=false;
+  const want={mur:w('murs?|peindre|enduire|enduit|platr'),plaf:w('plafonds?|enduire|platr'),sol:w('sol|carrel|carreaux|parquet|plancher'),vol:w('volume|m3|m³')};
+  if(!want.mur&&!want.plaf&&!want.sol&&!want.vol){want.mur=want.plaf=want.sol=true}
+  if(want.sol){L.push(`Sol : ${fmt(Q.A,1)} m²`);any=true}
+  if(want.mur){L.push(`Murs : ${fmt(Q.walls,1)} m² (portes et fenêtres déduites, ${Q.doors+Q.wins} ouverture${Q.doors+Q.wins>1?'s':''})`);any=true}
+  if(want.plaf){L.push(`Plafond : ${fmt(Q.ceil,1)} m²`);any=true}
+  if(want.vol){L.push(`Volume : ${fmt(Q.vol,1)} m³`);any=true}
+  if(/carrel|carreaux/.test(r)){const m=/(\d{2,3})\s*[x×]\s*(\d{2,3})/.exec(r),a=m?+m[1]/100:0.6,b=m?+m[2]/100:0.6,n=Math.ceil(Q.A*1.1/(a*b));L.push(`Carreaux de ${Math.round(a*100)} × ${Math.round(b*100)} cm${m?'':' (format supposé)'} : ${n}, chutes 10 % comprises`)}
+  S.orLast={k:'srf'};return tl('or_srf',{l:L.join('¶'),s:est?tl('or_est'):''}).trim()}
+function orWalls(){const R=S.rnv,H=S.params.H,L=S.walls.map((w,i)=>{const l=wallLen(w);return`Mur ${i+1} : ${fmt(l?l.v:0,2)} × ${fmt(H,2)} m${rvVirt(w)?' (non filmé, reconstitué)':''}`});return tl('or_wall',{l:L.join('¶')})}
+function orDefects(r){const R=S.rnv;const asked=[['la peinture écaillée ou abîmée',/ecaill|peinture.{0,15}(abim|deterior|degrad|cloque)|cloque/],['le carrelage cassé',/carrel\w*.{0,15}(casse|fendu|abim)|casse.{0,20}carrel/],['les défauts des fenêtres',/fenetre/],['les fuites',/fuite|siphon/]];
+  const out=[];const nx=asked.filter(([,re])=>re.test(r)).map(([k])=>k);
+  if(!R||!R.dg){if(R&&R.ph&&typeof rnvDiagGo==='function'){const p=rnvDiagGo();if(p&&p.then)p.then(()=>{say('bot',orDefects(r))});return 'Je regarde les photos des murs…'}
+    return tl('or_dglim')}
+  const kinds={fis:/fissur|lezard/,trou:/trou/,tache:/tache|humid|moisi|aureole/};let ks=Object.keys(kinds).filter(k=>kinds[k].test(r));if(!ks.length&&!nx.length)ks=['fis','trou','tache'];if(nx.length&&!ks.length)ks=[];
+  const G=rnvDgGroups(R),nm={fis:'fissure',trou:'trou',tache:'tache'},nm0={fis:'Aucune fissure repérée',trou:'Aucun trou repéré',tache:'Aucune tache repérée (humidité ou autre)'},cf=c=>c>=0.75?'forte':c>=0.5?'moyenne':'faible';
+  for(const k of ks){const ids=G[k]||[];if(!ids.length){out.push(tl('or_dg0',{k:nm0[k],n:(R.ph||[]).length||S.walls.length}));continue}
+    for(const i of ids.slice(0,6)){const d=R.dg[i];out.push(`${nm[k][0].toUpperCase()+nm[k].slice(1)} : mur ${d.w}, à ${fmt(d.X,2)} m du coin, ${fmt(d.z,2)} m du sol, ${d.k==='fis'?fmt(d.v,2)+' m de long':'environ '+fmt(d.v*100,0)+' cm'} — confiance ${cf(d.c)}`)}
+    if(ids.length>6)out.push(`… et ${ids.length-6} autre(s).`)}
+  for(const k of nx)out.push(tl('or_dgx',{k}));
+  const found=ks.some(k=>(G[k]||[]).length);if(found)try{rnvRoomSheet()}catch(e){}
+  return found?tl('or_dg',{l:out.join('¶')}):out.join('¶')}
+function orInventory(r){const E=S.eqs;if(/caracteristique|selectionn|fiche|chaque objet/.test(r)){const L=E.filter(e=>e.type==='vcap').slice(0,10).map(e=>{const m=e.vmes||{},f=k=>m[k]&&m[k].v!=null?fmt(m[k].v,2):'?',st=m.largeur&&m.largeur.statut||'estimée';return`${orName(e)} : ${f('largeur')} × ${f('profondeur')} × ${f('hauteur')} m (${st})`});return tl('or_sel',{l:L.join('¶')||'—'})}
+  const ask=[['prise',/prises?/,['socket']],['interrupteur',/interrupteurs?/,['switch']],['point lumineux',/points? lumineux|luminaires?|lumieres?|eclairage/,['light','ceiling_light','lamp']],['équipement sanitaire',/sanitaire|lavabo|evier|wc|douche|baignoire|canalisation/,['sink','wc','toilet','bath','shower','water','evier']]];
+  const L=[],no=[];for(const[k,re,ty]of ask){if(!re.test(r))continue;const f=E.filter(e=>ty.includes(e.type)||ty.includes(e.vcls)||k==='point lumineux'&&/lumi|plafonnier|lampe|spot/i.test(orName(e)));if(f.length)L.push(`${k[0].toUpperCase()+k.slice(1)}s : ${f.length} (${orList(f.map(orName))})`);else no.push(k)}if(no.length)L.push(tl('or_inv0',{k:no.join(', ')}))
+  if(/materiau|parpaing|palette|outil|machine|betonniere|echafaud|securite|garde.?corps|stockage|circulation/.test(r))L.push(tl('or_invx',{k:'les matériaux, outils et équipements de chantier (parpaings, palettes, machines, sécurité)'}));
+  if(L.length)return L.join('¶');
+  return tl('or_inv',{n:E.length,l:orList(E.map(orName))})}
+function orState(){const Q=rnvQty(),d=Q.dims;return tl('or_state',{w:`${S.walls.length} murs${d?`, ${fmt(d[0],2)} × ${fmt(d[1],2)} m`:''}, ${fmt(Q.H,2)} m sous plafond`,l:orList(S.eqs.map(orName))||'aucun'})}
+function orMissing(){const v=S.rnv&&S.rnv.vid,sp=window.__vidSpec||{},seen=v&&v.seen||sp.room&&sp.room.seen;if(!seen&&!(v&&v.notes))return'Je n\'ai pas gardé cette information pour cette maquette : refilmez la pièce, je vous dirai ensuite quels murs n\'ont pas été vus.';const L=[];if(seen){const nm={north:'le mur du fond',south:'le mur derrière vous',west:'le mur de gauche',east:'le mur de droite'};for(const k in nm)if(seen[k]===false)L.push(nm[k])}
+  const notes=((v&&v.notes)||sp.notes||[]).filter(x=>/non vu|derri/i.test(x));if(!L.length&&notes.length)L.push(...notes);return L.length?tl('or_miss',{l:L.join(', ')}):tl('or_miss0')}
+function orVariants(r){const COL=[['blanc','murs blancs'],['beige','murs beiges'],['gris','murs gris'],['vert','murs vert sauge'],['bleu','murs bleu'],['terracotta','murs terracotta']],MAT=[['brique','murs en brique'],['bois','murs en bois'],['pierre','murs en pierre'],['beton','murs en béton ciré'],['papier peint','murs papier peint'],['enduit','murs enduit à la chaux']];
+  const nW={deux:2,trois:3,quatre:4,cinq:5,six:6},m=/\b(\d|deux|trois|quatre|cinq|six)\b/.exec(r),n=m?(+m[1]||nW[m[1]]||3):3;let V=[];
+  const cs=COL.filter(([k])=>r.includes(k)),ms=MAT.filter(([k])=>r.includes(k));
+  if(/amenag|configuration|disposition|circulation|organisation/.test(r)){V=[['disposition actuelle',null],['meubles en miroir (gauche ↔ droite)','mx'],['meubles en miroir (avant ↔ arrière)','my'],['meubles retournés','mxy']].slice(0,Math.max(2,Math.min(4,n)))}
+  else if(cs.length>=2)V=cs.map(([k,c])=>[c,c]);else if(ms.length>=2||/materiau/.test(r))V=(ms.length>=2?ms:MAT).slice(0,n).map(([k,c])=>[c,c]);else V=COL.slice(0,n).map(([k,c])=>[c,c]);
+  S.orVar=V;S.orVarI=0;orApplyVar(0,true);return tl('or_var',{n:V.length,l:V.map((v,i)=>`${i+1}. ${v[0]}`).join('¶')})}
+function orApplyVar(i,first){const V=S.orVar;if(!V||!V[i])return false;const c=V[i][1];
+  if(c===null||/^m(x|y|xy)$/.test(c||'')){if(S.orVarBase)S.eqs=JSON.parse(S.orVarBase);else S.orVarBase=JSON.stringify(S.eqs);if(c)orMirror(c,true)}
+  else orRun(c);
+  S.orVarI=i;rebuild3();return true}
+function orMirror(ax,noHist){const fp=footprint();if(!fp)return 0;if(!noHist)pushHist();const F=S.eqs.filter(orFurn);
+  for(const e of F){if(/x/.test(ax)){e.x=fp.x0+fp.x1-e.x;e.rot=((180-(e.rot||0))%360+360)%360}if(/y/.test(ax)){e.y=fp.y0+fp.y1-e.y;e.rot=((360-(e.rot||0))%360+360)%360}}rebuild3();return F.length}
+function orPartition(){const Q=rnvQty(),d=Q.dims;if(!d)return null;const H=Q.H,len=Math.min(d[0],d[1]),s=len*H,w=d[0]<=d[1]?1:2;
+  return tl('or_clo',{w,l:fmt(len,2),h:fmt(H,2),s:fmt(s,1),p:Math.ceil(2*s*1.1/3),r:Math.ceil(2*len*1.1/3),m:Math.ceil((Math.floor(len/0.6)+2)*Math.max(1,H/3)),b:fmt(Math.ceil(2*s*1.1/3)*2*2.5,0)})}
+function orCost(){const E=rnvEstim(),sum=ks=>{let a=0,b=0;for(const x of E.rows)if(ks.includes(x.k)){a+=x.a;b+=x.b}return a===b?eur(a):eur(a)+'–'+eur(b)};return tl('or_cost',{a:sum(['paint','ceil']),b:sum(['prep','paint','ceil','dep','floor','plinth'])})}
+function orIdeas(){const Q=rnvQty(),k=(S.rnv&&RNAME[S.rnv.kind])||(S.rooms[0]&&S.rooms[0].name)||'pièce',ty=new Set(S.eqs.map(e=>e.vcls||e.type)),L=[];
+  L.push('1. Rafraîchir : « murs blancs et parquet clair »');
+  L.push(ty.has('bed')?'2. Rangement : « ajoute un dressing » le long du plus grand mur libre':'2. Rangement : « ajoute une bibliothèque »');
+  L.push(Q.A>14?'3. Coin bureau ou lecture : « ajoute un bureau » près de la fenêtre':'3. Plus d\'espace : « autre disposition » pour déplacer les meubles');
+  return tl('or_idea',{k:k.toLowerCase(),a:fmt(Q.A,0),l:L.join('¶')})}
+function orPmr(){const sc=S.scale,L=S.ops.filter(o=>o.type==='door').map((o,i)=>{const w=(o.c1-o.c0)*sc;return`Porte ${i+1} : ${fmt(w,2)} m ${w>=0.9?'✓':'— trop étroite (0,90 m conseillé)'}`});const Q=rnvQty(),d=Q.dims;
+  if(d)L.push(`Pièce de ${fmt(d[0],2)} × ${fmt(d[1],2)} m : ${Math.min(d[0],d[1])>=1.5?'un cercle de 1,50 m tient':'moins de 1,50 m de large'}`);return tl('or_pmr',{l:L.join('¶')||'—'})}
+function orCompare(){const cur=S.rnv&&S.rnv.vid;const P=projList().filter(p=>p.id!==S.pid&&p.d&&p.d.rnv&&p.d.rnv.vid);if(!cur||!P.length)return tl('or_two');
+  const o=P[0],sc0=o.d.scale||S.scale,sc=S.scale,A=o.d.eqs.filter(e=>e.vid).map(e=>({n:orName(e),x:e.x*sc0,y:e.y*sc0})),B=S.eqs.filter(e=>e.vid).map(e=>({n:orName(e),x:e.x*sc,y:e.y*sc}));
+  const used=new Set(),mv=[],gone=[];for(const a of A){let bi=-1,bd=1e9;B.forEach((b,i)=>{if(used.has(i)||b.n!==a.n)return;const dd=Math.hypot(a.x-b.x,a.y-b.y);if(dd<bd){bd=dd;bi=i}});if(bi<0){gone.push(a.n);continue}used.add(bi);if(bd>0.3)mv.push(`${a.n} (${fmt(bd,1)} m)`)}
+  const add=B.filter((b,i)=>!used.has(i)).map(b=>b.n),fp0=(()=>{let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;for(const w of o.d.walls){const ax=w.o==='h'?[w.a,w.b]:[w.p,w.p],ay=w.o==='h'?[w.p,w.p]:[w.a,w.b];x0=Math.min(x0,...ax);x1=Math.max(x1,...ax);y0=Math.min(y0,...ay);y1=Math.max(y1,...ay)}return[(x1-x0)*sc0,(y1-y0)*sc0]})(),d=rnvQty().dims;
+  const L=[`Ajoutés : ${orList(add)||'aucun'}`,`Retirés : ${orList(gone)||'aucun'}`,`Déplacés de plus de 30 cm : ${mv.join(', ')||'aucun'}`];if(d)L.push(`Dimensions : ${fmt(fp0[0],2)} × ${fmt(fp0[1],2)} m → ${fmt(d[0],2)} × ${fmt(d[1],2)} m`);
+  L.push('Les défauts ne sont pas encore comparés d\'une visite à l\'autre.');return tl('or_cmp',{n:o.name,d:new Date(o.at).toLocaleDateString(loc()),l:L.join('¶')})}
+function oeilRoute(raw){let tr0=null;try{tr0=toFr(String(raw))}catch(e){}if(tr0&&tr0.lang)S.chatLang=tr0.lang;const r0=nrm(tr0&&tr0.lang&&tr0.lang!=='fr'&&tr0.txt?tr0.txt:String(raw)).replace(/['’`´]/g,' ').replace(/[?!.;:]/g,' ').replace(/\s+/g,' ').trim(),r=' '+r0+' ',has=re=>re.test(r);
+  const prevN=S.orEqN0;S.orEqN0=S.eqs.length;const M=orModel(),ans=x=>{say('me',raw);S.rawMsg=raw;say('bot',x);return true};
+  // suites de conversation
+  if(S.orLast&&S.orLast.k==='srf'&&/^ ?(et )?(le |les |la )?(plafond|murs?|sol|volume)s? ?$/.test(r0))return ans(orSurfaces(r));
+  const vm=/^ ?variante (\d)/.exec(r0);if(vm&&S.orVar){const i=+vm[1]-1;if(orApplyVar(i))return ans(tl('or_varn',{i:i+1,l:S.orVar[i][0]}))}
+  if(/\bplus (fonce|sombre|clair)e?s?\b/.test(r0)&&r0.length<40&&S.orFin){const dark=/fonce|sombre/.test(r0),c=S.orFin.replace(/\b(clair|claire|fonce|foncee|sombre)s?\b/gi,'').trim()+(dark?' foncé':' clair');const o=orRun(c);if(o.ch){S.orFin=c;return ans(o.msgs.join('¶')||'C\'est fait.')}}
+  if(/\bplus (large|grand|long|petit|etroit)e?s?\b/.test(r0)&&r0.length<40&&S.eqs.length>(prevN||0)){const e=S.eqs[S.eqs.length-1],k=/petit|etroit/.test(r0)?0.8:1.25,D=eqDims(e);pushHist();e.sw=[+(D[0]*k).toFixed(2),D[1]];rebuild3();return ans(`${orName(e)} : ${k>1?'agrandi':'réduit'}, ${fmt(e.sw[0],2)} m de large.`)}
+  // demandes qui ont besoin d'une maison entière ou de l'extérieur
+  const ext=has(/\b(facade|toiture|toit|tuiles?|terrasse|piscine|jardin|extension|combles|maison (complete|entiere)|immeuble)\b/);
+  if(has(/\b(dessine|cree|imagine|concois)\w* (moi )?(une |un )?(maison|plain pied|villa)\b/)&&!M)return ans(tl('or_nodraw'));
+  if(has(/\b(compar\w*|avant .{0,40}apres|evolution|changements?|differences?)\b/)&&!has(/\bcout|prix|budget|devis\b/))return ans(M?orCompare():tl('or_two'));
+  if(!M){const q=r0.length>70?'cette demande':'« '+String(raw).trim().replace(/[.?!]+$/,'')+' »';
+    if(ext||has(/\bplan\b/))return ans(tl('or_plan',{q}));
+    if(has(/\b(video|photos?|filme|visite|piece|chambre|salon|cuisine|salle de bain|garage|appartement|maison|mur|plafond|sol|carrelage|chantier|bureau|local|commerce|meubles?|fissure|humidit|degrad|fuite|surface|m2|inventaire|identifie|reconnais|analyse|reconstru|maquette|3d|variante|propositions?|amenag|cloison|renov|moderne|lumineu|idees?|budget|ajoute|mets|place|enleve|retire|supprime|peins|repeins|remplace)\b/))return ans(tl('or_film',{q}));
+    return false}
+  // la maquette existe
+  if(/(parquet|carrel|moquette|lino|peint|\bmurs? (en |blanc|beige|gris|bleu|vert)|\bsol\b)/.test(r0)&&!/\bplus (fonce|sombre|clair)/.test(r0))S.orFin=String(raw);
+  if(has(/\b(manque|manquent|pas visibles?|non vus?|zones? (non|pas))\b/))return ans(orMissing());
+  if(has(/\b(caracteristiques?|selectionn\w*|fiches?)\b/))return ans(orInventory(r));
+  if(has(/\b(fissures?|lezardes?|humidit\w*|moisi\w*|taches?|degrad\w*|abime\w*|deterior\w*|ecaill\w*|casse\w*|fuites?|defauts?|endommag\w*)\b/)&&!has(/\b(ajoute|mets|place)\b/))return ans(orDefects(r));
+  if(has(/\b(surfaces?|m2|m²|metres? carres?|volumes?|quantites?|carreaux|combien de (carreaux|peinture|m))\b|\b(a |pour )(peindre|enduire|carreler)\b/))return ans(orSurfaces(r));
+  const cal=/\b(?:mur\s*(\d)|mur (?:du |de )?(fond|face|droite|gauche|derriere|entree))\b[^\d]{0,30}?(\d+(?:[.,]\d+)?)\s*(m|cm)\b/.exec(r);
+  if(cal&&S.rnv&&S.walls.length===4){let v=parseFloat(cal[3].replace(',','.'));if(cal[4]==='cm')v/=100;const w=cal[1]?+cal[1]:{fond:1,face:1,droite:2,derriere:3,entree:3,gauche:4}[cal[2]];const Q=rnvQty();
+    if(Q.dims&&v>=0.5&&v<=30){const ax=(w-1)%2,d=Q.dims.slice();d[ax]=v;pushHist();if(rnvResize(d[0],d[1])){rebuild3();const D=rnvQty().dims;return ans(tl('or_cal',{w,v:fmt(v,2),a:fmt(D[0],2),b:fmt(D[1],2)}))}}}
+  if(has(/\b(dimensions?|longueurs?|mesures?|taille)\b/)&&has(/\bmurs?\b/))return ans(orWalls());
+  if(has(/\bcloisons?\b|\b(separe|separer|diviser|couper) (la piece |le bureau |en deux)|deux espaces\b/))return ans(orPartition()||orState());
+  if(has(/\b(\d|deux|trois|quatre|cinq|six|plusieurs) (propositions?|variantes?|materiaux|couleurs|configurations?|options|possibilites|ambiances)\b|\bvariantes?\b/)||(has(/\bblanc/)&&has(/\bbeige/)&&has(/\bgris/)))return ans(orVariants(r));
+  if(has(/\b(identifie|inventaire|recense|liste|quels? sont|quelles? sont|reconnais|qu y a t il|prises?|interrupteurs?|points? lumineux|sanitaires?|outils|machines|palettes?|materiaux (presents|visibles|du chantier|sur ce chantier))\b/)&&!has(/\b(ajoute|mets|place|enleve|supprime)\b/))return ans(orInventory(r));
+  if(has(/\b(etat actuel|representation 3d|modele 3d|maquette 3d|reconstru\w*|copie numerique|jumeau)\b/)&&!has(/\b(ajoute|change|mets|remplace|transforme|moderne)\b/))return ans(orState());
+  if(has(/\b(supprim\w*|enlev\w*|retir\w*|vid\w*)\b.{0,30}\b(meubles|mobilier)\b|\b(uniquement|que) la structure\b/)){const F=S.eqs.filter(orFurn);if(!F.length)return ans(tl('or_empty0'));pushHist();S.eqs=S.eqs.filter(e=>!orFurn(e));rebuild3();return ans(tl('or_empty',{n:F.length}))}
+  if(has(/\b(remets?|remettre) (les |mes )?meubles\b/)){undo();return ans('Meubles remis.')}
+  if(has(/\b(organisation|disposition|reorganis\w*|agencement)\b/)&&!has(/\bvariantes?|configurations|propositions\b/)){S.orMir=((S.orMir||0)%3)+1;const n=orMirror(['x','y','xy'][S.orMir-1]);return ans(n?tl('or_mir',{n}):tl('or_empty0'))}
+  if(has(/\b(cout|couts|prix|budget)\b/)&&has(/\b(deux|2|comparer|solutions?|options?)\b/))return ans(orCost());
+  if(has(/\b(idees?|je ne sais pas|que faire|conseille?s?|inspiration)\b/))return ans(orIdeas());
+  if(has(/\b(pmr|accessib\w*|fauteuil roulant|mobilite reduite|difficultes? a se deplacer|handicap\w*)\b/))return ans(orPmr());
+  if(has(/\b(plus lumineu\w*|plus de lumiere|plus claire?)\b/)){let o=orRun('murs blancs');if(!o.ch){o=orRun('parquet chêne clair');if(o.ch)return ans('Les murs sont déjà blancs : j\'ai éclairci le sol (parquet chêne clair). Ensuite, si vous voulez : « ajoute un point lumineux ».')}if(o.ch)return ans('Pour la lumière sans tout changer : murs passés en blanc, la couleur qui renvoie le plus la lumière. Ensuite, si vous voulez : « plafond blanc », ou « ajoute un point lumineux ».')}
+  // « garder / conserver X » : X ne doit pas être ajouté ni changé ; une rénovation générale = ambiance moderne en gardant les meubles
+  const keep=[];const raw2=String(raw).replace(/\b(je veux |tout en |en )?(garder|conserver|garde|conserve|sans (perdre|toucher|changer))\s+(absolument\s+)?((?:mon|ma|mes|le|la|les|l')\s*[\wéèêàùç' -]+?)(?=,|\.| mais| et | et$|$)/gi,(m,a,b,c,d,e)=>{keep.push(e.trim());return ''});
+  if(keep.length||has(/\b(apres (une |la )?renovation|renov\w*|refaire|moderne|contemporain|changer (les )?(murs|sol|couleurs))\b/)&&!has(/\b(blanc|beige|gris|bleu|vert|rouge|noir|parquet|carrelage|moquette|beton|bois|brique|pierre|lino)\w*\b/)){
+    const o=orRun(has(/\bbudget\b/)?'ambiance moderne':'ambiance moderne');if(o.ch){say('me',raw);S.rawMsg=raw;say('bot',o.msgs.join('¶'));if(keep.length)say('bot',tl('or_keep',{l:keep.join(', ')}));if(has(/\bbudget\b/))say('bot',orCost());return true}
+    if(keep.length)return{raw:raw2}}
+  return false}
 function chatSend(raw){try{return chatSendX(raw)}catch(err){try{console.error(err)}catch(_){}S.chat0=null;S.chatPend=null;say('bot',tl('chat_oops'));try{rebuild3()}catch(_){}}}
-function chatSendX(raw){if(!CLIENT&&!(S.chatPend&&S.chatPend.kind)){let pro=false;try{pro=window.parent!==window&&window.parent.casoPont&&window.parent.casoPont.pourPro(raw)}catch(e){}if(pro){casoEmit('pro',{text:raw});return}}if(!S.cRetry){say('me',raw);S.rawMsg=raw}const tr=toFr(String(raw).replace(/(^|\s)\+\s*(\d)/g,'$1agrandis de $2').replace(/(^|\s)[-−]\s*(\d)/g,'$1reduis de $2'));S.chatLang=S.cRetry&&S.cLang?S.cLang:tr.lang;if(tr.lang==='tr'&&/\b(parquet|carrelage|moquette|lino|sol|faience)\b/.test(tr.txt))tr.txt=tr.txt.replace(/\bmeuble\b/g,'mets');else if(tr.lang==='tr'&&/ meuble$/.test(tr.txt))tr.txt='meuble '+tr.txt.replace(/ meuble$/,'');let txt=tr.lang==='fr'||tr.lang===LC&&LC==='fr'?fixTypos(tr.txt):tr.txt;
+function chatSendX(raw){if(!S.orIn&&(!(S.chatPend&&S.chatPend.kind)||S.chatPend.kind!=='yn'&&String(raw).trim().split(/\s+/).length>=3)){let rt=false;try{rt=oeilRoute(raw)}catch(e){try{console.error(e)}catch(_){}}if(rt===true){S.chatPend=null;return}if(rt&&rt.raw){S.orShow=raw;raw=rt.raw}}
+  if(!S.orIn&&!CLIENT&&!(S.chatPend&&S.chatPend.kind)){let pro=false;try{pro=window.parent!==window&&window.parent.casoPont&&window.parent.casoPont.pourPro(raw)}catch(e){}if(pro){casoEmit('pro',{text:raw});return}}if(!S.cRetry&&!S.orSilent){say('me',S.orShow||raw);S.rawMsg=S.orShow||raw;S.orShow=null}const tr=toFr(String(raw).replace(/(^|\s)\+\s*(\d)/g,'$1agrandis de $2').replace(/(^|\s)[-−]\s*(\d)/g,'$1reduis de $2'));S.chatLang=S.cRetry&&S.cLang?S.cLang:tr.lang;if(tr.lang==='tr'&&/\b(parquet|carrelage|moquette|lino|sol|faience)\b/.test(tr.txt))tr.txt=tr.txt.replace(/\bmeuble\b/g,'mets');else if(tr.lang==='tr'&&/ meuble$/.test(tr.txt))tr.txt='meuble '+tr.txt.replace(/ meuble$/,'');let txt=tr.lang==='fr'||tr.lang===LC&&LC==='fr'?fixTypos(tr.txt):tr.txt;
   const p=S.chatPend;if(p&&p.kind){S.chatPend=null;if(p.kind==='dg')try{if(rnvDgPick(p,raw))return}catch(e){}
     if(p.kind==='yn'){const A=[String(raw).toLowerCase().replace(/[!.?,¿¡]/g,' ').trim(),nrm(String(raw)).trim(),String(txt).trim()],has=re=>A.some(x=>re.test(x));if(has(/^(oui|ouais|ok|okay|d ?accord|vas ?y|fais ?le|yes|yeah|yep|sure|go|si|sí|sim|claro|vale|certo|va bene|da|tak|evet|tamam|olur|да|ага|давай|نعم|اي|ايوه|موافق)(?![\p{L}])/u)){p.fn();return}
       if(has(/^(non|nan|no|nao|não|nu|nie|hayir|hayır|нет|لا)(?![\p{L}])/u)){S.chatLang=p.lg||S.chatLang;say('bot',tl('chat_keep'));return}}
@@ -6560,7 +6711,7 @@ function chatSendX(raw){if(!CLIENT&&!(S.chatPend&&S.chatPend.kind)){let pro=fals
     if(p.kind==='eq'){const ty=VERBE.test(txt)?null:typeFromText(txt);if(ty){learnEq(p.word,ty.type,p);return}}
     if(p.kind==='col'){const c=VERBE.test(txt)?null:colorFromText(txt);if(c){learnCol(p.word,c,p);return}}}
   const h0=snap();S.chat0=snap3();const lastMv=S.lastMv;S.lastMv=false;
-  if(S.rnv)try{if(rnvEyeChat(raw,txt))return}catch(e){try{console.error(e)}catch(_){}}
+  if(S.rnv)try{if(rnvEyeChat(raw,txt)){if(!S.orIn&&/(parquet|carrel|sol|mur|peint|blanc|beige|gris|bleu|vert|bois|beton|clair|fonce)/.test(nrm(String(raw))))S.orFin=String(raw);return}}catch(e){try{console.error(e)}catch(_){}}
   // casô : revenir au mode Artisan par une phrase, dans sa langue (« mode artisan », « pro mode », « modo profesional »…)
   if(CLIENT){const rw=nrm(String(raw));if(/\b(mode (artisan|pro|professionnel)|version pro|je suis (un )?(artisan|professionnel)|passe en (mode )?(artisan|pro))\b/.test(txt)||/(^|\s)(mode|modo|modalita|tryb|mod|режим|وضع)\s+(artisan|pro|professional|profesional|profissional|professionale|zawodowy|profesyonel|meserias|профессионал\S*|المحترف)/.test(rw)||/\b(artisan|pro|professional|profesyonel|tradesperson)\s+(mode|modu)\b/.test(rw)){casoEmit('mode',{mode:'artisan'});return}}
   if(CLIENT&&/\b(envoie|envoyer|envoi|transmets|transmettre|fais suivre)\w*\b.*\b(artisan|pro|professionnel|devis|maquette|demande|modifications?|changements?)\b|^(envoie|envoyer|envoie le|envoie la|envoie les)$/.test(txt)){reqSheet();say('bot',tl('chat_view'));return}
