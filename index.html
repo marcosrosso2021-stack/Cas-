@@ -969,6 +969,10 @@ header .ttl{cursor:pointer}
 .enc-t{display:flex;flex-direction:column;gap:4px;margin-top:14px}.enc-t>b{font-size:26px}.enc-m{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--mut)}
 .enc-r{display:flex;flex-direction:row;align-items:center;gap:10px;text-align:start}.enc-r .it-t{flex:1;display:flex;flex-direction:column;align-items:flex-start;gap:2px}.enc-r.off .it-t,.enc-r.off>b{text-decoration:line-through;opacity:.6}.enc-r.neg>b{color:var(--ko)}
 .ac-del{display:block;margin:14px 0 0;color:var(--ko);font-size:13px}
+/* sécurité du compte : liens discrets en bas de Sauvegarde */
+#s-cpt .sec-d:not([hidden]){display:flex;flex-direction:column;align-items:center;gap:0;margin:26px 0 8px}
+.sec-d .lnk{margin:0;min-height:40px;font-size:13px;font-weight:500;color:var(--mut)}
+.sec-d .ac-del{color:var(--ko)}
 .btn.del-go{background:var(--ko);border-color:var(--ko);color:#fff;margin-top:16px}
 .cli-pl{display:flex;flex-direction:column;gap:6px;margin-top:8px}
 .cli-po{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);font:inherit;text-align:start;cursor:pointer}
@@ -1997,13 +2001,6 @@ body.tr-on{overflow:hidden}
   <button class="btn sec" id="notifBtn" onclick="enableNotif()">Recevoir une notification quand un client signe</button>
   <p class="mut" id="notifSt" style="margin:8px 0 0"></p>
  </div>
- <div class="card" id="acctCard" data-cp="ent" hidden>
-  <h2><span class="hi"><svg class="i"><use href="#i-user"/></svg></span><span id="acctName"></span></h2>
-  <div class="mut" id="acctMail"></div>
-  <button class="btn sec" style="margin-top:10px" onclick="rcNew()"><svg class="i"><use href="#i-shield"/></svg>Nouveau code de secours</button>
-  <button class="btn sec" id="bioBtn" hidden style="margin-top:8px" onclick="bioToggle()"><svg class="i"><use href="#i-shield"/></svg><span></span></button>
-  <button class="lnk ac-del" type="button" onclick="delOpen()">Supprimer mon compte</button>
- </div>
  <div class="en" data-cp="ent">
   <div class="card en-top">
    <label class="en-lg" aria-label="Logo"><span class="ent-lgv" id="eLogoV"></span><span class="en-lgp" aria-hidden="true"><svg class="i"><use href="#i-plus"/></svg></span><input type="file" accept="image/*" hidden onchange="entLogo(this)"></label>
@@ -2100,6 +2097,11 @@ body.tr-on{overflow:hidden}
   <button class="btn" onclick="backupNow()">Sauvegarder maintenant</button>
   <button class="btn sec" type="button" onclick="$('fJson').click()">Restaurer une sauvegarde</button>
   <input type="file" id="fJson" accept=".json,application/json" hidden onchange="importAll(this)">
+ </div>
+ <div class="sec-d" id="acctCard" data-cp="bk" hidden>
+  <button class="lnk" type="button" onclick="rcNew()">Nouveau code de secours</button>
+  <button class="lnk" id="bioBtn" type="button" hidden onclick="bioToggle()"><span></span></button>
+  <button class="lnk ac-del" type="button" onclick="delOpen()">Supprimer mon compte</button>
  </div>
 </section>
 
@@ -7316,7 +7318,7 @@ async function acSubmit(){
  $('acPass').value='';fillProf();renderAcct();bkSet('devis_welcomed',1);
  try{ONB.code=await rcSet()}catch(e){ONB.code=null}
  acBusy=false;btn.disabled=false;btn.textContent=i18nT('Créer mon compte');modeOpen(false)}
-function renderAcct(){const a=accountGet(),c=$('acctCard');if(!c)return;c.hidden=!a;if(a){$('acctName').textContent=a.prenom;$('acctMail').textContent=a.email}bioRender()}
+function renderAcct(){const a=accountGet(),c=$('acctCard');if(!c)return;c.hidden=!a;bioRender()}
 /* ouvrir casô avec Face ID / empreinte : la passkey du téléphone ouvre le coffre (le mot de passe reste valable) */
 const bioNom=()=>/iPhone|iPad|Macintosh/.test(navigator.userAgent)?'Face ID':'empreinte';
 async function bioRender(){const b=$('bioBtn');if(!b)return;const V=window.VAULT;if(!V||!V.on||!V.hasPw()||!(await V.bioOk())){b.hidden=true;return}
