@@ -287,5 +287,5 @@ Source du moteur et outils de traduction : le module « caso-ia » (moteur, cata
 - **Face ID / empreinte** (`app.faceid`) : un bouton, comme pour le code de secours ; il ouvre Sauvegarde et fait le réglage, ou dit que le téléphone ne le permet pas.
 - Ces phrases sont comprises en français ; « newsletter » dans les 10 langues. Les réponses sont traduites.
 - `veille.js` : « du nouveau » n'est une question sur la Newsletter qu'en début ou en fin de phrase (« on met du nouveau au sol » est un travail).
-- essais : 23 contrôles de plus dans `essai-fiabilite.js` (244).
+- essais : 23 contrôles de plus dans `essai-fiabilite.js` (245).
 
