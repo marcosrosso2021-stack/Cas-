@@ -40,7 +40,8 @@ await t('carte : fermée = titre et bouton ; ouverte = trois lignes ; rien d\'ex
  assert.ok(/Ça me concerne \?/.test(f)&&!/Pour qui/.test(f));assert.ok(/Pour qui/.test(o)&&/Quand/.test(o)&&/À faire/.test(o)&&!/Ça me concerne/.test(o));
  for(const h of [f,o]){assert.ok(!/<script|<img|<b>|javascript:/.test(h));assert.ok(/&lt;script&gt;/.test(h))}
  assert.ok(/href="https:\/\/www\.legifrance\.gouv\.fr\/x"/.test(V.carte({...it,url:'https://www.legifrance.gouv.fr/x'},true,{},A)));
- assert.ok(!/À faire/.test(V.carte({...it,aFaire:''},true,{},A)));assert.ok(/Une échéance approche/.test(V.carte({id:'a',titre:'T',dateVigueur:'2026-12-01'},false,{},A)))});
+ assert.ok(!/À faire/.test(V.carte({...it,aFaire:''},true,{},A)));assert.ok(/Du nouveau pour ton métier/.test(V.carte({id:'a',titre:'T',dateVigueur:'2026-12-01'},false,{},A)));
+ assert.ok(/Une échéance approche/.test(V.carte({id:'a',titre:'T',dateVigueur:'2026-12-01'},false,{},A,null,true)));assert.ok(/color:inherit/.test(V.carte({...it,url:'https://www.legifrance.gouv.fr/x'},true,{},A)))});
 
 await t('dans l\'appli (faux navigateur) : la carte arrive en haut du chat, s\'ouvre au toucher, ne revient pas ; rien en mode Bricoleur',async()=>{
  const vm=require('vm'),src=fs.readFileSync(path.join(__dirname,'..','chat','veille.js'),'utf8');
@@ -56,7 +57,7 @@ await t('dans l\'appli (faux navigateur) : la carte arrive en haut du chat, s\'o
  a.w.chatRender();assert.ok(a.log.html.indexOf('Devis : nouvelle mention')<a.log.html.indexOf('Bonjour'));
  a.ecoute.click({target:{closest:()=>({getAttribute:()=>'legifrance:A'})}});assert.ok(/Pour qui/.test(a.log.html)&&/Rien\./.test(a.log.html)&&/Texte officiel/.test(a.log.html));
  assert.strictEqual(JSON.parse(a.mem.caso_veille).vus['legifrance:A'],0);
- a.w.chatRender();assert.ok(/Pour qui/.test(a.log.html));
+ a.w.chatRender();assert.ok(/Pour qui/.test(a.log.html));assert.ok(/Du nouveau pour ton métier/.test(a.log.html)&&!/Une échéance approche/.test(a.log.html));
  const b=monter('bricoleur',items);await new Promise(r=>setTimeout(r,20));assert.strictEqual(b.w.appel,undefined);assert.strictEqual(b.log.html,'')});
 
 /* côté serveur */

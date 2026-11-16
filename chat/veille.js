@@ -43,14 +43,15 @@ function aMontrer(items,vus,prof,auj){
   if(v==null)return true;var p=palier(it,auj);return p>v&&p<4;
  }).slice(0,5);
 }
-function carte(it,ouvert,prof,auj,t){
- t=t||function(x){return x};var c=concerne(prof,it),q=quand(it,auj),rappel=palier(it,auj)>0&&palier(it,auj)<4;
+/* « rappel » : la carte a déjà été lue et revient parce que l'échéance approche */
+function carte(it,ouvert,prof,auj,t,rappel){
+ t=t||function(x){return x};var c=concerne(prof,it),q=quand(it,auj);
  var h='<div class="msg bot" data-veille-carte="'+esc(it.id)+'"><p style="font-size:.8em;opacity:.7;margin:0 0 4px">'+esc(t(rappel?'Une échéance approche':'Du nouveau pour ton métier'))+'</p>'
   +'<p data-noi18n lang="fr" style="font-weight:700;margin:0 0 10px">'+esc(it.titre)+'</p>';
  if(!ouvert)return h+'<button type="button" data-veille="'+esc(it.id)+'" style="background:var(--acc,#ffc21a);color:#18181a;border:0;border-radius:999px;padding:8px 14px;font:inherit;font-weight:700;cursor:pointer">'+esc(t('Ça me concerne ?'))+'</button></div>';
  var l=function(k,v){return v?'<div style="display:flex;gap:10px;margin:4px 0"><span style="flex:0 0 5em;opacity:.7">'+esc(t(k))+'</span><span data-noi18n lang="fr" style="min-width:0">'+esc(v)+'</span></div>':''};
  h+=l('Pour qui',c.texte)+l('Quand',q)+l('À faire',it.aFaire);
- if(/^https:\/\//.test(it.url||''))h+='<p style="margin:10px 0 0"><a href="'+esc(it.url)+'" target="_blank" rel="noopener noreferrer">'+esc(t('Texte officiel'))+'</a></p>';
+ if(/^https:\/\//.test(it.url||''))h+='<p style="margin:10px 0 0"><a href="'+esc(it.url)+'" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:underline;text-underline-offset:3px">'+esc(t('Texte officiel'))+'</a></p>';
  return h+'</div>';
 }
 
@@ -58,7 +59,7 @@ var api={concerne:concerne,quand:quand,palier:palier,aMontrer:aMontrer,carte:car
 if(typeof module!=='undefined'&&module.exports){module.exports=api;return}
 
 /* ---- dans l'appli ---- */
-var doc=racine.document,ouverts={},session={};
+var doc=racine.document,ouverts={},session={},revenu={};
 function lit(){try{var s=JSON.parse(racine.localStorage.getItem(K)||'null');if(s&&typeof s==='object')return s}catch(e){}return {}}
 function ecrit(s){try{racine.localStorage.setItem(K,JSON.stringify(s))}catch(e){}}
 function artisan(){try{var a=racine.accountGet&&racine.accountGet();return !a||a.mode!=='bricoleur'}catch(e){return true}}
@@ -68,7 +69,9 @@ function dessiner(){
  var log=doc.getElementById('chatLog');if(!log||!artisan())return;
  Array.prototype.forEach.call(log.querySelectorAll('[data-veille-carte]'),function(e){e.remove()});
  var s=lit(),auj=jour(),L=aMontrer(s.items,s.vus||{},prof(),auj).concat((s.items||[]).filter(function(it){return session[it.id]}));
- var vu={},h='';L.forEach(function(it){if(vu[it.id])return;vu[it.id]=1;h+=carte(it,!!ouverts[it.id],prof(),auj,tr)});
+ var vu={},h='';L.forEach(function(it){if(vu[it.id])return;vu[it.id]=1;
+  if(!Object.prototype.hasOwnProperty.call(revenu,it.id))revenu[it.id]=!!(s.vus&&Object.prototype.hasOwnProperty.call(s.vus,it.id));   // lue avant cette ouverture de l'appli : c'est un rappel
+  h+=carte(it,!!ouverts[it.id],prof(),auj,tr,revenu[it.id])});
  if(h)log.insertAdjacentHTML('afterbegin',h);
 }
 function ouvrir(id){
