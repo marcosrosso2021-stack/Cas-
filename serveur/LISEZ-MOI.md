@@ -256,6 +256,21 @@ Tests : `node outils/test-devis-canvas-appli.js` (avec `python3 -m http.server 8
 - **Ménage** : Mes services montre une ligne par service (on la touche pour changer le prix, la croix supprime). Au pointage, quand il n'y a encore ni chantier ni personne, on les crée sur place, ou en touchant un client. Le planning du jour sans créneaux va de 6 h à 21 h, et non plus de 0 h à 24 h. « Mon équipe » ne montre plus l'adresse technique d'office. La sauvegarde a un vrai bouton « Restaurer une sauvegarde ». Retirés : le bouton « Retour » en double dans le menu du compte, l'ancienne clé d'IA payante, la bande orange vide du plan et quelques textes d'explication.
 - Tests : `test-module-artisan.js`, `test-fiche-client.js`, `test-achats-fournisseurs.js`. La partie PDF du dernier test demande pdf.js dans `outils/pdfjs`, ou la variable `PDFJS`.
 
+## Prix des matériaux en ligne (16 novembre 2026)
+
+Page **Fournisseurs**, première barre (icône globe) : on tape un matériau, casô montre le produit, le prix public TTC et le magasin, du moins cher au plus cher. Le **+** l'ajoute à Mes prix en HT (TVA 20 %), le magasin devient fournisseur.
+
+Le serveur interroge Google Shopping par un service payant. Sa clé reste sur le serveur, jamais dans l'appli. Clever Cloud › Variables d'environnement :
+
+| Variable | Rôle |
+|---|---|
+| `SEARCHAPI_KEY` | clé SearchApi.io (conseillé), ou `SERPAPI_KEY` pour SerpApi |
+| `PRIX_JOUR` | recherches payantes au plus par jour pour tout le serveur (défaut 100) |
+| `PRIX_IP` | recherches payantes au plus par jour et par appareil (défaut 30) |
+| `PRIX_CACHE_H` | une même recherche n'est payée qu'une fois pendant ce temps, en heures (défaut 12) |
+
+Sans clé, la barre répond « Recherche de prix pas encore activée sur le serveur. ». Contrôles : `node tests/prix.test.js`.
+
 ## Apprentissage partagé du chat (10 novembre 2026)
 
 - `GET /api/appris?l=fr` et `POST /api/appris` (sans compte) : les appareils envoient les demandes de lecture apprises par leur chat
