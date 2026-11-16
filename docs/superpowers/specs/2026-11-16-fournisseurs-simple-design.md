@@ -23,7 +23,9 @@ Marcos trouve l'écran Fournisseurs confus : dans « Prix en ligne », produit, 
 3. Comparatif : une ligne par magasin. Cache les autres offres du magasin.
 
 ## L'écran
-Titre, deux onglets, une barre de recherche (comme aujourd'hui).
+Titre, deux onglets, une barre de recherche. Demande de Marcos après lecture : plus de globe, une loupe qui est le bouton de recherche ; elle s'allume en jaune dans « Prix en ligne » dès qu'il y a un mot à chercher.
+
+Accord de Marcos le 16 nov. 2026 (rangement par magasin, puis la loupe).
 
 ### Onglet « Mes fournisseurs »
 - Trois icônes rondes discrètes à droite de la barre : photo d'une facture, fichier, nouveau fournisseur. Plus de grands boutons ni de ligne « + Nouveau ».
