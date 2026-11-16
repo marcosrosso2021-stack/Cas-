@@ -13,7 +13,7 @@ db.invoices.push({id:'f1',kind:'facture',num:'F2026-001',qid:'q1',date:'2026-10-
 db.suppliers.push({id:'s1',nom:'Point P'},{id:'s2',nom:'Cedeo'});
 db.achats=[{id:'a1',four:'Point P',type:'facture',date:'2026-10-14',ttc:300,ht:250,cid:'c1',lines:[]}];
 db.hist.push({date:'2026-10-14',nom:'PLAQUE BA13 STD 2500x1200',four:'Point P',prix:8.95,unit:'u'},{date:'2026-10-02',nom:'Plaque BA13',four:'Cedeo',prix:9.4,unit:'u'},{date:'2026-10-14',nom:'Faïence',four:'Point P',prix:21,unit:'m²'});
-db.events.push({id:'e1',t:'rdv',d:d(-1),a:'10:00',b:'11:00',title:'Dupont',cid:'c2'},{id:'e2',t:'rdv',d:agAdd(agWeekStart(agToday()),-5),a:'08:00',b:'17:00',title:'Pose carrelage',cid:'c1'},{id:'e3',t:'rdv',d:agAdd(agWeekStart(agToday()),8),a:'08:00',b:'12:00',title:'Plinthes',cid:'c1'},{id:'e4',t:'rdv',d:agAdd(agWeekStart(agToday()),9),a:'14:00',b:'16:00',title:'Devis cuisine',cid:'c3'});
+db.events.push({id:'e1',t:'rdv',d:agToday()===agWeekStart(agToday())?agToday():d(-1),/* jamais la semaine dernière : « reprends le chantier de la semaine dernière » doit rester Martin, même un lundi */a:'10:00',b:'11:00',title:'Dupont',cid:'c2'},{id:'e2',t:'rdv',d:agAdd(agWeekStart(agToday()),-5),a:'08:00',b:'17:00',title:'Pose carrelage',cid:'c1'},{id:'e3',t:'rdv',d:agAdd(agWeekStart(agToday()),8),a:'08:00',b:'12:00',title:'Plinthes',cid:'c1'},{id:'e4',t:'rdv',d:agAdd(agWeekStart(agToday()),9),a:'14:00',b:'16:00',title:'Devis cuisine',cid:'c3'});
 db.plans.push({id:'pl1',pid:'pr1',cid:'c1',nom:'Salle de bain',date:Date.now()-864e5,th:'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==',pts:[],wm:[],h:{ok:true},ops:[]});
 db.quotes.push({id:'q3',num:'',client:'Martin',date:'2026-11-10',status:'brouillon',lines:[{label:'Peinture',qty:25,unit:'m²',pu:20,tva:10}],remise:0});
 db.chantiers=db.chantiers||[];db.pts=db.pts||[];db.chantiers.push({id:'ch1',cid:'c1',nom:'Martin',adr:'3 rue Victor Hugo, Lyon'});
@@ -22,7 +22,8 @@ db.maq3d=[{id:'m1',at:Date.now(),d:{estimation:{lignes:[{poste:'Rebouchage de fi
 /* [langue, phrases, textes attendus dans les réponses (dans l'ordre des phrases ; "" = pas de contrôle)] */
 const ESSAIS=[
  ["fr",["Il faut refaire le sol chez Martin, mettre du carrelage et prévoir les plinthes."],[/./]],
- ["fr",["Reprends le chantier de la semaine dernière."],[/Chantier Martin/]],
+ /* le lundi, le rendez-vous Dupont « hier » tombe aussi la semaine dernière : le chat demande alors lequel */
+ ["fr",["Reprends le chantier de la semaine dernière."],[/Chantier Martin|Plusieurs chantiers : Martin, Dupont/]],
  ["fr",["Il faut faire un ragréage avant le parquet."],[/D’abord ragréage, puis parquet/]],
  ["fr",["ragréage avant le parquet"],[/D’abord ragréage, puis parquet/]],
  ["fr",["Montre-moi tous les chantiers de la semaine prochaine."],[/Chantiers de la semaine prochaine.*Martin.*Petit/]],

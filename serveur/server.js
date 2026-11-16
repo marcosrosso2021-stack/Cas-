@@ -12,7 +12,7 @@
    Le même fichier peut être embarqué dans une application (voir createServer / start). */
 'use strict';
 const http=require('http'),fs=require('fs'),path=require('path'),crypto=require('crypto'),os=require('os');
-const webpush=require('./webpush.js'),prixLib=require('./prix.js');
+const webpush=require('./webpush.js'),prixLib=require('./prix.js'),authLib=require('./auth.js');
 
 const COLL=['prices','quotes','hist','chantiers','people','pts','prof','clients','suppliers','projects','plans','events','invoices'];
 const ROLE_PUSH={patron:COLL,chef:COLL,ouvrier:['pts']};
@@ -55,6 +55,7 @@ function createServer(opts={}){
  if(!data.invIds)data.invIds={};
  if(!data.signs)data.signs={};if(!data.sigreg)data.sigreg=Object.create(null);if(!data.subs)data.subs=[];if(!data.remSent)data.remSent={};if(!data.invSeq)data.invSeq={};if(!data.invShares)data.invShares={};if(!data.ics)data.ics={};
  if(!data.vapid){data.vapid=webpush.vapidKeys();try{const t=FILE+'.tmp';fs.writeFileSync(t,JSON.stringify(data));fs.renameSync(t,FILE)}catch(e){}}
+ const auth=authLib.creer(Object.assign({dir:DIR,hosted:HOSTED,maintenant:opts.maintenant},opts.auth||{}));// comptes des usagers : connexion Google / Microsoft (module AUTH)
  const prix=opts.prix||prixLib.creer();// prix des matériaux en ligne (clé SEARCHAPI_KEY ou SERPAPI_KEY)
  const pushSend=opts.pushSend||((sub,payload)=>webpush.send(sub,payload,data.vapid,{subject:process.env.VAPID_SUBJECT}));
  /* --- apprentissage partagé du chat : phrases apprises par les usagers, sans rien de personnel (fichier à part) --- */
@@ -343,9 +344,9 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
    if(NEWL&&req.method==='GET'&&url==='/devis.html'){/* module Devis, ouvert dans un cadre de l'appli */
     let html;try{html=fs.readFileSync(path.join(ROOT,'devis.html'),'utf8')}catch(e){return send(res,404,{error:'introuvable'})}
     return send(res,200,html,{'content-security-policy':CSP_APP.replace("frame-ancestors 'none'","frame-ancestors 'self'"),'x-frame-options':'SAMEORIGIN'})}
-   if(NEWL&&req.method==='GET'&&!url.includes('..')&&/^\/(?:chat|lib|i18n)\/[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)*\.(?:js|json|wasm|mjs)$/.test(url)){/* fichiers du chat, bibliothèques et traductions */
+   if(NEWL&&req.method==='GET'&&!url.includes('..')&&/^\/(?:chat|lib|i18n)\/[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)*\.(?:js|json|wasm|mjs|onnx)$/.test(url)){/* fichiers du chat, bibliothèques et traductions */
     let b;try{b=fs.readFileSync(path.join(ROOT,url))}catch(e){return send(res,404,{error:'introuvable'})}
-    const ty=url.endsWith('.json')?'application/json; charset=utf-8':url.endsWith('.wasm')?'application/wasm':'text/javascript; charset=utf-8';
+    const ty=url.endsWith('.json')?'application/json; charset=utf-8':url.endsWith('.wasm')?'application/wasm':url.endsWith('.onnx')?'application/octet-stream':'text/javascript; charset=utf-8';
     res.writeHead(200,Object.assign({'content-type':ty,'cache-control':'no-cache'},SEC));return res.end(b)}
    if(NEWL&&req.method==='GET'&&url==='/lib/m3d.html'){/* module 3D : lu par l'appli comme texte, puis mis dans son cadre */
     let b;try{b=fs.readFileSync(path.join(ROOT,'lib','m3d.html'))}catch(e){return send(res,404,{error:'introuvable'})}
@@ -420,6 +421,9 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
      notifySigned(sg).catch(()=>{});
      return send(res,200,publicSign(sg))}
     return send(res,405,{error:'méthode'})}
+
+   /* module AUTH : connexion directe avec Google ou Microsoft */
+   if(url.startsWith('/api/auth/'))return void await auth.traiter(req,res,{url,ip,send,readBody});
 
    /* ouvert à tous : état du serveur et adresses */
    if(req.method==='GET'&&url==='/api/ping')return send(res,200,{ok:true,app:'devis-btp',schema:3,sign:true});
@@ -637,7 +641,7 @@ data.invSeq[key]=n;if(iid)data.invIds[key+'|'+iid]=n;persist();return send(res,2
    return send(res,404,{error:'introuvable'});
   }catch(e){if(!e||!e.pub)console.error('[casô]',req.method,url,e&&e.stack||e);if(!res.headersSent)send(res,400,{error:e&&e.pub?e.message:'Requête invalide.'});else try{res.destroy()}catch(_){}}});
 
- return{server,data:()=>data,remindTick,icsFor};
+ return{server,data:()=>data,remindTick,icsFor,auth};
 }
 
 /* Démarrage prêt à l'emploi : utilisable depuis un lanceur ou depuis une application */

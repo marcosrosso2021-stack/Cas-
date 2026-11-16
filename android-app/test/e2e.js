@@ -42,7 +42,8 @@ function fakeAndroid(opts) {
 }
 
 async function open(browser, base, opts) {
-  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, locale: opts.locale || 'fr-FR' });
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, locale: opts.locale || 'fr-FR', hasTouch: !!opts.touch,
+    ...(opts.geo ? { geolocation: opts.geo, permissions: ['geolocation'] } : {}) });
   await ctx.route('https://data.geopf.fr/**', r => r.fulfill({
     status: 200, contentType: 'application/json',
     body: JSON.stringify({ features: [{ geometry: { coordinates: [2.35, 48.85] } }] })
@@ -52,7 +53,7 @@ async function open(browser, base, opts) {
   const errors = [];
   page.on('pageerror', e => errors.push(String(e.message || e)));
   await page.addInitScript(fakeAndroid, opts);
-  await page.goto(base + '/index.html');
+  await page.goto(base + '/index.html' + (opts.query || ''));
   await page.waitForFunction(() => typeof go === 'function' && typeof db === 'object' && !document.body.classList.contains('starting'), null, { timeout: 15000 }).catch(() => {});
   return { ctx, page, errors };
 }
@@ -89,6 +90,78 @@ const ptText = page => page.evaluate(() => { go('pt'); return document.getElemen
     const txt = await ptText(page);
     assert.ok(txt.includes('Pointer') && !has(txt, 'Pointage automatique'));
     assert.ok(await page.evaluate(() => !!document.getElementById('ptC')));
+    assert.deepStrictEqual(errors, []);
+    await ctx.close();
+  });
+
+  await check('écran Pointage simple : bouton dynamique, sans NFC, trois onglets', async () => {
+    const { ctx, page, errors } = await open(browser, base, { native: false, perm: {} });
+    await seed(page);
+    await page.evaluate(() => { db.chantiers = [{ id: 'w1', nom: 'Rue des Lilas' }]; db.events = []; save(); });
+    let txt = await ptText(page);
+    assert.ok(!/nfc/i.test(txt) && !txt.includes('Copier le lien'), txt.slice(0, 200));
+    assert.strictEqual(await page.evaluate(() => document.querySelectorAll('#ptSeg button').length), 3);
+    assert.strictEqual(await page.evaluate(() => document.getElementById('ptGo').textContent), 'Entrée');
+    assert.ok(await page.evaluate(() => document.getElementById('ptC').hidden && document.getElementById('ptP').hidden), 'un seul chantier et une seule personne : pas de listes');
+    if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'pointage-web-entree.png') });
+    await page.evaluate(() => manualPunch());
+    assert.strictEqual(await page.evaluate(() => document.getElementById('ptGo').textContent), 'Sortie');
+    txt = await ptText(page);
+    assert.ok(txt.includes('Présents') && txt.includes('Karim') && txt.includes('depuis'), txt.slice(0, 300));
+    if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'pointage-web-sortie.png') });
+    await page.clock.fastForward(60000); // la protection anti-double-tap dure 20 s
+    await page.evaluate(() => manualPunch());
+    assert.strictEqual(await page.evaluate(() => document.getElementById('ptGo').textContent), 'Entrée');
+    assert.strictEqual(await page.evaluate(() => db.pts.length), 2);
+    const h = await page.evaluate(() => { ptPage('h'); return document.getElementById('ptBody').innerText; });
+    assert.ok(h.includes('Journal') && h.includes('Heures'));
+    const set = await page.evaluate(() => { ptPage('set'); return document.getElementById('ptBody').innerText; });
+    assert.ok(set.includes('Chantiers') && set.includes('Personnes') && !/nfc/i.test(set));
+    assert.deepStrictEqual(errors, []);
+    await ctx.close();
+  });
+
+  await check('un ancien lien de tag ?p= ne pointe plus rien', async () => {
+    const { ctx, page, errors } = await open(browser, base, { native: false, perm: {}, query: '?p=abc&n=Test' });
+    assert.strictEqual(await page.evaluate(() => (db.pts || []).length), 0);
+    assert.deepStrictEqual(errors, []);
+    await ctx.close();
+  });
+
+  await check('iPhone / site web : pointage par la position, casô ouvert', async () => {
+    const here = { latitude: 48.85, longitude: 2.35, accuracy: 20 };
+    const { ctx, page, errors } = await open(browser, base, { native: false, touch: true, geo: here, perm: {} });
+    await page.waitForFunction(() => !!window.CasoAuto);
+    const { now } = await seed(page);
+    await page.evaluate(() => CasoAuto.run());              // zones inscrites, première lecture : arrivée
+    await page.clock.fastForward(70000);
+    await page.evaluate(() => CasoAuto.run());              // présence confirmée
+    let txt = await ptText(page);
+    assert.ok(txt.includes('Sur place'), txt.slice(0, 300));
+    assert.ok(!(await page.evaluate(() => !!document.getElementById('ptGo'))), 'pas de bouton quand ça pointe tout seul');
+    assert.ok(!/toujours/i.test(txt));
+    if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'pointage-web-gps.png') });
+    assert.strictEqual(await page.evaluate(() => db.pts.length), 1);
+    assert.strictEqual(await page.evaluate(() => db.pts[0].t), 'in');
+    await ctx.setGeolocation({ latitude: 48.86, longitude: 2.35, accuracy: 20 });   // il part (≈ 1 km)
+    await page.clock.fastForward(60000);
+    await page.evaluate(() => CasoAuto.run());
+    await page.clock.fastForward(11 * 60000);
+    await page.evaluate(() => CasoAuto.run());
+    const pts = await page.evaluate(() => db.pts.map(p => p.t));
+    assert.deepStrictEqual(pts, ['in', 'out']);
+    assert.deepStrictEqual(errors, []);
+    await ctx.close();
+  });
+
+  await check('iPhone / site web : sans autorisation, une phrase et « Autoriser »', async () => {
+    const { ctx, page, errors } = await open(browser, base, { native: false, touch: true, perm: {} });
+    await page.waitForFunction(() => !!window.CasoAuto);
+    await seed(page);
+    await page.evaluate(() => CasoAuto.run());
+    const txt = await ptText(page);
+    assert.ok(txt.includes('Autoriser') && txt.includes('casô est ouvert') && !/toujours/i.test(txt), txt.slice(0, 300));
+    assert.ok(await page.evaluate(() => !!document.getElementById('ptC')), 'le pointage manuel reste');
     assert.deepStrictEqual(errors, []);
     await ctx.close();
   });
@@ -132,7 +205,7 @@ const ptText = page => page.evaluate(() => { go('pt'); return document.getElemen
 
     const heures = await page.evaluate(() => { go('pt'); ptPage('h'); return document.getElementById('ptBody').innerText; });
     assert.ok(heures.includes('0 h 46') || heures.includes('0 h 45'), heures.slice(0, 300));
-    const journal = await page.evaluate(() => { ptPage('j'); return document.getElementById('ptBody').innerText; });
+    const journal = await page.evaluate(() => { ptPage('h'); return document.getElementById('ptBody').innerText; });
     assert.ok(journal.includes('Entrée') && journal.includes('Sortie') && journal.includes('automatique (GPS)'), journal.slice(0, 400));
     const zone = await page.evaluate(() => { ptPage('set'); return document.getElementById('ptBody').innerText; });
     assert.ok(zone.includes('Zone 100 m'));

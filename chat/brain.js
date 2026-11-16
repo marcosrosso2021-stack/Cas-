@@ -829,7 +829,10 @@ function create(E,X,saved,opts){
     if(!t){S.pending={type:"rdv",cmd:a};return R(tr("À quelle heure ?"));}
     return createRdv(d,t,+a.duree_min||60,k,a.titre);};
   function findRdv(a){var k=a.client?clientKey(a.client):null,d=fromIso(a.date);
-    var l=S.rdv.filter(function(r){return (!k||r.client===k)&&(!d||sod(new Date(r.start)).getTime()===d.getTime());});if(!k&&!d)l=S.rdv.filter(function(r){return r.start>=B.now().getTime();});return l[0]||null;}
+    var l=S.rdv.filter(function(r){return (!k||r.client===k)&&(!d||sod(new Date(r.start)).getTime()===d.getTime());});if(!k&&!d)l=S.rdv.filter(function(r){return r.start>=B.now().getTime();});
+    /* sans date dite : le prochain rendez-vous du client, pas un rendez-vous déjà passé */
+    else if(!d){var t0=sod(B.now()).getTime(),av=l.filter(function(r){return r.start>=t0;});l=av.length?av:l.slice().reverse();}
+    return l[0]||null;}
   X_["planning.annuler"]=function(a){var r=findRdv(a);if(!r)return R(tr("Je ne trouve pas ce rendez-vous."));S.rdv=S.rdv.filter(function(x){return x!==r;});emit("planning","annuler",r);return R(tr("Annulé : {0}.",[fmtRdv(r)]));};
   X_["planning.deplacer"]=function(a){var r=findRdv({client:a.client});if(!r)return R(tr("Je ne trouve pas le rendez-vous à déplacer."));
     var old=new Date(r.start),nd=fromIso(a.date)||sod(old),nt=a.heure?{h:+a.heure.slice(0,2),m:+a.heure.slice(3,5)}:{h:old.getHours(),m:old.getMinutes()};

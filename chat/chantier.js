@@ -139,6 +139,8 @@ function etatFa(f){try{return faState(f);}catch(x){return "";}}
 var ETFA={payee:"payée",attente:"en attente",retard:"en retard",partielle:"payée en partie",brouillon:"brouillon",avoir:"avoir",annulee:"annulée"};
 var ETDV={brouillon:"brouillon",envoye:"envoyé",accepte:"accepté",refuse:"refusé",paye:"payé",signe:"signé"};
 function occ(ev){try{return ev.rr?agNextOcc(ev,ev.d):ev.d;}catch(x){return ev.d;}}
+function heuresEntre(cid,r){var h=0;try{var C=(db.chantiers||[]).filter(function(c){return !cid||c.cid===cid;}).map(function(c){return c.id;}),A=new Date(r.a+"T00:00").getTime(),Bf=new Date(r.b+"T23:59").getTime();
+  if(C.length&&typeof sessions==="function")sessions().forEach(function(x){if(x.a&&x.b&&C.indexOf(x.c)>=0&&x.a>=A&&x.a<=Bf)h+=(x.b-x.a)/36e5;});}catch(x){}return Math.round(h*10)/10;}
 function jour(d){try{return agFmtD(d,{weekday:"short",day:"numeric",month:"numeric"});}catch(x){return d;}}
 function heure(ev){try{return ev.a?agFmtR(ev):"";}catch(x){return ev.a||"";}}
 function ml(titre,sous,droite,clic){return '<div class="ml"'+(clic?' role="button" tabindex="0" style="cursor:pointer" onclick="'+clic+'"':'')+'><div><b data-noi18n>'+e(titre)+'</b>'+(sous?'<div class="mut" dir="auto">'+e(sous)+'</div>':'')+'</div>'+(droite?'<b data-noi18n>'+e(droite)+'</b>':'')+'</div>';}
@@ -167,11 +169,16 @@ function photos(c,D){var I=[];D.PL.forEach(function(x){if(x.th)I.push({src:x.th,
   D.Q.forEach(function(o){var im=o.cv&&o.cv.imgs||{};Object.keys(im).forEach(function(k){if(/^data:image\//.test(im[k]||""))I.push({src:im[k],clic:"casoPont.voir('"+e(o.id)+"')"});});});
   return I.slice(0,12);}
 function derniereModif(c){var k=cle(c.nom),L=jLit();for(var i=L.length-1;i>=0;i--){var o=L[i];if(o.ch.some(function(x){return cle(x.cl)===k||cle(x.n)===k;}))return T("Dernière modification : {0}",[quand(o.at)+(o.qui?" · "+o.qui:"")]);}return "";}
-function fiche(t,c,mode){langue();TOUR.t=null;var D=donnees(c),h=[],tete='<p dir="auto"><b>'+e(T("Chantier {0}",[c.nom]))+'</b>'+(c.adr?'<br><span class="mut">'+e(c.adr)+'</span>':'')+'</p>';
+function fiche(t,c,mode,r){langue();TOUR.t=null;var D=donnees(c),h=[],tete='<p dir="auto"><b>'+e(T("Chantier {0}",[c.nom]))+'</b>'+(c.adr?'<br><span class="mut">'+e(c.adr)+'</span>':'')+'</p>';
   if(mode==="photos"){var I=photos(c,D);if(!I.length){bulle(t,p(T("Pas de photo pour {0}.",[c.nom])));return true;}
     bulle(t,tete+'<div style="display:flex;flex-wrap:wrap;gap:6px">'+I.map(function(x){return '<img src="'+e(x.src)+'" alt="" style="width:72px;height:72px;object-fit:cover;border-radius:8px'+(x.clic?';cursor:pointer" onclick="'+x.clic:'')+'">';}).join("")+'</div>');return true;}
   if(mode==="docs"){h.push(bloc("Devis",D.Q.slice(0,6).map(lQ)),bloc("Factures",D.F.slice(0,6).map(lF)),bloc("Plans",D.PL.slice(0,6).map(lP)),bloc("Rénovations 3D",D.M3.slice(0,3).map(lM)));}
-  else if(mode==="fait"){h.push(bloc("Travaux faits",lignesTravaux(D.Q).slice(0,8).map(function(l){return ml(l,"","","");})),bloc("Derniers passages",D.passe.slice(0,5).map(function(x){return lE(x,x.d);})));
+  else if(mode==="fait"){
+    /* « la semaine dernière » : seulement les passages et les heures de cette période */
+    var PS=r?D.passe.filter(function(x){return x.d>=r.a&&x.d<=r.b;}):D.passe,hr=r?heuresEntre(c.id,r):0;
+    h.push(bloc("Travaux faits",lignesTravaux(D.Q).slice(0,8).map(function(l){return ml(l,"","","");})),bloc(r?"Passages":"Derniers passages",PS.slice(0,8).map(function(x){return lE(x,x.d);})));
+    if(r&&hr)h.push('<p class="mut" dir="auto">'+e(T("Heures pointées : {0} h",[N(hr)]))+'</p>');
+    if(r&&!PS.length&&!hr)h.push(p(T("Aucun passage sur cette période.")));
     if(D.h>=0.5)h.push(p(T("Heures pointées : {0} h",[N(D.h)])));if(D.F.length)h.push(bloc("Factures",D.F.slice(0,4).map(lF)));}
   else if(mode==="reste"){h.push(bloc("Prochains rendez-vous",D.avenir.slice(0,3).map(function(x){return lE(x.e,x.d);})));
     if(D.aFac.length)h.push(bloc("Reste à facturer",D.aFac.map(lQ)));if(D.du>0.005)h.push(p(T("Reste dû : {0}",[E(D.du)])));}
@@ -207,12 +214,15 @@ function plage(s){if(typeof agWeekStart!=="function"||typeof agAdd!=="function")
 var TITRE={sp:"Chantiers de la semaine prochaine :",sd:"Chantiers de la semaine dernière :",cs:"Chantiers de cette semaine :",ad:"Chantiers d’après-demain :",de:"Chantiers de demain :",ah:"Chantiers d’avant-hier :",hi:"Chantiers d’hier :",au:"Chantiers d’aujourd’hui :"};
 var AUCUN={sp:"Aucun chantier la semaine prochaine.",sd:"Aucun chantier la semaine dernière.",cs:"Aucun chantier cette semaine.",ad:"Aucun chantier après-demain.",de:"Aucun chantier demain.",ah:"Aucun chantier avant-hier.",hi:"Aucun chantier hier.",au:"Aucun chantier aujourd’hui."};
 function evenements(r){var out=[];if(typeof agDayEvents!=="function")return out;for(var d=r.a;d<=r.b;d=agAdd(d,1))agDayEvents(d).forEach(function(x){if(x.t==="rdv")out.push({e:x,d:d});});return out;}
+var PREVU=W("j ai quoi|quoi de prevu|qu est ce que j ai|qu est ce qu il y a|qu est ce qui est prevu|de prevu|mon programme|what do i have|what s on|what have i got|que tengo|o que tenho|cosa ho|che ho|ce am|co mam|neyim var|ne var|что у меня|ماذا لدي|ماذا عندي"),
+ HRS=W("combien d heures|nombre d heures|heures pointees|heures faites|heures passees|how many hours|hours worked|cuantas horas|quantas horas|quante ore|cate ore|ile godzin|kac saat|сколько часов|كم ساعة"),
+ RIEN={sp:"Rien de prévu la semaine prochaine.",sd:"Rien au planning la semaine dernière.",cs:"Rien de prévu cette semaine."};
 var JOB=W("chantiers?|travaux|jobs?|sites?|obras?|cantier[ei]|lucrar\\p{L}*|santier\\p{L}*|budow\\p{L}*|prac\\p{L}*|isler\\p{L}*|isi|santiye\\p{L}*|объект\\p{L}*|работ\\p{L}*|ورش\\p{L}*|الورش\\p{L}*"),
  JOBS=W("chantiers|jobs|sites|obras|cantieri|lucrarile|lucrari|santiere|budowy|prace|isler\\p{L}*|объекты|работы|ورشات|الورشات"),
  FICHE=W("fiche|dossier|rapport|bilan|resume|recap\\p{L}*|etat|suivi|infos?|informations?|tout sur|report|summary|overview|informe|resumen|ficha|relatorio|resumo|rapporto|riepilogo|scheda|raport|fisa|rezumat|podsumowanie|rapor|ozet|отчет|сводк\\p{L}*|карточк\\p{L}*|تقرير|ملخص|ملف"),
  PHOTOS=W("photos?|images?|pictures?|pics|fotos?|fotografi\\p{L}*|imagini|poze|zdjeci\\p{L}*|fotograflar\\p{L}*|resimler\\p{L}*|фото\\p{L}*|صور|الصور"),
  DOCS=W("documents?|docs?|papiers|pieces jointes|fichiers?|files|paperwork|documentos|documenti|documente|dokumenty|belgeler\\p{L}*|evrak\\p{L}*|документ\\p{L}*|مستندات|وثائق|الوثائق"),
- FAIT=W("(?:qu est ce que|qu est ce qu|ce que|quoi) (?:j ai|on a|nous avons|l equipe a|ils ont|il a) (?:fait|realise|termine)|j ai fait quoi|on a fait quoi|qu est ce qui a ete fait|travaux faits|what did (?:i|we) do|what have (?:i|we) done|what was done|que hice|que hicimos|que he hecho|o que fiz|o que fizemos|cosa ho fatto|che ho fatto|cosa abbiamo fatto|ce am facut|co zrobil\\p{L}*|ne yapt\\p{L}*|что (?:я|мы) сделал\\p{L}*|что сделано|ماذا فعلت|ماذا انجزت"),
+ FAIT=W("(?:qu est ce que|qu est ce qu|ce que|ce qu|quoi) (?:j ai|on a|nous avons|l equipe a|ils ont|il a) (?:fait|realise|termine)|j ai fait quoi|on a fait quoi|qu est ce qui a ete fait|travaux faits|what did (?:i|we) do|what have (?:i|we) done|what was done|que hice|que hicimos|que he hecho|o que fiz|o que fizemos|cosa ho fatto|che ho fatto|cosa abbiamo fatto|ce am facut|co zrobil\\p{L}*|ne yapt\\p{L}*|что (?:я|мы) сделал\\p{L}*|что сделано|ماذا فعلت|ماذا انجزت"),
  RESTE=W("reste a faire|reste a facturer|qu est ce qu il reste|ce qu il reste|il reste quoi|reste quoi|qu est ce qui reste|what s left|what is left|left to do|still to do|que queda|lo que falta|que falta|o que falta|cosa resta|cosa manca|ce a ramas|ce mai (?:e|este) de facut|co zostalo|ne kald\\p{L}*|что осталось|ماذا بقي|ما المتبقي|ما الباقي"),
  REPR=W("reprends?|reprenons|reprendre|retourne|retournons|continue|continuons|resume|pick up|go back to|retoma|retomar|retomemos|riprendi|riprendiamo|reia|reluam|wznow|wracamy|devam|kaldigimiz|продолж\\p{L}*|вернемся|استانف|نكمل|اكمل"),
  MONTRE=W("montre|affiche|liste|donne|quels?|quelles?|tous|toutes|j ai quoi|qu est ce que j ai|voir|ou sont|show|list|what|which|all|muestra|ensename|cuales|todas|mostra|mostrami|quali|tutti|arata|care|toate|pokaz|jakie|wszystkie|goster|hangi|tum|покажи|какие|все|ارني|اعرض|ما هي"),
@@ -229,17 +239,40 @@ P.chantier=function(t){if(!P.ready||typeof db==="undefined")return false;var c=f
   if(r&&(JOB.test(s)||/\binterventions?\b/.test(s))&&!cl&&(MONTRE.test(s)||JOBS.test(s))){langue();var V=evenements(r);
     if(!V.length){bulle(t,p(T(AUCUN[r.k])));return true;}
     bulle(t,p(T(TITRE[r.k]))+'<div class="msg-lines">'+V.slice(0,20).map(function(x){var n=x.e.cid&&cliDe(x.e.cid);return ml(jour(x.d)+(x.e.a?" · "+heure(x.e):""),[n?n.nom:"",x.e.title||"",x.e.adr||""].filter(Boolean).join(" · "),"",typeof agOpen==="function"?"agOpen('"+e(x.d)+"')":"");}).join("")+'</div>');return true;}
+  /* « j'ai quoi cette semaine ? », « qu'est-ce que j'ai de prévu la semaine prochaine ? » : la liste, pas seulement l'écran */
+  if(r&&!cl&&/^(sp|sd|cs)$/.test(r.k)&&PREVU.test(s)){langue();TOUR.t=null;var V2=evenements(r);
+    if(!V2.length){bulle(t,p(T(RIEN[r.k])));return true;}
+    bulle(t,'<div class="msg-lines">'+V2.slice(0,20).map(function(x){var n=x.e.cid&&cliDe(x.e.cid);return ml(jour(x.d)+(x.e.a?" · "+heure(x.e):""),[n?n.nom:"",x.e.title&&(!n||cle(x.e.title)!==cle(n.nom))?x.e.title:"",x.e.adr||""].filter(Boolean).join(" · "),"",typeof agOpen==="function"?"agOpen('"+e(x.d)+"')":"");}).join("")+'</div>');return true;}
+  /* « combien d'heures chez Martin ? », « combien d'heures cette semaine ? » : les heures pointées */
+  if(HRS.test(s)&&(cl||r)){langue();TOUR.t=null;var hh=r?heuresEntre(cl?cl.id:null,r):Math.round(heures(cl.id)*10)/10;
+    bulle(t,p(cl?T("Heures pointées chez {0} : {1} h",[cl.nom,N(hh)]):T("Heures pointées : {0} h",[N(hh)])));return true;}
   if(/\d/.test(t))return false;
+  /* « montre-moi Martin », « affiche Martin » : la fiche du chantier (pas « mettre à jour la fiche ») */
+  if(cl&&MONTRE.test(s)&&!(" "+c.p+" ").replace(/\b(montre|montrez|affiche|voir|moi|m|le|la|les|l|du|de|d|chantier|client|fiche|dossier|chez|tout|sur|show|me|display)\b/g," ").split(" "+cle(cl.nom)+" ").join(" ").trim())return fiche(t,cl,"fiche");
   if(!cl&&/\bce (chantier|client)\b/.test(s)&&typeof q!=="undefined"&&q&&q.client)cl=cliNom(q.client);
   if(!cl)return false;
   if(PHOTOS.test(s))return fiche(t,cl,"photos");
   if(DOCS.test(s))return fiche(t,cl,"docs");
-  if(FAIT.test(s))return fiche(t,cl,"fait");
+  if(FAIT.test(s))return fiche(t,cl,"fait",r);
   if(RESTE.test(s))return fiche(t,cl,"reste");
   if((FICHE.test(s)&&(JOB.test(s)||/\b(chez|client)\b/.test(s)||FICHE.test(" "+c.p+" "))||/\bchantiers? (de|chez|du) /.test(s))&&!FINI.test(s))return fiche(t,cl,"fiche");
   return false;};
 
+/* ================= conflits de planning ================= */
+/* « y a-t-il des conflits dans mon planning ? » : deux rendez-vous à la même heure, sur 30 jours (ou la période dite) */
+var CONF=W("conflits?|chevauch\\p{L}*|en meme temps|a la meme heure|deux rendez vous|doublons?|overlap\\p{L}*|conflicts?|clash\\p{L}*|double booked|conflictos?|solap\\p{L}*|a la misma hora|conflitos?|sobrepo\\p{L}*|mesma hora|conflitti|sovrappo\\p{L}*|stessa ora|conflicte|conflict|suprapun\\p{L}*|aceeasi ora|konflikt\\p{L}*|nakladaj\\p{L}*|kolizj\\p{L}*|cakis\\p{L}*|ayni saat\\p{L}*|конфликт\\p{L}*|пересека\\p{L}*|накладк\\p{L}*|тоже время|تعارض|تداخل|نفس الوقت");
+function mn(h){var m=String(h||"").match(/^(\d{1,2}):(\d{2})/);return m?+m[1]*60+ +m[2]:null;}
+P.conflits=function(t){if(!P.ready||typeof db==="undefined"||typeof agDayEvents!=="function")return false;var c=fr(t),s=" "+c.p+" "+nrm(t)+" ";
+  if(!CONF.test(s)||ACT.test(c.p))return false;langue();TOUR.t=null;
+  var r=plage(s),a=r?r.a:aujourdhui(),b=r?r.b:agAdd(aujourdhui(),29),C=[];
+  for(var d=a;d<=b;d=agAdd(d,1)){var L=agDayEvents(d).filter(function(x){return x.t==="rdv"&&mn(x.a)!=null;});
+    for(var i=0;i<L.length;i++)for(var j=i+1;j<L.length;j++){var x=L[i],y=L[j],xa=mn(x.a),xb=mn(x.b)!=null?mn(x.b):xa+60,ya=mn(y.a),yb=mn(y.b)!=null?mn(y.b):ya+60;
+      if(xa<yb&&ya<xb)C.push({d:d,x:x,y:y});}}
+  var nom=function(ev){var n=ev.cid&&cliDe(ev.cid);return [heure(ev),n?n.nom:(ev.title||"")].filter(Boolean).join(" ");};
+  if(!C.length){bulle(t,p(r?T("Aucun conflit sur cette période."):T("Aucun conflit dans ton planning sur les 30 prochains jours.")));return true;}
+  bulle(t,p(T(C.length>1?"{0} conflits dans ton planning :":"1 conflit dans ton planning :",[C.length]))+'<div class="msg-lines">'+C.slice(0,12).map(function(k){return ml(jour(k.d),nom(k.x)+" / "+nom(k.y),"","agOpen('"+e(k.d)+"')");}).join("")+'</div>');return true;};
+
 /* ================= branchement : avant les questions sur l'activité ================= */
 (function brancher(n){if(typeof P.question!=="function"){if(n<120)setTimeout(function(){brancher(n+1);},500);return;}if(P.question.chantier)return;
-  var q0=P.question;P.question=function(t){try{if(P.lexique(t)||P.historique(t)||P.chantier(t))return true;}catch(x){if(window.console)console.error(x);}return q0.apply(this,arguments);};P.question.chantier=true;})(0);
+  var q0=P.question;P.question=function(t){try{if(P.lexique(t)||P.historique(t)||P.conflits(t)||P.chantier(t))return true;}catch(x){if(window.console)console.error(x);}return q0.apply(this,arguments);};P.question.chantier=true;})(0);
 })();

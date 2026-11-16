@@ -35,8 +35,10 @@ await t('limites : par adresse et par jour',async()=>{const f=faux(REP),p=creer(
  assert.strictEqual((await p.chercher('a3','FR','A'))[0],429);
  assert.strictEqual((await p.chercher('b1','FR','B'))[0],200);assert.strictEqual((await p.chercher('b2','FR','B'))[0],429);
  assert.strictEqual(f.appels.length,3)});
-await t('recherche trop courte : 400 ; service en panne : 502 sans détail',async()=>{const p=creer({env:{SEARCHAPI_KEY:'k'},fetch:faux({error:'Invalid API key k'},401)});
+await t('recherche trop courte : 400 ; service en panne : 502 sans détail',async()=>{const p=creer({env:{SEARCHAPI_KEY:'k'},log:()=>{},fetch:faux({error:'Invalid API key k'},401)});
  assert.strictEqual((await p.chercher('a','FR','1'))[0],400);const [c,b]=await p.chercher('placo','FR','1');assert.strictEqual(c,502);assert.ok(!/k\b|Invalid/.test(b.error))});
+await t('SerpApi « aucun résultat » : liste vide, pas une panne',async()=>{const p=creer({env:{SERPAPI_KEY:'k'},log:()=>{},fetch:faux({error:"Google hasn't returned any results for this query."})});
+ const [c,b]=await p.chercher('xyzxyz','FR','1');assert.strictEqual(c,200);assert.deepStrictEqual(b,[])});
 await t('serveur : GET /api/prix sans compte',async()=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'caso-prix-'));
  const {createServer}=require('../serveur/server.js');
