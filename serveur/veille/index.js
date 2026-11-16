@@ -83,7 +83,8 @@ function creer(opts={}){
  function passer(){if(!enCours)enCours=faire().finally(()=>{enCours=null});return enCours}
  /* un passage par jour, à partir de 5 h (heure universelle) */
  function aFaire(d){return d.getUTCHours()>=5&&String(base.etat().dernierPassage).slice(0,10)!==d.toISOString().slice(0,10)}
- const etat=()=>Object.assign(base.etat(),{sources:src.actives()});
+ /* « erreursDernier » : les sources en erreur au dernier passage seulement */
+ const etat=()=>{const p=base.dernieres(200).find(x=>x.type==='passage');return Object.assign(base.etat(),{sources:src.actives(),erreursDernier:p&&p.detail?p.detail.erreurs||0:0})};
  const liste=fi=>base.liste(fi).filter(f=>!fi||((!fi.priorite||f.priorite===fi.priorite)&&(!fi.domaine||(f.domaines||[]).includes(fi.domaine)))).map(voir);
  return {passer,aFaire,etat,liste,lire:id=>base.lire(id),decider,journal:n=>base.dernieres(n||50),lettre,aAnnoncer,annonce};
 }
