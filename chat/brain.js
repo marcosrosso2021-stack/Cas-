@@ -1539,7 +1539,8 @@ function create(E,X,saved,opts){
     return L.sort(function(a,b){return b.score-a.score;});}
   /* remplir le devis à partir du modèle choisi : les prix de la base d'abord, sinon ceux du modèle */
   function devisDepuis(k,m){var d=newDevis(k);d.modele=m.nom;if(S.maSignature)d.sig.artisan=S.maSignature;if(d.sig.artisan)d.statut="signé";
-    m.lignes.forEach(function(l){var sv=findService(l[0]),p=sv&&sv.prix!=null?sv.prix:(l[3]!=null?l[3]:null);d.lignes.push({libelle:l[0],quantite:l[1],unite:l[2]||"forfait",prix:p});});
+    /* modèle du métier (pas un devis ni un modèle de l'artisan) : ses surfaces et ses heures seraient inventées, elles restent à préciser */
+    m.lignes.forEach(function(l){var sv=findService(l[0]),p=sv&&sv.prix!=null?sv.prix:(l[3]!=null?l[3]:null),u=l[2]||"forfait";d.lignes.push({libelle:l[0],quantite:m.src==="metier"&&!/^(forfait|u)$/.test(u)?null:l[1],unite:u,prix:p});});
     if(m.src==="modele")(S.modeles||[]).forEach(function(x){if(x.nom===m.nom)x.n=(x.n||0)+1;});return d;}
   X_["devis.preparer"]=function(a){var k=a.client?ensureClient(a.client):null,rdv=null;
     if(!k&&a.prochain){rdv=prochainRdv(null);if(!rdv)return R(tr("Aucun rendez-vous à venir avec un client."));k=rdv.client;}
@@ -1553,7 +1554,8 @@ function create(E,X,saved,opts){
     S.prepDemande=0;
     var d=devisDepuis(k,L[0]),manque=d.lignes.filter(function(l){return l.prix==null;}).map(function(l){return l.libelle;});S.last.client=k;
     emit("devis","preparer",{id:d.id,client:clientName(k),modele:d.modele});
-    return {say:manque.length?tr("Il manque ton prix pour : {0}.",[manque.join(", ")]):"",ui:"devis-carte",devis:d.id};};
+    var sansQ=d.lignes.filter(function(l){return l.quantite==null;}).map(function(l){return l.libelle+" ("+l.unite+")";});
+    return {say:[manque.length?tr("Il manque ton prix pour : {0}.",[manque.join(", ")]):"",sansQ.length?tr("Quantités à préciser : {0}.",[sansQ.join(", ")]):""].filter(Boolean).join(" "),ui:"devis-carte",devis:d.id};};
   X_["devis.modele"]=function(a){var d=getCur();if(!d||!d.lignes.length)return R(tr("Il n’y a pas de devis à enregistrer comme modèle."));var nom=cap(String(a.nom||d.modele||(d.client?clientName(d.client):d.num)).trim());
     S.modeles=(S.modeles||[]).filter(function(m){return hn(m.nom)!==hn(nom);});S.modeles.push({nom:nom,lignes:clone(d.lignes),n:0,at:Date.now()});d.modele=nom;emit("devis","modele",{nom:nom});
     return R(tr("Modèle « {0} » enregistré.",[nom]));};

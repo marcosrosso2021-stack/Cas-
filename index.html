@@ -2899,6 +2899,9 @@ function vnMatch(label,prices){
  const a=vnTok(label);if(!a.length)return null;let best=null,bs=0;const dep=VN_DEP.test(vnNorm(label));
  for(const p of prices||[]){const b=vnTok(p.nom);if(!b.length)continue;if(VN_DEP.test(vnNorm(p.nom))!==dep)continue;
   let hit=0;for(const w of b)if(a.some(x=>x===w||(w.length>4&&x.startsWith(w.slice(0,5)))))hit++;
+  /* « dépose placo » n'est pas « Dépose carrelage » : chacun a un mot que l'autre n'a pas */
+  const proche=(x,w)=>x===w||(w.length>4&&x.startsWith(w.slice(0,5)))||(x.length>4&&w.startsWith(x.slice(0,5)));
+  if(hit<b.length&&a.some(x=>x.length>=4&&!b.some(w=>proche(x,w)))&&b.some(w=>w.length>=4&&!a.some(x=>proche(x,w))))continue;
   const s=hit/b.length;if(s>bs){bs=s;best=p}}
  return bs>=.5?best:null;
 }
@@ -4088,6 +4091,8 @@ function chatSend(text){
   CHAT.m.push({who:'bot',html:out.join(''),undo:before});
  }else if(pick||cand||R.adr||R.dims||(R.dim1||[]).length){
   fillForm();save();CHAT.m.push({who:'bot',html:out.join('')});
+ }else if(window.casoPont&&casoPont.travail&&casoPont.travail(t)){
+  /* dernier recours : un travail dit sans « faut » (« refaire la gouttière ») est gardé dans les notes À faire du devis */
  }else{
   save();
   CHAT.m.push({who:'bot',html:`<p data-noi18n>${esc(window.casoPont&&casoPont.ready?casoPont.incompris():'Je n’ai pas compris.')}</p>`});
@@ -8089,6 +8094,8 @@ function entExtra(){const p=db.prof||{},v=$('eLogoV');if(v)v.innerHTML=p.logo?`<
 <script type="text/x-caso" data-src="chat/intel.js"></script>
 <script type="text/x-caso" data-src="chat/lexique.js"></script>
 <script type="text/x-caso" data-src="chat/chantier.js"></script>
+<script type="text/x-caso" data-src="chat/lexique-btp.js"></script>
+<script type="text/x-caso" data-src="chat/langage.js"></script>
 <script type="text/x-caso" data-src="pointage/pointage-auto.js"></script>
 <script type="text/x-caso" data-src="pointage/geo-web.js"></script>
 <script type="text/x-caso" data-src="pointage/caso-native.js"></script>
