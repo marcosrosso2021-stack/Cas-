@@ -2104,6 +2104,11 @@ body.tr-on{overflow:hidden}
 </section>
 
 <!-- HISTORIQUE -->
+<section id="s-news">
+ <button class="btn sec back" onclick="go('devis')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
+ <div class="pg-h"><h1 class="pg-t">Newsletter</h1></div>
+ <div id="newsList"></div>
+</section>
 <section id="s-enc">
  <button class="btn sec back" onclick="go('devis')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
  <div class="pg-h"><h1 class="pg-t">Encaissements</h1></div>
@@ -2349,6 +2354,7 @@ body.tr-on{overflow:hidden}
  <button class="dw-i" onclick="drawerGo('cli')"><svg class="i"><use href="#i-user"/></svg><span>Clients</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
  <button class="dw-i" onclick="drawerGo('fou')"><svg class="i"><use href="#i-truck"/></svg><span>Fournisseurs</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
  <button class="dw-i" onclick="drawerGo('enc')"><svg class="i"><use href="#i-chart"/></svg><span>Encaissements</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
+ <button class="dw-i" onclick="drawerGo('news')"><svg class="i"><use href="#i-doc"/></svg><span>Newsletter</span><i id="newsDot" hidden aria-hidden="true" style="width:9px;height:9px;border-radius:50%;background:#e5484d;margin-inline-start:8px;flex:none"></i><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
  <p class="dw-g">L'appli</p>
  <button class="dw-i" onclick="drawerGo('cpt:app')"><svg class="i"><use href="#i-globe"/></svg><span>Langue et notifications</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
  <button class="dw-i" onclick="drawerGo('cpt:bk')"><svg class="i"><use href="#i-shield"/></svg><span>Sauvegarde</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
@@ -2473,7 +2479,7 @@ function tab(n,b){
  $('s-'+n).classList.add('on');
  document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));
  if(b)b.classList.add('on');
- if(n==='histo')renderHisto();if(n==='cli')cliRender();if(n==='clif')plCliBlock();if(n==='agenda')agPage(agMode);if(n==='fact')faRender();if(n==='plan')plRender();if(n==='sigp')spRender();if(n==='fou')fouRender(); if(n==='four')renderFour(); if(n==='prix'){renderPrices();prPage(prCur)} if(n==='pt')renderPt();if(n==='enc')encRender();
+ if(n==='news'&&window.casoVeille)casoVeille.page();if(n==='histo')renderHisto();if(n==='cli')cliRender();if(n==='clif')plCliBlock();if(n==='agenda')agPage(agMode);if(n==='fact')faRender();if(n==='plan')plRender();if(n==='sigp')spRender();if(n==='fou')fouRender(); if(n==='four')renderFour(); if(n==='prix'){renderPrices();prPage(prCur)} if(n==='pt')renderPt();if(n==='enc')encRender();
  if(n==='cpt'){fillProf();renderSync();bkRefresh();renderNotif();const t=$('trOpen');if(t)t.hidden=I18N.lang==='fr'}
  if(n==='tr')trRender();
  window.scrollTo(0,0);
@@ -2484,7 +2490,7 @@ function hdBack(){const b=document.querySelector('section.on .back:not([hidden])
 function hdBackSync(){const b=$('hdBack');if(b)b.hidden=!document.querySelector('section.on .back:not([hidden])')}
 (()=>{const o=new MutationObserver(hdBackSync);document.querySelectorAll('section').forEach(s=>o.observe(s,{attributes:true,attributeFilter:['class']}));
  document.querySelectorAll('section .back').forEach(b=>o.observe(b,{attributes:true,attributeFilter:['hidden']}));hdBackSync()})();
-function go(n){const m={enc:-1,fact:-1,agenda:-1,plan:-1,sigp:-1,devis:-1,chat:-1,edit:-1,prix:1,imp:-1,pt:2,histo:3,mes:-1,four:-1,cpt:-1,tr:-1,sign:0,cli:-1,clif:-1,fou:-1,fouf:-1};tab(n,document.querySelectorAll('nav button')[m[n]])}
+function go(n){const m={enc:-1,fact:-1,agenda:-1,plan:-1,sigp:-1,devis:-1,chat:-1,edit:-1,prix:1,imp:-1,pt:2,histo:3,mes:-1,four:-1,cpt:-1,tr:-1,sign:0,cli:-1,clif:-1,fou:-1,fouf:-1,news:-1};tab(n,document.querySelectorAll('nav button')[m[n]])}
 
 /* ---------- Langue de l'appli (le devis, le PDF et le message restent en français) ---------- */
 /* traductions de l'interface : i18n/ui-xx.json, seulement la langue choisie ; gardée sur l'appareil, mise à jour en arrière-plan */
@@ -3253,7 +3259,7 @@ async function enableNotif(){
   const {key}=await apiTeam('/api/push/key');
   let sub=await reg.pushManager.getSubscription();
   if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToU8(key)});
-  await apiTeam('/api/push/sub',{sub:sub.toJSON(),lang:I18N.lang});
+  await apiTeam('/api/push/sub',{sub:sub.toJSON(),lang:I18N.lang,metier:(db.prof||{}).metier||''});
   try{localStorage.setItem('caso_notif','1')}catch(e){}
   toast(i18nT('Notifications activées'));renderNotif();return true
  }catch(e){alert('Erreur d\'envoi : '+(e.message||e));return false}}

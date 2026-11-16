@@ -74,7 +74,7 @@ function creer(opts={}){
   return publies(auj).sort((x,y)=>x.publieLe<y.publieLe?1:x.publieLe>y.publieLe?-1:0).slice(0,50).map(f=>({id:f.id,titre:f.titre,resume:String(f.nouvelle||'').slice(0,600),url:f.url,datePub:f.datePub,
    dateVigueur:f.dateVigueur,categorie:f.categorie,priorite:f.priorite,pros:f.pros||[],aFaire:f.aFaire||'',publieLe:f.publieLe}))}
  /* ce qui est sorti et n'a pas encore été annoncé par notification */
- function aAnnoncer(){const auj=maintenant().toISOString().slice(0,10);return publies(auj).filter(f=>!f.pousse).map(f=>({id:f.id,titre:f.titre,priorite:f.priorite}))}
+ function aAnnoncer(){const auj=maintenant().toISOString().slice(0,10);return publies(auj).filter(f=>!f.pousse).map(f=>({id:f.id,titre:f.titre,priorite:f.priorite,pros:f.pros||[]}))}
  function annonce(ids){for(const id of ids)base.completer(id,{pousse:true});try{base.enregistrer()}catch(e){log('[casô] veille : base non enregistrée',e&&e.code)}}
  /* une fiche telle que le tableau de bord la montre : avec son délai du jour */
  function voir(f){const auj=maintenant().toISOString().slice(0,10);
