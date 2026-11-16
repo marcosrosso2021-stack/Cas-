@@ -13,7 +13,7 @@ const a=(o,k)=>Object.prototype.hasOwnProperty.call(o,k);
 function ouvrir(dir,opts={}){
  const maintenant=opts.maintenant||(()=>new Date()),log=opts.log||console.error;
  const F=path.join(dir,'veille.json'),BAK=F+'.bak',PR=path.join(dir,'veille-preuves');
- const vide=()=>({textes:{},journal:[],dernierPassage:'',erreurs:0});
+ const vide=()=>({textes:{},journal:[],dernierPassage:'',erreurs:0,appris:{}});
  const lire1=f=>{const d=JSON.parse(fs.readFileSync(f,'utf8'));if(!d||typeof d!=='object'||!d.textes||typeof d.textes!=='object')throw new Error('forme');
   return Object.assign(vide(),d)};
  let d=vide();
@@ -29,7 +29,7 @@ function ouvrir(dir,opts={}){
   const emp=sha(titre+'|'+texte+'|'+(b.dateVigueur||'')),extrait=court(b.resume||texte,2000);
   if(!a(d.textes,id)){
    d.textes[id]={id,titre,numero:court(b.numero,60),source:b.source,url:b.url||'',datePub:b.datePub||'',dateVigueur:b.dateVigueur||'',dateVerif:'',
-    articles:[],ancienne:'',nouvelle:extrait,categorie:'',priorite:'',pros:[],modules:[],actions:[],validation:'attente',bloque:false,raisons:[],
+    articles:[],ancienne:'',nouvelle:extrait,categorie:'',priorite:'',domaines:[],pros:[],modules:[],actions:[],corrige:[],validation:'attente',bloque:false,raisons:[],
     empreinte:emp,preuve:preuve(emp,texte),historique:[]};
    return {id,etat:'nouveau'}}
   const f=d.textes[id];
@@ -54,7 +54,10 @@ function ouvrir(dir,opts={}){
  function passage(iso){d.dernierPassage=iso}
  function enregistrer(){fs.mkdirSync(dir,{recursive:true});const t=F+'.tmp';fs.writeFileSync(t,JSON.stringify(d));fs.renameSync(t,F);
   try{fs.copyFileSync(F,BAK)}catch(e){log('[casô] veille : copie non écrite')}}
- return {recevoir,lire,liste,noter,completer,vu,journal,etat,passage,enregistrer};
+ /* ce que les corrections du propriétaire ont appris (gardé avec la base) */
+ const appris=()=>{if(!d.appris||typeof d.appris!=='object')d.appris={};return d.appris};
+ const dernieres=n=>d.journal.slice(-n).reverse();
+ return {recevoir,lire,liste,noter,completer,vu,journal,etat,passage,enregistrer,appris,dernieres};
 }
 
 module.exports={ouvrir,sha,court};
