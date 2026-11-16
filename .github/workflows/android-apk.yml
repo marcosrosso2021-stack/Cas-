@@ -30,6 +30,7 @@ jobs:
         working-directory: android-app
         run: |
           node test/pointage-auto.test.js
+          node test/geo-web.test.js
           node test/caso-auto.test.js
 
       - name: Installer Capacitor

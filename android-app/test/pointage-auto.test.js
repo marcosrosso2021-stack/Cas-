@@ -1,5 +1,5 @@
 const assert = require('assert');
-const P = require('../web/pointage-auto.js');
+const P = require('../../pointage/pointage-auto.js');
 
 const BASE = { lat: 46.0, lng: 2.0 };
 const M_LAT = 111320, M_LNG = 111320 * Math.cos(BASE.lat * Math.PI / 180);

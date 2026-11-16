@@ -47,17 +47,15 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   ok('4b.4 aucune erreur JavaScript',noErr(errs).length===0,noErr(errs).slice(0,3).join(' || '));
  }
 
- /* ===== 5. pointage pendant le verrouillage ===== */
+ /* ===== 5. ancien lien de tag (le NFC est retiré du pointage, 16 nov. 2026) : ignoré, rien de noté, pas d'erreur ===== */
  {const {p,errs}=await ctx();await p.goto(B);await appUp(p);await newAccount(p,'motdepasse1');
   await p.goto(B+'?p=ch1&n=Chantier%20A&u=Pierre');await sleep(800);
-  const n=await p.evaluate(()=>({lock:typeof db==='undefined',note:(document.querySelector('.vnote')||{}).textContent||'',url:location.search,q:VAULT.raw.get('caso_pq')}));
-  ok('5.1 verrouillé : pointage noté avec l’heure, lien effacé',n.lock&&/Pointage noté à \d\d:\d\d/.test(n.note)&&n.url===''&&/"p":"ch1"/.test(n.q||''),n.note);
-  const t0=JSON.parse(n.q)[0].t;await sleep(2500);
+  const n=await p.evaluate(()=>({lock:typeof db==='undefined',q:VAULT.raw.get('caso_pq')}));
+  ok('5.1 verrouillé : un ancien lien de tag ne note aucun pointage',n.lock&&!n.q,String(n.q));
   await p.fill('#lgMail','jean@test.fr');await p.fill('#lgPass','motdepasse1');await p.click('#lgGo');await appUp(p);await sleep(1500);
-  const r=await p.evaluate(()=>({pts:db.pts.map(e=>({c:e.c,t:e.t,ts:e.ts})),ch:db.chantiers.map(c=>c.nom),pe:db.people.map(x=>x.nom),q:VAULT.raw.get('caso_pq'),note:!!document.querySelector('.vnote')}));
-  ok('5.2 au déverrouillage : entrée enregistrée à l’heure du passage',r.pts.length===1&&r.pts[0].c==='ch1'&&r.pts[0].t==='in'&&r.pts[0].ts===t0,JSON.stringify(r.pts));
-  ok('5.3 chantier et ouvrier créés, file vidée',r.ch.includes('Chantier A')&&r.pe.includes('Pierre')&&r.q===null&&!r.note);
-  ok('5.4 aucune erreur JavaScript',noErr(errs).length===0,noErr(errs).slice(0,3).join(' || '));
+  const r=await p.evaluate(()=>({pts:(db.pts||[]).length,ch:db.chantiers.map(c=>c.nom)}));
+  ok('5.2 au déverrouillage : aucun pointage ni chantier créé par le lien',r.pts===0&&!r.ch.includes('Chantier A'),JSON.stringify(r));
+  ok('5.3 aucune erreur JavaScript',noErr(errs).length===0,noErr(errs).slice(0,3).join(' || '));
  }
 
  /* ===== 6. sauvegarde chiffrée + 7. IBAN ===== */

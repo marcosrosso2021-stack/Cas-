@@ -35,7 +35,7 @@ window.VAULT=(()=>{
   keys:()=>{const o=[];try{for(let i=0;i<LS.length;i++)o.push(LS.key(i))}catch(e){}return o}};
  const PX='caso_x_',META='caso_vault',ITER=600000;
  // restent lisibles : réglages sans donnée client, verrou, compte (e-mail + empreintes du mot de passe, nécessaires pour se connecter)
- const PUB=new Set(['caso_account','caso_lk','caso_locked','caso_pq','caso_lang','caso_ts','caso_test','caso_notif','caso_notif_asked','caso_remshown','caso_seen_sig','caso_tourcal','caso_camh','caso_laser',META]);
+ const PUB=new Set(['caso_account','caso_lk','caso_locked','caso_lang','caso_ts','caso_test','caso_notif','caso_notif_asked','caso_remshown','caso_seen_sig','caso_tourcal','caso_camh','caso_laser',META]);
  const prot=k=>typeof k==='string'&&!k.startsWith(PX)&&!PUB.has(k)&&!/^caso_(bk|essai_v|test)/.test(k);
  const C=window.crypto&&crypto.subtle,te=new TextEncoder(),td=new TextDecoder();
  const rnd=n=>crypto.getRandomValues(new Uint8Array(n));
@@ -165,11 +165,7 @@ window.VAULT=(()=>{
    let ran=false;const go=()=>{if(ran)return;ran=true;try{run()}catch(e){console.error(e)}};
    if(!C||raw.get('caso_test')){go();return}
    const m=getMeta();let acc=null,sy=null;try{acc=JSON.parse(raw.get('caso_account'))}catch(e){}
-   // pointage (lien ?p=) pendant que le coffre est fermé : noté avec son heure, appliqué à l'ouverture
-   let noted=0;if(m)try{const u=new URLSearchParams(location.search),p=u.get('p');
-    if(p&&/^[\w.-]{1,64}$/.test(p)){let q=[];try{q=JSON.parse(raw.get('caso_pq'))||[]}catch(e){}noted=Date.now();
-     q.push({p,n:(u.get('n')||'').slice(0,80),u:(u.get('u')||'').slice(0,60),t:noted});raw.set('caso_pq',JSON.stringify(q.slice(-20)));
-     history.replaceState(null,'',location.pathname)}}catch(e){}
+   const noted=0;
    if(!m&&!(acc&&acc.hash&&acc.salt)){
     try{sy=JSON.parse(raw.get('devis_sync'))}catch(e){}
     if(!acc&&sy&&sy.token){ui('setup',null,null,go);return}
@@ -776,6 +772,10 @@ body.starting #hd{display:none}
 .pt-sug{margin:10px 0 2px;display:flex;flex-wrap:wrap;gap:8px}
 .pt-sug .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--card);font:inherit;font-size:14px;cursor:pointer}
 .pt-adv{margin-top:14px}
+.pt-ctx{display:flex;flex-direction:column;gap:2px;margin-bottom:14px}.pt-ctx b{font-size:22px}.pt-ctx span{color:var(--mut);font-size:15px}
+.pt-go{width:100%;font-size:22px;font-weight:800;padding:20px;border-radius:18px;background:#1e8e3e;color:#fff;margin-top:6px}.pt-go.out{background:#e8710a}
+.pt-els{display:block;text-align:right;white-space:nowrap;font-family:var(--mono);color:var(--mut);font-size:13px}
+#ptBody [hidden]{display:none!important}
 .pt-adv summary{cursor:pointer;color:var(--mut);font-size:14px}
 .md .h1{margin:0 0 20px}
 .md-c{display:flex;align-items:center;gap:14px;width:100%;margin:0 0 12px;padding:18px 16px;text-align:left;font:inherit;color:var(--ink);background:var(--card);border:2px solid var(--line);border-radius:18px;cursor:pointer}
@@ -1582,7 +1582,6 @@ body.tr-on{overflow:hidden}
 <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
 <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" stroke-width="2.2"/></symbol>
 <symbol id="i-chart" viewBox="0 0 24 24"><path d="M5 20V11M12 20V4M19 20v-7M3 20h18"/></symbol>
-<symbol id="i-nfc" viewBox="0 0 24 24"><path d="M6 9a4 4 0 0 1 0 6M10 6.5a8 8 0 0 1 0 11M14 4a12 12 0 0 1 0 16"/></symbol>
 </defs></svg>
 <header id="hd"><span class="ttl" role="button" tabindex="0" aria-label="Menu" onclick="drawer('L')" onkeydown="if(event.key==='Enter')drawer('L')"><span class="wm" role="img" aria-label="casô"><svg class="cso-tile" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#ffc21a"/><g transform="translate(10.5 3.5) scale(1.075)"><path d="M10 16.5 17.6 9.4Q20 7.2 22.4 9.4L30 16.5" fill="none" stroke="#18181a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="20" cy="33" r="12" fill="none" stroke="#18181a" stroke-width="3.2"/><clipPath id="cso3"><circle cx="20" cy="33" r="8.9"/></clipPath><g fill="#18181a" clip-path="url(#cso3)"><rect x="9.7" y="26.7" width="9.6" height="5.6" rx="1.2"/><rect x="20.7" y="26.7" width="9.6" height="5.6" rx="1.2"/><rect x="4.2" y="33.7" width="9.6" height="5.6" rx="1.2"/><rect x="15.2" y="33.7" width="9.6" height="5.6" rx="1.2"/><rect x="26.2" y="33.7" width="9.6" height="5.6" rx="1.2"/></g></g></svg><span class="wm-t" aria-hidden="true">cas<svg viewBox="0 3 40 44" aria-hidden="true"><path d="M10 16.5 17.6 9.4Q20 7.2 22.4 9.4L30 16.5" fill="none" stroke="#ffc21a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="20" cy="33" r="12" fill="none" stroke="currentColor" stroke-width="3.2"/><clipPath id="cso4"><circle cx="20" cy="33" r="8.9"/></clipPath><g fill="currentColor" clip-path="url(#cso4)"><rect x="9.7" y="26.7" width="9.6" height="5.6" rx="1.2"/><rect x="20.7" y="26.7" width="9.6" height="5.6" rx="1.2"/><rect x="4.2" y="33.7" width="9.6" height="5.6" rx="1.2"/><rect x="15.2" y="33.7" width="9.6" height="5.6" rx="1.2"/><rect x="26.2" y="33.7" width="9.6" height="5.6" rx="1.2"/></g></svg></span></span></span><button class="acct" onclick="drawer('R')" aria-label="Compte"><svg class="i"><use href="#i-user"/></svg></button></header>
 <div class="tape"></div>
@@ -2146,7 +2145,7 @@ body.tr-on{overflow:hidden}
 
 <!-- POINTAGE -->
 <section id="s-pt">
- <div class="seg" role="tablist" id="ptSeg"><button role="tab" data-p="go" onclick="ptPage('go')">Pointer</button><button role="tab" data-p="h" onclick="ptPage('h')">Heures</button><button role="tab" data-p="j" onclick="ptPage('j')">Journal</button><button role="tab" data-p="set" onclick="ptPage('set')">Chantiers</button></div>
+ <div class="seg" role="tablist" id="ptSeg"><button role="tab" data-p="go" onclick="ptPage('go')">Pointer</button><button role="tab" data-p="h" onclick="ptPage('h')">Heures</button><button role="tab" data-p="set" onclick="ptPage('set')">Chantiers</button></div>
  <div id="ptFlash"></div>
  <div id="ptBody"></div>
 </section>
@@ -3385,9 +3384,9 @@ let prCur='list',ptCur='go';
 function segOn(id,p){document.querySelectorAll('#'+id+' [data-p]').forEach(b=>{const on=b.dataset.p===p;b.classList.toggle('on',on);b.setAttribute('aria-selected',on)})}
 function prPage(p){prCur=p;segOn('prSeg',p);document.querySelectorAll('#s-prix [data-pp]').forEach(e=>{e.style.display=e.dataset.pp===p?'':'none'})}
 function ptPage(p,quiet){
+ if(p==='j')p='h';if(p!=='h'&&p!=='set')p='go';
  ptCur=p;segOn('ptSeg',p);
- const o=$('ptBody').querySelector(':scope>.ag-ptc')?1:0,map={go:o?[0,1,2]:[0,1],h:[2+o],j:[3+o,4+o],set:[5+o,6+o]},cards=[...$('ptBody').children];
- cards.forEach((c,i)=>{c.style.display=(map[p]||[]).includes(i)?'':'none'});
+ document.querySelectorAll('#ptBody>[data-pg]').forEach(e=>{e.hidden=e.dataset.pg!==p});
  if(!quiet)window.scrollTo(0,0)}
 
 /* ---------- Clients et fournisseurs ---------- */
@@ -5454,7 +5453,7 @@ function agChFor(e){
  if(!c){c={id:uid().slice(-6),nom:nm};db.chantiers.push(c)}e.ch=c.id;save();return c.id}
 function agPtGo(id){
  const e=db.events.find(x=>x.id===id);if(!e)return;const cid=agChFor(e);renderPt();
- const C=$('ptC'),P=$('ptP');if(C)C.value=cid;if(P&&e.who&&e.who.length)P.value=e.who[0];
+ const C=$('ptC'),P=$('ptP');if(C)C.value=cid;if(P&&e.who&&e.who.length)P.value=e.who[0];ptBtn();
  ptPage('go');const k=C&&C.closest('.card');if(k){k.scrollIntoView({behavior:'smooth',block:'center'});k.classList.add('ag-flash');setTimeout(()=>k.classList.remove('ag-flash'),1500)}
  toast(i18nT('Chantier choisi : touche « Entrée / Sortie ».'))}
 // une notification de rappel touchée : ouvrir le planning au bon jour
@@ -6930,7 +6929,7 @@ function applyImp(){
  if(ach&&four){const s=findBy(db.suppliers,four);if(s){toast(i18nT('Document enregistré.'));setTimeout(()=>fouEdit(s.id),600)}}
 }
 
-/* ---------- Pointage (NFC) ---------- */
+/* ---------- Pointage ---------- */
 function ensurePt(){if(!db.chantiers)db.chantiers=[];if(!db.people)db.people=[];if(!db.pts)db.pts=[]}
 const FMT_T=new Intl.DateTimeFormat('fr-FR',{hour:'2-digit',minute:'2-digit'}),FMT_D=new Intl.DateTimeFormat('fr-FR',{day:'2-digit',month:'2-digit'});
 const fmtT=ts=>FMT_T.format(new Date(ts));
@@ -6938,7 +6937,7 @@ const fmtD=ts=>FMT_D.format(new Date(ts));
 const fmtH=ms=>{const m=Math.round(ms/60000);return Math.floor(m/60)+' h '+String(m%60).padStart(2,'0')};
 const chName=id=>(db.chantiers.find(c=>c.id===id)||{}).nom||'?';
 const pName=id=>(db.people.find(p=>p.id===id)||{}).nom||'?';
-let ptPer='week',lastIds=[],pend=null;
+let ptPer='week',lastIds=[];
 
 function lastEv(pid){
  const e=db.pts.filter(x=>x.p===pid).sort((a,b)=>a.ts-b.ts);return e[e.length-1]||null}
@@ -6993,36 +6992,6 @@ function summarize(per){
  return{by,flags,open};
 }
 
-/* --- lecture du lien du tag --- */
-function handleScan(q){ // q : pointage noté pendant que le coffre était fermé ({p,n,u,t})
- ensurePt();
- const u=q?new URLSearchParams({p:q.p||'',n:q.n||'',u:q.u||''}):new URLSearchParams(location.search),cid=u.get('p'),ts=q&&q.t>0?q.t:0;
- if(!cid)return;
- if(!okId(cid)){if(!q)history.replaceState(null,'',location.pathname);toast(i18nT('Lien de pointage invalide.'));return}
- if(!q)history.replaceState(null,'',location.pathname); // évite de repointer si on rafraîchit la page
- let ch=db.chantiers.find(c=>c.id===cid);
- if(!ch){ch={id:cid,nom:u.get('n')||('Chantier '+cid)};db.chantiers.push(ch);save()}
- go('pt');
- const un=(u.get('u')||'').trim();
- if(un){
-  let p=db.people.find(x=>x.nom.toLowerCase()===un.toLowerCase());
-  if(!p){p={id:uid(),nom:un};db.people.push(p);save()}
-  doPunch(cid,p.id,ts);return}
- if(db.people.length===1){doPunch(cid,db.people[0].id,ts);return}
- pend=cid;pendTs=ts;
- if(db.people.length===0){
-  flash('<div style="font-size:20px;font-weight:700">Chantier : '+esc(ch.nom)+'</div><div style="margin:10px 0">Quel est ton prénom ?</div><input id="ptNew" placeholder="Prénom"><button class="btn sec" onclick="pickNew()">Valider</button>','#1a73e8');
- }else{
-  flash('<div style="font-size:20px;font-weight:700">Chantier : '+esc(ch.nom)+'</div><div style="margin:10px 0">Qui es-tu ?</div>'+db.people.map(p=>`<button class="btn sec" onclick="pickP('${p.id}')">${esc(p.nom)}</button>`).join(''),'#1a73e8');
- }
-}
-let pendTs=0;
-function pickP(pid){doPunch(pend,pid,pendTs);pend=null;pendTs=0}
-function pickNew(){
- const n=($('ptNew').value||'').trim();if(!n)return;
- const p={id:uid(),nom:n};db.people.push(p);save();doPunch(pend,p.id,pendTs);pend=null;pendTs=0}
-function ptQueue(){let q=[];try{q=JSON.parse(localStorage.getItem('caso_pq'))||[]}catch(e){}
- try{localStorage.removeItem('caso_pq')}catch(e){}if(Array.isArray(q))q.filter(x=>x&&typeof x.p==='string').forEach(x=>handleScan(x))}
 function flash(html,color){
  $('ptFlash').innerHTML=`<div class="card" style="background:${color};color:#fff;text-align:center;padding:24px">${html}</div>`;
  window.scrollTo(0,0)}
@@ -7088,13 +7057,6 @@ function addForgot(){
  if(!n){alert('Indique la raison (par exemple « oubli de sortie »).');return}
  db.pts.push({id:uid(),c,p,t,ts:new Date(d).getTime(),note:'ajout manuel : '+n});save();renderPt()}
 function setPer(p){ptPer=p;renderPt()}
-function baseUrl(){return db.baseUrl||(location.origin+location.pathname)}
-function tagUrl(c,person){
- return baseUrl()+'?p='+encodeURIComponent(c.id)+'&n='+encodeURIComponent(c.nom)+(person?'&u='+encodeURIComponent(person):'')}
-function copyUrl(id){
- const c=db.chantiers.find(x=>x.id===id),u=tagUrl(c);
- if(navigator.clipboard)navigator.clipboard.writeText(u).then(()=>alert('Lien copié.'),()=>prompt('Copie ce lien :',u));
- else prompt('Copie ce lien :',u)}
 function exportPt(){
  const rows=['date;chantier;personne;entrée;sortie;durée (h)'];
  sessions().forEach(s=>{
@@ -7109,58 +7071,69 @@ function ptToQuote(cid){
  q.lines.push({label:'Main d\'œuvre - '+chName(cid),qty:Math.round(ms/3600000*100)/100,unit:'h',pu:mo.prix,tva:mo.tva});
  renderLines();go('devis')}
 
+/* écran Pointage : trois pages — Pointer (aujourd'hui), Heures (heures + journal), Chantiers (chantiers + personnes) */
+function ptOpen(pid){const l=lastEv(pid);return l&&l.t==='in'&&Date.now()-l.ts<16*3600000?l:null}
+function ptBtn(who){ // le bouton dit toujours ce qui va se passer : Entrée ou Sortie
+ const c=$('ptC'),p=$('ptP'),b=$('ptGo');if(!c||!p||!b)return;
+ const o=ptOpen(p.value);
+ if(o&&who&&db.chantiers.some(x=>x.id===o.c))c.value=o.c; // une personne déjà sur place : on propose sa sortie
+ const out=!!(o&&o.c===c.value);
+ b.textContent=out?'Sortie':'Entrée';b.classList.toggle('out',out);
+ const ctx=$('ptCtx');if(ctx)ctx.innerHTML=`<b data-noi18n>${esc(pName(p.value))}</b><span data-noi18n>${esc(chName(c.value))}${out?' · '+fmtH(Date.now()-o.ts):''}</span>`}
+function ptTick(){ // met à jour la durée des présents sans redessiner l'écran
+ document.querySelectorAll('#ptBody [data-since]').forEach(e=>{e.textContent=fmtH(Date.now()-(+e.dataset.since))})}
+setInterval(()=>{if(document.getElementById('s-pt')&&document.getElementById('s-pt').classList.contains('on'))ptTick()},30000);
+
 function renderPt(){
  ensurePt();
+ const AU=window.CasoAuto,auto=!!(AU&&AU.active());
  const opt=(arr,sel)=>arr.map(x=>`<option value="${x.id}" ${x.id===sel?'selected':''}>${esc(x.nom)}</option>`).join('');
- const sm=summarize(ptPer),S=sessions();
+ const sm=summarize(ptPer);
  const keepC=($('ptC')&&$('ptC').value)||'',keepP=($('ptP')&&$('ptP').value)||'';
- const AU=window.CasoAuto;
- let h=AU&&AU.active()?'':agPtCard();
- // pointer : tout seul quand l'appli Android le fait (window.CasoAuto), sinon à la main
- h+=AU&&AU.active()?AU.card():`<div class="card"><h2><span class="hi"><svg class="i"><use href="#i-helmet"/></svg></span>Pointer</h2>${AU?AU.line():''}
-  ${(!db.chantiers.length||!db.people.length)?ptSetupHtml():`<label>Chantier</label><select id="ptC">${opt(db.chantiers,keepC)}</select>
-  <label>Personne</label><select id="ptP">${opt(db.people,keepP)}</select>
-  <button class="btn" onclick="manualPunch()">Entrée / Sortie</button>`}</div>`;
- // en ce moment
- h+=`<div class="card"><h2><span class="hi"><svg class="i"><use href="#i-users"/></svg></span>Présents</h2>`+
-  (sm.open.length?sm.open.map(s=>`<div class="tot"><span>${esc(pName(s.p))} · ${esc(chName(s.c))}</span><b>depuis ${fmtT(s.a)}</b></div>`).join(''):'<div class="mut">Personne.</div>')+`</div>`;
- // heures
- h+=`<div class="card"><h2><span class="hi"><svg class="i"><use href="#i-clock"/></svg></span>Heures</h2><div class="chips" style="margin-bottom:8px">`+
+ const ready=db.chantiers.length&&db.people.length;
+ const one=a=>a.length===1?' hidden':'';
+ /* --- Pointer --- */
+ let go=auto?'':agPtCard();
+ if(auto)go+=AU.card();
+ else go+=`<div class="card pt-now">${AU?AU.line():''}`+(ready
+  ?`<div id="ptCtx" class="pt-ctx"></div>
+   <select id="ptC" aria-label="Chantier"${one(db.chantiers)} onchange="ptBtn()">${opt(db.chantiers,keepC)}</select>
+   <select id="ptP" aria-label="Personne"${one(db.people)} onchange="ptBtn(1)">${opt(db.people,keepP)}</select>
+   <button id="ptGo" class="btn pt-go" onclick="manualPunch()">Entrée</button>`
+  :ptSetupHtml())+`</div>`;
+ go+=`<div class="card"><h2><span class="hi"><svg class="i"><use href="#i-users"/></span>Présents</h2>`+
+  (sm.open.length?sm.open.map(s=>`<div class="tot"><span data-noi18n>${esc(pName(s.p))} · ${esc(chName(s.c))}</span><span><b>depuis ${fmtT(s.a)}</b> <span class="pt-els" data-noi18n data-since="${s.a}">${fmtH(Date.now()-s.a)}</span></span></div>`).join(''):'<div class="mut">Personne.</div>')+`</div>`;
+ /* --- Heures et journal --- */
+ let hh=`<div class="card"><h2><span class="hi"><svg class="i"><use href="#i-clock"/></svg></span>Heures</h2><div class="chips" style="margin-bottom:8px">`+
   [['week','Semaine'],['month','Mois'],['all','Tout']].map(([k,l])=>`<span class="chip" style="${ptPer===k?'background:var(--acc);color:var(--ink)':''}" onclick="setPer('${k}')">${l}</span>`).join('')+`</div>`;
  const cids=Object.keys(sm.by);
- h+=cids.length?cids.map(c=>{
+ hh+=cids.length?cids.map(c=>{
    const tot=Object.values(sm.by[c]).reduce((a,b)=>a+b,0);
-   return `<div class="line"><div class="t"><span>${esc(chName(c))}</span><span>${fmtH(tot)}</span></div>`+
-    Object.keys(sm.by[c]).map(p=>`<div class="tot mut"><span>${esc(pName(p))}</span><span>${fmtH(sm.by[c][p])}</span></div>`).join('')+
+   return `<div class="line"><div class="t"><span data-noi18n>${esc(chName(c))}</span><span>${fmtH(tot)}</span></div>`+
+    Object.keys(sm.by[c]).map(p=>`<div class="tot mut"><span data-noi18n>${esc(pName(p))}</span><span>${fmtH(sm.by[c][p])}</span></div>`).join('')+
     `<button class="btn sm sec" data-c="${esc(c)}" onclick="ptToQuote(this.dataset.c)">Ajouter au devis (main d'œuvre)</button></div>`}).join(''):'<div class="mut">Aucune heure.</div>';
- if(sm.flags)h+=`<div class="mut" style="color:#b06000;margin-top:8px"><svg class="i i-sm"><use href="#i-warn"/></svg> ${sm.flags} période(s) incomplète(s), non comptées.</div>`;
- h+=`<button class="btn sec" onclick="exportPt()">Exporter en CSV (Excel)</button></div>`;
- // journal
+ if(sm.flags)hh+=`<div class="mut" style="color:#b06000;margin-top:8px"><svg class="i i-sm"><use href="#i-warn"/></svg> ${sm.flags} période(s) incomplète(s), non comptées.</div>`;
+ hh+=`<button class="btn sec" onclick="exportPt()">Exporter en CSV (Excel)</button></div>`;
  const ev=db.pts.slice().sort((a,b)=>b.ts-a.ts).slice(0,30);
- h+=`<div class="card"><h2><span class="hi"><svg class="i"><use href="#i-list"/></svg></span>Journal</h2>`+(ev.length?ev.map(e=>`<div class="line"><div class="t"><span>${e.t==='in'?'Entrée':'Sortie'} · ${esc(pName(e.p))}</span><span>${fmtD(e.ts)} ${fmtT(e.ts)}</span></div>
-   <div class="mut">${esc(chName(e.c))}${e.note?' · '+esc(e.note):''}</div>
-   <button class="btn sm ko" onclick="delEv('${e.id}')">Supprimer</button></div>`).join(''):'<div class="mut">Aucun pointage.</div>')+`</div>`;
- // oubli
- h+=`<div class="card"><h2><span class="hi"><svg class="i"><use href="#i-plus"/></svg></span>Ajouter un oubli</h2>
+ hh+=`<div class="card"><h2><span class="hi"><svg class="i"><use href="#i-list"/></svg></span>Journal</h2>`+(ev.length?ev.map(e=>`<div class="line"><div class="t"><span>${e.t==='in'?'Entrée':'Sortie'} · <span data-noi18n>${esc(pName(e.p))}</span></span><span data-noi18n>${fmtD(e.ts)} ${fmtT(e.ts)}</span></div>
+   <div class="mut" data-noi18n>${esc(chName(e.c))}${e.note?' · '+esc(e.note):''}</div>
+   <button class="btn sm ko" onclick="delEv('${e.id}')">Supprimer</button></div>`).join(''):'<div class="mut">Aucun pointage.</div>')+
+  `<details class="pt-adv"><summary>Ajouter un oubli</summary>
   <label>Chantier</label><select id="fgC">${opt(db.chantiers,'')}</select>
   <label>Personne</label><select id="fgP">${opt(db.people,'')}</select>
   <div class="row"><div><label>Type</label><select id="fgT"><option value="in">Entrée</option><option value="out">Sortie</option></select></div>
   <div><label>Date et heure</label><input id="fgD" type="datetime-local"></div></div>
   <label>Raison (obligatoire)</label><input id="fgN" placeholder="oubli de sortie, pas de réseau…">
-  <button class="btn sec" onclick="addForgot()">Ajouter</button></div>`;
- // chantiers et étiquettes
- h+=`<div class="card"><h2><span class="hi"><svg class="i"><use href="#i-nfc"/></svg></span>Chantiers et NFC</h2>
-  <div class="row" style="margin-top:8px"><input id="chNew" placeholder="Nouveau chantier"><button class="btn sm" style="flex:0 0 auto" onclick="addCh()">Ajouter</button></div>`+
-  db.chantiers.map(c=>`<div class="line" data-sw="ch:${c.id}"><div class="t"><span>${esc(c.nom)}</span></div>${AU?AU.zone(c):''}
-   <input readonly value="${esc(tagUrl(c))}" onclick="this.select()" style="font-size:13px">
-   <button class="btn sm sec" onclick="copyUrl('${c.id}')">Copier le lien</button>
-</div>`).join('')+`<details class="pt-adv"><summary>Réglage avancé</summary><label>Adresse publique de cette application</label>
-  <input value="${esc(db.baseUrl||'')}" placeholder="${esc(location.origin+location.pathname)}" onchange="db.baseUrl=this.value.trim();save();renderPt()"></details></div>`;
- // personnes
- h+=`<div class="card"><h2><span class="hi"><svg class="i"><use href="#i-user"/></svg></span>Personnes</h2>
+  <button class="btn sec" onclick="addForgot()">Ajouter</button></details></div>`;
+ /* --- Chantiers et personnes --- */
+ let st=`<div class="card"><h2><span class="hi"><svg class="i"><use href="#i-pin"/></svg></span>Chantiers</h2>
+  <div class="row"><input id="chNew" placeholder="Nouveau chantier" data-adr autocomplete="off"><button class="btn sm" style="flex:0 0 auto" onclick="addCh()">Ajouter</button></div>`+
+  db.chantiers.map(c=>`<div class="line" data-sw="ch:${c.id}"><div class="t"><span data-noi18n>${esc(c.nom)}</span></div>${AU?AU.zone(c):''}</div>`).join('')+`</div>`;
+ st+=`<div class="card"><h2><span class="hi"><svg class="i"><use href="#i-user"/></svg></span>Personnes</h2>
   <div class="row"><input id="pnNew" placeholder="Prénom"><button class="btn sm" style="flex:0 0 auto" onclick="addPerson()">Ajouter</button></div>`+
-  db.people.map(p=>`<div class="line" data-sw="pe:${p.id}"><div class="t"><span>${esc(p.nom)}</span></div></div>`).join('')+`</div>`;;
- $('ptBody').innerHTML=h;ptPage(ptCur,true);
+  db.people.map(p=>`<div class="line" data-sw="pe:${p.id}"><div class="t"><span data-noi18n>${esc(p.nom)}</span></div></div>`).join('')+`</div>`;
+ $('ptBody').innerHTML=`<div data-pg="go">${go}</div><div data-pg="h">${hh}</div><div data-pg="set">${st}</div>`;
+ ptBtn();ptPage(ptCur,true);
 }
 
 
@@ -7655,7 +7628,7 @@ function init(){
  renderQuick();renderPrices();fillForm();
 }
 init();
-handleScan();ptQueue();
+
 vnInit();sigInit();chatLoad();renderAcct();
 try{if(localStorage.getItem('caso_locked')==='1'&&accountGet())setTimeout(showLogin,0);else{const a=accountGet();if(a&&a.mode==='bricoleur')setTimeout(modeEnter,0)}}catch(e){}
 setTimeout(()=>{if($('s-chat').classList.contains('on'))chatRender(false)},0);
@@ -8039,6 +8012,9 @@ function entExtra(){const p=db.prof||{},v=$('eLogoV');if(v)v.innerHTML=p.logo?`<
 <script type="text/x-caso" data-src="chat/intel.js"></script>
 <script type="text/x-caso" data-src="chat/lexique.js"></script>
 <script type="text/x-caso" data-src="chat/chantier.js"></script>
+<script type="text/x-caso" data-src="pointage/pointage-auto.js"></script>
+<script type="text/x-caso" data-src="pointage/geo-web.js"></script>
+<script type="text/x-caso" data-src="pointage/caso-native.js"></script>
 <script type="text/x-caso" data-src="chat/memoire.js"></script>
 <script>/* démarrage : le coffre s'ouvre (ou il n'y en a pas), puis les scripts de l'appli s'exécutent dans l'ordre */
 VAULT.start(()=>{document.querySelectorAll('script[type="text/x-caso"]').forEach(t=>{const e=document.createElement('script');
