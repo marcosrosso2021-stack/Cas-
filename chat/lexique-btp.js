@@ -18,7 +18,7 @@ t:[
 "mortiercolle|mortier-colle|carrelage|mat|sol|mortier colle;colle a carrelage;colle carrelage;ciment colle||",
 "joint|joints de carrelage|carrelage|ouv|sol|joint carrelage;joints carrelage;jointoiement||",
 "ragreage|ragréage|sol|ouv|sol|ragreage;ragrehage;ragréages;ragrage;ragreyage;reagreage||",
-"chape|chape|maconnerie|ouv?|sol|chappe;chapes;chape liquide;chape seche||",
+"chape|chape|maconnerie|ouv|sol|chappe;chapes;chape liquide;chape seche||",
 "receveur|receveur de douche|plomberie|eq|u|receveur;recepteur de douche;bac de douche;bac a douche||",
 "doucheitalienne|douche à l'italienne|plomberie|ouv|u|douche italienne;douche a l italienne;douche de plain pied||italienne",
 "spec|étanchéité sous carrelage|carrelage|ouv|surf|spec;sel;etancheite sous carrelage;natte d etancheite||",
@@ -38,8 +38,8 @@ t:[
 "cloison|cloison|platrerie|ouv|mur|cloisons;cloizon;cloison placo;cloison seche|clois|",
 "doublage|doublage|platrerie|ouv|mur|doublages;doublage placo;doublage colle;doublage sur ossature;contre cloison;contre-cloison||",
 "fauxplafond|faux plafond|platrerie|ouv|plafond|faux plafond;faux-plafond;fauxplafond;plafond suspendu;faux plafonds||",
-"bandes|bandes à joint|platrerie|ouv?|mur|bandes a joint;bande a joint;bandes a joints;bandes placo;les bandes;joints placo;joints de placo||",
-"rail|rail de cloison|platrerie|mat?|lin|rails;rail placo;rail r48;rail de cloison||",
+"bandes|bandes à joint|platrerie|ouv|mur|bandes a joint;bande a joint;bandes a joints;bandes placo;les bandes;joints placo;joints de placo||",
+"rail|rail de cloison|platrerie|mat?|lin|rail;rails;rail placo;rail r48;rail de cloison||",
 "montant|montant métallique|platrerie|mat|u|montants;montant m48;montant placo||",
 "ossature|ossature métallique|platrerie|ouv|mur|ossature;ossature metallique;ossature placo||",
 "platre|plâtre|platrerie|mat|mur|platre;plâtre;platres||",
@@ -68,8 +68,8 @@ t:[
 "colonnedouche|colonne de douche|plomberie|eq|u|colonne de douche;colonnes de douche||",
 "paroi|paroi de douche|plomberie|eq|u|paroi de douche;paroi;parois de douche;pare douche;pare-douche||",
 "siphon|siphon|plomberie|eq|u|siphon;siphons;syphon;bonde;bondes||",
-"evacuation|évacuation|plomberie|ouv?|lin|evacuation eaux usees;evacuations;evac pvc;tuyau d evacuation|evac|",
-"alimentation|alimentation en eau|plomberie|ouv?|lin|alimentation eau;alimentation en eau;arrivee d eau;arrivée d eau;arrivees d eau|alim|",
+"evacuation|évacuation|plomberie|ouv|lin|evacuation eaux usees;evacuations;evac pvc;tuyau d evacuation|evac|",
+"alimentation|alimentation en eau|plomberie|ouv|lin|alimentation eau;alimentation en eau;arrivee d eau;arrivée d eau;arrivees d eau|alim|",
 "tuyau|tuyauterie|plomberie|mat|lin|tuyau;tuyaux;tuyauterie;canalisation;canalisations;tube cuivre;tube per;tube multicouche||",
 "per|tube PER|plomberie|mat|lin|per;tube per;multicouche;tube multicouche||",
 "cuivre|tube cuivre|plomberie|mat|lin|cuivre;tube cuivre;tuyau cuivre||",
@@ -82,9 +82,9 @@ t:[
 /* ---- électricité ---- */
 "prise|prise de courant|electricite|eq|u|prise;prises;prise de courant;prises de courant;prise electrique;prise 16a;prise 32a||",
 "interrupteur|interrupteur|electricite|eq|u|interrupteur;interrupteurs;interupteur;va et vient;va-et-vient|inter;inters|",
-"tableau|tableau électrique|electricite|eq?|u|tableau electrique;tableau elec;tableaux electriques;coffret electrique|tgbt|",
+"tableau|tableau électrique|electricite|eq?|u|tableau;tableaux;tableau electrique;tableau elec;tableaux electriques;coffret electrique|tgbt|",
 "disjoncteur|disjoncteur|electricite|eq|u|disjoncteur;disjoncteurs;disjonteur;disj;differentiel;différentiel;interrupteur differentiel||",
-"ligne|ligne électrique|electricite|ouv?|u|ligne electrique;ligne elec;circuit electrique;circuit specialise;circuit spécialisé;ligne dediee;ligne dédiée||",
+"ligne|ligne électrique|electricite|ouv|u|ligne electrique;ligne elec;circuit electrique;circuit specialise;circuit spécialisé;ligne dediee;ligne dédiée||",
 "cable|câble électrique|electricite|mat|lin|cable;cables;câble;câbles;cable electrique;fil electrique;fils electriques||",
 "gaine|gaine électrique|electricite|mat|lin|gaine;gaines;gaine icta;gaine electrique||",
 "spot|spot encastré|electricite|eq|u|spot;spots;spot encastre;spots encastres;spot led;spots led||",
@@ -210,6 +210,14 @@ expr:[
  ["dep comp|depose comp|dep complete|dép comp","dépose complète"],
  ["a neuf|tout neuf|comme neuf","à neuf"]
 ],
+/* ---- mots à plusieurs sens : le mot seul (« le bâti », « le rail », « le tableau ») ----
+   chaque sens : son nom, puis les mots qui le désignent quand ils sont dans la phrase, le devis en cours ou les derniers messages.
+   Un seul sens désigné → il est pris. Aucun ou plusieurs → la ligne garde le mot tapé et le chat pose une question. */
+sens:{
+ bati:[["bâti de porte","porte|portes|bloc porte|huisserie|serrure|poignee|placard"],["bâti de fenêtre","fenetre|fenetres|vitrage|volet|volets|baie|velux"],["bâti-support de WC","wc|toilettes|suspendu|lavabo|geberit"]],
+ rail:[["rail de cloison","placo|cloison|cloisons|doublage|montant|montants|ossature|ba13|plaque|plaques|faux plafond"],["rail de porte coulissante","porte|coulissante|coulissant|placard|galandage|dressing"],["rail de volet ou de store","volet|volets|store|stores|rideau|rideaux"]],
+ tableau:[["tableau électrique","disjoncteur|disjoncteurs|electrique|electricite|elec|differentiel|ligne|prise|prises|compteur|consuel|circuit|cable"],["tableau de fenêtre","fenetre|fenetres|baie|appui|embrasure|volet|enduit|macon|maconnerie"]]
+},
 /* « le sol est mort » : un constat, pas une quantité ni un travail décidé */
 etat:"mort|morte|morts|mortes|foutu|foutue|foutus|foutues|naze|nazes|pourri|pourrie|pourris|pourries|hs|h.s|hors service|flingue|flinguee|cuit|cuite|nique|niquee|bousille|bousillee|abime|abimee|abimes|abimees|casse|cassee|fichu|fichue|degueulasse|crade|a refaire",
 /* « le vieux carrelage » */

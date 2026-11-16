@@ -257,3 +257,13 @@ Source du moteur et outils de traduction : le module « caso-ia » (moteur, cata
 - `index.html` (`vnMatch`) : « dépose placo » ne prend plus le prix de « Dépose carrelage ».
 - essais : `outils/chat/essai-langage.js` (sans navigateur : 88 phrases de `corpus-langage.json`, et les 1 348 phrases du contrôle du moteur qui doivent sortir identiques) ; 13 contrôles dans `essai-fiabilite.js`.
 - pas encore : question sur un mot à plusieurs sens, projet décrit sur plusieurs messages, constats (« le sol est mort »), vocabulaire personnel, libellé professionnel, autres langues.
+
+**Langage de chantier, étape 2 (16 nov. 2026)** — mots à plusieurs sens, projet sur plusieurs messages, constats :
+- **mots à plusieurs sens** (`lexique-btp.js` → `sens`, `langage.js` → `leve`, `ambigus`) : « bâti », « rail », « tableau » dits seuls.
+  - ce qui tranche : le mot qui suit (« le rail du placard » → rail de porte coulissante), sinon le devis en cours et les trois derniers messages ; un autre travail de la même phrase ne suffit pas ;
+  - sinon la ligne (ou la note) garde le mot tapé, et le chat pose une seule question après sa réponse : « Bâti » : bâti de porte, bâti de fenêtre, ou bâti-support de WC ? Les réponses se touchent (`casoPont.sens(i)`) ou se tapent (« de porte », « le premier ») ; la ligne ou la note est alors renommée, annulable par « non ».
+- **projet en plusieurs messages** (`intel.js` → `projet`) : « Je dois refaire ma salle de bain. » ouvre un projet (20 min) ; « Elle fait 8 m² », « 4 m sur 3 » donnent la surface ; « on enlève tout le carrelage », « on met du nouveau au sol et aux murs », « on change l'évier » sont notés ; « fais-moi le devis » en fait un devis. Le sol prend la surface dite ; les murs ne sont pas devinés : « Carrelage mural (m²) » reste à préciser, et « 18 m² » juste après le remplit.
+- **constats** (`intel.js` → `constat`) : « Le mur est abîmé. » va dans les remarques du devis (jamais envoyées au client), « Celui de droite. » le précise, « Il faut le reprendre aussi derrière la porte. » devient une note À faire sur ce mur. Rien n'en est déduit (ni cause, ni travaux).
+- **modèles du métier** (moteur, `devisDepuis`) : « fais un devis pour Dupont pour refaire sa cuisine » sans devis ni modèle de l'artisan : les surfaces et les heures du modèle ne sont plus posées (« Crédence 4 m² », « 20 h ») ; elles restent à préciser.
+- « dépose lino » ne prend plus le prix de « Dépose carrelage » (mots de 4 lettres comptés).
+- essais : 24 contrôles de plus dans `essai-fiabilite.js` (154).

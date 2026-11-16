@@ -2846,7 +2846,7 @@ function vnMatch(label,prices){
   let hit=0;for(const w of b)if(a.some(x=>x===w||(w.length>4&&x.startsWith(w.slice(0,5)))))hit++;
   /* « dépose placo » n'est pas « Dépose carrelage » : chacun a un mot que l'autre n'a pas */
   const proche=(x,w)=>x===w||(w.length>4&&x.startsWith(w.slice(0,5)))||(x.length>4&&w.startsWith(x.slice(0,5)));
-  if(hit<b.length&&a.some(x=>x.length>=5&&!b.some(w=>proche(x,w)))&&b.some(w=>w.length>=5&&!a.some(x=>proche(x,w))))continue;
+  if(hit<b.length&&a.some(x=>x.length>=4&&!b.some(w=>proche(x,w)))&&b.some(w=>w.length>=4&&!a.some(x=>proche(x,w))))continue;
   const s=hit/b.length;if(s>bs){bs=s;best=p}}
  return bs>=.5?best:null;
 }

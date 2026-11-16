@@ -109,13 +109,13 @@ P.verifier=function(o){langue();if(!o||!(o.lines||[]).length)return "";var L=o.l
 
 /* ---------- devis depuis une description ---------- */
 var PIECES=/\b(salle de bains?|salle d eau|sdb|cuisine|chambre|salon|sejour|wc|toilettes|entree|couloir|bureau|buanderie|cellier|garage|piece)\b/;
-var TRAV=[["mur",/\b(faience|peinture (des )?murs|papier peint|toile de verre|enduit|lambris|placo|plaque de platre|ba13|doublage|cloison|credence)\b/],
+var TRAV=[["mur",/\b(carrelage (?:mural|murale|murs?|aux murs)|faience|peinture (des )?murs|papier peint|toile de verre|enduit|lambris|placo|plaque de platre|ba13|doublage|cloison|credence)\b/],
   ["sol",/\b(carrelage|parquet|stratifie|lino|vinyle|moquette|sol|chape|ragreage|(?:depose|enleve|retire|arrache) (?:du |le |la |les )?(?:carrelage|sol|parquet|moquette)|isolation (du )?sol|plancher)\b/],
   ["plafond",/\b(plafond|faux plafond)\b/],["peinture",/\bpeinture\b/],["perim",/\b(plinthes?|corniches?|baguettes?|joint silicone)\b/],
   ["u",/\b(receveur|douche|baignoire|wc|lavabo|vasque|meuble|robinet|robinetterie|mitigeur|porte|fenetre|radiateur|prises?|interrupteurs?|spots?|luminaires?|seche serviettes?|vmc|chauffe eau|ballon|evier|plan de travail|hotte|colonne de douche|paroi)\b/],
   ["forfait",/\b(evacuation|gravats|nettoyage|deplacement|protection|benne)\b/]];
 /* « douche italienne » n'est pas « receveur de douche » : chacun a un mot que l'autre n'a pas */
-function autreChose(a,b){var A=mots(a),Bm=mots(b),pas=function(L,M){return L.some(function(w){return w.length>=5&&!M.some(function(x){return x===w||x.indexOf(w)===0||w.indexOf(x)===0;});});};return pas(A,Bm)&&pas(Bm,A);}
+function autreChose(a,b){var A=mots(a),Bm=mots(b),pas=function(L,M){return L.some(function(w){return w.length>=4&&!M.some(function(x){return x===w||x.indexOf(w)===0||w.indexOf(x)===0;});});};return pas(A,Bm)&&pas(Bm,A);}
 function genre(l){for(var i=0;i<TRAV.length;i++)if(TRAV[i][1].test(l))return TRAV[i][0];return null;}
 function piece(nom,cli,seul){var M=null;try{var L=(db.maq3d||[]).filter(function(x){return x&&x.d&&x.d.projet&&x.d.projet.rooms&&x.d.projet.scale&&(x.cli?!cli||cle(x.cli)===cle(cli):!seul);}).sort(function(a,b){return (b.at||0)-(a.at||0);});
   for(var i=0;i<L.length&&!M;i++){var pj=L[i].d.projet,sc=+pj.scale,H=+(pj.params&&pj.params.H)||2.5;(pj.rooms||[]).forEach(function(r){if(!M&&r.name&&nom&&hn(r.name).indexOf(nom)>=0&&r.areaPx)M={a:r.areaPx*sc*sc,per:(r.perimPx||0)*sc,h:H,src:"maq",nom:r.name};});}}catch(x){}return M;}
@@ -125,6 +125,8 @@ function suite(t,s){var S0=SUITE;if(!S0)return false;if(Date.now()-S0.at>15*6000
   var x=s.replace(/^\s*(?:la |ma |sa )?(?:piece|surface|pièce)\s*(?:fait|de|est de|mesure)?\s*|^\s*(?:ca fait|c est|environ|elle fait|il fait)\s*/,"").trim(),A=null,per=null,dims=null,m;
   if((m=x.match(/^(\d+(?:\.\d+)?)\s*(?:m2|m²|metres? carres?)$/)))A=+m[1];
   else if((m=x.match(/^(\d+(?:\.\d+)?)\s*m?\s*(?:x|par|sur|\*)\s*(\d+(?:\.\d+)?)\s*m?$/))){dims=[+m[1],+m[2]];A=dims[0]*dims[1];per=2*(dims[0]+dims[1]);}
+  if(S0.direct){var md=x.match(/^(\d+(?:[.,]\d+)?)\s*(m2|m²|metres? carres?|ml|m|u|h)?$/);if(!md)return false;var vd=parseFloat(md[1].replace(",",".")),ld=(q.lines||[]).filter(function(y){return y.label===S0.lignes[0].label&&!(+y.qty>0);})[0];if(!ld||!(vd>0))return false;
+    SUITE=null;langue();var bd=JSON.stringify(q);ld.qty=vd;fillForm();store();CHAT.qid=q.id;bulle(t,carteL(ld)+piedDevis(),{undo:bd},true);return true;}
   if(!(A>0&&A<10000))return false;SUITE=null;langue();
   if(per==null)per=4*Math.sqrt(A);var H=2.5,murs=Math.max(0,per*H-1.6),before=JSON.stringify(q),faits=[];
   S0.lignes.forEach(function(r){var l=(q.lines||[]).filter(function(y){return y.label===r.label&&y.unit===r.unit&&!(+y.qty>0);})[0];if(!l)return;
@@ -244,10 +246,11 @@ P.remplacer=function(t){var c=fr(t),s=c.p.replace(/[.!]+$/,"").trim(),m=(c.lang|
   var vf=P.verifier(q);if(vf)out.push(vf.replace("<p ","<p data-noi18n "));
   out.push('<div class="msg-tot"><span>Total du devis</span><b data-noi18n>'+e(E(tt.ttc))+' TTC</b></div><div class="msg-act"><button class="btn sm sec" onclick="go(\'edit\')"><svg class="i"><use href="#i-quote"/></svg>Voir le devis</button></div>');
   bulle(t,out.join(""),{undo:before},true);return true;};
-P.decrire=function(t){langue();if(!P.ready||typeof db==="undefined"||typeof q==="undefined")return false;
-  if(P.remplacer(t))return true;
-  if(suite(t,fr(t).p))return true;
-  var L0=lire(t);if(!L0)return false;var A=L0.A,pc=L0.pc,items=L0.items,cl0=L0.cl0;
+P.decrire=function(t,opts){langue();if(!P.ready||typeof db==="undefined"||typeof q==="undefined")return false;
+  opts=opts&&typeof opts==="object"?opts:null;
+  if(!opts){if(P.remplacer(t))return true;
+    if(suite(t,fr(t).p))return true;}
+  var L0=lire(t,!!opts);if(!L0)return false;var A=L0.A,pc=L0.pc,items=L0.items,cl0=L0.cl0;
   /* mesures : la pièce de la maquette, sinon une pièce carrée de cette surface (2,50 m sous plafond) */
   var mq=pc?piece(pc[1],cl0,A==null):null;if(A==null&&mq)A=mq.a;
   var aire=A,per=mq&&mq.per?mq.per:4*Math.sqrt(A||0),H=mq?mq.h:2.5,murs=Math.max(0,per*H-1.6);if(mq&&Math.abs(mq.a-A)/A>0.25)mq=null;
@@ -258,9 +261,13 @@ P.decrire=function(t){langue();if(!P.ready||typeof db==="undefined"||typeof q===
   q.lines=q.lines.filter(function(l){return l.label||l.pu;});
   var nouv=[],aMesurer=[];items.forEach(function(it){var qte,un;if(it.own!=null&&it.g!=="sol"){qte=it.own;un="m²";}else if(it.g==="surf"){qte=null;un="m²";}else if(it.g==="lin"){qte=null;un="ml";}else if(it.g==="vol"){qte=null;un="m³";}else if(it.g==="mur"){qte=murs;un="m²";}else if(it.g==="sol"||it.g==="plafond"){qte=aire;un="m²";}else if(it.g==="peinture"){qte=murs+aire;un="m²";}else if(it.g==="perim"){qte=per-0.8;un="ml";}else if(it.g==="forfait"){qte=1;un="forfait";}else{qte=it.n;un="u";}
     if(inconnu&&un!=="u"&&un!=="forfait"&&!(it.own!=null&&it.g!=="sol"))qte=null;
+    /* projet décrit en plusieurs messages : les murs ne sont pas devinés d'après le sol */
+    if(opts&&opts.sansEstim&&!mq&&it.own==null&&/^(mur|peinture|perim)$/.test(it.g))qte=null;
     var pr=null,bs=0,dep=/\b(depose|demolition|arrachage|enleve|retire|arrache)\b/;(db.prices||[]).forEach(function(x){if(dep.test(hn(it.lab))!==dep.test(hn(x.nom)))return;if(autreChose(it.lab,x.nom))return;var v=Math.min(proche(it.lab,x.nom),proche(x.nom,it.lab)+0.5);if(v>bs){bs=v;pr=x;}});if(bs<0.5)pr=null;
     if(pr&&pr.unit&&pr.unit!==un&&!(un==="u"&&/^(u|forfait)$/.test(pr.unit))&&!(un==="forfait"&&pr.unit==="u"))pr=null;
     var lab=pr?pr.nom:it.lab.charAt(0).toUpperCase()+it.lab.slice(1);if(qte!=null)qte=Math.round(qte*10)/10;
+    /* « carrelage mural » garde son nom, même chiffré au prix du carrelage */
+    if(pr&&/\b(mural|murale|murs|plafond)\b/.test(hn(it.lab))&&!/\b(mural|murale|murs?|plafond)\b/.test(hn(pr.nom)))lab=it.lab.charAt(0).toUpperCase()+it.lab.slice(1);
     var l={label:lab,qty:qte,unit:pr&&pr.unit?pr.unit:un,pu:pr?nombre(pr.prix):null,tva:pr&&pr.tva!=null?pr.tva:10,g:it.g};q.lines.push(l);nouv.push(l);if(qte==null)aMesurer.push(l);});
   nouv.forEach(function(l){delete l.g;});
   fillForm();store();CHAT.qid=q.id;var tt=totals(q);
@@ -269,12 +276,14 @@ P.decrire=function(t){langue();if(!P.ready||typeof db==="undefined"||typeof q===
   SUITE=null;
   if(aMesurer.length){var vu=VU[q.id]||(VU[q.id]={});aMesurer.forEach(function(l){vu["qte:"+cle(l.label)]=1;});
     out.push('<p class="vn-w" dir="auto" data-noi18n>'+e(T("Quantités à préciser : {0}.",[aMesurer.map(function(l){return l.label+" ("+l.unit+")";}).join(", ")]))+'</p>');
-    out.push(p(T("Donne la surface de la pièce (par exemple « 20 m² » ou « 4 m sur 3,5 m ») et je les calcule.")));
-    SUITE={qid:q.id,at:Date.now(),lignes:aMesurer.map(function(l){return {label:l.label,unit:l.unit};})};}
+    if(opts&&opts.sansEstim&&A!=null){/* la surface du sol est connue : il manque autre chose (les murs…) ; une seule ligne → sa quantité est demandée */
+      if(aMesurer.length===1){out.push(p(T("Donne la quantité pour {0} (par exemple « 18 {1} »).",[aMesurer[0].label,aMesurer[0].unit])));SUITE={qid:q.id,at:Date.now(),direct:true,lignes:aMesurer.map(function(l){return {label:l.label,unit:l.unit};})};}}
+    else{out.push(p(T("Donne la surface de la pièce (par exemple « 20 m² » ou « 4 m sur 3,5 m ») et je les calcule.")));
+    SUITE={qid:q.id,at:Date.now(),lignes:aMesurer.map(function(l){return {label:l.label,unit:l.unit};})};}}
   else if(A!=null&&(mq||nouv.some(function(l){var g=genre(" "+hn(l.label)+" ");return g==="mur"||g==="peinture"||g==="perim";}))){SUITE=null;out.push('<p class="mut" dir="auto" data-noi18n>'+e(mq?T("Mesures de la maquette ({0}).",[mq.nom]):T("Murs et plinthes estimés pour une pièce carrée de {0} m².",[N(A)]))+'</p>');}
   var vf=P.verifier(q);if(vf)out.push(vf.replace("<p ","<p data-noi18n "));
   out.push('<div class="msg-tot"><span>Total du devis</span><b data-noi18n>'+e(E(tt.ttc))+' TTC</b></div><div class="msg-act"><button class="btn sm sec" onclick="go(\'edit\')"><svg class="i"><use href="#i-quote"/></svg>Voir le devis</button></div>');
-  bulle(t,out.join(""),{undo:before},true);return true;};
+  bulle(opts&&opts.aff!=null?opts.aff:t,out.join(""),{undo:before},true);return true;};
 /* le devis où écrire : jamais celui d'un autre client, jamais un devis déjà envoyé ou signé.
    Client nommé : son devis ouvert s'il est en brouillon, sinon son dernier brouillon, sinon un nouveau devis. */
 function brouil(o){return !!o&&(!o.status||o.status==="brouillon");}
@@ -395,12 +404,73 @@ var QN="(\\d+(?:[.,]\\d+)?)\\s*(m2|m²|metres? carres?|ml|m3|m|h|heures?|sacs?|p
  PRX4=/^combien (?:ca )?coutent? (?:une? |le |la |les |l |du |de la |des )?(.+)$/,
  PRX3=/^(?:a )?combien (?:est|sont|coute|coutent|je fais|je prends pour|je facture|je vends) (?:le |la |les |l |du |de la |des )?(.+)$/,
  ETAT=/\b(?:est|a ete|a|passe|mets|marque|note)\b.*\b(signe|signee|accepte|acceptee|valide|validee|dit oui|d accord|refuse|refusee|dit non|decline|perdu)\b/;
+/* ---------- un projet décrit en plusieurs messages (« Je dois refaire ma salle de bain. » … « Fais-moi le devis. ») ---------- */
+var PROJET=null,PJ_OUV=/^(?:je dois|il faut|faut|on doit|je vais|on va|j ai a|il y a a)?\s*(?:refaire|renover|retaper|reprendre|faire)\s+(?:toute la |tout le |ma |la |une |sa |le |un |mon |son )(.+)$/,
+ PJ_DEVIS=/^(?:fais|fait|prepare|sors|etablis|chiffre|envoie)(?: moi| nous)?(?: le| un| ce| mon)? ?(?:devis|chiffrage|ca)?$|^(?:le )?devis$/,
+ PJ_DEP=/\b(?:enleve|enlever|enleves|retire|retirer|arrache|arracher|vire|virer|casse|casser|depose|deposer|demonte|demonter|pete|peter|degage|degager)\b/;
+function capit(x){x=String(x||"");return x.charAt(0).toUpperCase()+x.slice(1);}
+function enFr(c){var ui="fr";try{ui=(typeof I18N!=="undefined"&&I18N.lang)||"fr";}catch(x){}return ui==="fr"||(c&&c.lang)==="fr";}
+function projet(t,s,c){var m,LG=window.CASO_LANGAGE;if(!enFr(c)||typeof q==="undefined")return false;
+  if(PROJET&&Date.now()-PROJET.at>20*60000)PROJET=null;
+  /* ouverture : une pièce à refaire, sans autre détail */
+  if((m=s.match(PJ_OUV))){var cl=clientDe(t),r0=m[1],pm=(" "+r0+" ").match(PIECES);
+    if(pm){var reste=(" "+r0+" ").replace(PIECES," ").replace(/\b(de|du|chez|pour|a|la|le|l|d|m|mme|monsieur|madame)\b/g," ");if(cl)reste=reste.split(hn(cl)).join(" ");
+      if(!reste.trim()){PROJET={pc:pm[1]==="sdb"?"salle de bain":pm[1],cl:cl&&cliNom(cl)?cliNom(cl).nom:null,A:null,items:[],mat:null,at:Date.now()};
+        bulle(t,p(T("{0} : je note. Donne la surface et les travaux, puis dis « fais le devis ».",[capit(PROJET.pc)])));return true;}}}
+  if(!PROJET)return false;var P0=PROJET;
+  /* la surface de la pièce */
+  var x=s.replace(/^(?:elle|il|ca|la piece|la surface|c est)\s*/,"").replace(/^(?:fait|mesure|est de|de)\s*/,"").replace(/\s*(?:environ|a peu pres)\s*/," ").trim();
+  if((m=x.match(/^(\d+(?:[.,]\d+)?)\s*(?:m2|m²|metres? carres?)$/))){P0.A=parseFloat(m[1].replace(",","."));P0.at=Date.now();bulle(t,p(capit(P0.pc)+" : "+N(P0.A)+" m²."));return true;}
+  if((m=x.match(/^(\d+(?:[.,]\d+)?)\s*m?\s*(?:x|par|sur)\s*(\d+(?:[.,]\d+)?)\s*m?$/))){P0.A=Math.round(parseFloat(m[1].replace(",","."))*parseFloat(m[2].replace(",","."))*100)/100;P0.at=Date.now();bulle(t,p(capit(P0.pc)+" : "+N(P0.A)+" m²."));return true;}
+  /* « fais-moi le devis » : tout ce qui a été noté devient un devis ; rien n'est deviné */
+  if(PJ_DEVIS.test(s)){if(!P0.items.length){bulle(t,p(T("Dis-moi d’abord les travaux à faire dans la {0}.",[P0.pc])));return true;}
+    var ph=P0.pc+(P0.A!=null?" "+String(P0.A).replace(".",",")+" m²":"")+", "+P0.items.join(", ")+(P0.cl?" pour "+P0.cl:"");PROJET=null;
+    if(P.decrire(ph,{aff:t,sansEstim:true}))return true;PROJET=P0;return false;}
+  /* un travail : « on enlève tout le carrelage », « on met du nouveau au sol et aux murs », « changer le lavabo » */
+  if(B().isQuestion&&B().isQuestion(t))return false;
+  if(/^(?:nouveau|nouvelle|rdv|rendez vous|envoie|ouvre|montre|affiche|supprime|annule|relance|combien|client)\b/.test(s)||/\d\s*(?:€|euros?)/.test(s))return false;
+  var y=s.replace(/^(?:et |puis |ensuite |aussi )?(?:on (?:va |doit )?|il faut |faut |je (?:vais |dois )?|faudra )/,"").replace(/\b(?:tout le|toute la|tous les|toutes les)\b/g,"le").trim(),dep=PJ_DEP.test(y),nouv=[];
+  var lieux=[];if(/\b(?:au |le |du |par )?sol\b/.test(y))lieux.push("sol");if(/\b(?:aux? |les? |des |sur les )?murs?\b|\bmural/.test(y))lieux.push("mur");if(/\bplafond\b/.test(y))lieux.push("plafond");
+  var tm=LG?LG.terme(t):null;if(tm&&/^(mur|dalle)$/.test(tm.id)&&lieux.length)tm=null;var mat=tm&&tm.type==="mat"?tm.ecrit.toLowerCase():null;
+  /* « du nouveau », « du neuf » : le dernier matériau dit */
+  if(!tm&&/\b(?:du |le |un )?(?:nouveau|neuf|pareil|meme)\b/.test(y)&&P0.mat)mat=P0.mat;
+  if(mat){if(tm&&tm.type==="mat")P0.mat=mat;
+    if(dep)nouv.push("dépose "+mat);
+    else if(lieux.length>1||lieux[0]==="mur"&&/carrelage|parquet|vinyle/.test(mat))lieux.forEach(function(l){nouv.push(l==="mur"?(mat==="carrelage"?"carrelage mural":mat+" murs"):l==="plafond"?mat+" plafond":mat);});
+    else nouv.push(mat);}
+  else if(tm){nouv.push((dep?"dépose ":"")+tm.ecrit.toLowerCase());}
+  if(!nouv.length)return false;
+  nouv.forEach(function(n){if(P0.items.indexOf(n)<0)P0.items.push(n);});P0.at=Date.now();
+  bulle(t,p(T("Noté : {0}.",[nouv.join(", ")])));return true;}
+/* ---------- constats : « Le mur est abîmé. » « Celui de droite. » « Il faut le reprendre aussi derrière la porte. » ----------
+   Un constat reste un constat : il est gardé dans les notes du devis (jamais envoyées au client), sans cause ni travaux déduits. */
+var SUJET=null;
+function noteBulle(t,k,txt){CHAT.qid=q.id;bulle(t,'<p class="mut"><b>'+e(T(k==="todo"?"À faire":"Remarques"))+'</b> : <span data-noi18n dir="auto">'+e(txt)+'</span></p><div class="msg-act"><button class="btn sm sec" onclick="go(\'edit\')"><svg class="i"><use href="#i-quote"/></svg>Voir le devis</button></div>',null,true);}
+function constat(t,s){var D=window.CASO_LEXBTP,m;if(!D||typeof q==="undefined"||!enFr(fr(t)))return false;
+  if(SUJET&&Date.now()-SUJET.at>10*60000)SUJET=null;
+  var ET="(?:tout |toute |completement |bien |tres |trop |un peu |assez )?("+D.etat+"|abime|abimee|abimes|abimees|fissure|fissuree|fissures|humide|humides|moisi|moisie|decolle|decollee|gonfle|gonflee|use|usee|rouille|rouillee|a changer|a reprendre)";
+  if((m=s.match(new RegExp("^(le|la|les|l) (.{2,40}?) (?:est|sont|c est) "+ET+"$")))&&!/\b(devis|client|facture|prix|rdv|rendez vous|planning|total)\b/.test(m[2])&&!clientDe(t)){
+    var raw=String(t).trim().replace(/[.!]+$/,""),mr=raw.match(/^(?:le|la|les|l['’])\s*(.+?)\s+(?:est|sont)\s+(.+)$/i),nom=mr?mr[1]:m[2],etat=mr?mr[2]:m[3],before=JSON.stringify(q),txt=capit(nom)+" "+etat;
+    q.notes=(q.notes||[]).concat({k:"rem",t:txt});store();try{qNotesR();}catch(x){}
+    SUJET={art:m[1],nom:nom,etat:etat,txt:txt,qid:q.id,at:Date.now()};noteBulle(t,"rem",txt);return true;}
+  if(!SUJET||SUJET.qid!==q.id)return false;
+  /* « Celui de droite. » : précise le constat d'avant */
+  if((m=s.match(/^(?:celui|celle|ceux|celles)(?: la| ci)? (?:(?:de|du|d|des|a|au|dans|sous|sur|derriere|devant|pres|cote) .{2,40}|en .{2,30})$/))){
+    var prec=String(t).trim().replace(/[.!]+$/,"").replace(/^(?:celui|celle|ceux|celles)(?:[- ]l[aà]|[- ]ci)?\s+/i,""),n0=(q.notes||[]).filter(function(n){return n.t===SUJET.txt;})[0],nt=capit(SUJET.nom)+" "+prec+" "+SUJET.etat;
+    if(n0)n0.t=nt;else q.notes=(q.notes||[]).concat({k:"rem",t:nt});SUJET.txt=nt;SUJET.nom=SUJET.nom+" "+prec;SUJET.at=Date.now();store();try{qNotesR();}catch(x){}noteBulle(t,"rem",nt);return true;}
+  /* « Il faut le reprendre aussi derrière la porte. » : « le » = ce dont on vient de parler */
+  if((m=s.match(/^(?:il faut|faut|faudra|on doit|il faudrait) (?:le|la|les|l) ([a-z]+er|[a-z]+ir|[a-z]+re)\b(.*)$/))){
+    var rw=String(t).trim().replace(/[.!]+$/,"").match(/^(?:il\s+)?(?:faut|faudra|faudrait|on doit)\s+(?:le|la|les|l['’])\s*(\S+)\s*(.*)$/i),verbe=rw?rw[1]:m[1],suite2=rw?rw[2]:m[2].trim();
+    var td=capit(verbe)+" "+(SUJET.art==="l"?"l'":SUJET.art+" ")+SUJET.nom+(suite2?", "+suite2:"");q.notes=(q.notes||[]).concat({k:"todo",t:td});SUJET.at=Date.now();store();try{qNotesR();}catch(x){}noteBulle(t,"todo",td);return true;}
+  return false;}
 var STN={brouillon:"brouillon",envoye:"envoyé",accepte:"accepté",paye:"payé",refuse:"refusé",expire:"expiré"};
 function listeDevis(L,avecClient){return '<div class="msg-lines">'+L.map(function(o){return '<div class="ml" role="button" tabindex="0" style="cursor:pointer" onclick="casoPont.voir(\''+e(o.id)+'\')"><div><b data-noi18n>'+e(avecClient&&o.client?o.client:T("Devis {0}",[o.num||""]).trim())+'</b><div class="mut" data-noi18n>'+e([avecClient&&o.num?o.num:"",o.date?dFR(o.date):"",T(STN[o.status||"brouillon"]||"brouillon")].filter(Boolean).join(" · "))+'</div></div><b data-noi18n>'+e(E(totals(o).ttc))+' TTC</b></div>';}).join("")+'</div>';}
 function usage(t,c){var s=c.p.replace(/[?!.…]+/g," ").replace(/\s+/g," ").trim(),m,cl;
   /* « rdv Petit vendredi 8h pour le métré de la cuisine » : un rendez-vous, pas un plan de pièce */
   if(/^(?:rdv|rendez vous)\b/.test(s)&&/ pour (?:le |la |l |un |une |du |des )/.test(" "+s)&&typeof agChat==="function")return !!agChat(t);
   /* « Martin a tout payé », « Petit a réglé le solde » : l'encaissement des factures (avant, la phrase créait une ligne de devis) */
+  if(projet(t,s,c))return true;
+  if(constat(t,s))return true;
   /* « Martin a tout payé », « Petit a réglé sa facture » (sans montant) : le reste dû est encaissé après un Oui */
   if((m=s.match(/^(.+?) (?:m a |a |ont )(?:deja |bien )?(?:tout (?:paye|regle|vire|solde)|(?:paye|regle|vire|solde) (?:tout|le reste|le solde|la totalite|sa facture|toute sa facture|toute la facture|la facture))(?: (?:en |par )(?:especes?|liquide|cheque|carte|cb|virement))?$/))&&(cl=clientDe(t))&&cliNom(cl)&&P.demander&&typeof faDue==="function"&&typeof faPayAdd==="function"){
     var np=cliNom(cl).nom,FP=(db.invoices||[]).filter(function(x){return x&&x.num&&x.kind!=="avoir"&&x.client&&cle(x.client.nom)===cle(np)&&faDue(x)>0.005;}).sort(function(a,b){return String(a.date).localeCompare(String(b.date));});

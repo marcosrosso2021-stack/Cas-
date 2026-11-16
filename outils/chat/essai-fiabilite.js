@@ -103,7 +103,21 @@ const ESSAIS=[
  ["fr",["devis pour Martin : 12 m² de carrelage","arrondis à 600 €"],["","js:q.lines.length===1&&!db.prices.some(p=>/arrondi/i.test(p.nom))"]],
  /* ---- langage de chantier (chat/langage.js) : fautes, abréviations, parler familier ---- */
  ["fr",["faut refaire le bati et changer 2 fenetre"],[/À faire : Refaire le bâti et changer 2 fenêtre/]],
- ["fr",["devis pour Martin : faut refaire le bati et changer 2 fenetre"],[/Bâti 1 u.*Fenêtre 2 u/]],
+ /* un mot à plusieurs sens : la ligne garde le mot tapé, une seule question, la réponse (touchée ou tapée) précise la ligne */
+ ["fr",["devis pour Martin : faut refaire le bati et changer 2 fenetre","de porte"],[/Bâti 1 u.*Fenêtre 2 u.*« Bâti » : bâti de porte, bâti de fenêtre, ou bâti-support de WC \?/,"js:q.lines.some(l=>l.label==='Bâti de porte'&&l.qty==1)&&q.lines.length===3"]],
+ ["fr",["Il faut changer le rail.","de cloison"],[/À faire : Changer le rail.*« Rail » : rail de cloison, rail de porte coulissante, ou rail de volet ou de store \?/,"js:(q.notes||[]).some(n=>n.t==='Changer le rail de cloison')"]],
+ ["fr",["Il faut changer le rail du placard."],[/^(?![\s\S]*« Rail »)[\s\S]*À faire : Changer le rail de porte coulissante du placard/]],
+ ["fr",["devis Martin : cloison placo 12 m²","faut changer le rail"],["",/^(?![\s\S]*« Rail »)[\s\S]*rail de cloison/]],
+ /* un projet décrit en plusieurs messages ; les murs ne sont pas devinés */
+ ["fr",["Je dois refaire ma salle de bain.","Elle fait 8 mètres carrés.","On enlève tout le carrelage.","On met du nouveau au sol et aux murs.","Fais-moi le devis.","18 m²"],
+  [/Salle de bain : je note/,/Salle de bain : 8 m²/,/Noté : dépose carrelage/,/Noté : carrelage, carrelage mural/,/Dépose carrelage 8 m² × 15 €.*Carrelage 8 m² × 45 €.*Carrelage mural m².*Quantités à préciser : Carrelage mural \(m²\)/,"js:q.lines.some(l=>l.label==='Carrelage mural'&&l.qty==18)&&q.lines.some(l=>l.label==='Carrelage'&&l.qty==8)"]],
+ ["fr",["Je dois refaire la cuisine de Martin","4 m sur 3","faut virer le vieux lino","on met du parquet","et on change l'évier","fais le devis"],
+  ["","","","","","js:q.client==='Martin'&&q.lines.some(l=>/pose lino/i.test(l.label)&&l.qty==12&&!l.pu)&&q.lines.some(l=>l.label==='Parquet'&&l.qty==12)&&q.lines.some(l=>l.label==='Évier'&&l.qty==1)"]],
+ ["fr",["Je dois refaire ma salle de bain.","Fais-moi le devis."],["",/Dis-moi d’abord les travaux/]],
+ /* constats : gardés dans les notes du devis, sans rien en déduire */
+ ["fr",["Le mur est abîmé.","Celui de droite.","Il faut le reprendre aussi derrière la porte."],[/Remarques : Mur abîmé/,/Remarques : Mur de droite abîmé/,/À faire : Reprendre le mur de droite, aussi derrière la porte/]],
+ /* devis d'après un modèle du métier : pas de surface ni d'heures inventées */
+ ["fr",["fais un devis pour Dupont pour refaire sa cuisine"],[/Quantités à préciser : Crédence \(m²\), Main d’œuvre \(h\)/]],
  ["fr",["faut peter le vieux carlage et remettre du neuf"],[/^(?![\s\S]*9)[\s\S]*À faire : Déposer l'ancien carrelage et remettre du carrelage/]],
  ["fr",["faut peter le vieux carlage et remettre du neuf"],["js:CHAT.m.some(m=>m.who==='me'&&m.text==='faut peter le vieux carlage et remettre du neuf')"]],
  ["fr",["devis Martin faut peter le vieux carlage et remettre du neuf","12 m²"],[/Dépose carrelage m² × 15 €.*Carrelage m² × 45 €.*Quantités à préciser/,/Dépose carrelage 12 m².*Carrelage 12 m²/]],

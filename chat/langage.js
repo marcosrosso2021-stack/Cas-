@@ -113,12 +113,58 @@ function nettoie(t){var brut=String(t||""),R=[],X=trouve(brut),J=X.J,H=X.hits,i;
 function terme(x){var H=trouve(String(x||"")).hits.filter(function(h){return h.f.t.type!=="piece";});if(!H.length)return null;
   H.sort(function(a,b){return b.n-a.n||a.i-b.i;});var h=H[0],o=h.f.t;return {id:o.id,nom:o.nom,ecrit:h.f.sorte==="fam"?o.nom:h.f.ecrit,g:o.g,type:o.type,amb:o.amb,metier:o.metier,k:h.k};}
 
-window.CASO_LANGAGE={nettoie:nettoie,terme:terme,termes:TERMES,nz:nz,nombre:Object.keys(TERMES).length};
+/* ---------- mots à plusieurs sens ----------
+   leve(id, contexte) → {sur:"bâti de porte"|null, choix:[noms]} : un seul sens désigné par le contexte → il est sûr. */
+var SENS=D.sens||{};
+function leve(id,ctx){var S=SENS[id];if(!S)return {sur:null,choix:[]};var c=" "+nz(ctx).replace(/[^a-z0-9]+/g," ")+" ",vus=S.filter(function(x){return x[1].split("|").some(function(w){return c.indexOf(" "+w+" ")>=0;});});
+  return {sur:vus.length===1?vus[0][0]:null,choix:S.map(function(x){return x[0];})};}
+/* le mot seul (« bâti », « rail ») dans une phrase : [{id, a, b, mot}] */
+function ambigus(t){var X=trouve(String(t||"")),out=[];X.hits.forEach(function(h){var o=h.f.t;if(!o.amb||!SENS[o.id])return;
+    /* « rail de cloison », « bâti de porte » sont déjà précis */
+    if(SENS[o.id].some(function(x){return nz(x[0])===h.k;})||h.n>1)return;out.push({id:o.id,a:h.a,b:h.b,mot:String(t).slice(h.a,h.b),k:h.k});});return out;}
+
+window.CASO_LANGAGE={nettoie:nettoie,terme:terme,termes:TERMES,nz:nz,nombre:Object.keys(TERMES).length,leve:leve,ambigus:ambigus};
 
 /* ---------- branchement : la phrase nettoyée passe par le chemin habituel du chat ---------- */
 var P=window.casoPont;if(!P)return;
+function esc(x){return String(x==null?"":x).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+function cap(x){x=String(x||"");return x.charAt(0).toUpperCase()+x.slice(1);}
+/* ce qui entoure la phrase : le devis en cours et les trois derniers messages de l'artisan */
+function contexte(t){var L=t==null?[]:[String(t)];try{if(typeof q!=="undefined"&&q){(q.lines||[]).forEach(function(l){if(l.label)L.push(l.label);});(q.notes||[]).forEach(function(n){L.push(n.t);});}
+    if(typeof CHAT!=="undefined"&&CHAT.m)CHAT.m.filter(function(m){return m.who==="me";}).slice(-3).forEach(function(m){L.push(m.text);});}catch(x){}return L.join(" . ");}
+/* la question en attente : {id, k, choix, qid, at} */
+var AMB=null;
+function demande(a){var S=SENS[a.id];if(!S||typeof CHAT==="undefined")return;AMB={id:a.id,k:a.k,mot:a.mot,choix:S.map(function(x){return x[0];}),qid:typeof q!=="undefined"&&q?q.id:null,at:Date.now()};
+  CHAT.m.push({who:"bot",html:'<div data-noi18n><p dir="auto">« '+esc(cap(a.mot))+' » : '+esc(AMB.choix.map(function(c,i){return (i===AMB.choix.length-1&&i>0?"ou ":"")+c;}).join(AMB.choix.length>2?", ":" "))+' ?</p><div class="msg-act">'+AMB.choix.map(function(c,i){return '<button class="btn sm'+(i?" sec":"")+'" onclick="casoPont.sens('+i+')">'+esc(cap(c))+'</button>';}).join("")+'</div></div>'});
+  try{chatSave();chatRender(true);}catch(x){}}
+/* la réponse : la ligne du devis (ou la note) qui porte le mot seul prend le nom précis */
+function applique2(i){var a=AMB;AMB=null;if(!a||typeof q==="undefined"||!q||q.id!==a.qid)return false;var nom=a.choix[i];if(!nom)return false;var fait=null,avant=JSON.stringify(q);
+  (q.lines||[]).forEach(function(l){if(!fait&&l.label&&nz(l.label)===a.k){l.label=cap(nom);fait={l:l};}});
+  if(!fait)(q.notes||[]).forEach(function(n){if(fait)return;var J=jetons(n.t),h=J.filter(function(x){return x.k===a.k;})[0];if(h){n.t=n.t.slice(0,h.a)+nom+n.t.slice(h.b);fait={n:n};}});
+  if(!fait)return false;try{fillForm();store();}catch(x){}
+  var h2=fait.l?'<div class="msg-lines"><div class="ml"><div><b data-noi18n lang="fr">'+esc(fait.l.label)+'</b><div class="mut" data-noi18n>'+esc((fait.l.qty==null?"":String(fait.l.qty).replace(".",",")+" ")+(fait.l.unit||""))+'</div></div></div></div>'
+    :'<p class="mut"><b>'+esc(P.tr(fait.n.k==="todo"?"À faire":"Remarques"))+'</b> : <span data-noi18n dir="auto">'+esc(fait.n.t)+'</span></p>';
+  CHAT.m.push({who:"bot",html:h2,undo:avant});try{chatSave();chatRender(true);}catch(x){}return true;}
+P.sens=function(i){if(!AMB)return;var c=AMB.choix[i];if(typeof CHAT!=="undefined"&&c)CHAT.m.push({who:"me",text:cap(c)});applique2(i);};
+/* réponse tapée : « de porte », « porte », « fenêtre », « le premier » */
+var oui0=P.oui;
+P.oui=function(t){if(AMB&&Date.now()-AMB.at<10*60000){var k=nz(t).replace(/[.!?]+/g,"").replace(/^(c est |celui |le |la |un |une )?(de |du |d )?/,"").trim(),i=-1;
+    if(/^(1|premier|premiere|le premier|la premiere)$/.test(nz(t)))i=0;else if(/^(2|deuxieme|second|seconde|le deuxieme)$/.test(nz(t)))i=1;else if(/^(3|troisieme|le troisieme|dernier)$/.test(nz(t)))i=AMB.choix.length-1;
+    else if(k&&k.length>=3){var V=AMB.choix.map(function(c,j){var w=nz(c).replace(new RegExp("^"+AMB.k+"\\b"),"").replace(/\b(de|du|d|ou|a|support)\b/g," ").trim().split(/\s+/);return k.split(/\s+/).every(function(x){return w.some(function(y){return y===x||y.indexOf(x)===0&&x.length>=4;});})?j:-1;}).filter(function(j){return j>=0;});if(V.length===1)i=V[0];}
+    if(i>=0){if(typeof CHAT!=="undefined")CHAT.m.push({who:"me",text:String(t)});if(applique2(i))return true;}
+    else if(nz(t).split(" ").length>3)AMB=null;}
+  return oui0?oui0.apply(this,arguments):false;};
 var rv0=P.renvoi;
-P.renvoi=function(t){var r=null;try{var lg=(P.B&&P.B.translate?P.B.translate(String(t)).lang:"fr")||"fr";if(lg==="fr"){var n=nettoie(t);if(n.change)r=n.t;}}catch(x){if(window.console)console.error(x);}
+P.renvoi=function(t){var r=null,aDemander=null;try{var lg=(P.B&&P.B.translate?P.B.translate(String(t)).lang:"fr")||"fr",ui="fr";try{ui=(typeof I18N!=="undefined"&&I18N.lang)||"fr";}catch(x){}if(lg==="fr"||ui==="fr"&&lg!=="en"){var n=nettoie(t),txt=n.t;
+      /* un mot à plusieurs sens : le contexte tranche, sinon la question vient après la réponse du chat */
+      /* ce qui tranche : le mot qui suit (« le rail du placard »), sinon le devis en cours et les messages d'avant.
+         Un autre travail cité dans la même phrase (« refaire le bâti et changer 2 fenêtres ») ne suffit pas : la question est posée. */
+      var A=ambigus(txt);if(A.length){var ctx=contexte(null),R2=[];A.forEach(function(a){var apres=txt.slice(a.b).split(/[,;.]|\s(?:et|puis|avec)\s/)[0].split(/\s+/).slice(0,5).join(" "),v=leve(a.id,apres);if(!v.sur)v=leve(a.id,ctx);if(v.sur)R2.push({a:a.a,b:a.b,par:v.sur});else if(!aDemander)aDemander=a;});if(R2.length)txt=applique(txt,R2);}
+      if(txt!==String(t))r=txt;}}catch(x){if(window.console)console.error(x);}
+  if(aDemander){var n0=typeof CHAT!=="undefined"&&CHAT.m?CHAT.m.length:0,essais=0,att=function(){essais++;try{var M=CHAT.m,der=M[M.length-1];
+        /* la réponse du chat est arrivée : la question suit, si le mot est bien resté sur une ligne ou une note */
+        if(M.length>n0&&der&&der.who==="bot"){var la=typeof q!=="undefined"&&q&&((q.lines||[]).some(function(l){return l.label&&nz(l.label)===aDemander.k;})||(q.notes||[]).some(function(x){return jetons(x.t).some(function(j){return j.k===aDemander.k;});}));if(la)demande(aDemander);return;}}catch(x){return;}
+      if(essais<25)setTimeout(att,250);};setTimeout(att,250);}
   if(r){var r2=null;try{r2=rv0?rv0.call(this,r):null;}catch(x){}return r2===true?true:(r2||r);}
   return rv0?rv0.apply(this,arguments):null;};
 })();
