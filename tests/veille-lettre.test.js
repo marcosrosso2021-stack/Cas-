@@ -66,7 +66,7 @@ await t('dans l\'appli (faux navigateur) : page Newsletter et pastille, rien dan
  const e=monter('artisan',[{id:'x:1',titre:'Lointain',priorite:'P2',dateVigueur:'2099-01-01',pros:[]},{id:'x:2',titre:'Critique',priorite:'P0',dateVigueur:'2098-01-01',pros:[]},{id:'x:3',titre:'Plus proche',priorite:'P2',dateVigueur:'2090-01-01',pros:[]}]);
  await new Promise(r=>setTimeout(r,20));e.w.casoVeille.page();const he=e.E.newsList.innerHTML;
  assert.ok(/nv-une[\s\S]*Critique[\s\S]*À lire aussi[\s\S]*Plus proche[\s\S]*Lointain/.test(he),'le plus important en grand, puis l\'échéance la plus proche');assert.ok(/3 à lire/.test(he)&&/J-\d+/.test(he));
- e.ecoute.click({target:{closest:()=>({getAttribute:()=>'x:2'})}});const h2=e.E.newsList.innerHTML;assert.ok(/nv-une[\s\S]*Critique[\s\S]*Pour qui/.test(h2)&&/2 à lire/.test(h2),'lu pendant la visite : garde sa place');
+ e.ecoute.click({target:{closest:()=>({getAttribute:()=>'x:2'})}});const h2=e.E.newsList.innerHTML;assert.ok(/nv-une[\s\S]*Critique[\s\S]*nv-a/.test(h2)&&/2 à lire/.test(h2),'lu pendant la visite : garde sa place');assert.ok(!/Pour qui|Quand|Oui, toi/.test(h2),'partie dépliée courte');
  const d=monter('artisan',[]);await new Promise(r=>setTimeout(r,20));d.w.casoVeille.page();assert.ok(/Rien de nouveau pour ton métier/.test(d.E.newsList.innerHTML));d.w.chatSend('des nouveautés ?');assert.ok(/Rien de nouveau/.test(d.pousse[1].html))});
 await t('question ou commande : seules les tournures de question vont à la newsletter',()=>{
  for(const q of ['quoi de neuf','Quoi de neuf pour la TVA ?','des nouveautés ?','qu\'est-ce qui change pour les devis','il y a une nouvelle loi ?','la réglementation a changé ? du nouveau ?','ma newsletter'])assert.ok(V.demande(q),q);

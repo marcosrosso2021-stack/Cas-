@@ -100,11 +100,9 @@ var CSS='#newsList{--nv:cubic-bezier(.2,.8,.2,1)}'
 +'[dir=rtl] .nv-bar i{transform-origin:right}'
 +'.nv-go{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:999px;background:var(--acc,#ffc21a);color:#18181a;font:inherit;font-weight:800;padding:13px 20px;min-height:48px;cursor:pointer}'
 +'.nv-go:active,.nv-l:active{transform:scale(.98)}'
-+'.nv-f{margin:0;display:grid;gap:12px}'
-+'.nv-f div{display:grid;grid-template-columns:34px minmax(0,1fr);gap:12px;align-items:start}'
-+'.nv-f dt{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:color-mix(in srgb,currentColor 12%,transparent)}.nv-f dt svg{width:17px;height:17px}'
-+'.nv-f dd{margin:0;font-size:16px;line-height:1.4}.nv-f small{display:block;font-size:12px;opacity:.65;margin-bottom:1px}'
-+'.nv-lien{display:inline-flex;align-items:center;gap:6px;margin-top:16px;font-size:14px;color:inherit;text-decoration:underline;text-underline-offset:3px;opacity:.85}'
++'.nv-f{margin:0}.nv-a{margin:0;font-size:16px;line-height:1.45}.nv-q{margin:6px 0 0;font-size:14px;opacity:.7}'
++'.nv-m{margin:10px 0 0;font-size:13.5px;opacity:.7;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center}.nv-m a{color:inherit;text-decoration:underline;text-underline-offset:3px}'
++'.nv-une .nv-f{margin-top:2px}'
 +'.nv-in{animation:nvi .34s var(--nv) both}'
 +'.nv-t{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut,#6b6b70);margin:22px 4px 8px}'
 +'.nv-l{display:block;width:100%;text-align:start;border:1px solid var(--line,#e2e1dc);background:var(--card,#fbfbfa);color:inherit;font:inherit;border-radius:20px;padding:14px 16px;margin:0 0 8px;cursor:pointer;transition:transform .12s}'
@@ -113,7 +111,7 @@ var CSS='#newsList{--nv:cubic-bezier(.2,.8,.2,1)}'
 +'.nv-b.proche{background:var(--acc,#ffc21a);color:#18181a}.nv-b.proche small{color:#18181a;opacity:.7}'
 +'.nv-n{font-weight:700;line-height:1.3;font-size:15.5px}.nv-n u{text-decoration:none;display:inline-block;width:8px;height:8px;border-radius:50%;background:#e5484d;margin-inline-end:7px;vertical-align:1px}'
 +'.nv-c{width:18px;height:18px;color:var(--mut,#6b6b70);transition:transform .25s var(--nv)}.nv-l[aria-expanded=true] .nv-c{transform:rotate(90deg)}'
-+'.nv-l .nv-f{margin-top:14px;padding-top:14px;border-top:1px solid var(--line,#e2e1dc)}.nv-l.lu{opacity:.78}'
++'.nv-l .nv-f{margin-top:10px;padding-inline-start:66px}.nv-l.lu{opacity:.78}'
 +'.nv-vide{text-align:center;padding:44px 16px;color:var(--mut,#6b6b70)}.nv-vide span{width:60px;height:60px;border-radius:20px;background:var(--acc,#ffc21a);color:#18181a;display:grid;place-items:center;margin:0 auto 14px}.nv-vide span svg{width:28px;height:28px}.nv-vide b{display:block;color:var(--ink,#18181a);font-size:19px;margin-bottom:4px}'
 +'.nv-anim>*{animation:nvi .45s var(--nv) both}.nv-anim>*:nth-child(2){animation-delay:.05s}.nv-anim>*:nth-child(3){animation-delay:.1s}.nv-anim>*:nth-child(4){animation-delay:.15s}.nv-anim>*:nth-child(n+5){animation-delay:.2s}'
 +'@keyframes nvi{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}@keyframes nvb{from{transform:scaleX(0)}to{transform:none}}@keyframes nvp{50%{opacity:.35;transform:scale(.8)}}'
@@ -125,11 +123,15 @@ function court(it,auj){
  if(!it.dateVigueur)return {t:it.datePub?it.datePub.slice(8,10)+'/'+it.datePub.slice(5,7):'•',s:'',p:0};
  var d=delai(it.dateVigueur,auj);return d>1?{t:'J-'+d,s:it.dateVigueur.slice(8,10)+'/'+it.dateVigueur.slice(5,7),p:d<=30?1:0}:d===1?{t:'Demain',s:'',p:1}:d===0?{t:'Auj.',s:'',p:1}:{t:'En vigueur',s:'',p:0};
 }
-/* les trois lignes : Pour qui, Quand, À faire, puis le lien */
-function faits(it,p,auj){
- var c=concerne(p,it),q=quand(it,auj),l=function(i,k,v){return v?'<div><dt>'+ic(i)+'</dt><dd><small>'+esc(tr(k))+'</small><span data-noi18n lang="fr">'+esc(v)+'</span></dd></div>':''};
- return '<dl class="nv-f nv-in">'+l('user','Pour qui',c.texte)+l('cal','Quand',q)+l('check','À faire',it.aFaire)+'</dl>'
-  +(/^https:\/\//.test(it.url||'')?'<a class="nv-lien" href="'+esc(it.url)+'" target="_blank" rel="noopener noreferrer">'+ic('doc')+esc(tr('Texte officiel'))+'</a>':'');
+/* la partie dépliée, courte : ce qu'il y a à faire, puis une ligne discrète (la date si elle n'est pas déjà affichée, le lien officiel).
+   « Pour qui » n'apparaît que s'il y a quelque chose à préciser (un métier, ou « si tu fais partie des… »). */
+function faits(it,p,auj,une){
+ var c=concerne(p,it),q=quand(it,auj),h='<div class="nv-f nv-in">';
+ if(it.aFaire)h+='<p class="nv-a" data-noi18n lang="fr">'+esc(it.aFaire)+'</p>';else if(q)h+='<p class="nv-a" data-noi18n lang="fr">'+esc(q)+'.</p>';
+ if(c.texte!=='Oui, toi')h+='<p class="nv-q" data-noi18n lang="fr">'+esc(c.texte)+'</p>';
+ var m=(!une&&it.aFaire&&it.dateVigueur&&it.categorie!=='proposition'?'<span data-noi18n lang="fr">'+esc(dateFr(it.dateVigueur))+'</span>':'')
+  +(/^https:\/\//.test(it.url||'')?'<a href="'+esc(it.url)+'" target="_blank" rel="noopener noreferrer">'+esc(tr('Texte officiel'))+'</a>':'');
+ return h+(m?'<p class="nv-m">'+m+'</p>':'')+'</div>';
 }
 var dejaAnime=false,lus={};
 function page(){
@@ -149,7 +151,7 @@ function page(){
  if(une){var d=une.dateVigueur?delai(une.dateVigueur,auj):null,tot=une.dateVigueur&&une.datePub?Math.max(1,delai(une.dateVigueur,une.datePub)):0,fait=tot&&d!=null?Math.min(100,Math.max(4,Math.round((tot-Math.max(0,d))/tot*100))):0;
   h+='<article class="nv-une"><p class="nv-sur"><i></i>'+esc(tr(une.priorite==='P0'||une.priorite==='P1'?'Important':'Du nouveau pour ton métier'))+'</p><h2 data-noi18n lang="fr">'+esc(une.titre)+'</h2>'
    +(d!=null&&d>0&&une.categorie!=='proposition'?'<p class="nv-j"><b>J-'+d+'</b><span data-noi18n lang="fr">'+esc(dateFr(une.dateVigueur))+'</span></p><div class="nv-bar"><i style="width:'+fait+'%"></i></div>':'')
-   +(ouverts[une.id]?faits(une,p,auj):'<button type="button" class="nv-go" data-veille="'+esc(une.id)+'">'+esc(tr('Ça me concerne ?'))+ic('arrow')+'</button>')+'</article>'}
+   +(ouverts[une.id]?faits(une,p,auj,true):'<button type="button" class="nv-go" data-veille="'+esc(une.id)+'">'+esc(tr('Ça me concerne ?'))+ic('arrow')+'</button>')+'</article>'}
  var ligne=function(it,lu){var o=!!ouverts[it.id],c=court(it,auj);
   return '<button type="button" class="nv-l'+(lu?' lu':'')+'" data-veille="'+esc(it.id)+'" aria-expanded="'+o+'"><span class="nv-h"><span class="nv-b'+(c.p?' proche':'')+'">'+esc(tr(c.t))+(c.s?'<small>'+esc(c.s)+'</small>':'')+'</span>'
    +'<span class="nv-n" data-noi18n lang="fr">'+(lu||lus[it.id]?'':'<u></u>')+esc(it.titre)+'</span><svg class="i nv-c i-flip" aria-hidden="true"><use href="#i-chev"/></svg></span>'+(o?faits(it,p,auj):'')+'</button>'};
