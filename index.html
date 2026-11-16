@@ -35,7 +35,7 @@ window.VAULT=(()=>{
   keys:()=>{const o=[];try{for(let i=0;i<LS.length;i++)o.push(LS.key(i))}catch(e){}return o}};
  const PX='caso_x_',META='caso_vault',ITER=600000;
  // restent lisibles : réglages sans donnée client, verrou, compte (e-mail + empreintes du mot de passe, nécessaires pour se connecter)
- const PUB=new Set(['caso_account','caso_lk','caso_locked','caso_pq','caso_lang','caso_ts','caso_test','caso_notif','caso_notif_asked','caso_remshown','caso_seen_sig','caso_tourcal','caso_camh','caso_laser',META]);
+ const PUB=new Set(['caso_account','caso_lk','caso_locked','caso_lang','caso_ts','caso_test','caso_notif','caso_notif_asked','caso_remshown','caso_seen_sig','caso_tourcal','caso_camh','caso_laser',META]);
  const prot=k=>typeof k==='string'&&!k.startsWith(PX)&&!PUB.has(k)&&!/^caso_(bk|essai_v|test)/.test(k);
  const C=window.crypto&&crypto.subtle,te=new TextEncoder(),td=new TextDecoder();
  const rnd=n=>crypto.getRandomValues(new Uint8Array(n));
@@ -165,11 +165,7 @@ window.VAULT=(()=>{
    let ran=false;const go=()=>{if(ran)return;ran=true;try{run()}catch(e){console.error(e)}};
    if(!C||raw.get('caso_test')){go();return}
    const m=getMeta();let acc=null,sy=null;try{acc=JSON.parse(raw.get('caso_account'))}catch(e){}
-   // pointage (lien ?p=) pendant que le coffre est fermé : noté avec son heure, appliqué à l'ouverture
-   let noted=0;if(m)try{const u=new URLSearchParams(location.search),p=u.get('p');
-    if(p&&/^[\w.-]{1,64}$/.test(p)){let q=[];try{q=JSON.parse(raw.get('caso_pq'))||[]}catch(e){}noted=Date.now();
-     q.push({p,n:(u.get('n')||'').slice(0,80),u:(u.get('u')||'').slice(0,60),t:noted});raw.set('caso_pq',JSON.stringify(q.slice(-20)));
-     history.replaceState(null,'',location.pathname)}}catch(e){}
+   const noted=0;
    if(!m&&!(acc&&acc.hash&&acc.salt)){
     try{sy=JSON.parse(raw.get('devis_sync'))}catch(e){}
     if(!acc&&sy&&sy.token){ui('setup',null,null,go);return}
@@ -708,6 +704,10 @@ header .cso-tile{width:38px;height:38px}
 #lgForm.nopw>label,#lgForm.nopw>input,#lgForm.nopw>.pw,#lgForm.nopw>#lgGo,#lgForm.sso>label,#lgForm.sso>input,#lgForm.sso>.pw,#lgForm.sso>#lgGo,#lgForm.sso>.lnk,#lgForm.sso>.lang-sel,#lgForm.sso>.st-sso{display:none!important}
 body.starting #hd{display:none}
 #m3d{position:fixed;inset:0;z-index:9000;background:var(--bg)}
+/* travail du module 3D poursuivi en arrière-plan : pastille de suivi, touchée pour y revenir */
+#m3d-pill{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 74px);z-index:8000;display:flex;align-items:center;gap:10px;max-width:calc(100vw - 32px);padding:10px 16px;border:0;border-radius:999px;background:var(--ink,#111);color:var(--bg,#fff);font:600 14px/1.2 inherit;box-shadow:0 6px 24px rgba(0,0,0,.18);cursor:pointer}
+#m3d-pill[hidden]{display:none}#m3d-pill span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#m3d-pill i{flex:none;width:14px;height:14px;border-radius:50%;border:2px solid rgba(127,127,127,.35);border-top-color:#ffc21a;animation:m3dsp .8s linear infinite}
+#m3d-pill.ok i{border:0;background:#ffc21a;animation:none}@keyframes m3dsp{to{transform:rotate(360deg)}}@media (prefers-reduced-motion:reduce){#m3d-pill i{animation:none}}
 #dvx{position:fixed;inset:0;z-index:8000;background:var(--bg)}
 #dvx iframe{position:absolute;left:0;right:0;top:env(safe-area-inset-top,0px);width:100%;height:calc(100% - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));border:0;background:var(--bg)}
 .ent-lg{display:flex;align-items:center;gap:12px;margin:4px 0 6px}
@@ -776,6 +776,10 @@ body.starting #hd{display:none}
 .pt-sug{margin:10px 0 2px;display:flex;flex-wrap:wrap;gap:8px}
 .pt-sug .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--card);font:inherit;font-size:14px;cursor:pointer}
 .pt-adv{margin-top:14px}
+.pt-ctx{display:flex;flex-direction:column;gap:2px;margin-bottom:14px}.pt-ctx b{font-size:22px}.pt-ctx span{color:var(--mut);font-size:15px}
+.pt-go{width:100%;font-size:22px;font-weight:800;padding:20px;border-radius:18px;background:#1e8e3e;color:#fff;margin-top:6px}.pt-go.out{background:#e8710a}
+.pt-els{display:block;text-align:right;white-space:nowrap;font-family:var(--mono);color:var(--mut);font-size:13px}
+#ptBody [hidden]{display:none!important}
 .pt-adv summary{cursor:pointer;color:var(--mut);font-size:14px}
 .md .h1{margin:0 0 20px}
 .md-c{display:flex;align-items:center;gap:14px;width:100%;margin:0 0 12px;padding:18px 16px;text-align:left;font:inherit;color:var(--ink);background:var(--card);border:2px solid var(--line);border-radius:18px;cursor:pointer}
@@ -879,21 +883,37 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;justify-conten
 .chip .i{margin-inline-end:4px}
 
 /* refonte */
-.back{margin:0 0 12px}
+/* retour : le bouton de chaque page reste dans la page (il porte l'action) mais ne s'affiche plus ; un seul bouton rond dans l'en-tête, à gauche du logo, l'actionne */
+section .back{display:none!important}
+header .hd-back{flex:none;width:44px;height:44px;border-radius:50%;border:1px solid color-mix(in srgb,currentColor 22%,transparent);background:none;color:inherit;display:grid;place-items:center;padding:0;cursor:pointer;transition:transform .15s}
+header .hd-back[hidden]{display:none}header .hd-back:active{transform:scale(.92)}header .hd-back:focus-visible{outline:3px solid var(--acc)}
+body.starting header .hd-back{display:none}
 .pg-h{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:2px 2px 12px}
 .pg-t{font-size:26px;line-height:1.15;margin:2px 2px 12px;letter-spacing:-.01em}
 .pg-h .pg-t{margin:0}
 .pg-h .btn{width:auto;margin:0;display:inline-flex;align-items:center;gap:6px}
 .srch{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:0 12px;margin:0 0 12px}
-.it.prx-it{flex-direction:row;align-items:center;gap:10px;animation:prxIn .28s both}.prx-it .it-main{flex:1;min-width:0;text-decoration:none}.prx-it .it-t{align-items:flex-start}.prx-it .it-t b:last-child{white-space:nowrap}.prx-it .btn{flex:none;margin:0}
-.prx-it.best .it-t b:last-child{color:var(--ok)}
-.fou-new{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;min-height:44px;margin:0 0 14px;padding:0;border:0;background:none;color:var(--mut);font:inherit;font-size:14px;font-weight:600;cursor:pointer}
-.prx-it .fav{flex:none;display:flex;align-items:center;justify-content:center;width:40px;height:44px;margin:0 -6px 0 -4px;padding:0;border:0;background:none;color:var(--mut);cursor:pointer}.prx-it .fav.on{color:var(--acc)}.prx-it .fav.on svg{fill:currentColor}
-.fou-imp{display:flex;gap:10px;margin:0 0 12px}.fou-imp .btn{flex:1;margin:0}
+.fou-bar{display:flex;align-items:center;gap:8px;margin:0 0 12px}.fou-bar .srch{flex:1;min-width:0;margin:0;padding-inline-start:4px;gap:2px}
+.srch-go{flex:none;display:flex;align-items:center;justify-content:center;width:38px;height:38px;padding:0;border:0;border-radius:50%;background:none;color:var(--mut);cursor:pointer;transition:background .2s,color .2s,transform .15s}
+.srch-go.go{background:var(--acc);color:#18181a}.srch-go:active{transform:scale(.9)}
+.fou-act{display:flex;gap:6px}.fou-act[hidden]{display:none}
+.fou-act .ic{display:flex;align-items:center;justify-content:center;width:44px;height:44px;padding:0;border:1px solid var(--line);border-radius:50%;background:var(--card);color:var(--ink);cursor:pointer;transition:transform .15s}.fou-act .ic:active{transform:scale(.92)}
+.fou-it .it-main{flex-direction:row;align-items:center;gap:12px}.fou-tx{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.av{flex:none;display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;background:var(--soft);font-weight:700;font-size:15px;text-transform:uppercase}
+.it.prx-it{flex-direction:row;align-items:center;gap:6px;padding:10px 6px 10px 12px;animation:prxIn .28s both}
+.prx-it .it-main{flex:1;min-width:0;text-decoration:none;flex-direction:row;align-items:center;gap:12px}
+.prx-ph{flex:none;width:56px;height:56px;border-radius:12px;background:var(--soft);overflow:hidden;display:flex;align-items:center;justify-content:center;color:var(--mut)}
+.prx-ph img{width:100%;height:100%;object-fit:contain;background:#fff;animation:prxIn .25s both}
+.prx-n{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}.prx-n>span:first-child{font-size:14px;font-weight:600;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.prx-n .mut{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prx-r{flex:none;display:flex;flex-direction:column;align-items:flex-end}.prx-b{display:flex}
+.prx-p{font-weight:700;font-size:17px;white-space:nowrap;font-variant-numeric:tabular-nums;padding-inline-end:8px}
+.prx-it .ib{flex:none;display:flex;align-items:center;justify-content:center;width:36px;height:34px;padding:0;border:0;background:none;color:var(--mut);cursor:pointer;transition:transform .15s}.prx-it .ib:active{transform:scale(.85)}
+.prx-it .ib.on{color:var(--acc)}.prx-it .ib.on svg{fill:currentColor}.prx-it .ib:disabled{color:var(--ink);cursor:default}
+.prx-aut{margin:0 0 14px}.prx-aut .chip{text-decoration:none;padding:8px 14px;font-size:14px}
 .prx-rec{margin:0 0 12px}.prx-rec:empty{display:none}.prx-rec .chip{padding:8px 14px;font:inherit;font-size:14px;cursor:pointer}
 .prx-sk{display:flex;flex-direction:column;gap:8px;padding:14px;border-bottom:1px solid var(--line)}.prx-sk:last-child{border-bottom:0}.prx-sk i{display:block;height:12px;border-radius:6px;background:var(--line);animation:prxSk 1.1s ease-in-out infinite}.prx-sk i:last-child{width:40%;opacity:.7}
 @keyframes prxSk{50%{opacity:.35}}@keyframes prxIn{from{opacity:0;transform:translateY(6px)}}
-@media (prefers-reduced-motion:reduce){.prx-sk i,.it.prx-it{animation:none}}
+@media (prefers-reduced-motion:reduce){.prx-sk i,.it.prx-it,.prx-ph img{animation:none}}
 .srch input{border:0;background:transparent;min-height:46px;padding:0;margin:0;box-shadow:none;outline:0}
 .lst{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden;margin:0 0 14px}
 .it{display:flex;flex-direction:column;gap:2px;padding:12px 14px;border-bottom:1px solid var(--line)}
@@ -1582,9 +1602,8 @@ body.tr-on{overflow:hidden}
 <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
 <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" stroke-width="2.2"/></symbol>
 <symbol id="i-chart" viewBox="0 0 24 24"><path d="M5 20V11M12 20V4M19 20v-7M3 20h18"/></symbol>
-<symbol id="i-nfc" viewBox="0 0 24 24"><path d="M6 9a4 4 0 0 1 0 6M10 6.5a8 8 0 0 1 0 11M14 4a12 12 0 0 1 0 16"/></symbol>
 </defs></svg>
-<header id="hd"><span class="ttl" role="button" tabindex="0" aria-label="Menu" onclick="drawer('L')" onkeydown="if(event.key==='Enter')drawer('L')"><span class="wm" role="img" aria-label="casô"><svg class="cso-tile" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#ffc21a"/><g transform="translate(10.5 3.5) scale(1.075)"><path d="M10 16.5 17.6 9.4Q20 7.2 22.4 9.4L30 16.5" fill="none" stroke="#18181a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="20" cy="33" r="12" fill="none" stroke="#18181a" stroke-width="3.2"/><clipPath id="cso3"><circle cx="20" cy="33" r="8.9"/></clipPath><g fill="#18181a" clip-path="url(#cso3)"><rect x="9.7" y="26.7" width="9.6" height="5.6" rx="1.2"/><rect x="20.7" y="26.7" width="9.6" height="5.6" rx="1.2"/><rect x="4.2" y="33.7" width="9.6" height="5.6" rx="1.2"/><rect x="15.2" y="33.7" width="9.6" height="5.6" rx="1.2"/><rect x="26.2" y="33.7" width="9.6" height="5.6" rx="1.2"/></g></g></svg><span class="wm-t" aria-hidden="true">cas<svg viewBox="0 3 40 44" aria-hidden="true"><path d="M10 16.5 17.6 9.4Q20 7.2 22.4 9.4L30 16.5" fill="none" stroke="#ffc21a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="20" cy="33" r="12" fill="none" stroke="currentColor" stroke-width="3.2"/><clipPath id="cso4"><circle cx="20" cy="33" r="8.9"/></clipPath><g fill="currentColor" clip-path="url(#cso4)"><rect x="9.7" y="26.7" width="9.6" height="5.6" rx="1.2"/><rect x="20.7" y="26.7" width="9.6" height="5.6" rx="1.2"/><rect x="4.2" y="33.7" width="9.6" height="5.6" rx="1.2"/><rect x="15.2" y="33.7" width="9.6" height="5.6" rx="1.2"/><rect x="26.2" y="33.7" width="9.6" height="5.6" rx="1.2"/></g></svg></span></span></span><button class="acct" onclick="drawer('R')" aria-label="Compte"><svg class="i"><use href="#i-user"/></svg></button></header>
+<header id="hd"><button class="hd-back" id="hdBack" type="button" hidden aria-label="Retour" onclick="hdBack()"><svg class="i i-flip"><use href="#i-back"/></svg></button><span class="ttl" role="button" tabindex="0" aria-label="Menu" onclick="drawer('L')" onkeydown="if(event.key==='Enter')drawer('L')"><span class="wm" role="img" aria-label="casô"><svg class="cso-tile" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#ffc21a"/><g transform="translate(10.5 3.5) scale(1.075)"><path d="M10 16.5 17.6 9.4Q20 7.2 22.4 9.4L30 16.5" fill="none" stroke="#18181a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="20" cy="33" r="12" fill="none" stroke="#18181a" stroke-width="3.2"/><clipPath id="cso3"><circle cx="20" cy="33" r="8.9"/></clipPath><g fill="#18181a" clip-path="url(#cso3)"><rect x="9.7" y="26.7" width="9.6" height="5.6" rx="1.2"/><rect x="20.7" y="26.7" width="9.6" height="5.6" rx="1.2"/><rect x="4.2" y="33.7" width="9.6" height="5.6" rx="1.2"/><rect x="15.2" y="33.7" width="9.6" height="5.6" rx="1.2"/><rect x="26.2" y="33.7" width="9.6" height="5.6" rx="1.2"/></g></g></svg><span class="wm-t" aria-hidden="true">cas<svg viewBox="0 3 40 44" aria-hidden="true"><path d="M10 16.5 17.6 9.4Q20 7.2 22.4 9.4L30 16.5" fill="none" stroke="#ffc21a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="20" cy="33" r="12" fill="none" stroke="currentColor" stroke-width="3.2"/><clipPath id="cso4"><circle cx="20" cy="33" r="8.9"/></clipPath><g fill="currentColor" clip-path="url(#cso4)"><rect x="9.7" y="26.7" width="9.6" height="5.6" rx="1.2"/><rect x="20.7" y="26.7" width="9.6" height="5.6" rx="1.2"/><rect x="4.2" y="33.7" width="9.6" height="5.6" rx="1.2"/><rect x="15.2" y="33.7" width="9.6" height="5.6" rx="1.2"/><rect x="26.2" y="33.7" width="9.6" height="5.6" rx="1.2"/></g></svg></span></span></span><button class="acct" onclick="drawer('R')" aria-label="Compte"><svg class="i"><use href="#i-user"/></svg></button></header>
 <div class="tape"></div>
 
 <!-- DÉMARRAGE -->
@@ -1769,7 +1788,7 @@ body.tr-on{overflow:hidden}
 
 <!-- COMPTE -->
 <section id="s-sign">
- <button class="btn sec" style="margin:0 0 12px" onclick="go('devis')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
+ <button class="btn sec back" onclick="go('devis')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
  <div class="card" id="sgCard">
   <h2><span class="hi"><svg class="i"><use href="#i-pen"/></svg></span>Valider le devis</h2>
   <div id="sgRecap" class="sg-recap"></div>
@@ -1845,13 +1864,14 @@ body.tr-on{overflow:hidden}
  <button class="btn sec back" onclick="go('devis')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
  <div class="pg-h"><h1 class="pg-t">Fournisseurs</h1></div>
  <div class="seg" id="fouSeg"><button type="button" class="on" data-m="mes" onclick="fouMode('mes')">Mes fournisseurs</button><button type="button" data-m="web" onclick="fouMode('web')">Prix en ligne</button></div>
- <form class="srch" onsubmit="fouGo();return false"><svg class="i i-sm"><use id="fouIc" href="#i-search"/></svg><input type="search" id="fouQ" placeholder="Chercher" enterkeyhint="search" autocomplete="off" oninput="fouType()"></form>
+ <div class="fou-bar">
+  <form class="srch" onsubmit="fouGo();return false"><button type="submit" class="srch-go" id="fouBtn" aria-label="Chercher"><svg class="i i-sm"><use href="#i-search"/></svg></button><input type="search" id="fouQ" placeholder="Chercher" enterkeyhint="search" autocomplete="off" oninput="fouType()"></form>
+  <div class="fou-act" id="fouAct"><button class="ic" type="button" aria-label="Photo d'un devis ou d'une facture" onclick="impPick('cam')"><svg class="i i-sm"><use href="#i-cam"/></svg></button><button class="ic" type="button" aria-label="Fichier (PDF ou image)" onclick="impPick('file')"><svg class="i i-sm"><use href="#i-doc"/></svg></button><button class="ic" type="button" aria-label="Nouveau fournisseur" onclick="fouEdit()"><svg class="i i-sm"><use href="#i-plus"/></svg></button></div>
+ </div>
  <div id="fouMes">
-  <div class="fou-imp"><button class="btn sec" type="button" onclick="impPick('cam')"><svg class="i"><use href="#i-cam"/></svg><span>Photo</span></button><button class="btn sec" type="button" onclick="impPick('file')"><svg class="i"><use href="#i-doc"/></svg><span>Fichier</span></button></div>
   <div id="fouDue"></div>
   <button class="btn sec" hidden onclick="go('imp')"><svg class="i"><use href="#i-scan"/></svg>Importer une facture ou une liste</button>
   <div id="fouList"></div>
-  <button class="fou-new" type="button" onclick="fouEdit()"><svg class="i i-sm"><use href="#i-plus"/></svg><span>Nouveau</span></button>
  </div>
  <div id="fouWeb" hidden><div id="prxRec" class="chips prx-rec"></div><div id="prxFav"></div><div id="prxRes" aria-live="polite"></div></div>
 </section>
@@ -1947,7 +1967,7 @@ body.tr-on{overflow:hidden}
  </div>
 </section>
 <section id="s-tr">
- <button class="btn sec" style="margin:0 0 12px" onclick="go('cpt')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
+ <button class="btn sec back" onclick="go('cpt')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
  <div class="card">
   <h2><span class="hi"><svg class="i"><use href="#i-globe"/></svg></span>Améliorer la traduction</h2>
   <p class="mut" style="margin:0 0 10px">Corrige une phrase : elle change tout de suite dans l'appli. Envoie ensuite tes corrections pour qu'elles arrivent chez tout le monde.</p>
@@ -2102,7 +2122,7 @@ body.tr-on{overflow:hidden}
 
 <!-- FOURNISSEURS -->
 <section id="s-four">
- <button class="btn sec" style="margin:0 0 12px" onclick="go('histo')"><svg class="i i-flip"><use href="#i-back"/></svg>Historique</button>
+ <button class="btn sec back" onclick="go('histo')"><svg class="i i-flip"><use href="#i-back"/></svg>Historique</button>
  <div class="card"><h2><span class="hi"><svg class="i"><use href="#i-truck"/></svg></span>Fournisseurs</h2><div id="fourList"></div></div>
 </section>
 
@@ -2147,7 +2167,7 @@ body.tr-on{overflow:hidden}
 
 <!-- POINTAGE -->
 <section id="s-pt">
- <div class="seg" role="tablist" id="ptSeg"><button role="tab" data-p="go" onclick="ptPage('go')">Pointer</button><button role="tab" data-p="h" onclick="ptPage('h')">Heures</button><button role="tab" data-p="j" onclick="ptPage('j')">Journal</button><button role="tab" data-p="set" onclick="ptPage('set')">Chantiers</button></div>
+ <div class="seg" role="tablist" id="ptSeg"><button role="tab" data-p="go" onclick="ptPage('go')">Pointer</button><button role="tab" data-p="h" onclick="ptPage('h')">Heures</button><button role="tab" data-p="set" onclick="ptPage('set')">Chantiers</button></div>
  <div id="ptFlash"></div>
  <div id="ptBody"></div>
 </section>
@@ -2348,28 +2368,33 @@ body.tr-on{overflow:hidden}
  <button onclick="tab('histo',this)"><span class="pill"><svg class="i"><use href="#i-archive"/></svg></span>Historique</button>
 </nav>
 
-<div id="m3d" hidden></div>
+<div id="m3d" hidden></div><button type="button" id="m3d-pill" hidden onclick="m3dOpen(M3D&&M3D.cli)"><i></i><span></span></button>
 <div id="dvx" hidden></div>
 <script>
 /* module casô 3D : artisan (depuis le chat) ou bricoleur (plein écran), dans une page à part pour garder la mémoire et les données séparées */
 /* module 3D : lib/m3d.html, chargé au premier usage (gardé hors ligne par sw.js) */
 let M3D_SRC=null;function m3dSrc(){if(M3D_SRC)return Promise.resolve(M3D_SRC);return fetch('lib/m3d.html').then(r=>{if(!r.ok)throw new Error('m3d '+r.status);return r.text()}).then(t=>M3D_SRC=t)}
 let M3D=null;
-function m3dOpen(cli){if(M3D)return;const m={cli:!!cli};M3D=m;$('m3d').hidden=false;
+function m3dOpen(cli){if(M3D){if(!M3D.bg)return;if(!!cli===M3D.cli){M3D.bg=false;M3D.ready=false;$('m3d').hidden=false;m3dPill();return}m3dClose(true)}const m={cli:!!cli};M3D=m;$('m3d').hidden=false;
  m3dSrc().then(src=>{if(M3D!==m)return;const f=document.createElement('iframe'),a=accountGet()||{};
-  f.setAttribute('allow','camera');f.title='casô 3D';
+  f.setAttribute('allow','camera; screen-wake-lock');f.title='casô 3D';
   f.srcdoc=cli?src.replace('const CLIENT=/*CLIENT*/false;',()=>'const CLIENT=true;'):src;
   f.onload=()=>{try{f.contentWindow.postMessage({source:'caso-app',type:'init',data:{lang:vlGet(),name:a.prenom||'',email:a.email||''}},'*')}catch(e){}};
   m.f=f;$('m3d').appendChild(f)}).catch(()=>{if(M3D===m){M3D=null;$('m3d').hidden=true}})}
-function m3dClose(){if(!M3D)return;if(M3D.f)M3D.f.remove();M3D=null;$('m3d').hidden=true}
+/* pendant un travail long du module (série de photos, maquette), le quitter le garde ouvert en arrière-plan : le calcul continue (sauf déconnexion) */
+function m3dClose(force){if(!M3D)return;if(M3D.busy&&!force){M3D.bg=true;$('m3d').hidden=true;m3dPill();return}if(M3D.f)M3D.f.remove();M3D=null;$('m3d').hidden=true;m3dPill()}
+function m3dPill(){const b=$('m3d-pill');if(!b)return;const on=!!(M3D&&M3D.bg&&(M3D.busy||M3D.ready));b.hidden=!on;if(!on)return;b.classList.toggle('ok',!M3D.busy);b.lastChild.textContent=M3D.busy?(M3D.lbl||'…')+(M3D.n?' · '+Math.min(M3D.n,M3D.done+1)+'/'+M3D.n:''):(M3D.readyLbl||'')}
 /* module 3D : préchargé quand le téléphone ne fait rien, pour qu'il s'ouvre vite (et hors ligne) */
 setTimeout(()=>{const go=()=>m3dSrc().catch(()=>{});window.requestIdleCallback?requestIdleCallback(go,{timeout:15000}):go()},8000);
 window.addEventListener('message',e=>{if(!M3D||!M3D.f||e.source!==M3D.f.contentWindow)return;const m=e.data;if(!m||m.source!=='caso-3d')return;
  if(m.type==='close'&&!M3D.cli){m3dClose();go('chat')}
+ /* travail long : étapes suivies ; « Continuer en arrière-plan » ramène à la conversation, la pastille montre l'étape en cours puis le résultat prêt */
+ else if(m.type==='busy'&&m.data){const d=m.data;M3D.busy=!!d.on;M3D.lbl=String(d.label||'').slice(0,80);M3D.done=+d.done||0;M3D.n=+d.n||0;if(!d.on){M3D.readyLbl=String(d.ready||'').slice(0,60);M3D.ready=!!M3D.bg}m3dPill()}
+ else if(m.type==='bg'&&M3D.busy&&!M3D.cli){M3D.bg=true;$('m3d').hidden=true;go('chat');m3dPill()}
  /* demande du chat Pro tapée dans le chat 3D (devis, client, rendez-vous…) : elle repart dans la conversation de casô */
  else if(m.type==='pro'&&!M3D.cli){const t=String(m.data&&m.data.text||'').trim();if(t){m3dClose();go('chat');chatSend(t)}}
  else if(m.type==='mode'&&M3D.cli&&m.data&&m.data.mode==='artisan'){m3dClose();modeOpen();modePick('artisan')}
- else if(m.type==='logout'&&M3D.cli){if(confirm(i18nT('Se déconnecter ? Tes données restent sur ce téléphone.'))){m3dClose();try{localStorage.setItem('caso_locked','1')}catch(x){}if(window.VAULT&&VAULT.on)VAULT.lockNow();else showLogin()}}
+ else if(m.type==='logout'&&M3D.cli){if(confirm(i18nT('Se déconnecter ? Tes données restent sur ce téléphone.'))){m3dClose(true);try{localStorage.setItem('caso_locked','1')}catch(x){}if(window.VAULT&&VAULT.on)VAULT.lockNow();else showLogin()}}
  else if(m.type==='addToChantier'&&!M3D.cli&&m.data&&m.data.projet){const L=db.maq3d=db.maq3d||[],id=m.data.projet.id||'';const o={id:id||uid(),at:Date.now(),d:m.data};const i=id?L.findIndex(x=>x.id===id):-1;/* le client lié à la maquette reste lié quand elle est réenregistrée */if(i>=0){if(L[i].cli)o.cli=L[i].cli;L[i]=o}else L.push(o);if(L.length>20)L.shift();save()}});
 </script>
 <script type="text/x-caso">
@@ -2451,6 +2476,11 @@ function tab(n,b){
  window.scrollTo(0,0);
 }
 
+/* bouton retour de l'en-tête : visible quand la page ouverte a un retour, et il fait ce que ce retour fait */
+function hdBack(){const b=document.querySelector('section.on .back:not([hidden])');if(b)b.click()}
+function hdBackSync(){const b=$('hdBack');if(b)b.hidden=!document.querySelector('section.on .back:not([hidden])')}
+(()=>{const o=new MutationObserver(hdBackSync);document.querySelectorAll('section').forEach(s=>o.observe(s,{attributes:true,attributeFilter:['class']}));
+ document.querySelectorAll('section .back').forEach(b=>o.observe(b,{attributes:true,attributeFilter:['hidden']}));hdBackSync()})();
 function go(n){const m={enc:-1,fact:-1,agenda:-1,plan:-1,sigp:-1,devis:-1,chat:-1,edit:-1,prix:1,imp:-1,pt:2,histo:3,mes:-1,four:-1,cpt:-1,tr:-1,sign:0,cli:-1,clif:-1,fou:-1,fouf:-1};tab(n,document.querySelectorAll('nav button')[m[n]])}
 
 /* ---------- Langue de l'appli (le devis, le PDF et le message restent en français) ---------- */
@@ -3386,9 +3416,9 @@ let prCur='list',ptCur='go';
 function segOn(id,p){document.querySelectorAll('#'+id+' [data-p]').forEach(b=>{const on=b.dataset.p===p;b.classList.toggle('on',on);b.setAttribute('aria-selected',on)})}
 function prPage(p){prCur=p;segOn('prSeg',p);document.querySelectorAll('#s-prix [data-pp]').forEach(e=>{e.style.display=e.dataset.pp===p?'':'none'})}
 function ptPage(p,quiet){
+ if(p==='j')p='h';if(p!=='h'&&p!=='set')p='go';
  ptCur=p;segOn('ptSeg',p);
- const o=$('ptBody').querySelector(':scope>.ag-ptc')?1:0,map={go:o?[0,1,2]:[0,1],h:[2+o],j:[3+o,4+o],set:[5+o,6+o]},cards=[...$('ptBody').children];
- cards.forEach((c,i)=>{c.style.display=(map[p]||[]).includes(i)?'':'none'});
+ document.querySelectorAll('#ptBody>[data-pg]').forEach(e=>{e.hidden=e.dataset.pg!==p});
  if(!quiet)window.scrollTo(0,0)}
 
 /* ---------- Clients et fournisseurs ---------- */
@@ -3431,30 +3461,49 @@ function prxPick(i){const x=prxRecGet()[i];if(!x)return;$('fouQ').value=x;prxGo(
 /* favoris : produits gardés depuis les prix en ligne (prix, magasin et date du relevé), affichés quand la barre est vide */
 function favKey(x){return (x.produit+'|'+x.magasin).toLowerCase()}
 function favList(){return Array.isArray(db.favs)?db.favs:(db.favs=[])}
-function prxRow(x,i,o){const u=/^https:\/\//i.test(x.url||'')?x.url:'',fav=o.fav,on=fav||favList().some(f=>favKey(f)===favKey(x)),
-  ex=db.prices.some(p=>p.nom.toLowerCase()===x.produit.slice(0,80).toLowerCase()&&p.four===x.magasin),ref=fav?`'${x.id}'`:i;
- return `<div class="it prx-it${o.best?' best':''}"${fav?` data-sw="fav:${x.id}"`:''} style="animation-delay:${Math.min(i,12)*35}ms"><${u?`a href="${esc(u)}" target="_blank" rel="noopener noreferrer"`:'span'} class="it-main"><span class="it-t"><b data-noi18n>${esc(x.produit)}</b><b data-noi18n>${esc(prxPrix(x))}</b></span><span class="mut it-s"><span data-noi18n>${esc(x.magasin)}</span> · <span>TTC</span>${fav&&x.maj?` · <span data-noi18n>${esc(dFR(x.maj))}</span>`:''}</span></${u?'a':'span'}>`+
-  `<button class="fav${on?' on':''}" type="button" aria-pressed="${on}" aria-label="${esc(i18nT('Mes favoris'))}" onclick="favToggle(${ref},this)"><svg class="i i-sm"><use href="#i-star"/></svg></button>`+
-  (x.devise==='EUR'?`<button class="btn sm sec" type="button" aria-label="${esc(i18nT('Ajouter à mes prix'))}" ${ex?'disabled':''} onclick="prxAdd(${ref},this)"><svg class="i i-sm"><use href="#i-${ex?'check':'plus'}"/></svg></button>`:'')+'</div>'}
-function prxShow(){$('prxRes').innerHTML='<div class="lst">'+PRX.map((x,i)=>prxRow(x,i,{best:i===0&&PRX.length>1})).join('')+'</div>'}
+/* une offre : la photo, le produit avec le magasin dessous, puis à droite le prix, l'étoile (favori) et le + (Mes prix). Toucher la ligne ouvre la page du magasin */
+function prxRow(x,ref,o){const u=/^https:\/\//i.test(x.url||'')?x.url:'',fav=o.fav,on=fav||favList().some(f=>favKey(f)===favKey(x)),
+  ex=db.prices.some(p=>p.nom.toLowerCase()===x.produit.slice(0,80).toLowerCase()&&p.four===x.magasin),r=fav?`'${x.id}'`:ref;
+ return `<div class="it prx-it"${fav?` data-sw="fav:${x.id}"`:''} style="animation-delay:${Math.min(o.n||0,12)*35}ms"><${u?`a href="${esc(u)}" target="_blank" rel="noopener noreferrer"`:'span'} class="it-main"><span class="prx-ph"${x.photo?` data-ph="${esc(x.photo)}"`:''}><svg class="i i-sm"><use href="#i-tag"/></svg></span><span class="prx-n"><span data-noi18n>${esc(x.produit)}</span><span class="mut"><span data-noi18n>${esc(x.magasin)}</span> · <span>TTC</span>${fav&&x.maj?` · <span data-noi18n>${esc(dFR(x.maj))}</span>`:''}</span></span></${u?'a':'span'}>`+
+  `<span class="prx-r"><b class="prx-p" data-noi18n>${esc(prxPrix(x))}</b><span class="prx-b"><button class="ib${on?' on':''}" type="button" aria-pressed="${on}" aria-label="${esc(i18nT('Mes favoris'))}" onclick="favToggle(${r},this)"><svg class="i i-sm"><use href="#i-star"/></svg></button>`+
+  (x.devise==='EUR'?`<button class="ib" type="button" aria-label="${esc(i18nT('Ajouter à mes prix'))}" ${ex?'disabled':''} onclick="prxAdd(${r},this)"><svg class="i i-sm"><use href="#i-${ex?'check':'plus'}"/></svg></button>`:'')+'</span></span></div>'}
+/* une seule liste, du moins cher au plus cher */
+function prxListe(L,o){return '<div class="lst">'+L.map((x,i)=>({x,i})).sort((a,b)=>a.x.prix-b.x.prix).map((e,n)=>prxRow(e.x,e.i,{fav:o.fav,n})).join('')+'</div>'}
+/* photos : l'appli refuse les images d'autres sites ; une petite image vient dans la réponse, les autres passent par le serveur casô */
+const PRX_IMG=new Map();
+async function prxImg(u){if(u.startsWith('data:image/'))return u;if(PRX_IMG.has(u))return PRX_IMG.get(u);
+ const p=(async()=>{for(const b of prxBases()){try{const r=await fetch(b+'/api/prix/img?u='+encodeURIComponent(u),{credentials:'omit'});
+   if(r.ok&&/^image\//.test(r.headers.get('content-type')||'')){PRX_B=PRX_B||b;return URL.createObjectURL(await r.blob())}}catch(e){}}return ''})();
+ PRX_IMG.set(u,p);return p}
+function prxPhotos(box){box.querySelectorAll('[data-ph]').forEach(async el=>{const u=el.dataset.ph;el.removeAttribute('data-ph');const src=await prxImg(u);if(!src||!el.isConnected)return;
+ const im=new Image();im.alt='';im.decoding='async';im.onload=()=>{el.textContent='';el.appendChild(im)};im.src=src})}
+/* enseignes du pays absentes des résultats : un appui ouvre la recherche du produit sur leur site */
+const PRX_ENS={FR:[['Leroy Merlin','leroymerlin.fr'],['Castorama','castorama.fr'],['Brico Dépôt','bricodepot.fr'],['Point.P','pointp.fr'],['Cedeo','cedeo.fr'],['Rexel','rexel.fr'],['Bricoman','bricoman.fr'],['Bricomarché','bricomarche.com'],['Mr.Bricolage','mr-bricolage.fr'],['Gedimat','gedimat.fr'],['Sonepar','sonepar.fr'],['Würth','wurth.fr'],['ManoMano','manomano.fr']],
+ BE:[['Brico','brico.be'],['Gamma','gamma.be'],['Hubo','hubo.be']],CH:[['Jumbo','jumbo.ch'],['Hornbach','hornbach.ch'],['Bauhaus','bauhaus.ch']],
+ ES:[['Leroy Merlin','leroymerlin.es'],['Bauhaus','bauhaus.es'],['ManoMano','manomano.es']],PT:[['Leroy Merlin','leroymerlin.pt']],IT:[['Leroy Merlin','leroymerlin.it'],['OBI','obi-italia.it'],['ManoMano','manomano.it']],
+ DE:[['OBI','obi.de'],['Hornbach','hornbach.de'],['Bauhaus','bauhaus.info'],['toom','toom.de']],GB:[['Screwfix','screwfix.com'],['Toolstation','toolstation.com'],['Wickes','wickes.co.uk'],['B&Q','diy.com']]};
+function prxAutres(q){const nk=t=>vnNorm(t).replace(/[^a-z0-9]/g,''),vus=PRX.map(x=>nk(x.magasin)),
+  L=(PRX_ENS[prxPays()]||[]).filter(e=>{const k=nk(e[0]);return !vus.some(v=>v.includes(k)||k.includes(v))});
+ return L.length?`<h2 class="grp"><span>Autres magasins</span></h2><div class="chips prx-aut">`+L.map(e=>`<a class="chip" data-noi18n href="https://www.google.com/search?q=${encodeURIComponent(q+' site:'+e[1])}" target="_blank" rel="noopener noreferrer">${esc(e[0])}</a>`).join('')+'</div>':''}
+function prxShow(q,vide){const box=$('prxRes');box.innerHTML=(vide?`<div class="lst"><div class="lst-empty mut">${esc(i18nT('Aucun résultat.'))}</div></div>`:prxListe(PRX,{}))+prxAutres(q);prxPhotos(box)}
 function favShow(){const L=favList(),box=$('prxFav');if(!box)return;
- box.innerHTML=!L.length||$('fouQ').value.trim()?'':`<h2 class="grp"><span>Mes favoris</span><span class="cnt">${L.length}</span></h2><div class="lst">`+L.map((x,i)=>prxRow(x,i,{fav:true})).join('')+'</div>'}
+ box.innerHTML=!L.length||$('fouQ').value.trim()?'':`<h2 class="grp"><span>Mes favoris</span><span class="cnt" data-noi18n>${L.length}</span></h2>`+prxListe(L,{fav:true});prxPhotos(box)}
 function favToggle(ref,btn){const L=favList(),x=typeof ref==='number'?PRX[ref]:L.find(f=>f.id===ref);if(!x)return;
  const k=favKey(x),i=L.findIndex(f=>favKey(f)===k);
- if(i>=0)L.splice(i,1);else L.unshift({id:uid(),produit:x.produit,prix:x.prix,devise:x.devise,magasin:x.magasin,url:x.url||'',maj:x.maj||ymdL()});
+ if(i>=0)L.splice(i,1);else L.unshift({id:uid(),produit:x.produit,prix:x.prix,devise:x.devise,magasin:x.magasin,url:x.url||'',maj:x.maj||ymdL(),photo:x.photo||''});
  save();if(typeof ref==='number'){btn.classList.toggle('on',i<0);btn.setAttribute('aria-pressed',i<0)}else favShow()}
 function prxHome(){prxRecShow();favShow()}
 async function prxGo(){
  const box=$('prxRes'),q=$('fouQ').value.trim().replace(/\s+/g,' '),n=++PRX_N,msg=t=>{if(n===PRX_N)box.innerHTML=`<div class="lst"><div class="lst-empty mut">${esc(i18nT(t))}</div></div>`};
  PRX=[];$('prxRec').innerHTML='';$('prxFav').innerHTML='';if(q.length<2){box.innerHTML='';prxHome();return}
  const k=prxPays()+'|'+q.toLowerCase(),c=PRX_C.get(k);
- if(c&&Date.now()-c.t<36e5){PRX=c.v;return prxShow()}
+ if(c&&Date.now()-c.t<36e5){PRX=c.v;return prxShow(q)}
  if(navigator.onLine===false)return msg('Pas de connexion.');
  box.innerHTML='<div class="lst" role="status" aria-label="'+esc(i18nT('Recherche…'))+'">'+'<div class="prx-sk"><i></i><i></i></div>'.repeat(4)+'</div>';
  const r=await prxAsk(q);if(n!==PRX_N)return;
  if(r.err)return msg(r.err);
- PRX=r.v.filter(x=>x&&x.produit&&x.magasin&&+x.prix>0);if(!PRX.length)return msg('Aucun résultat.');
- PRX_C.set(k,{t:Date.now(),v:PRX});prxRecAdd(q);prxShow()}
+ PRX=r.v.filter(x=>x&&x.produit&&x.magasin&&+x.prix>0);if(!PRX.length)return prxShow(q,true);
+ PRX_C.set(k,{t:Date.now(),v:PRX});prxRecAdd(q);prxShow(q)}
 function prxAdd(ref,btn){const x=typeof ref==='number'?PRX[ref]:favList().find(f=>f.id===ref);if(!x)return;
  const nom=x.produit.slice(0,80),ht=Math.round(x.prix/1.2*100)/100,ex=db.prices.find(p=>p.nom.toLowerCase()===nom.toLowerCase());
  if(ex){ex.prix=ht;ex.four=x.magasin}else db.prices.push({id:uid(),nom,unit:'u',prix:ht,tva:20,four:x.magasin});
@@ -3462,15 +3511,18 @@ function prxAdd(ref,btn){const x=typeof ref==='number'?PRX[ref]:favList().find(f
  if(btn){btn.disabled=true;btn.innerHTML='<svg class="i i-sm"><use href="#i-check"/></svg>'}toast(i18nT('Ajouté à tes prix'))}
 function fouMode(m){FOU_M=m==='web'?'web':'mes';const w=FOU_M==='web';
  [...$('fouSeg').children].forEach(b=>b.classList.toggle('on',b.dataset.m===FOU_M));$('fouMes').hidden=w;$('fouWeb').hidden=!w;
- $('fouIc').setAttribute('href',w?'#i-globe':'#i-search');$('fouQ').placeholder=i18nT(w?"Prix d'un matériau en ligne":'Chercher');
+ $('fouAct').hidden=w;fouBtn();$('fouQ').placeholder=i18nT(w?"Prix d'un matériau en ligne":'Chercher');
  if(w){if($('fouQ').value.trim().length>1)prxGo();else{$('prxRes').innerHTML='';prxHome()}}else fouRender()}
-function fouType(){if(FOU_M==='mes')return fouRender();if(!$('fouQ').value.trim()){PRX_N++;$('prxRes').innerHTML='';prxHome()}}
+/* la loupe est le bouton de recherche : elle s'allume dans « Prix en ligne » dès qu'il y a un mot à chercher */
+function fouBtn(){$('fouBtn').classList.toggle('go',FOU_M==='web'&&$('fouQ').value.trim().length>1)}
+function fouType(){fouBtn();if(FOU_M==='mes')return fouRender();if(!$('fouQ').value.trim()){PRX_N++;$('prxRes').innerHTML='';prxHome()}}
 function fouGo(){if(FOU_M==='web'){try{$('fouQ').blur()}catch(e){}prxGo()}else fouRender()}
 /* liste : rien quand il n'y a encore aucun fournisseur ; si le mot cherché n'est chez aucun fournisseur, on propose de le chercher en ligne */
 function fouRender(){syncSuppliersFromPrices();const fd=$('fouDue');if(fd)fd.innerHTML=fouDueHtml();
  const q=$('fouQ').value.trim(),k=vnNorm(q),n=db.suppliers.filter(x=>!k||vnNorm(x.nom+' '+(x.tel||'')+' '+(x.adr||'')).includes(k)).length,box=$('fouList');
  if(FOU_M!=='mes')return;
- if(n){box.className='lst';box.innerHTML=listHtml(db.suppliers,q,'fou')}
+ if(n){box.className='lst';box.innerHTML=db.suppliers.filter(x=>!k||vnNorm(x.nom+' '+(x.tel||'')+' '+(x.adr||'')).includes(k)).sort((a,b)=>a.nom.localeCompare(b.nom)).map(x=>
+   `<div class="it fou-it" data-sw="fou:${x.id}"><button type="button" class="it-main" onclick="fouEdit('${x.id}')"><span class="av" data-noi18n aria-hidden="true">${esc((x.nom.trim()[0]||'?'))}</span><span class="fou-tx"><b data-noi18n>${esc(x.nom)}</b>${x.tel||x.adr?`<span class="mut it-s" data-noi18n>${esc([x.tel,x.adr].filter(Boolean).join(' · '))}</span>`:''}</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button></div>`).join('')}
  else if(q.length>1){box.className='lst';box.innerHTML=`<button type="button" class="it it-main" onclick="fouMode('web')"><span class="it-t"><b><span>Prix en ligne</span> : <span data-noi18n>${esc(q)}</span></b><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></span></button>`}
  else{box.className='';box.innerHTML=''}}
 function formFill(sid,x,title){
@@ -5163,11 +5215,13 @@ function chatFix(t,lang){
 const PR_LEAD=/^(?:(?:change|changer|modifie|modifier|mets|met|mettre|passe|passer|fixe|fixer|nouveau|nouvelle|enregistre|set|update|change|cambia|actualiza|muda|altera|cambia|aggiorna|modifica|schimba|seteaza|degistir|zmien|ustaw|измени|поставь|غير|عدل)\s+)?(?:(?:le|la|mon|ma|mes|the|my|el|mi|o|meu|il|mio|pretul|cena|цену|السعر)\s+)?(?:(?:prix|tarif|price|rate|precio|preco|preço|prezzo|pret|preț|fiyat|cena|цена|سعر)\s+(?:de\s+la\s+|de\s+l'|du\s+|des\s+|de\s+|d'|pour\s+(?:la\s+|le\s+|l')?|of\s+(?:the\s+)?|for\s+(?:the\s+)?|del\s+|da\s+|do\s+|della\s+|dello\s+|di\s+|pentru\s+|за\s+|на\s+)?)?/i;
 const PR_UNIT=[[/^(m2|m²|metres? carres?|mètres? carrés?|le m2|le m²|sqm)$/i,'m²'],[/^(ml|metre lineaire|mètre linéaire|le ml|m)$/i,'ml'],[/^(m3|m³)$/i,'m³'],[/^(h|heure|l'heure|de l'heure|hour|hr|hora|ora|saat|godz|час|ساعة)$/i,'h'],[/^(jour|j|journee|journée|day|dia|día|giorno|zi|gun|gün|dzien|день|يوم)$/i,'jour'],[/^(forfait|flat|fixed)$/i,'forfait'],[/^(u|unite|unité|piece|pièce|unit|pce)$/i,'u']];
 const PR_ADD=/^(?:ajoute|ajouter|ajoutes|rajoute|rajouter|mets|met|mettre|insere|inserer|add|put|anade|agrega|pon|adiciona|coloca|aggiungi|metti|adauga|pune|ekle|dodaj|добавь|أضف|اضف)(?:[\s-]+(?:moi|nous|me|-moi|-nous))?(?:\s+(?:au|sur le|dans le|to the|to my|al|ao|nel|в)\s+(?:devis|quote|presupuesto|orcamento|orçamento|preventivo|deviz|teklif|kosztorys|смету))?\s+/i;
-function prParse(t){let raw=String(t).trim().replace(/\s+/g,' ');const add=PR_ADD.test(raw);if(add)raw=raw.replace(PR_ADD,'');
+function prParse(t){let raw=String(t).trim().replace(/\s+/g,' ');let add=PR_ADD.test(raw);if(add)raw=raw.replace(PR_ADD,'');
+ /* « ajoute un service : pose de parquet 35 € le m² » : un service à enregistrer (pas une ligne), sans « Service : » dans son nom */
+ {const sv=/^(?:(?:nouveau|nouvelle|un|une|le|mon)\s+)?(?:service|prestation)\s*:?\s+(?=\p{L})/iu;if(sv.test(raw)){raw=raw.replace(sv,'');add=false}}
  const m=/^(.*?)(?:\s*(?:[:=]|->|→))?(?:\s+(?:à|a|est de|est à|est a|c'est|coûte|coute|vaut|au prix de|is|costs?|cuesta|costa|kosztuje|стоит))?\s*(\d+(?:[.,]\d{1,2})?)\s*(?:€|euros?|eur)(?![\p{L}])\.?\s*(?:ht|ttc)?\s*(?:(?:le|la|les|par|per|por|pour|the|de)\s+|\/\s*)?(?:l')?([\p{L}²³0-9' ]{0,24}?)\s*(?:ht|ttc)?\s*[.!]?$/iu.exec(raw);
  if(!m)return null;let name=m[1].replace(PR_LEAD,'').replace(/^(le|la|les|l'|un|une|the|el|la|il|o|a)\s+/i,'').replace(/[\s:,-]+$/,'').trim();
  if(name.length<2||name.length>60||/\d/.test(name)||!/\p{L}/u.test(name))return null;
- if(/^(total|acompte|remise|tva|reste|solde)$/i.test(vnNorm(name)))return null;
+ if(/^(total|acompte|remise|tva|reste|solde|arrondis?|arrondir|arrondit)$/i.test(vnNorm(name)))return null;
  if(/^(client|cliente|fournisseur|chez|pour|mme|mlle|m\.|monsieur|madame|acompte|remise|facture|devis)(\s|$)/i.test(vnNorm(name)))return null;
  const u0=(m[3]||'').trim();let unit=null;if(u0){const e=PR_UNIT.find(([re])=>re.test(u0));if(!e)return null;unit=e[1]}
  return{name,prix:Math.round(parseFloat(m[2].replace(',','.'))*100)/100,unit,add}}
@@ -5192,6 +5246,12 @@ function prixChat(t){const x=prParse(t);if(!x)return false;
  if($('s-prix')&&$('s-prix').classList.contains('on'))renderPrices();return true}
 function prAddLine(t,x){const p=prFind(x.name);CHAT.m.push({who:'me',text:t});
  readForm();const before=JSON.stringify(q);
+ /* la ligne est déjà au devis : son prix change, sa quantité reste (pas de deuxième ligne « 1 m² ») */
+ {const k=vnNorm(p?p.nom:x.name),ex=(q.lines||[]).filter(y=>y.label&&vnNorm(y.label)===k);
+  if(ex.length===1){const l=ex[0];l.pu=x.prix;if(x.unit&&l.qty==null)l.unit=x.unit;fillForm();store();const tt=totals(q),diff=p&&+p.prix!==x.prix;
+   CHAT.m.push({who:'bot',undo:before,html:`<div class="msg-lines"><div class="ml"><div><b data-noi18n lang="fr">${esc(l.label)}</b><div class="mut" data-noi18n>${l.qty==null?'':fmtN(l.qty)+' '}${esc(l.unit)} × ${eur(l.pu)}</div></div><b>${l.qty==null?'':eur(l.qty*l.pu)}</b></div></div><div class="msg-tot"><span>Total du devis</span><b>${eur(tt.ttc)} TTC</b></div>`+
+    `<div class="msg-act">${diff?`<button class="btn sm sec" onclick="prSave(this,'${p.id}',${x.prix})"><svg class="i"><use href="#i-tag"/></svg><span>Garder ce prix dans Mes services</span></button>`:''}<button class="btn sm sec" onclick="go('edit')"><svg class="i"><use href="#i-quote"/></svg>Voir le devis</button></div>`});
+   chatSave();chatRender(true);return true}}
  const l={label:p?p.nom:x.name.charAt(0).toUpperCase()+x.name.slice(1),qty:1,unit:x.unit||(p&&p.unit)||'forfait',pu:x.prix,tva:p&&p.tva!=null?+p.tva:20};
  q.lines=q.lines.filter(y=>y.label||y.pu);q.lines.push(l);fillForm();store();
  const tt=totals(q),diff=p&&+p.prix!==x.prix;
@@ -5447,7 +5507,7 @@ function agChFor(e){
  if(!c){c={id:uid().slice(-6),nom:nm};db.chantiers.push(c)}e.ch=c.id;save();return c.id}
 function agPtGo(id){
  const e=db.events.find(x=>x.id===id);if(!e)return;const cid=agChFor(e);renderPt();
- const C=$('ptC'),P=$('ptP');if(C)C.value=cid;if(P&&e.who&&e.who.length)P.value=e.who[0];
+ const C=$('ptC'),P=$('ptP');if(C)C.value=cid;if(P&&e.who&&e.who.length)P.value=e.who[0];ptBtn();
  ptPage('go');const k=C&&C.closest('.card');if(k){k.scrollIntoView({behavior:'smooth',block:'center'});k.classList.add('ag-flash');setTimeout(()=>k.classList.remove('ag-flash'),1500)}
  toast(i18nT('Chantier choisi : touche « Entrée / Sortie ».'))}
 // une notification de rappel touchée : ouvrir le planning au bon jour
@@ -6923,7 +6983,7 @@ function applyImp(){
  if(ach&&four){const s=findBy(db.suppliers,four);if(s){toast(i18nT('Document enregistré.'));setTimeout(()=>fouEdit(s.id),600)}}
 }
 
-/* ---------- Pointage (NFC) ---------- */
+/* ---------- Pointage ---------- */
 function ensurePt(){if(!db.chantiers)db.chantiers=[];if(!db.people)db.people=[];if(!db.pts)db.pts=[]}
 const FMT_T=new Intl.DateTimeFormat('fr-FR',{hour:'2-digit',minute:'2-digit'}),FMT_D=new Intl.DateTimeFormat('fr-FR',{day:'2-digit',month:'2-digit'});
 const fmtT=ts=>FMT_T.format(new Date(ts));
@@ -6931,7 +6991,7 @@ const fmtD=ts=>FMT_D.format(new Date(ts));
 const fmtH=ms=>{const m=Math.round(ms/60000);return Math.floor(m/60)+' h '+String(m%60).padStart(2,'0')};
 const chName=id=>(db.chantiers.find(c=>c.id===id)||{}).nom||'?';
 const pName=id=>(db.people.find(p=>p.id===id)||{}).nom||'?';
-let ptPer='week',lastIds=[],pend=null;
+let ptPer='week',lastIds=[];
 
 function lastEv(pid){
  const e=db.pts.filter(x=>x.p===pid).sort((a,b)=>a.ts-b.ts);return e[e.length-1]||null}
@@ -6986,36 +7046,6 @@ function summarize(per){
  return{by,flags,open};
 }
 
-/* --- lecture du lien du tag --- */
-function handleScan(q){ // q : pointage noté pendant que le coffre était fermé ({p,n,u,t})
- ensurePt();
- const u=q?new URLSearchParams({p:q.p||'',n:q.n||'',u:q.u||''}):new URLSearchParams(location.search),cid=u.get('p'),ts=q&&q.t>0?q.t:0;
- if(!cid)return;
- if(!okId(cid)){if(!q)history.replaceState(null,'',location.pathname);toast(i18nT('Lien de pointage invalide.'));return}
- if(!q)history.replaceState(null,'',location.pathname); // évite de repointer si on rafraîchit la page
- let ch=db.chantiers.find(c=>c.id===cid);
- if(!ch){ch={id:cid,nom:u.get('n')||('Chantier '+cid)};db.chantiers.push(ch);save()}
- go('pt');
- const un=(u.get('u')||'').trim();
- if(un){
-  let p=db.people.find(x=>x.nom.toLowerCase()===un.toLowerCase());
-  if(!p){p={id:uid(),nom:un};db.people.push(p);save()}
-  doPunch(cid,p.id,ts);return}
- if(db.people.length===1){doPunch(cid,db.people[0].id,ts);return}
- pend=cid;pendTs=ts;
- if(db.people.length===0){
-  flash('<div style="font-size:20px;font-weight:700">Chantier : '+esc(ch.nom)+'</div><div style="margin:10px 0">Quel est ton prénom ?</div><input id="ptNew" placeholder="Prénom"><button class="btn sec" onclick="pickNew()">Valider</button>','#1a73e8');
- }else{
-  flash('<div style="font-size:20px;font-weight:700">Chantier : '+esc(ch.nom)+'</div><div style="margin:10px 0">Qui es-tu ?</div>'+db.people.map(p=>`<button class="btn sec" onclick="pickP('${p.id}')">${esc(p.nom)}</button>`).join(''),'#1a73e8');
- }
-}
-let pendTs=0;
-function pickP(pid){doPunch(pend,pid,pendTs);pend=null;pendTs=0}
-function pickNew(){
- const n=($('ptNew').value||'').trim();if(!n)return;
- const p={id:uid(),nom:n};db.people.push(p);save();doPunch(pend,p.id,pendTs);pend=null;pendTs=0}
-function ptQueue(){let q=[];try{q=JSON.parse(localStorage.getItem('caso_pq'))||[]}catch(e){}
- try{localStorage.removeItem('caso_pq')}catch(e){}if(Array.isArray(q))q.filter(x=>x&&typeof x.p==='string').forEach(x=>handleScan(x))}
 function flash(html,color){
  $('ptFlash').innerHTML=`<div class="card" style="background:${color};color:#fff;text-align:center;padding:24px">${html}</div>`;
  window.scrollTo(0,0)}
@@ -7081,13 +7111,6 @@ function addForgot(){
  if(!n){alert('Indique la raison (par exemple « oubli de sortie »).');return}
  db.pts.push({id:uid(),c,p,t,ts:new Date(d).getTime(),note:'ajout manuel : '+n});save();renderPt()}
 function setPer(p){ptPer=p;renderPt()}
-function baseUrl(){return db.baseUrl||(location.origin+location.pathname)}
-function tagUrl(c,person){
- return baseUrl()+'?p='+encodeURIComponent(c.id)+'&n='+encodeURIComponent(c.nom)+(person?'&u='+encodeURIComponent(person):'')}
-function copyUrl(id){
- const c=db.chantiers.find(x=>x.id===id),u=tagUrl(c);
- if(navigator.clipboard)navigator.clipboard.writeText(u).then(()=>alert('Lien copié.'),()=>prompt('Copie ce lien :',u));
- else prompt('Copie ce lien :',u)}
 function exportPt(){
  const rows=['date;chantier;personne;entrée;sortie;durée (h)'];
  sessions().forEach(s=>{
@@ -7102,58 +7125,69 @@ function ptToQuote(cid){
  q.lines.push({label:'Main d\'œuvre - '+chName(cid),qty:Math.round(ms/3600000*100)/100,unit:'h',pu:mo.prix,tva:mo.tva});
  renderLines();go('devis')}
 
+/* écran Pointage : trois pages — Pointer (aujourd'hui), Heures (heures + journal), Chantiers (chantiers + personnes) */
+function ptOpen(pid){const l=lastEv(pid);return l&&l.t==='in'&&Date.now()-l.ts<16*3600000?l:null}
+function ptBtn(who){ // le bouton dit toujours ce qui va se passer : Entrée ou Sortie
+ const c=$('ptC'),p=$('ptP'),b=$('ptGo');if(!c||!p||!b)return;
+ const o=ptOpen(p.value);
+ if(o&&who&&db.chantiers.some(x=>x.id===o.c))c.value=o.c; // une personne déjà sur place : on propose sa sortie
+ const out=!!(o&&o.c===c.value);
+ b.textContent=out?'Sortie':'Entrée';b.classList.toggle('out',out);
+ const ctx=$('ptCtx');if(ctx)ctx.innerHTML=`<b data-noi18n>${esc(pName(p.value))}</b><span data-noi18n>${esc(chName(c.value))}${out?' · '+fmtH(Date.now()-o.ts):''}</span>`}
+function ptTick(){ // met à jour la durée des présents sans redessiner l'écran
+ document.querySelectorAll('#ptBody [data-since]').forEach(e=>{e.textContent=fmtH(Date.now()-(+e.dataset.since))})}
+setInterval(()=>{if(document.getElementById('s-pt')&&document.getElementById('s-pt').classList.contains('on'))ptTick()},30000);
+
 function renderPt(){
  ensurePt();
+ const AU=window.CasoAuto,auto=!!(AU&&AU.active());
  const opt=(arr,sel)=>arr.map(x=>`<option value="${x.id}" ${x.id===sel?'selected':''}>${esc(x.nom)}</option>`).join('');
- const sm=summarize(ptPer),S=sessions();
+ const sm=summarize(ptPer);
  const keepC=($('ptC')&&$('ptC').value)||'',keepP=($('ptP')&&$('ptP').value)||'';
- const AU=window.CasoAuto;
- let h=AU&&AU.active()?'':agPtCard();
- // pointer : tout seul quand l'appli Android le fait (window.CasoAuto), sinon à la main
- h+=AU&&AU.active()?AU.card():`<div class="card"><h2><span class="hi"><svg class="i"><use href="#i-helmet"/></svg></span>Pointer</h2>${AU?AU.line():''}
-  ${(!db.chantiers.length||!db.people.length)?ptSetupHtml():`<label>Chantier</label><select id="ptC">${opt(db.chantiers,keepC)}</select>
-  <label>Personne</label><select id="ptP">${opt(db.people,keepP)}</select>
-  <button class="btn" onclick="manualPunch()">Entrée / Sortie</button>`}</div>`;
- // en ce moment
- h+=`<div class="card"><h2><span class="hi"><svg class="i"><use href="#i-users"/></svg></span>Présents</h2>`+
-  (sm.open.length?sm.open.map(s=>`<div class="tot"><span>${esc(pName(s.p))} · ${esc(chName(s.c))}</span><b>depuis ${fmtT(s.a)}</b></div>`).join(''):'<div class="mut">Personne.</div>')+`</div>`;
- // heures
- h+=`<div class="card"><h2><span class="hi"><svg class="i"><use href="#i-clock"/></svg></span>Heures</h2><div class="chips" style="margin-bottom:8px">`+
+ const ready=db.chantiers.length&&db.people.length;
+ const one=a=>a.length===1?' hidden':'';
+ /* --- Pointer --- */
+ let go=auto?'':agPtCard();
+ if(auto)go+=AU.card();
+ else go+=`<div class="card pt-now">${AU?AU.line():''}`+(ready
+  ?`<div id="ptCtx" class="pt-ctx"></div>
+   <select id="ptC" aria-label="Chantier"${one(db.chantiers)} onchange="ptBtn()">${opt(db.chantiers,keepC)}</select>
+   <select id="ptP" aria-label="Personne"${one(db.people)} onchange="ptBtn(1)">${opt(db.people,keepP)}</select>
+   <button id="ptGo" class="btn pt-go" onclick="manualPunch()">Entrée</button>`
+  :ptSetupHtml())+`</div>`;
+ go+=`<div class="card"><h2><span class="hi"><svg class="i"><use href="#i-users"/></span>Présents</h2>`+
+  (sm.open.length?sm.open.map(s=>`<div class="tot"><span data-noi18n>${esc(pName(s.p))} · ${esc(chName(s.c))}</span><span><b>depuis ${fmtT(s.a)}</b> <span class="pt-els" data-noi18n data-since="${s.a}">${fmtH(Date.now()-s.a)}</span></span></div>`).join(''):'<div class="mut">Personne.</div>')+`</div>`;
+ /* --- Heures et journal --- */
+ let hh=`<div class="card"><h2><span class="hi"><svg class="i"><use href="#i-clock"/></svg></span>Heures</h2><div class="chips" style="margin-bottom:8px">`+
   [['week','Semaine'],['month','Mois'],['all','Tout']].map(([k,l])=>`<span class="chip" style="${ptPer===k?'background:var(--acc);color:var(--ink)':''}" onclick="setPer('${k}')">${l}</span>`).join('')+`</div>`;
  const cids=Object.keys(sm.by);
- h+=cids.length?cids.map(c=>{
+ hh+=cids.length?cids.map(c=>{
    const tot=Object.values(sm.by[c]).reduce((a,b)=>a+b,0);
-   return `<div class="line"><div class="t"><span>${esc(chName(c))}</span><span>${fmtH(tot)}</span></div>`+
-    Object.keys(sm.by[c]).map(p=>`<div class="tot mut"><span>${esc(pName(p))}</span><span>${fmtH(sm.by[c][p])}</span></div>`).join('')+
+   return `<div class="line"><div class="t"><span data-noi18n>${esc(chName(c))}</span><span>${fmtH(tot)}</span></div>`+
+    Object.keys(sm.by[c]).map(p=>`<div class="tot mut"><span data-noi18n>${esc(pName(p))}</span><span>${fmtH(sm.by[c][p])}</span></div>`).join('')+
     `<button class="btn sm sec" data-c="${esc(c)}" onclick="ptToQuote(this.dataset.c)">Ajouter au devis (main d'œuvre)</button></div>`}).join(''):'<div class="mut">Aucune heure.</div>';
- if(sm.flags)h+=`<div class="mut" style="color:#b06000;margin-top:8px"><svg class="i i-sm"><use href="#i-warn"/></svg> ${sm.flags} période(s) incomplète(s), non comptées.</div>`;
- h+=`<button class="btn sec" onclick="exportPt()">Exporter en CSV (Excel)</button></div>`;
- // journal
+ if(sm.flags)hh+=`<div class="mut" style="color:#b06000;margin-top:8px"><svg class="i i-sm"><use href="#i-warn"/></svg> ${sm.flags} période(s) incomplète(s), non comptées.</div>`;
+ hh+=`<button class="btn sec" onclick="exportPt()">Exporter en CSV (Excel)</button></div>`;
  const ev=db.pts.slice().sort((a,b)=>b.ts-a.ts).slice(0,30);
- h+=`<div class="card"><h2><span class="hi"><svg class="i"><use href="#i-list"/></svg></span>Journal</h2>`+(ev.length?ev.map(e=>`<div class="line"><div class="t"><span>${e.t==='in'?'Entrée':'Sortie'} · ${esc(pName(e.p))}</span><span>${fmtD(e.ts)} ${fmtT(e.ts)}</span></div>
-   <div class="mut">${esc(chName(e.c))}${e.note?' · '+esc(e.note):''}</div>
-   <button class="btn sm ko" onclick="delEv('${e.id}')">Supprimer</button></div>`).join(''):'<div class="mut">Aucun pointage.</div>')+`</div>`;
- // oubli
- h+=`<div class="card"><h2><span class="hi"><svg class="i"><use href="#i-plus"/></svg></span>Ajouter un oubli</h2>
+ hh+=`<div class="card"><h2><span class="hi"><svg class="i"><use href="#i-list"/></svg></span>Journal</h2>`+(ev.length?ev.map(e=>`<div class="line"><div class="t"><span>${e.t==='in'?'Entrée':'Sortie'} · <span data-noi18n>${esc(pName(e.p))}</span></span><span data-noi18n>${fmtD(e.ts)} ${fmtT(e.ts)}</span></div>
+   <div class="mut" data-noi18n>${esc(chName(e.c))}${e.note?' · '+esc(e.note):''}</div>
+   <button class="btn sm ko" onclick="delEv('${e.id}')">Supprimer</button></div>`).join(''):'<div class="mut">Aucun pointage.</div>')+
+  `<details class="pt-adv"><summary>Ajouter un oubli</summary>
   <label>Chantier</label><select id="fgC">${opt(db.chantiers,'')}</select>
   <label>Personne</label><select id="fgP">${opt(db.people,'')}</select>
   <div class="row"><div><label>Type</label><select id="fgT"><option value="in">Entrée</option><option value="out">Sortie</option></select></div>
   <div><label>Date et heure</label><input id="fgD" type="datetime-local"></div></div>
   <label>Raison (obligatoire)</label><input id="fgN" placeholder="oubli de sortie, pas de réseau…">
-  <button class="btn sec" onclick="addForgot()">Ajouter</button></div>`;
- // chantiers et étiquettes
- h+=`<div class="card"><h2><span class="hi"><svg class="i"><use href="#i-nfc"/></svg></span>Chantiers et NFC</h2>
-  <div class="row" style="margin-top:8px"><input id="chNew" placeholder="Nouveau chantier"><button class="btn sm" style="flex:0 0 auto" onclick="addCh()">Ajouter</button></div>`+
-  db.chantiers.map(c=>`<div class="line" data-sw="ch:${c.id}"><div class="t"><span>${esc(c.nom)}</span></div>${AU?AU.zone(c):''}
-   <input readonly value="${esc(tagUrl(c))}" onclick="this.select()" style="font-size:13px">
-   <button class="btn sm sec" onclick="copyUrl('${c.id}')">Copier le lien</button>
-</div>`).join('')+`<details class="pt-adv"><summary>Réglage avancé</summary><label>Adresse publique de cette application</label>
-  <input value="${esc(db.baseUrl||'')}" placeholder="${esc(location.origin+location.pathname)}" onchange="db.baseUrl=this.value.trim();save();renderPt()"></details></div>`;
- // personnes
- h+=`<div class="card"><h2><span class="hi"><svg class="i"><use href="#i-user"/></svg></span>Personnes</h2>
+  <button class="btn sec" onclick="addForgot()">Ajouter</button></details></div>`;
+ /* --- Chantiers et personnes --- */
+ let st=`<div class="card"><h2><span class="hi"><svg class="i"><use href="#i-pin"/></svg></span>Chantiers</h2>
+  <div class="row"><input id="chNew" placeholder="Nouveau chantier" data-adr autocomplete="off"><button class="btn sm" style="flex:0 0 auto" onclick="addCh()">Ajouter</button></div>`+
+  db.chantiers.map(c=>`<div class="line" data-sw="ch:${c.id}"><div class="t"><span data-noi18n>${esc(c.nom)}</span></div>${AU?AU.zone(c):''}</div>`).join('')+`</div>`;
+ st+=`<div class="card"><h2><span class="hi"><svg class="i"><use href="#i-user"/></svg></span>Personnes</h2>
   <div class="row"><input id="pnNew" placeholder="Prénom"><button class="btn sm" style="flex:0 0 auto" onclick="addPerson()">Ajouter</button></div>`+
-  db.people.map(p=>`<div class="line" data-sw="pe:${p.id}"><div class="t"><span>${esc(p.nom)}</span></div></div>`).join('')+`</div>`;;
- $('ptBody').innerHTML=h;ptPage(ptCur,true);
+  db.people.map(p=>`<div class="line" data-sw="pe:${p.id}"><div class="t"><span data-noi18n>${esc(p.nom)}</span></div></div>`).join('')+`</div>`;
+ $('ptBody').innerHTML=`<div data-pg="go">${go}</div><div data-pg="h">${hh}</div><div data-pg="set">${st}</div>`;
+ ptBtn();ptPage(ptCur,true);
 }
 
 
@@ -7648,7 +7682,7 @@ function init(){
  renderQuick();renderPrices();fillForm();
 }
 init();
-handleScan();ptQueue();
+
 vnInit();sigInit();chatLoad();renderAcct();
 try{if(localStorage.getItem('caso_locked')==='1'&&accountGet())setTimeout(showLogin,0);else{const a=accountGet();if(a&&a.mode==='bricoleur')setTimeout(modeEnter,0)}}catch(e){}
 setTimeout(()=>{if($('s-chat').classList.contains('on'))chatRender(false)},0);
@@ -7817,11 +7851,13 @@ function agChat(t){
   const L=[];for(let x=d;x<=d2;x=agAdd(x,1))agDayEvents(x).forEach(e=>{if(!e.d2||x===d||x===e.d)L.push([e,x])});
   out.push(`<p><svg class="i i-sm"><use href="#i-cal"/></svg> <b data-noi18n>${esc(o.date?agFmtD(d):i18nT('Les 7 prochains jours'))}</b></p>`+(L.length?L.map(([e,x])=>agCard(e,null,x)).join(''):`<p class="mut">Rien de prévu.</p>`)+(agDispo()?`<p class="mut"><span>Créneaux de travail</span> : <span data-noi18n>${esc(agDispoTxt(agDispo()))}</span></p>`:''));act.push(goBtn(d))}
  else if(P.intent==='cancel'||P.intent==='move'){
-  const cl=P.who?findBy(db.clients,P.who.nom):null;
+  /* « décale le rdv de Martin à jeudi 14h » : Martin est dans le titre ; sans lui, on déplaçait le premier rendez-vous venu */
+  const clT=!P.who&&P.title?(findBy(db.clients,P.title)||knownClient(P.title)):null,cl=P.who?findBy(db.clients,P.who.nom):clT;
   if(P.intent==='move'&&o.ranges.length===1&&o.times.length<2){o.times=[o.ranges[0][0],o.ranges[0][1]];o.ranges=[]}   // « de 14h à 16h » = déplacer de 14h vers 16h
   const narrow=!!(cl||P.who||o.date||o.times.length||(P.team&&P.team.length));
   let C=narrow?db.events.filter(e=>e.t==='rdv').map(e=>({e,n:agNextOcc(e,agToday())})).filter(x=>x.n):[];
-  if(cl)C=C.filter(x=>x.e.cid===cl.id);else if(P.who)C=C.filter(x=>nameKey(x.e.title).includes(nameKey(P.who.nom)));
+  if(cl)C=C.filter(x=>x.e.cid===cl.id||(!x.e.cid&&nameKey(x.e.title).includes(nameKey(cl.nom))));else if(P.who)C=C.filter(x=>nameKey(x.e.title).includes(nameKey(P.who.nom)));
+  else if(P.title&&/^\p{Lu}/u.test(P.title)){const k=nameKey(P.title),Cn=C.filter(x=>nameKey(x.e.title).includes(k));if(Cn.length||t.trim().indexOf(P.title)>0)C=Cn}
   if(P.team&&P.team.length&&!cl)C=C.filter(x=>(x.e.who||[]).some(id=>P.team.includes(id)));
   if(P.intent==='cancel'&&o.date)C=C.filter(x=>agOccurs(x.e,o.date)).map(x=>({e:x.e,n:o.date}));
   if(P.intent==='move'&&o.dates.length>1)C=C.filter(x=>agOccurs(x.e,o.dates[0])).map(x=>({e:x.e,n:o.dates[0]}));
@@ -7852,6 +7888,8 @@ function agChat(t){
   if(P.who){sup=findBy(db.suppliers,P.who.nom);if(!sup){const M=cliMatches(P.who.nom);
    if(M.length===1&&!M.fz)cl=M[0];else if(M.length)pickM=M;else{const r=upsert('clients',{nom:chatCasse(P.who.nom)});cl=r.x;isNew=r.isNew}}}
   else{const kc=knownClient(t);if(kc){const M=cliMatches(kc.nom);if(M.length>1)pickM=M;else cl=kc}}
+  if(cl&&P.title){const k=nameKey(cl.nom),w=P.title.split(/\s+/),nb=cl.nom.trim().split(/\s+/).length;
+   if(nameKey(w.slice(0,nb).join(' '))===k&&w.length>nb){const r=w.slice(nb).join(' ').replace(/^(?:pour|:|-)\s*(?:le\s+|la\s+|les\s+|l['’]\s*|un\s+|une\s+|du\s+|des\s+)?/i,'').trim();if(r)P.title=r.charAt(0).toUpperCase()+r.slice(1)}}
   const ev={id:uid(),t:'rdv',d,d2:o.drange?o.drange[1]:undefined,a,b,title:P.title||(sup?sup.nom:'')||(pickM&&P.who?P.who.nom:''),cid:cl?cl.id:undefined,adr:cl&&cl.adr||'',src:'chat',at:Date.now()};
   if(rr)ev.rr=rr;if(P.team&&P.team.length)ev.who=P.team.slice();agRemCompute(ev);
   if(sup&&!/chez/i.test(ev.title))ev.title=(P.title?P.title+' · ':'')+sup.nom;
@@ -8028,6 +8066,9 @@ function entExtra(){const p=db.prof||{},v=$('eLogoV');if(v)v.innerHTML=p.logo?`<
 <script type="text/x-caso" data-src="chat/intel.js"></script>
 <script type="text/x-caso" data-src="chat/lexique.js"></script>
 <script type="text/x-caso" data-src="chat/chantier.js"></script>
+<script type="text/x-caso" data-src="pointage/pointage-auto.js"></script>
+<script type="text/x-caso" data-src="pointage/geo-web.js"></script>
+<script type="text/x-caso" data-src="pointage/caso-native.js"></script>
 <script type="text/x-caso" data-src="chat/memoire.js"></script>
 <script type="text/x-caso" data-src="chat/veille.js"></script>
 <script>/* démarrage : le coffre s'ouvre (ou il n'y en a pas), puis les scripts de l'appli s'exécutent dans l'ordre */

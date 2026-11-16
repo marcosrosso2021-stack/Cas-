@@ -1,7 +1,7 @@
 /* Tests du pont casô <-> zones Android, avec de faux téléphones. */
 const assert = require('assert');
-const P = require('../web/pointage-auto.js');
-const CasoAuto = require('../web/caso-native.js');
+const P = require('../../pointage/pointage-auto.js');
+const CasoAuto = require('../../pointage/caso-native.js');
 
 const today = '2026-11-09';
 const ts = (hm, day = today) => new Date(day + 'T' + hm + ':00').getTime();
@@ -242,7 +242,7 @@ t('rendez-vous sans adresse ou sans heure : ignoré', async () => {
 });
 
 t('traductions : chaque texte du code existe dans les 9 langues', async () => {
-  const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'web', 'caso-native.js'), 'utf8');
+  const src = require('fs').readFileSync(require('path').join(__dirname, '..', '..', 'pointage', 'caso-native.js'), 'utf8');
   const used = [];
   for (const call of src.matchAll(/\bT\(([^)]*)\)/g)) for (const q of call[1].matchAll(/'([^']+)'/g)) used.push(q[1]);
   assert.ok(used.length >= 14, 'textes trouvés : ' + used.length);

@@ -13,7 +13,7 @@ db.invoices.push({id:'f1',kind:'facture',num:'F2026-001',qid:'q1',date:'2026-10-
 db.suppliers.push({id:'s1',nom:'Point P'},{id:'s2',nom:'Cedeo'});
 db.achats=[{id:'a1',four:'Point P',type:'facture',date:'2026-10-14',ttc:300,ht:250,cid:'c1',lines:[]}];
 db.hist.push({date:'2026-10-14',nom:'PLAQUE BA13 STD 2500x1200',four:'Point P',prix:8.95,unit:'u'},{date:'2026-10-02',nom:'Plaque BA13',four:'Cedeo',prix:9.4,unit:'u'},{date:'2026-10-14',nom:'Faïence',four:'Point P',prix:21,unit:'m²'});
-db.events.push({id:'e1',t:'rdv',d:d(-1),a:'10:00',b:'11:00',title:'Dupont',cid:'c2'},{id:'e2',t:'rdv',d:agAdd(agWeekStart(agToday()),-5),a:'08:00',b:'17:00',title:'Pose carrelage',cid:'c1'},{id:'e3',t:'rdv',d:agAdd(agWeekStart(agToday()),8),a:'08:00',b:'12:00',title:'Plinthes',cid:'c1'},{id:'e4',t:'rdv',d:agAdd(agWeekStart(agToday()),9),a:'14:00',b:'16:00',title:'Devis cuisine',cid:'c3'});
+db.events.push({id:'e1',t:'rdv',d:agToday()===agWeekStart(agToday())?agToday():d(-1),a:'10:00',b:'11:00',title:'Dupont',cid:'c2'},{id:'e2',t:'rdv',d:agAdd(agWeekStart(agToday()),-5),a:'08:00',b:'17:00',title:'Pose carrelage',cid:'c1'},{id:'e3',t:'rdv',d:agAdd(agWeekStart(agToday()),8),a:'08:00',b:'12:00',title:'Plinthes',cid:'c1'},{id:'e4',t:'rdv',d:agAdd(agWeekStart(agToday()),9),a:'14:00',b:'16:00',title:'Devis cuisine',cid:'c3'},{id:'e5',t:'rdv',d:agAdd(agWeekStart(agToday()),8),a:'09:00',b:'10:00',title:'Métré',cid:'c2'});
 db.plans.push({id:'pl1',pid:'pr1',cid:'c1',nom:'Salle de bain',date:Date.now()-864e5,th:'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==',pts:[],wm:[],h:{ok:true},ops:[]});
 db.quotes.push({id:'q3',num:'',client:'Martin',date:'2026-11-10',status:'brouillon',lines:[{label:'Peinture',qty:25,unit:'m²',pu:20,tva:10}],remise:0});
 db.chantiers=db.chantiers||[];db.pts=db.pts||[];db.chantiers.push({id:'ch1',cid:'c1',nom:'Martin',adr:'3 rue Victor Hugo, Lyon'});
@@ -45,6 +45,62 @@ const ESSAIS=[
  ["fr",["nouveau devis pour Dupont","carrelage 10 m² à 40 €","envoie le devis de Martin"],["","","js:q.client==='Martin'&&q.id==='q3'"]],
  ["fr",["envoie le devis de Dupont"],[/Je ne trouve pas de devis à envoyer pour Dupont/]],
  ["fr",["nouveau devis pour Dupont","carrelage 10 m² à 40 €","ajoute du carrelage et des plinthes au devis de Martin"],["","","js:(db.quotes.find(o=>o.client==='Dupont'&&o.status!=='accepte')||{lines:[]}).lines.every(l=>l.label!=='Plinthes')"]],
+ /* une question ou une modification, pas une mauvaise action */
+ ["fr",["Montre-moi ce qu'on a fait la semaine dernière chez Martin."],[/Chantier Martin.*Passages.*Pose carrelage.*Heures pointées : 16 h/]],
+ ["fr",["montre-moi Martin"],[/Chantier Martin.*Prochains rendez-vous/]],
+ ["fr",["nouveau devis pour Dupont","carrelage 10 m² à 40 €","Remplace le carrelage de cette salle de bain par du parquet imitation bois.","non"],["","",/Carrelage remplacé par Parquet imitation bois.*Parquet imitation bois 10 m².*prix à remplir/,"js:q.lines[0].label==='Carrelage'&&q.lines[0].pu==40"]],
+ ["fr",["remplace la peinture par du parquet dans le devis de Martin"],["js:q.id==='q3'&&q.lines[0].label==='Parquet'&&q.lines[0].qty==25&&q.lines[0].pu==null"]],
+ ["en",["replace the paint with parquet in Martin's quote"],["js:q.id==='q3'&&q.lines[0].label==='Parquet'"]],
+ ["es",["cambia la pintura por parquet en el presupuesto de Martin"],["js:q.id==='q3'&&q.lines[0].label==='Parquet'"]],
+ ["ru",["замени покраску на паркет в смете Martin"],["js:q.id==='q3'&&q.lines[0].label==='Parquet'"]],
+ ["fr",["remplace le carrelage par de la faïence dans le devis de Dupont"],[/Aucun devis en cours pour Dupont/]],
+ ["fr",["change le sol en beige"],[/maquette 3D/]],
+ ["fr",["enlève les plinthes du devis"],[/Je ne trouve pas « plinthes »/]],
+ ["fr",["y a-t-il des conflits dans mon planning ?"],[/1 conflit dans ton planning.*8h – 12h Martin \/ 9h – 10h Dupont/]],
+ ["en",["are there any conflicts in my schedule?"],[/1 conflict in your schedule/]],
+ ["fr",["des conflits la semaine dernière ?"],[/Aucun conflit sur cette période/]],
+ /* ---- détails d'usage : le devis en cours ---- */
+ ["fr",["devis pour Martin : 12 m² de carrelage","ajoute 2 sacs de colle","et 6h de main d'oeuvre","en fait mets 14 m²","enlève la colle","combien ça fait ?","le carrelage c'est 15 m² pas 14","mets le carrelage à 50 €","finalement 8 h","c'est quoi le total ?"],
+  ["","","","js:q.lines.length===3&&q.lines[0].label==='Carrelage'&&q.lines[0].qty==14",/Colle carrelage retiré du devis/,/Devis en cours \(Martin\) : 900 € HT, 1 017 € TTC/,"js:q.lines[0].qty==15&&q.lines.length===2","js:q.lines.length===2&&q.lines[0].pu==50&&q.lines[0].qty==15","js:q.lines[1].qty==8&&q.lines.length===2",/1 110 € HT, 1 257 € TTC/]],
+ ["fr",["devis pour Martin : 12 m² de carrelage","supprime la main d'oeuvre","en fait 14","enlève le carrelage","non"],["",/Je ne trouve pas « main d oeuvre » dans le devis/,"js:q.lines.length===1&&q.lines[0].qty==14",/Carrelage retiré du devis/,"js:q.lines.length===1&&q.lines[0].label==='Carrelage'"]],
+ ["fr",["devis pour Martin : 12 m² de carrelage","mets 2 sacs de colle","non, 3 sacs"],["","","js:q.lines.length===2&&q.lines[1].qty==3"]],
+ ["en",["new quote for Martin: 12 m² of tiling","how much is that?","remove the tiling"],["",/Current quote \(Martin\): 540 € excl\. VAT, 594 € incl\. VAT/,"js:!q.lines.some(l=>l.label==='Carrelage')"]],
+ /* ---- rendez-vous : celui du client nommé, le prochain ---- */
+ ["fr",["décale le rdv de Martin à jeudi 14h"],["js:db.events.find(e=>e.id==='e3').a==='14:00'&&db.events.find(e=>e.id==='e1').a==='10:00'&&db.events.find(e=>e.id==='e5').a==='09:00'"]],
+ ["fr",["décale le rdv de Bernard à jeudi 14h"],[/Je ne trouve pas ce rendez-vous/]],
+ ["fr",["annule le rdv de Martin"],["js:!db.events.some(e=>e.id==='e3')&&db.events.some(e=>e.id==='e2')"]],
+ ["fr",["rdv Petit vendredi 8h pour le métré de la cuisine"],["js:db.events.some(e=>e.title==='Métré de la cuisine'&&e.cid==='c3'&&e.a==='08:00')"]],
+ ["fr",["j'ai quoi cette semaine ?"],[/10h – 11h Dupont/]],
+ ["fr",["qu'est-ce que j'ai de prévu la semaine prochaine ?"],[/Martin · Plinthes.*Dupont · Métré.*Petit · Devis cuisine/]],
+ /* ---- état d'un devis : après un Oui seulement ---- */
+ ["fr",["le devis de Martin est signé","oui"],[/Passer le devis de Martin \(550 € TTC\) en « accepté » \?/,"js:db.quotes.find(o=>o.id==='q3').status==='accepte'"]],
+ ["fr",["Martin a refusé le devis","non"],[/en « refusé » \?/,"js:db.quotes.find(o=>o.id==='q3').status==='brouillon'"]],
+ ["fr",["le devis de Martin est signé"],["js:db.quotes.find(o=>o.id==='q3').status==='brouillon'"]],
+ ["fr",["Dupont a accepté le devis"],[/Je ne trouve pas de devis en attente pour Dupont/]],
+ ["fr",["est-ce que Martin a signé le devis ?"],[/brouillon 550 € TTC.*D2026-001.*accepté/]],
+ ["en",["Martin signed the quote"],[/Mark Martin's quote \(550 € incl\. VAT\) as “accepted”\?/]],
+ /* ---- prix : les miens, sinon ceux payés chez les fournisseurs ---- */
+ ["fr",["quel est le prix du carrelage ?"],[/Carrelage : 45 € HT \/ m²/]],
+ ["fr",["le carrelage est à combien ?"],[/Carrelage : 45 € HT \/ m²/]],
+ ["es",["¿cuál es el precio del alicatado?"],[/Carrelage : 45 € HT \/ m²/]],
+ ["fr",["prix du parquet"],[/« parquet » n’est pas dans tes services/]],
+ ["fr",["prix de la faïence chez Point P"],[/Point P 21 € \/ m²/]],
+ ["fr",["combien coûte une plaque de BA13 ?"],[/Point P 8,95 €.*Cedeo 9,40 €/]],
+ ["fr",["ajoute un service : pose de parquet 35 € le m²"],["js:db.prices.some(p=>p.nom==='Pose de parquet'&&p.prix==35&&p.unit==='m²')"]],
+ /* ---- heures pointées ---- */
+ ["fr",["combien d'heures j'ai fait chez Martin ?"],[/Heures pointées chez Martin : 16 h/]],
+ /* ---- clients, encaissement, relance ---- */
+ ["fr",["nouveau client : Mme Leroy, 06 11 22 33 44, 5 rue des Roses à Lyon"],["js:db.clients.some(c=>c.nom==='Leroy'&&c.tel==='06 11 22 33 44'&&c.adr==='5 rue des Roses à Lyon')&&!db.clients.some(c=>c.nom==='Lyon')"]],
+ ["fr",["ajoute le client Jean Moreau, jean.moreau@mail.fr, 07 55 44 33 22"],["js:db.clients.some(c=>c.nom==='Jean Moreau'&&c.email==='jean.moreau@mail.fr'&&c.tel==='07 55 44 33 22')"]],
+ ["fr",["Martin a tout payé","oui"],[/Enregistrer le paiement du reste dû par Martin : 90 € \(F2026-001\) \?/,"js:faDue(db.invoices[0])<0.01"]],
+ ["fr",["Martin a tout payé"],["js:Math.abs(faDue(db.invoices[0])-90)<0.01"]],
+ ["fr",["Petit a tout payé"],["js:db.quotes.length===3&&!/Petites fournitures/.test(JSON.stringify(q.lines))"]],
+ ["fr",["relance Martin"],[/Relance de la facture F2026-001 \(90 € restant dû\)/]],
+ ["fr",["relance Dupont"],[/Rien à relancer pour Dupont/]],
+ ["fr",["mes devis en attente"],[/Martin.*brouillon 550 € TTC/]],
+ ["fr",["dernier devis de Petit"],[/D2026-002.*accepté 2 425,50 € TTC/]],
+ ["fr",["rdv demain 9h chez Martin","mets-le plutôt à 10h","finalement annule"],["","js:db.events.filter(e=>e.src==='chat'&&e.cid==='c1').length===1&&db.events.find(e=>e.src==='chat'&&e.cid==='c1').a==='10:00'","js:db.events.find(e=>e.src==='chat'&&e.cid==='c1').a==='09:00'"]],
+ ["fr",["devis pour Martin : 12 m² de carrelage","arrondis à 600 €"],["","js:q.lines.length===1&&!db.prices.some(p=>/arrondi/i.test(p.nom))"]],
  /* jamais la rénovation d'un autre client */
  ["fr",["mets la rénovation sur le devis de Dupont","oui","mets la rénovation sur le devis de Petit"],[/n’est liée à aucun client.*devis de Dupont/,/Rebouchage de fissures 3 ml/,/Aucune rénovation enregistrée pour Petit/]],
  ["fr",["mets la rénovation sur le devis de Dupont","oui","fiche chantier Dupont","fiche chantier Martin"],[/aucun client/,/Rebouchage/,/Chantier Dupont.*Rénovation 3D.*2 postes/,/^(?![\s\S]*Rénovation 3D)[\s\S]*Chantier Martin/]],

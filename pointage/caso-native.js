@@ -20,53 +20,63 @@
     'Demain', 'Terminé', 'Absent', 'Adresse introuvable', 'Autorisation requise',
     'Autorise la position « Toujours » pour pointer tout seul.', 'Autoriser',
     'Ce téléphone n’est lié à aucune personne. Ajoute ton prénom dans Personnes.',
-    'Aucun chantier prévu avec une adresse.', 'Zone'];
+    'Aucun chantier prévu avec une adresse.', 'Zone',
+    'Autorise la position pour pointer tout seul quand casô est ouvert.'];
   var TR = {
     en: ['Automatic clocking', 'On site', 'since', 'Leaving', 'Next job site', 'Expected on site',
       'Tomorrow', 'Done', 'Absent', 'Address not found', 'Permission needed',
       'Allow location “Always” to clock in automatically.', 'Allow',
       'This phone isn’t linked to anyone. Add your first name under People.',
-      'No job site planned with an address.', 'Zone'],
+      'No job site planned with an address.', 'Zone',
+      'Allow location to clock in automatically while casô is open.'],
     pt: ['Ponto automático', 'No local', 'desde', 'A sair', 'Próxima obra', 'Esperado no local',
       'Amanhã', 'Concluído', 'Ausente', 'Morada não encontrada', 'Autorização necessária',
       'Autoriza a posição «Sempre» para picar o ponto automaticamente.', 'Autorizar',
       'Este telemóvel não está associado a nenhuma pessoa. Adiciona o teu nome próprio em Pessoas.',
-      'Nenhuma obra prevista com morada.', 'Zona'],
+      'Nenhuma obra prevista com morada.', 'Zona',
+      'Autoriza a posição para picar o ponto automaticamente com o casô aberto.'],
     es: ['Fichaje automático', 'En la obra', 'desde', 'Saliendo', 'Próxima obra', 'Esperado en la obra',
       'Mañana', 'Terminado', 'Ausente', 'Dirección no encontrada', 'Permiso necesario',
       'Permite la ubicación «Siempre» para fichar automáticamente.', 'Permitir',
       'Este teléfono no está vinculado a ninguna persona. Añade tu nombre en Personas.',
-      'Ninguna obra prevista con dirección.', 'Zona'],
+      'Ninguna obra prevista con dirección.', 'Zona',
+      'Permite la ubicación para fichar automáticamente con casô abierto.'],
     it: ['Timbratura automatica', 'In cantiere', 'dalle', 'In uscita', 'Prossimo cantiere', 'Atteso in cantiere',
       'Domani', 'Terminato', 'Assente', 'Indirizzo non trovato', 'Autorizzazione necessaria',
       'Consenti la posizione «Sempre» per timbrare automaticamente.', 'Consenti',
       'Questo telefono non è collegato a nessuna persona. Aggiungi il tuo nome in Persone.',
-      'Nessun cantiere previsto con un indirizzo.', 'Zona'],
+      'Nessun cantiere previsto con un indirizzo.', 'Zona',
+      'Consenti la posizione per timbrare automaticamente con casô aperto.'],
     ro: ['Pontaj automat', 'Pe șantier', 'de la', 'Pleacă', 'Următorul șantier', 'Așteptat pe șantier',
       'Mâine', 'Terminat', 'Absent', 'Adresa nu a fost găsită', 'Permisiune necesară',
       'Permite locația „Întotdeauna” pentru pontaj automat.', 'Permite',
       'Acest telefon nu este asociat niciunei persoane. Adaugă-ți prenumele în Persoane.',
-      'Niciun șantier programat cu adresă.', 'Zonă'],
+      'Niciun șantier programat cu adresă.', 'Zonă',
+      'Permite locația pentru pontaj automat cât timp casô este deschis.'],
     tr: ['Otomatik puantaj', 'Şantiyede', 'giriş:', 'Çıkıyor', 'Sıradaki şantiye', 'Şantiyede bekleniyor',
       'Yarın', 'Bitti', 'Yok', 'Adres bulunamadı', 'İzin gerekli',
       'Otomatik puantaj için konuma «Her zaman» izni ver.', 'İzin ver',
       'Bu telefon hiçbir kişiyle eşleşmedi. Adını Kişiler bölümüne ekle.',
-      'Adresi olan planlı şantiye yok.', 'Bölge'],
+      'Adresi olan planlı şantiye yok.', 'Bölge',
+      'casô açıkken otomatik giriş için konuma izin ver.'],
     pl: ['Automatyczny czas pracy', 'Na budowie', 'od', 'Wychodzi', 'Następna budowa', 'Oczekiwany na budowie',
       'Jutro', 'Zakończone', 'Nieobecny', 'Nie znaleziono adresu', 'Wymagane zezwolenie',
       'Zezwól na lokalizację „Zawsze”, aby rejestrować czas pracy automatycznie.', 'Zezwól',
       'Ten telefon nie jest przypisany do żadnej osoby. Dodaj swoje imię w sekcji Osoby.',
-      'Brak zaplanowanych budów z adresem.', 'Strefa'],
+      'Brak zaplanowanych budów z adresem.', 'Strefa',
+      'Zezwól na lokalizację, aby rejestrować czas automatycznie, gdy casô jest otwarte.'],
     ar: ['الحضور التلقائي', 'في الورشة', 'منذ', 'يغادر', 'الورشة التالية', 'في انتظاره بالورشة',
       'غدًا', 'انتهى', 'غائب', 'لم يتم العثور على العنوان', 'الإذن مطلوب',
       'اسمح بالموقع «دائمًا» لتسجيل الحضور تلقائيًا.', 'السماح',
       'هذا الهاتف غير مرتبط بأي شخص. أضف اسمك الشخصي في الأشخاص.',
-      'لا توجد ورشة مخطط لها بعنوان.', 'منطقة'],
+      'لا توجد ورشة مخطط لها بعنوان.', 'منطقة',
+      'اسمح بالموقع للتسجيل التلقائي أثناء فتح casô.'],
     ru: ['Автоматический учёт времени', 'На объекте', 'с', 'Уходит', 'Следующий объект', 'Ожидается на объекте',
       'Завтра', 'Завершено', 'Отсутствует', 'Адрес не найден', 'Нужно разрешение',
       'Разреши геопозицию «Всегда», чтобы время учитывалось автоматически.', 'Разрешить',
       'Этот телефон не привязан ни к одному человеку. Добавь своё имя в разделе «Люди».',
-      'Нет запланированных объектов с адресом.', 'Зона']
+      'Нет запланированных объектов с адресом.', 'Зона',
+      'Разрешите геолокацию для автоматического учёта, пока casô открыт.']
   };
 
   /* Ajoute ces textes au dictionnaire de casô, sans écraser une traduction qui existe déjà. */
@@ -322,7 +332,7 @@
           return pill('bad', T('Adresse introuvable')) + nm(s.site);
         case 'perm':
           return pill('bad', T('Autorisation requise')) + '<div class="au-sub">' +
-            T('Autorise la position « Toujours » pour pointer tout seul.') + '</div>' +
+            T(env.web ? 'Autorise la position pour pointer tout seul quand casô est ouvert.' : 'Autorise la position « Toujours » pour pointer tout seul.') + '</div>' +
             '<button class="btn au-btn" onclick="CasoAuto.fix()">' + T('Autoriser') + '</button>';
         case 'noone':
           return '<div class="au-sub">' + T('Ce téléphone n’est lié à aucune personne. Ajoute ton prénom dans Personnes.') + '</div>';
@@ -363,9 +373,26 @@
 
   /* ---------- branchement réel, seulement dans l'appli Android ---------- */
   function boot() {
-    var Cap = root.Capacitor;
-    if (!Cap || !Cap.isNativePlatform || !Cap.isNativePlatform() || Cap.getPlatform() !== 'android') return;
+    var Cap = root.Capacitor, G, web = false;
     if (!root.CasoPointage) return;
+    if (Cap && Cap.isNativePlatform && Cap.isNativePlatform() && Cap.getPlatform() === 'android') {
+      G = Cap.registerPlugin('CasoGeofence');
+    } else if (root.CasoGeoWeb && root.navigator && root.navigator.geolocation && root.matchMedia &&
+      (root.matchMedia('(pointer: coarse)').matches || root.navigator.maxTouchPoints > 0)) {
+      // téléphone ou tablette, site ouvert : la position n'est lue que casô ouvert
+      web = true;
+      G = root.CasoGeoWeb.create({
+        geo: root.navigator.geolocation,
+        perm: function () {
+          return root.navigator.permissions && root.navigator.permissions.query
+            ? root.navigator.permissions.query({ name: 'geolocation' }).then(function (r) { return r.state; })
+            : Promise.resolve('prompt');
+        },
+        now: function () { return Date.now(); },
+        load: function () { try { return JSON.parse(root.localStorage.getItem('caso_geoweb')); } catch (e) { return null; } },
+        store: function (o) { try { root.localStorage.setItem('caso_geoweb', JSON.stringify(o)); } catch (e) {} }
+      });
+    } else return;
     var KEY = 'caso_geo_state';
     if (typeof I18N_DATA !== 'undefined') {
       addTranslations(I18N_DATA);
@@ -376,7 +403,8 @@
     root.document.head.appendChild(style);
     var api = create({
       P: root.CasoPointage,
-      G: Cap.registerPlugin('CasoGeofence'),
+      G: G,
+      web: web,
       db: function () { return db; },
       sync: function () { return getSync(); },
       account: function () { return accountGet(); },
