@@ -464,6 +464,9 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
    /* prix des matériaux en ligne (sans compte) : la clé du service reste ici, limites par jour et par adresse */
    if(req.method==='GET'&&url==='/api/prix'){const sp=new URLSearchParams(req.url.split('?')[1]||'');
     const [c,b]=await prix.chercher(sp.get('q')||'',sp.get('pays')||'FR',ip);return send(res,c,b)}
+   if(req.method==='GET'&&url==='/api/prix/img'){const sp=new URLSearchParams(req.url.split('?')[1]||'');
+    const [c,o]=await prix.image(sp.get('u')||'');if(c!==200)return send(res,c,o);
+    res.writeHead(200,Object.assign({'content-type':o.type,'content-length':o.buf.length,'cache-control':'public, max-age=86400'},SEC,cors));return res.end(o.buf)}
 
    /* apprentissage partagé du chat (sans compte) : chaque appareil envoie ses phrases apprises, reçoit celles des autres */
    if(url==='/api/appris'){
