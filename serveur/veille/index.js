@@ -74,7 +74,7 @@ function creer(opts={}){
   return publies(auj).sort((x,y)=>x.publieLe<y.publieLe?1:x.publieLe>y.publieLe?-1:0).slice(0,50).map(f=>({id:f.id,titre:f.titre,resume:String(f.nouvelle||'').slice(0,600),url:f.url,datePub:f.datePub,
    dateVigueur:f.dateVigueur,categorie:f.categorie,priorite:f.priorite,pros:f.pros||[],aFaire:f.aFaire||'',publieLe:f.publieLe}))}
  /* ce qui est sorti et n'a pas encore été annoncé par notification */
- function aAnnoncer(){const auj=maintenant().toISOString().slice(0,10);return publies(auj).filter(f=>!f.pousse).map(f=>({id:f.id,titre:f.titre,priorite:f.priorite}))}
+ function aAnnoncer(){const auj=maintenant().toISOString().slice(0,10);return publies(auj).filter(f=>!f.pousse).map(f=>({id:f.id,titre:f.titre,priorite:f.priorite,pros:f.pros||[]}))}
  function annonce(ids){for(const id of ids)base.completer(id,{pousse:true});try{base.enregistrer()}catch(e){log('[casô] veille : base non enregistrée',e&&e.code)}}
  /* une fiche telle que le tableau de bord la montre : avec son délai du jour */
  function voir(f){const auj=maintenant().toISOString().slice(0,10);
@@ -83,7 +83,8 @@ function creer(opts={}){
  function passer(){if(!enCours)enCours=faire().finally(()=>{enCours=null});return enCours}
  /* un passage par jour, à partir de 5 h (heure universelle) */
  function aFaire(d){return d.getUTCHours()>=5&&String(base.etat().dernierPassage).slice(0,10)!==d.toISOString().slice(0,10)}
- const etat=()=>Object.assign(base.etat(),{sources:src.actives()});
+ /* « erreursDernier » : les sources en erreur au dernier passage seulement */
+ const etat=()=>{const p=base.dernieres(200).find(x=>x.type==='passage');return Object.assign(base.etat(),{sources:src.actives(),erreursDernier:p&&p.detail?p.detail.erreurs||0:0})};
  const liste=fi=>base.liste(fi).filter(f=>!fi||((!fi.priorite||f.priorite===fi.priorite)&&(!fi.domaine||(f.domaines||[]).includes(fi.domaine)))).map(voir);
  return {passer,aFaire,etat,liste,lire:id=>base.lire(id),decider,journal:n=>base.dernieres(n||50),lettre,aAnnoncer,annonce};
 }
