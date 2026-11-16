@@ -59,6 +59,7 @@ function createServer(opts={}){
  const prix=opts.prix||prixLib.creer();// prix des matériaux en ligne (clé SEARCHAPI_KEY ou SERPAPI_KEY)
  /* veille réglementaire : un passage par jour sur les sources officielles ; rien n'est envoyé aux artisans sans validation */
  const veille=opts.veille||veilleLib.creer({dir:DIR});
+ const DEMARRE=new Date().toISOString();
  const vEssais=new Map();// mauvaises clés par adresse : 10 essais par quart d'heure
  /* newsletter : une notification quand un texte validé sort (tout de suite s'il est critique, sinon à partir de 6 h, heure universelle, le jour d'envoi) */
  const VEILLE_TXT='Du nouveau pour ton métier';
@@ -516,6 +517,14 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
     if(e&&e.n>=10&&t-e.t<9e5)return send(res,429,{error:'Trop d\'essais, réessaie plus tard.'});
     if(!cle||String(req.headers['x-caso-cle']||'')!==cle){if(!e||t-e.t>=9e5)vEssais.set(ip,{n:1,t});else e.n++;if(vEssais.size>5000)vEssais.clear();return send(res,404,{error:'Introuvable.'})}
     if(req.method==='GET'&&url==='/api/veille/etat')return send(res,200,Object.assign(veille.etat(),{modules:veilleLib.MODULES,domaines:veilleLib.DOMAINES}));
+    /* le tableau de bord de casô, pour le propriétaire : des nombres seulement (aucun nom, aucune adresse, aucun devis) */
+    if(req.method==='GET'&&url==='/api/veille/saas'){const t=Date.now(),S=Object.keys(data.signs).map(k=>data.signs[k]),ve=veille.etat(),VL=veille.liste({validation:'attente'});
+     const inc=[];for(const l of APL){const L=incompris[l]||{};for(const k of Object.keys(L))if(L[k].u.length>=3)inc.push({t:k,n:L[k].u.length,l})}
+     return send(res,200,{comptes:auth.resume(),equipes:Object.keys(data.users).length,notifications:data.subs.length,
+      signatures:{envoyees7:S.filter(x=>x.sentAt&&t-x.sentAt<7*864e5).length,signees:S.filter(x=>x.status==='signed').length,enAttente:S.filter(x=>x.status==='sent').length},
+      chat:{apprises:APL.reduce((n,l)=>n+Object.keys(appris[l]||{}).length,0),incomprises:inc.sort((x,y)=>y.n-x.n).slice(0,8)},
+      prix:prix.etat(),veille:{dernierPassage:ve.dernierPassage,erreursDernier:ve.erreursDernier,sources:ve.sources,aValider:VL.filter(f=>!f.bloque).length,aVerifier:VL.filter(f=>f.bloque).length},
+      serveur:{demarre:DEMARRE,memoireMo:Math.round(process.memoryUsage().rss/1048576),node:process.version}})}
     if(req.method==='GET'&&url==='/api/veille/journal')return send(res,200,veille.journal(100));
     if(req.method==='GET'&&url==='/api/veille/textes'){
      const sp=new URLSearchParams(req.url.split('?')[1]||''),fi={},c=sp.get('categorie')||'',b=sp.get('bloque'),v=sp.get('validation')||'',p=sp.get('priorite')||'',d=sp.get('domaine')||'';

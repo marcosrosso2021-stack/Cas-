@@ -202,6 +202,17 @@ function creer(opts){
  /* changement de SIRET en cours d'essai : le nouveau SIRET hérite de la même date de fin (pas de nouvel essai) */
  function debutEssaiSiret(c,siret){const k='s'+sha(siret);const fin=Math.max(d.essais[k]||0,c.essaiFin||0);if(fin){d.essais[k]=fin;c.essaiFin=Math.min(c.essaiFin||fin,fin)}}
 
- return{traiter,compte,pub,offre:c=>offre(c,now()),_d:()=>d};
+ /* résumé pour le propriétaire : des nombres seulement, aucun nom ni adresse */
+ function resume(){const t=now(),J=864e5,C=Object.keys(d.comptes).map(k=>d.comptes[k]),vu={};
+  for(const k of Object.keys(d.sessions)){const x=d.sessions[k];if(x.exp>t)vu[x.id]=Math.max(vu[x.id]||0,x.vu||0)}
+  const offres={},parJour=[];for(const c of C){const o=offre(c,t)||'sans_choix';offres[o]=(offres[o]||0)+1}
+  for(let i=13;i>=0;i--){const j=new Date(t-i*J).toISOString().slice(0,10);parJour.push({j,n:C.filter(c=>c.creeLe&&new Date(c.creeLe).toISOString().slice(0,10)===j).length})}
+  return {total:C.length,artisan:C.filter(c=>c.mode==='artisan').length,bricoleur:C.filter(c=>c.mode==='bricoleur').length,sansChoix:C.filter(c=>!c.mode).length,
+   google:C.filter(c=>c.via==='google').length,microsoft:C.filter(c=>c.via==='microsoft').length,
+   nouveaux7:C.filter(c=>c.creeLe&&t-c.creeLe<7*J).length,nouveaux30:C.filter(c=>c.creeLe&&t-c.creeLe<30*J).length,
+   actifs7:C.filter(c=>vu[c.id]&&t-vu[c.id]<7*J).length,actifs30:C.filter(c=>vu[c.id]&&t-vu[c.id]<30*J).length,
+   essaisFin7:C.filter(c=>c.mode==='artisan'&&!(c.abo&&c.abo.offre)&&c.essaiFin&&c.essaiFin>t&&c.essaiFin-t<7*J).length,offres,parJour}}
+
+ return{traiter,compte,pub,offre:c=>offre(c,now()),resume,_d:()=>d};
 }
 module.exports={creer,siretOk,offre,FOURNISSEURS,ESSAI_JOURS,SESSION_JOURS};

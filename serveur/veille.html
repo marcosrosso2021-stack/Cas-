@@ -20,13 +20,27 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 a{color:inherit}
 
 .haut{position:sticky;top:0;z-index:2;background:var(--bg);display:flex;align-items:center;gap:12px;padding:calc(14px + env(safe-area-inset-top)) 0 12px}
-.logo{width:36px;height:36px;border-radius:11px;background:var(--acc);color:#18181a;display:grid;place-items:center;font-weight:800;font-size:18px;flex:none}
+.logo{width:36px;height:36px;border-radius:11px;background:var(--acc);flex:none;display:block}
 .haut h1{margin:0;font-size:20px;line-height:1.15;font-weight:800;letter-spacing:-.01em}
 .haut p{margin:0;font-size:13px;color:var(--mut)}
 .rond{margin-left:auto;flex:none;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--card);display:grid;place-items:center}
 .rond svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .rond.tourne svg{animation:t 1s linear infinite}@keyframes t{to{transform:rotate(360deg)}}
 
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--soft);border-radius:14px;padding:4px;margin:0 0 14px}
+.modes button{border:0;background:none;border-radius:11px;min-height:40px;font-size:15px;color:var(--mut)}
+.modes button[aria-pressed=true]{background:var(--card);color:var(--ink);font-weight:700}
+.bloc{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin:0 0 10px}
+.bloc h2{font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin:0 0 12px}
+.chiffres{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 12px}
+@media (min-width:560px){.chiffres{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.chiffres b{display:block;font-size:24px;line-height:1.1;font-weight:800}.chiffres span{font-size:13px;color:var(--mut)}
+.barres{display:flex;align-items:flex-end;gap:4px;height:64px;margin-top:16px}
+.barres i{flex:1;background:var(--acc);border-radius:4px 4px 0 0;min-height:2px}
+.barres i.zero{background:var(--line)}
+.axe{display:flex;justify-content:space-between;font-size:12px;color:var(--mut);margin-top:6px}
+.ligne{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid var(--line);font-size:15px}
+.ligne:first-of-type{border-top:0;padding-top:0}.ligne span:last-child{font-weight:700;white-space:nowrap}.ligne em{font-style:normal;color:var(--mut)}
 .tuiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:4px 0 14px}
 @media (min-width:560px){.tuiles{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .tuile{text-align:left;border:1px solid var(--line);background:var(--card);border-radius:16px;padding:12px 14px;min-height:76px}
@@ -84,11 +98,13 @@ summary::after{content:'›';font-size:18px;line-height:1;transition:transform .
 <body>
 <main>
 <header class="haut">
- <div class="logo" aria-hidden="true">c</div>
- <div><h1>Veille</h1><p id="sync"></p></div>
+ <img class="logo" src="/icon-192.png" alt="casô" width="36" height="36">
+ <div><h1 id="titre">Veille</h1><p id="sync"></p></div>
  <button class="rond" id="collecte" aria-label="Lancer une collecte" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></button>
 </header>
 <section class="porte" id="porte" hidden><label for="cle">Clé du propriétaire</label><input class="champ" id="cle" type="password" autocomplete="off"><button class="oui" id="entrer">Entrer</button></section>
+<nav class="modes" id="modes" hidden><button type="button" data-m="veille" aria-pressed="true">Veille</button><button type="button" data-m="saas" aria-pressed="false">casô</button></nav>
+<div id="saas" hidden></div>
 <div id="app" hidden>
  <div class="tuiles" id="tuiles"></div>
  <div class="barre"><span id="onglets"></span><select id="dom" aria-label="Domaine"></select></div>
@@ -106,7 +122,7 @@ const SRC={bofip:'BOFiP',entreprendre:'Entreprendre',legifrance:'Légifrance'};
 const TUILES=[['attente','À valider'],['verifier','À vérifier'],['critiques','Critiques'],['echeances','Échéances']],ONGLETS=[['valide','Validés'],['adapter','À adapter dans casô'],['refuse','Refusés']];
 const VIDE={attente:['Rien à valider','Tout est traité. La prochaine collecte se fait demain matin.'],verifier:['Rien à vérifier','Aucun texte bloqué.'],critiques:['Aucun texte critique','Rien n\'entre en vigueur dans les 30 jours.'],
  echeances:['Aucune échéance à venir',''],valide:['Aucun texte validé',''],adapter:['Rien à adapter','Aucun texte validé ne touche un module de casô.'],refuse:['Aucun texte refusé','']};
-let cle='',T=[],E={modules:[],domaines:[]},vue='attente',dom='',ouvert=decodeURIComponent(location.hash.slice(1)),occupe=false;
+let cle='',T=[],E={modules:[],domaines:[]},vue='attente',dom='',ouvert=decodeURIComponent(location.hash.slice(1)),occupe=false,mode=ouvert==='saas'?'saas':'veille',S=null;
 try{cle=sessionStorage.getItem('caso-veille')||''}catch(e){}
 async function api(chemin,corps){const r=await fetch('/api/veille/'+chemin,{method:corps?'POST':'GET',headers:Object.assign({'x-caso-cle':cle},corps?{'content-type':'application/json'}:{}),body:corps?JSON.stringify(corps):undefined});
  const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(r.status===404?'Clé refusée.':j.error||'Erreur '+r.status);return j}
@@ -114,9 +130,29 @@ function dire(m,ko){const e=$('msg');e.textContent=m||'';e.hidden=!m;e.className
 const fr=d=>d?d.slice(8,10)+'/'+d.slice(5,7)+'/'+d.slice(0,4):'—';
 const dans=f=>f.delaiJours>0?' · dans '+f.delaiJours+' j':f.dateVigueur?' · en vigueur':'';
 async function charger(){
- try{E=await api('etat');T=await api('textes')}catch(e){$('porte').hidden=false;$('app').hidden=true;$('collecte').hidden=true;$('liste').textContent='';$('sync').textContent='';return dire(cle?e.message:'',true)}
+ try{E=await api('etat');T=await api('textes');if(mode==='saas')S=await api('saas')}catch(e){$('porte').hidden=false;['app','saas','modes','collecte'].forEach(i=>$(i).hidden=true);$('liste').textContent='';$('sync').textContent='';return dire(cle?e.message:'',true)}
  try{sessionStorage.setItem('caso-veille',cle)}catch(e){}
- $('porte').hidden=true;$('app').hidden=false;$('collecte').hidden=false;dessiner()}
+ $('porte').hidden=true;$('modes').hidden=false;const v=mode==='veille';$('app').hidden=!v;$('liste').hidden=!v;$('collecte').hidden=!v;$('saas').hidden=v;$('titre').textContent=v?'Veille':'casô';
+ Array.prototype.forEach.call($('modes').children,b=>b.setAttribute('aria-pressed',String(b.dataset.m===mode)));
+ if(v)dessiner();else tableau()}
+/* le tableau de bord de casô : des nombres seulement, lus sur le serveur */
+const OFFRES={artisan_pro:'Artisan pro',artisan:'Artisan',artisan_curieux:'Artisan curieux (essai)',artisan_fin_essai:'Essai terminé',bricoleur_pro:'Bricoleur du dimanche pro',bricoleur:'Bricoleur du dimanche',sans_choix:'Sans mode choisi'};
+function tableau(){
+ const z=$('saas'),c=S.comptes;z.textContent='';$('sync').textContent='Serveur démarré le '+fr(S.serveur.demarre.slice(0,10))+' · '+S.serveur.memoireMo+' Mo';
+ const bloc=(t)=>{const b=el('section','bloc');b.append(el('h2',null,t));z.append(b);return b},nb=(b,L)=>{const g=el('div','chiffres');L.forEach(([n,l])=>{const d=el('div');d.append(el('b',null,n),el('span',null,l));g.append(d)});b.append(g)};
+ const li=(b,l,v,sous)=>{const r=el('div','ligne'),g=el('span',null,l);if(sous){g.append(document.createTextNode(' '),el('em',null,sous))}r.append(g,el('span',null,v));b.append(r)};
+ const a=bloc('Comptes');nb(a,[[c.total,'Comptes'],[c.actifs7,'Actifs sur 7 jours'],[c.nouveaux7,'Nouveaux sur 7 jours'],[c.essaisFin7,'Essais qui finissent sous 7 jours']]);
+ const max=Math.max(1,...c.parJour.map(x=>x.n)),ba=el('div','barres');ba.setAttribute('role','img');ba.setAttribute('aria-label','Nouveaux comptes par jour, 14 derniers jours');
+ c.parJour.forEach(x=>{const i=el('i',x.n?null:'zero');i.style.height=Math.round(x.n/max*100)+'%';i.title=fr(x.j)+' : '+x.n;ba.append(i)});
+ const ax=el('div','axe');ax.append(el('span',null,fr(c.parJour[0].j).slice(0,5)),el('span',null,'Nouveaux comptes, 14 jours'),el('span',null,fr(c.parJour[c.parJour.length-1].j).slice(0,5)));a.append(ba,ax);
+ const o=bloc('Offres');const ko=Object.keys(c.offres).sort((x,y)=>c.offres[y]-c.offres[x]);if(!ko.length)li(o,'Aucun compte pour l\'instant','');ko.forEach(k=>li(o,OFFRES[k]||k,c.offres[k]));
+ li(o,'Connexion Google',c.google);li(o,'Connexion Microsoft',c.microsoft);
+ const u=bloc('Usage');li(u,'Devis envoyés à signer','' +S.signatures.envoyees7,'7 jours');li(u,'En attente de signature',S.signatures.enAttente);li(u,'Devis signés',S.signatures.signees);
+ li(u,'Téléphones avec notifications',S.notifications);li(u,'Comptes d\'équipe',S.equipes);li(u,'Recherches de prix',S.prix.pret?S.prix.jour+' / '+S.prix.limite:'Non activées','aujourd\'hui');
+ const h=bloc('Chat');li(h,'Phrases apprises et partagées',S.chat.apprises);if(!S.chat.incomprises.length)li(h,'Phrases non comprises par 3 usagers ou plus',0);
+ S.chat.incomprises.forEach(x=>li(h,'« '+x.t+' »',x.n,x.l));
+ const w=bloc('Veille');li(w,'Dernière collecte',S.veille.dernierPassage?fr(S.veille.dernierPassage.slice(0,10)):'Aucune');li(w,'Textes à valider',S.veille.aValider);li(w,'Textes à vérifier',S.veille.aVerifier);
+ li(w,'Sources',(S.veille.sources||[]).map(s=>SRC[s]||s).join(', '));if(S.veille.erreursDernier)li(w,'Sources en erreur à la dernière collecte',S.veille.erreursDernier)}
 const vivant=f=>f.validation!=='refuse';
 const VUES={attente:f=>f.validation==='attente'&&!f.bloque,verifier:f=>f.validation==='attente'&&f.bloque,critiques:f=>vivant(f)&&f.priorite==='P0',echeances:f=>vivant(f)&&f.delaiJours>0,
  valide:f=>f.validation==='valide',adapter:f=>f.validation==='valide'&&(f.modules||[]).length>0,refuse:f=>f.validation==='refuse'};
@@ -169,7 +205,8 @@ async function collecter(){if(occupe)return;occupe=true;const b=$('collecte');b.
  catch(e){dire(e.message,true)}b.classList.remove('tourne');occupe=false}
 $('entrer').onclick=()=>{cle=$('cle').value.trim();$('cle').value='';charger()};
 $('cle').onkeydown=e=>{if(e.key==='Enter')$('entrer').click()};
-$('collecte').onclick=collecter;$('dom').onchange=e=>{dom=e.target.value;dessiner()};
+$('collecte').onclick=collecter;$('modes').onclick=e=>{const b=e.target.closest('button');if(!b||b.dataset.m===mode)return;mode=b.dataset.m;ouvert='';dire('');charger()};
+if(ouvert==='saas')ouvert='';$('dom').onchange=e=>{dom=e.target.value;dessiner()};
 charger();
 })();
 </script>
