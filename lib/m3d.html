@@ -4801,12 +4801,12 @@ async function owlRun(cv){const V=await v2Sess('owl');if(!V)return null;const nq
   for(let p=0;p<P;p++){let bq=0,bs=-1,s2=-1;for(let q=0;q<nq;q++){const s=1/(1+Math.exp(-lg[p*nq+q]));if(s>bs){s2=bs;bs=s;bq=q}else if(s>s2)s2=s}if(bs<0.22||bs-s2<0.04)continue;
     const cx=bx[p*4]*Mx,cy=bx[p*4+1]*Mx,bw=bx[p*4+2]*Mx,bh=bx[p*4+3]*Mx;if(cx<0||cy<0||cx>W||cy>H)continue;out.push({k:OWLQ[bq][0],sc:bs,cx,cy,w:bw,h:bh})}
   out.sort((a,b)=>b.sc-a.sc);const keep=[];for(const r of out)if(!keep.some(k=>k.k===r.k&&Math.hypot(k.cx-r.cx,k.cy-r.cy)<Math.max(r.w,r.h)*0.5))keep.push(r);return keep.slice(0,30)}
-/* OWLv2 demande environ 1,7 Go de mémoire pendant son calcul (mesuré sur ordinateur) : sur iPhone et iPad, ou sur un appareil qui annonce moins de 8 Go,
-   l'onglet risquerait d'être fermé par le système en pleine prise de vue ; il n'y tourne donc pas */
+/* mémoire demandée pendant le calcul (mesurée sur ordinateur) : OWLv2 environ 1,7 Go, DETR environ 0,8 Go. Sur iPhone et iPad, ou sur un appareil qui annonce
+   moins de 8 Go, la page était fermée puis rechargée par le système (essai de Marcos sur la démo, 16 novembre) : ni l'un ni l'autre n'y tourne */
 function v2OwlOk(){try{const ua=navigator.userAgent||'',ios=/iPhone|iPad|iPod/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1);if(ios)return false;const dm=navigator.deviceMemory;return!(dm&&dm<8)}catch(e){return false}}
 /* file d'attente : chaque photo de mur passe par DETR puis OWLv2 ; le repérage du mur est refait avec ce qu'ils ont vu */
 function v2Queue(w){if(w.v2)return;w.v2=1;V2.pend++;let dn=0;V2.chain=V2.chain.then(async()=>{try{
-      if(!RNV.walls.includes(w))return;try{const D=await dtrRun(w.cv);if(D)dtrUse(w,D)}catch(e){}V2.pend--;dn=1;
+      if(!RNV.walls.includes(w)||!v2OwlOk())return;try{const D=await dtrRun(w.cv);if(D)dtrUse(w,D)}catch(e){}V2.pend--;dn=1;
       if(RNV.walls.includes(w)&&w.dtr){await rnvDetect(w);if(RNV.walls[RNV.cur]===w)try{rnvSvg()}catch(e){}}
       // pas sur un mur recomposé d'une série (image assemblée, où ses boîtes sont peu sûres) : il ne sert qu'aux photos prises une à une
       if(!RNV.walls.includes(w)||w.ser||!v2OwlOk())return;try{const O=await owlRun(w.cv);if(O)w.owl=O}catch(e){}
