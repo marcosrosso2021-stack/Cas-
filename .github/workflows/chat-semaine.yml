@@ -8,7 +8,7 @@ on:
     - cron: '17 5 * * 1'
   workflow_dispatch:
   pull_request:
-    paths: ['chat/**', 'index.html', 'outils/chat/**', 'outils/ia/**']
+    paths: ['chat/**', 'index.html', 'outils/chat/**', 'outils/ia/**', 'serveur/veille/**', 'tests/veille*', 'tests/veille/**']
 
 permissions:
   contents: read
@@ -26,6 +26,10 @@ jobs:
 
       - name: Bilan de l'IA (commandes, métier, fautes) avec seuils
         run: node outils/ia/bilan.js
+
+      - name: Veille réglementaire (base, collecteur, vérificateur, 10 scénarios, serveur)
+        run: |
+          for f in tests/veille-*.test.js; do node "$f"; done
 
       - name: Navigateur pour l'essai dans l'appli
         run: |
