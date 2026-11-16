@@ -10,6 +10,8 @@ et n'utilise aucun service extérieur. Il travaille sur les données de casô (`
 - `caso-mini.js`, `caso-mini-model.json` : le mini modèle (5 Mo), chargé après coup, sans bloquer casô.
 - `pont.js` : le branchement avec casô.
 - `intel.js` : plusieurs demandes dans une phrase, renvois, devis depuis une description, contrôle du devis, durée d'un travail, questions sur l'activité, apprentissage partagé.
+- `lexique.js` : lexique du bâtiment en 10 langues (32 mots, 26 définitions) et ordre des travaux.
+- `chantier.js` : fiche chantier dans le chat (documents, photos, travaux faits, ce qui reste, chantiers d'une semaine), questions au lexique, historique des modifications (qui, quand, quoi) ; aucun bouton ajouté.
 
 ## Comment il s'insère dans casô
 `chatSend()` passe d'abord la phrase au chat. Il la garde s'il sait la faire lui-même, sinon les modules de casô
@@ -208,3 +210,24 @@ Source du moteur et outils de traduction : le module « caso-ia » (moteur, cata
   l'appli Android garde son pointage automatique en arrière-plan.
 - `outils/chat/fautes.js` : tirage stable (une graine par phrase).
 
+**Chantier, lexique, historique (15 nov. 2026)** — `chantier.js`, `lexique.js`, branchés avant les questions sur l'activité :
+- « fiche du chantier Martin », « rapport du chantier Martin », « documents / photos du chantier Martin », « qu'est-ce que j'ai fait chez Martin », « qu'est-ce qu'il reste chez Martin » : une réponse qui regroupe rendez-vous, devis, factures, plans, heures pointées, achats, reste à facturer et reste dû ; chaque ligne ouvre sa fiche ;
+- « reprends le chantier de la semaine dernière », « montre les chantiers de la semaine prochaine » (10 langues) ;
+- « c'est quoi un ragréage », « ragréage avant le parquet », « ordre des travaux » : seuls les ordres admis partout sont donnés, sinon « pas d'ordre fixe » ;
+- volume d'une dalle donnée en longueur × largeur (moteur, `brain/p8me.js`) ;
+- historique : chaque enregistrement note qui a changé quoi et quand (`caso_journal` dans le téléphone, 400 dernières), avec la phrase du chat qui l'a provoqué ; la fiche modifiée garde le prénom de son auteur (`by`) pour l'équipe. « historique », « qui a modifié le devis de Martin ».
+
+**Rien d'inventé, rien d'un autre client (15 nov. 2026)** — `intel.js`, `pont.js`, `parseNote` (index.html) :
+- une ligne dite sans quantité (« mettre du carrelage », « prévoir les plinthes ») n'est plus comptée 1 m² : elle reste à préciser, le chat le dit, et la réponse suivante (« 20 m² », « 4 m sur 3,5 m ») la calcule. Un article à l'unité (« un receveur ») compte toujours 1 ;
+- « il faut refaire le sol chez Martin, mettre du carrelage et prévoir les plinthes » et « ajoute du carrelage et des plinthes au devis de Martin » donnent des lignes de devis (plus de « maquette 3D », plus de plinthes perdues), dans les 10 langues ;
+- un devis avec une quantité manquante n'est pas envoyé (même règle que pour un prix manquant) ; la vérification du devis le signale ;
+- la rénovation (œil 3D) mise sur un devis est celle du client du devis : une rénovation liée à personne est d'abord proposée (« La mettre sur le devis de Dupont ? »), puis reste liée à ce client (`db.maq3d[].cli`) ; celle d'un autre client n'est jamais prise. Les mesures d'une pièce ne viennent plus d'une maquette d'un autre client.
+- essai : `outils/chat/essai-fiabilite.js` (navigateur, chaque semaine).
+
+**Plusieurs actions dans une phrase (15 nov. 2026)** — `intel.js` :
+- « nouveau devis pour Dupont et ajoute du carrelage » : la commande d'abord, puis la description sur le devis qu'elle vient d'ouvrir (le moteur prenait « ajoute du carrelage » pour la maquette 3D). « pour le chantier Martin, … » donne le client au morceau qui suit ;
+- « Pour le chantier Martin, ajoute la rénovation de la salle de bain, prévois une douche italienne, remplace le carrelage, calcule les surfaces et prépare un devis » : lignes Douche italienne et Carrelage sur le devis de Martin, surface demandée ; « prépare un devis », « calcule les surfaces », « la rénovation de … » disent quoi faire, ce ne sont pas des lignes ;
+- les lignes vont toujours sur le devis du client nommé (son brouillon, sinon un nouveau devis), jamais sur le devis ouvert d'un autre client ni sur un devis déjà envoyé ;
+- un service enregistré n'est plus pris pour un autre (« douche italienne » ≠ « receveur de douche »).
+- « crée le client Bernard et ajoute de la faïence » : la ligne va sur un devis de Bernard, et « 12 m² » juste après la calcule ;
+- « envoie le devis de Martin », « appelle Martin et envoie-lui le devis » : le devis de Martin pas encore envoyé (celui ouvert d'abord, sinon le plus récent), même si un autre devis est ouvert ; aucun → « Je ne trouve pas de devis à envoyer pour Martin » (`pont.js`).

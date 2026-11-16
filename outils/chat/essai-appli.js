@@ -47,7 +47,7 @@ const ESSAIS=[
  ["es",["qué tipo de iva para una reforma"],[/IVA en una vivienda/]],
  ["fr",["nouveau devis pour Petit","carrelage 20 m² à 40 €","tva à 5,5 %"],["",/880,00/,/844/]],
  ["fr",["nouveau devis pour Petit","appelle ce client"],["",/Petit : 0633333333/]],
- ["fr",["nouveau devis pour Dupont","carrelage 10 m² à 40 €","nouveau devis pour Petit","mets la rénovation sur le devis de Dupont"],["","","",/Rebouchage de fissures[\s\S]*Peinture murs[\s\S]*Total du devis 1[\s\S]*€ TTC/]]
+ ["fr",["nouveau devis pour Dupont","carrelage 10 m² à 40 €","nouveau devis pour Petit","mets la rénovation sur le devis de Dupont","oui"],["","","",/n’est liée à aucun client/,/Rebouchage de fissures[\s\S]*Peinture murs[\s\S]*Total du devis 1[\s\S]*€ TTC/]]
 ];
 (async()=>{const b=await chromium.launch();let ko=0;const out=[];
  for(const [lg,phr,att] of ESSAIS){const ctx=await b.newContext({serviceWorkers:"block"}),p=await ctx.newPage();const err=[];p.on("pageerror",e=>err.push(e.message));
