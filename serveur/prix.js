@@ -52,11 +52,14 @@ function creer(opts={}){
   const ac=new AbortController(),to=setTimeout(()=>ac.abort(),20000);
   try{
    const r=await F(url,{signal:ac.signal});const js=await r.json().catch(()=>null);
-   if(!r.ok||!js||js.error)return [502,{error:'Le service de prix ne répond pas, réessaie plus tard.'}];
-   const v=convertir(js,devise);
+   /* « aucun résultat » arrive comme une erreur chez SerpApi : c'est une liste vide, pas une panne */
+   const vide=js&&typeof js.error==='string'&&/hasn'?t returned any results|no results/i.test(js.error);
+   if(!vide&&(!r.ok||!js||js.error)){(opts.log||console.error)('[casô] prix : service en erreur',r.status,court(js&&js.error,200));
+    return [502,{error:'Le service de prix ne répond pas, réessaie plus tard.'}]}
+   const v=vide?[]:convertir(js,devise);
    cache.set(cle,{t:Date.now(),v});if(cache.size>3000)cache.delete(cache.keys().next().value);
    return [200,v];
-  }catch(e){return [502,{error:'Le service de prix ne répond pas, réessaie plus tard.'}]}
+  }catch(e){(opts.log||console.error)('[casô] prix : service injoignable',e&&e.name);return [502,{error:'Le service de prix ne répond pas, réessaie plus tard.'}]}
   finally{clearTimeout(to)}
  }
  return {chercher,pret,etat:()=>({pret:pret(),jour:j===jour()?n:0,limite:JOUR})};
