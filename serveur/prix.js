@@ -3,7 +3,8 @@
    - PRIX_JOUR : recherches payantes au plus par jour, pour tout le serveur (défaut 100)
    - PRIX_IP : recherches payantes au plus par jour et par adresse (défaut 30)
    - PRIX_CACHE_H : une même recherche n'est payée qu'une fois pendant ce temps, en heures (défaut 12)
-   Réponse : [{produit, prix (TTC), devise, magasin, url, maj}] du moins cher au plus cher. */
+   Réponse : [{produit, prix (TTC), devise, magasin, url, maj, photo}] du moins cher au plus cher.
+   Photos : l'appli refuse les images d'autres sites ; elles passent par ce serveur (image), seulement depuis les hôtes du service. */
 'use strict';
 
 // pays casô -> Google : gl (pays), hl (langue), devise
@@ -13,6 +14,11 @@ const PAYS={FR:['fr','fr','EUR'],BE:['be','fr','EUR'],CH:['ch','fr','CHF'],LU:['
 
 function jour(){return new Date().toISOString().slice(0,10)}
 function court(s,n){return String(s==null?'':s).replace(/\s+/g,' ').trim().slice(0,n)}
+
+/* photo d'un produit : petite image déjà dans la réponse, ou adresse https chez un hôte du service (jamais ailleurs : pas de relais ouvert) */
+const HOTES=/(^|\.)(gstatic\.com|googleusercontent\.com|serpapi\.com|searchapi\.io)$/i;
+function hoteOk(u){try{const x=new URL(u);return x.protocol==='https:'&&!x.username&&!x.port&&HOTES.test(x.hostname)}catch(e){return false}}
+function photoOk(u){return typeof u==='string'&&(/^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(u)?u.length<=20000:u.length<=2000&&hoteOk(u))}
 
 /* réponse du service -> liste casô (sans doublon, prix > 0, liens https seulement) */
 function convertir(json,devise){
@@ -25,7 +31,8 @@ function convertir(json,devise){
   if(!produit||!magasin||!isFinite(prix)||prix<=0||prix>1e6)continue;
   const url=[r.link,r.product_link].find(u=>/^https:\/\/[^\s"'<>]+$/i.test(u||''))||'';
   const k=(produit+'|'+magasin+'|'+prix).toLowerCase();if(vus.has(k))continue;vus.add(k);
-  out.push({produit,prix:Math.round(prix*100)/100,devise,magasin,url,maj});
+  const photo=[r.thumbnail,r.serpapi_thumbnail,Array.isArray(r.thumbnails)?r.thumbnails[0]:''].find(photoOk)||'';
+  out.push({produit,prix:Math.round(prix*100)/100,devise,magasin,url,maj,photo});
  }
  return out.sort((a,b)=>a.prix-b.prix).slice(0,30);
 }
@@ -62,7 +69,19 @@ function creer(opts={}){
   }catch(e){(opts.log||console.error)('[casô] prix : service injoignable',e&&e.name);return [502,{error:'Le service de prix ne répond pas, réessaie plus tard.'}]}
   finally{clearTimeout(to)}
  }
- return {chercher,pret,etat:()=>({pret:pret(),jour:j===jour()?n:0,limite:JOUR})};
+ /* relais d'une photo : hôtes du service seulement, image seulement, 400 Ko au plus, sans redirection, gardée en mémoire */
+ const imgs=new Map();
+ async function image(u){
+  if(!photoOk(u)||u.startsWith('data:'))return [400,{error:'Image refusée.'}];
+  const c=imgs.get(u);if(c)return [200,c];
+  const ac=new AbortController(),to=setTimeout(()=>ac.abort(),8000);
+  try{const r=await F(u,{signal:ac.signal,redirect:'error'});const type=String(r.headers&&r.headers.get&&r.headers.get('content-type')||'').split(';')[0].trim().toLowerCase();
+   if(!r.ok||!/^image\/(jpeg|png|webp|gif|avif)$/.test(type))return [502,{error:'Image indisponible.'}];
+   const buf=Buffer.from(await r.arrayBuffer());if(!buf.length||buf.length>4e5)return [502,{error:'Image indisponible.'}];
+   const v={type,buf};imgs.set(u,v);if(imgs.size>400)imgs.delete(imgs.keys().next().value);return [200,v];
+  }catch(e){return [502,{error:'Image indisponible.'}]}finally{clearTimeout(to)}
+ }
+ return {chercher,image,pret,etat:()=>({pret:pret(),jour:j===jour()?n:0,limite:JOUR})};
 }
 
-module.exports={creer,convertir,PAYS};
+module.exports={creer,convertir,photoOk,PAYS};

@@ -1,0 +1,9 @@
+{
+  "name": "caso-geofence",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Zones de chantier pour casô (iPhone) : même contrat que le plugin Android",
+  "files": ["ios"],
+  "capacitor": { "ios": { "src": "ios" } },
+  "peerDependencies": { "@capacitor/core": ">=7.0.0" }
+}
