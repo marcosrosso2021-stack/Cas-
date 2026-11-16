@@ -51,3 +51,10 @@ Accord de Marcos le 16 nov. 2026 (rangement par magasin, puis la loupe).
 ## Contrôles
 - Tests existants (prix, coffre, serveur).
 - Essai dans Chromium en thème sombre avec un service simulé : regroupement, « n de plus », favoris, autres magasins, onglet Mes fournisseurs.
+
+## Changement demandé par Marcos (16 nov. 2026, après la proposition)
+Le rangement par magasin est abandonné. « Prix en ligne » redevient **une seule liste, du moins cher au plus cher**, avec **la photo du produit** et **le nom du magasin sous le nom du produit** ; le prix en gros à droite, l'étoile et le + dessous. Favoris : même présentation.
+
+Photos : l'appli garde `img-src 'self' data: blob:`. Une petite image fournie dans la réponse est utilisée telle quelle ; les autres passent par le serveur casô (`GET /api/prix/img?u=`), limité aux hôtes du service de prix (gstatic.com, googleusercontent.com, serpapi.com, searchapi.io), aux images de 400 Ko au plus, sans redirection. L'appli les charge par `fetch` puis `blob:`.
+
+Restent de la proposition : la loupe-bouton, les trois icônes rondes de « Mes fournisseurs », la liste avec initiale, « Autres magasins », plus de prix en vert.
