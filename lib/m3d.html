@@ -463,7 +463,7 @@ body.cli .hm-x{display:none!important}
       <button class="rb hm-x" id="b-exit" data-ta="back"><svg class="i flipx" viewBox="0 0 24 24"><path d="M15 5 8 12l7 7"/></svg></button>
       <div class="col home">
         <span class="wm" id="h-wm" role="button" tabindex="0" aria-label="casô"><span class="wm-t">cas<svg aria-hidden="true"><use href="#o"/></svg></span></span>
-<div class="secs" id="h-secs"><button class="seccard" data-sec="cons"><span class="sc-ic"><svg class="i" viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11"/><path d="M9 21v-6h6v6"/><path d="M14 5V3h3v4"/></svg></span><span class="sc-t"><b data-t="sec_c"></b><small data-t="sec_cs"></small></span><svg class="i flipx sc-go" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></svg></button><button class="seccard" data-sec="reno"><span class="sc-ic"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="3" width="13" height="6" rx="1.5"/><path d="M17 6h2.5v5H11v3"/><rect x="9.5" y="14" width="3" height="7" rx="1"/></svg></span><span class="sc-t"><b data-t="sec_r"></b><small data-t="sec_rs"></small></span><svg class="i flipx sc-go" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></svg></button></div>
+<div class="secs" id="h-secs"><button class="seccard" data-sec="cons"><span class="sc-ic"><svg class="i" viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11"/><path d="M9 21v-6h6v6"/><path d="M14 5V3h3v4"/></svg></span><span class="sc-t"><b data-t="sec_c"></b><small data-t="sec_cs"></small></span><svg class="i flipx sc-go" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></svg></button><button class="seccard" data-sec="reno"><span class="sc-ic"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="3" width="13" height="6" rx="1.5"/><path d="M17 6h2.5v5H11v3"/><rect x="9.5" y="14" width="3" height="7" rx="1"/></svg></span><span class="sc-t"><b data-t="sec_r"></b><small data-t="sec_rs"></small></span><svg class="i flipx sc-go" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></svg></button><div class="hps" id="hp-art"></div></div>
         <div class="secv" id="h-cons" hidden><div class="sech"><button class="rb" data-sec="" data-ta="back"><svg class="i flipx" viewBox="0 0 24 24"><path d="M15 5 8 12l7 7"/></svg></button><b data-t="sec_c"></b></div>
                 <div class="stack">
           <label class="btn"><input class="sr" type="file" accept="image/*,application/pdf,.pdf" id="in-file">
@@ -1159,6 +1159,7 @@ sec_c|Construction|Construction|Construção|Construcción|Costruzione|Construc�
 sec_cs|Plan et maquette 3D|Plan and 3D model|Planta e maqueta 3D|Plano y maqueta 3D|Pianta e modello 3D|Plan și machetă 3D|Rzut i model 3D|Plan ve 3B model|План и 3D-макет|المخطط والمجسم ثلاثي الأبعاد
 sec_r|Rénovation|Renovation|Renovação|Reforma|Ristrutturazione|Renovare|Remont|Tadilat|Ремонт|التجديد
 sec_rs_old|Pièces en photo, avant / après|Rooms from photos, before / after|Divisões em foto, antes / depois|Habitaciones en foto, antes / después|Stanze in foto, prima / dopo|Camere din fotografii, înainte / după|Pomieszczenia ze zdjęć, przed / po|Fotoğraftan odalar, önce / sonra|Комнаты по фото, до и после|غرف من الصور، قبل / بعد
+art_cur|Croquis en cours|Sketch in progress|Esboço em curso|Croquis en curso|Schizzo in corso|Schiță în lucru|Szkic w toku|Devam eden taslak|Текущий эскиз|مخطط قيد العمل
 sec_mine|Mes projets|My projects|Os meus projetos|Mis proyectos|I miei progetti|Proiectele mele|Moje projekty|Projelerim|Мои проекты|مشاريعي
 rp_socket|Prise|Socket|Tomada|Enchufe|Presa|Priză|Gniazdko|Priz|Розетка|مقبس
 rp_switch|Interrupteur|Switch|Interruptor|Interruptor|Interruttore|Întrerupător|Włącznik|Anahtar|Выключатель|مفتاح
@@ -2343,7 +2344,7 @@ function pickAsk(){const ws=[...S.walls].sort((a,b)=>lenPx(b)-lenPx(a));S.ask=ws
 /* ---------- écrans ---------- */
 const TT={crop:'t_crop',plan:'t_plan',result:'t_res','3d':'t_3d'},STEP={crop:1,plan:2,result:3,'3d':3};
 function go(sc,keep){const prev=S.screen;S.screen=sc;document.body.dataset.sc=sc;for(const s of $$('.screen'))s.hidden=s.id!=='s-'+sc;if(!keep||prev!==sc)closeSheet();
-  const home=sc==='home';$('#h-title').textContent=home?'':(CLIENT&&sc==='3d'?(S.pname||t('t_cli')):t(TT[sc]));$('#prog').hidden=home||CLIENT;$$('#prog i').forEach((i,k)=>i.classList.toggle('on',k<(STEP[sc]||0)));
+  const home=sc==='home';if(home)try{artHome()}catch(e){}$('#h-title').textContent=home?'':(CLIENT&&sc==='3d'?(S.pname||t('t_cli')):t(TT[sc]));$('#prog').hidden=home||CLIENT;$$('#prog i').forEach((i,k)=>i.classList.toggle('on',k<(STEP[sc]||0)));
   $('.hd').hidden=home&&!CLIENT;$('#b-help').style.visibility=sc==='plan'?'visible':'hidden';
   if(sc==='crop')renderCrop();if(sc==='plan'){if(!S.vb)fit();if(!keep)setMode('touch');renderPlan();if(keep&&S.sel)reopenSel()}
   if(sc==='home'){S.addingPlan=false;try{setSec(S.sec)}catch(e){}}if(sc==='result')renderResult();if(sc==='3d'){if(S.addingPlan)finishAddPlan();if(!S.autoF&&S.scale&&!lvN()){S.autoF=true;autoFurnish();if(CLIENT&&S.base3)S.base3=snap3()}$$('[data-cam]').forEach(b=>b.textContent=t(b.dataset.t));if(keep&&T3)ui3();if(!keep)open3D()}}
@@ -4825,7 +4826,11 @@ async function photoOpen(){if(!T3||!T3.scene)return;railClose();closeSheet();con
 S.sec=null;
 const isReno=p=>!!(p&&p.d&&p.d.rnv);
 function setSec(k){if(k==='reno'){rnvOpen();return}S.sec=k||null;$('#h-secs').hidden=!!S.sec;$('#h-cons').hidden=S.sec!=='cons';$('#h-reno').hidden=S.sec!=='reno';homeProjs();const sc=$('#s-home');if(sc)sc.scrollTop=0}
-function homeProjs(){for(const k of['cons','reno']){const el=$('#hp-'+k);if(!el)continue;if(!CLIENT||S.sec!==k){el.innerHTML='';continue}
+/* artisan : le croquis en cours est proposé sous les deux cartes de l'accueil (il n'ouvre plus le module à la place du choix) */
+function artHome(){const el=$('#hp-art');if(!el)return;const ok=!CLIENT&&S.W&&S.walls&&S.walls.length;
+  el.innerHTML=ok?`<button class="hp" id="b-art">${miniPlan(S)}<span class="pj-t"><b data-t="art_cur">${t('art_cur')}</b></span><svg class="i flipx" viewBox="0 0 24 24" style="color:var(--mut)"><path d="m9 5 7 7-7 7"/></svg></button>`:'';
+  const b=$('#b-art');if(b)b.onclick=()=>go('3d')}
+function homeProjs(){artHome();for(const k of['cons','reno']){const el=$('#hp-'+k);if(!el)continue;if(!CLIENT||S.sec!==k){el.innerHTML='';continue}
   const l=projList().filter(p=>!p.ch&&isReno(p)===(k==='reno'));el.innerHTML=l.length?`<p class="lbl-m">${t('sec_mine')}</p>`+l.map(p=>`<button class="hp" data-hp="${p.id}">${miniPlan(p.d)}<span class="pj-t"><b>${esc(p.name)}</b><small>${new Date(p.at).toLocaleDateString(loc(),{day:'numeric',month:'short'})}</small></span></button>`).join(''):'';
   el.querySelectorAll('[data-hp]').forEach(b=>b.onclick=()=>openProj(b.dataset.hp))}}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('#s-home [data-sec]');if(b)setSec(b.dataset.sec)});
@@ -7766,6 +7771,6 @@ function planOpts(i){const p=S.plans[i];openSheet(`${head(esc(p.name))}<div clas
 
 updUndo();setLang(guessLang());
 if(CLIENT){document.body.classList.add('cli');S.view3='cli';setSec(null);go('home')}
-else{const d=artLoad();if(d){try{applyData(d);S.sel3=null;S.ctxRoom=null;S.chatPend=null;hist.u=[];hist.r=[];updUndo();bumpUid();computeRooms();if(S.rectURL)try{initPlanSvg()}catch(e){}go('3d')}catch(e){try{localStorage.removeItem('m3d_art')}catch(_){}go('home')}}else go('home')}
+else{const d=artLoad();if(d){try{applyData(d);S.sel3=null;S.ctxRoom=null;S.chatPend=null;hist.u=[];hist.r=[];updUndo();bumpUid();computeRooms();if(S.rectURL)try{initPlanSvg()}catch(e){}setSec(null);go('home')}catch(e){try{localStorage.removeItem('m3d_art')}catch(_){}go('home')}}else go('home')}
 })();
 </script>
