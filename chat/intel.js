@@ -249,6 +249,8 @@ P.remplacer=function(t){var c=fr(t),s=c.p.replace(/[.!]+$/,"").trim(),m=(c.lang|
   out.push('<div class="msg-tot"><span>Total du devis</span><b data-noi18n>'+e(E(tt.ttc))+' TTC</b></div><div class="msg-act"><button class="btn sm sec" onclick="go(\'edit\')"><svg class="i"><use href="#i-quote"/></svg>Voir le devis</button></div>');
   bulle(t,out.join(""),{undo:before},true);return true;};
 P.decrire=function(t,opts){langue();if(!P.ready||typeof db==="undefined"||typeof q==="undefined")return false;
+  /* « je suis carreleur » dit un métier, pas un travail à chiffrer */
+  if(/^\s*(?:je suis|on est|nous sommes)\s+\S+\s*[.!]*$/i.test(String(t||"")))return false;
   opts=opts&&typeof opts==="object"?opts:null;
   if(!opts){if(P.remplacer(t))return true;
     if(suite(t,fr(t).p))return true;}

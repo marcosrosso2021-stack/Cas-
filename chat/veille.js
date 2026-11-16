@@ -59,13 +59,16 @@ function carte(it,ouvert,prof,auj,t,rappel){
 
 function plat(x){return String(x||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[’`]/g,"'")}
 /* une question sur les nouveautés ? (seulement des tournures de question : une commande de devis ne passe pas ici) */
-var DEMANDE=/quoi de neuf|nouveaute|newsletter|actualite|qu'?est[- ]ce qui change|ca change quoi|quoi change|qui change|des changements|nouvelles? (?:loi|regle|obligation)|reglementation|quoi de nouveau|du nouveau/;
+var DEMANDE=/quoi de neuf|nouveaute|newsletter|actualite|qu'?est[- ]ce qui change|ca change quoi|quoi change|qui change|des changements|nouvelles? (?:loi|regle|obligation)|reglementation|quoi de nouveau|(?:^|il y a |y a |y a-t-il |as-tu |t'as |tu as )du nouveau|du nouveau\s*(?:\?|$)/;
 function demande(t){return DEMANDE.test(plat(t))}
+/* « ouvre la newsletter », « newsletter » : c'est la page qu'on demande, pas une réponse dans le chat */
+var PAGE=/^(?:(?:ouvr\w*|affich\w*|montr\w*|voir|lire|lis|va (?:dans|sur|a)|open|show|see|read|abr\w*|ver|mostra\w*|apri\w*|vedi|deschide|arata|otworz|pokaz|ac|goster|открой|покажи|افتح|اعرض)\s+)?(?:moi\s+|me\s+)?(?:la |ma |les |the |my |el |a |o |il |le )?newsletters?\s*[.!]*$/;
+function page0(t){return PAGE.test(plat(t).trim())}
 /* les mots du sujet demandé (« tva », « facture »…), hors mots de la question */
 var CREUX=/^(quoi|neuf|nouveau|nouveaute|nouveautes|newsletter|actualite|actualites|change|changement|changements|pour|avec|dans|cette|cette|quel|quelle|quelles|quels|est|qui|que|les|des|sur|mon|mes|ton|tes|moi|loi|lois|regle|regles|reglementation|nouvelle|nouvelles|obligation|obligations|metier|semaine|mois|annee|il|ya|y|a|la|le|de|du|en|ce|ca)$/;
 function sujets(t){var out=[];plat(t).split(/[^a-z0-9]+/).forEach(function(m){if(m.length>=3&&!CREUX.test(m)&&out.indexOf(m)<0)out.push(m)});return out.slice(0,6)}
 
-var api={concerne:concerne,quand:quand,palier:palier,aMontrer:aMontrer,carte:carte,dateFr:dateFr,demande:demande,sujets:sujets};
+var api={concerne:concerne,quand:quand,palier:palier,aMontrer:aMontrer,carte:carte,dateFr:dateFr,demande:demande,sujets:sujets,page:page0};
 if(typeof module!=='undefined'&&module.exports){module.exports=api;return}
 
 /* ---- dans l'appli ---- */
@@ -186,7 +189,9 @@ if(typeof envoi==='function')racine.chatSend=function(texte){
  var inp=doc.getElementById('chatIn'),t=String(texte==null?(inp?inp.value:''):texte).trim();
  if(!t||!artisan()||!demande(t)||typeof racine.chatPush!=='function')return envoi.apply(this,arguments);
  if(inp){inp.value='';try{racine.chatGrow&&racine.chatGrow(inp);racine.qkUpdate&&racine.qkUpdate()}catch(e){}}
- racine.chatPush({who:'me',text:t});racine.chatPush({who:'bot',html:reponse(t)});
+ racine.chatPush({who:'me',text:t});
+ if(page0(t)&&typeof racine.go==='function'){racine.chatPush({who:'bot',text:tr('Newsletter')});setTimeout(function(){try{racine.go('news')}catch(e){}},250);return}
+ racine.chatPush({who:'bot',html:reponse(t)});
 };
 racine.casoVeille={charger:charger,page:page,ouvrir:ouvrir,pastille:pastille,reponse:reponse};
 pastille();charger();
