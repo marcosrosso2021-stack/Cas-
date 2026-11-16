@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/ https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1/ https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/ https://cdnjs.cloudflare.com/ajax/libs/onnxruntime-web/1.20.1/; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: mediastream:; font-src 'self' data:; connect-src 'self' https: http://localhost:* http://127.0.0.1:*; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<script>/* anciens QR de signature (?sig=CS-…) : vers la page de vérification */(function(){var q=location.search.match(/[?&]sig=(CS-[0-9A-HJKMNP-TV-Z-]{11})(?:&|$)/);if(q)location.replace(location.origin+'/v/'+q[1])})()</script>
 <script>if(/[?&]reset\b/.test(location.search)){if(!confirm('Effacer toutes les données de casô sur cet appareil ?')){try{history.replaceState(null,'',location.pathname)}catch(e){}}else(async()=>{try{localStorage.clear()}catch(e){}try{sessionStorage.clear()}catch(e){}
  try{if(indexedDB.databases)for(const d of await indexedDB.databases())if(d.name)indexedDB.deleteDatabase(d.name)}catch(e){}
  try{for(const k of await caches.keys())await caches.delete(k)}catch(e){}
@@ -3913,9 +3914,10 @@ function forgotWipe(){
    Tracé → Face ID / empreinte (passkey, la clé privée ne quitte jamais le téléphone) → enregistrement électronique :
    identifiant CS-… dérivé de l'empreinte SHA-256 (e-mail du compte | date | tracé), QR affiché sur les devis.
    Stocké ici : caso_sig (tracé), caso_sig_reg (identifiant, e-mail, date, empreinte, n° de clé Face ID, clé publique).
-   Sauvegardé avec le reste de casô (Store.flush) ; à envoyer au serveur casô pour la vérification du QR. */
+   Sauvegardé avec le reste de casô (Store.flush) et envoyé au serveur casô (/api/sig/register) : le QR ouvre /v/CS-…,
+   page publique qui décrit le signataire et l'entreprise (données de « Mon entreprise »). */
 let SPAD=null;
-const sgVerify=()=>new URL('./',location.href).href+'?sig=';
+const sgVerify=()=>{const c=getSync();return String(c.url||location.origin).replace(/\/+$/,'')+'/v/'};
 function sgReg(){try{return JSON.parse(localStorage.getItem('caso_sig_reg')||'null')}catch(e){return null}}
 function sgOk(){const r=sgReg();return sgSigImg()&&r&&r.faceid?r:null}
 const sgHex=b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
@@ -3935,11 +3937,20 @@ async function sgFaceId(hash,prev){
  const c=await navigator.credentials.create({publicKey:{rp:{id:location.hostname,name:'casô'},user:{id:new TextEncoder().encode(mail),name:mail,displayName:a.prenom||mail},challenge:ch,
   pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required',residentKey:'preferred'},attestation:'none',timeout:60000}});
  return{credential_id:sgB64(c.rawId),public_key:c.response.getPublicKey&&c.response.getPublicKey()?sgB64(c.response.getPublicKey()):null}}
+let sgPushing=false;
+async function sgPush(force){
+ const r=sgReg(),c=getSync();if(!r||!r.faceid||!c.url||!c.token||sgPushing)return;
+ const p=db.prof||{};if(!force&&r.srv&&(r.srvAt||0)>=(db.profAt||0))return;
+ sgPushing=true;
+ try{await apiTeam('/api/sig/register',{id:r.id,hash:r.hash,at:r.at,faceid:r.faceid,pk:r.pk||null,img:sgSigImg(),nom:(accountGet()||{}).prenom||c.user||'',
+   entreprise:{nom:p.nom,forme:p.forme,siret:p.siret,adresse:p.adr,tel:p.tel,email:p.email||r.email,rm:p.rm,assur:p.assur,zone:p.zone}});
+  const r2=sgReg();if(r2&&r2.id===r.id){r2.srv=1;r2.srvAt=Date.now();try{localStorage.setItem('caso_sig_reg',JSON.stringify(r2))}catch(e){}}}
+ catch(e){}finally{sgPushing=false}}
 function spState(){const e=!SPAD||SPAD.empty();$('spGo').disabled=e;$('spHint').hidden=!e}
 function spRender(){
  const r=sgOk(),done=r&&!spRender.redo;
  $('spNew').hidden=!!done;$('spDone').hidden=!done;
- if(done){$('spImg').src=sgSigImg();$('spQr').innerHTML=qrSvg(sgVerify()+r.id,4);$('spId').textContent=r.id;$('spAt').textContent=(r.email?r.email+' · ':'')+sgDate(r.at);return}
+ if(done){sgPush();$('spImg').src=sgSigImg();$('spQr').innerHTML=qrSvg(sgVerify()+r.id,4);$('spId').textContent=r.id;$('spAt').textContent=(r.email?r.email+' · ':'')+sgDate(r.at);return}
  setTimeout(()=>{const cv=$('spPad');if(!SPAD){SPAD=SigPad(cv);['pointerdown','pointerup','pointercancel','pointerleave'].forEach(t=>cv.addEventListener(t,()=>setTimeout(spState,0)))}
   SPAD.size();SPAD.clear();const old=sgSigImg();if(old&&!spRender.redo){SPAD.load(old);setTimeout(spState,150)}spState()},60)}
 function spClear(){if(SPAD)SPAD.clear();spState()}
@@ -3958,6 +3969,7 @@ function spDelete(){try{localStorage.removeItem('caso_sig');localStorage.removeI
 function entSigRender(){const el=$('entSig');if(!el)return;const r=sgOk();
  const w=$('entSigW');if(w)w.hidden=!r;
  if(!r){el.innerHTML='';return}
+ sgPush();
  el.innerHTML=`<div class="sg-ro" aria-readonly="true"><img src="${esc(sgSigImg())}" alt=""><div class="sg-qr">${qrSvg(sgVerify()+r.id,4)}</div><div class="sg-meta"><b data-noi18n>${esc(r.id)}</b><span data-noi18n>${esc(r.email||'')}${r.email?' · ':''}${sgDate(r.at)}<svg class="i sg-lk"><use href="#i-lock"/></svg></span></div></div>`}
 
 /* ---------- Plan à partir d'une photo ----------
