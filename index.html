@@ -867,6 +867,7 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;justify-conten
 .pg-h .pg-t{margin:0}
 .pg-h .btn{width:auto;margin:0;display:inline-flex;align-items:center;gap:6px}
 .srch{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:0 12px;margin:0 0 12px}
+.it.prx-it{flex-direction:row;align-items:center;gap:10px}.prx-it .it-main{flex:1;min-width:0;text-decoration:none}.prx-it .it-t b:last-child{white-space:nowrap}.prx-it .btn{flex:none;margin:0}
 .srch input{border:0;background:transparent;min-height:46px;padding:0;margin:0;box-shadow:none;outline:0}
 .lst{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden;margin:0 0 14px}
 .it{display:flex;flex-direction:column;gap:2px;padding:12px 14px;border-bottom:1px solid var(--line)}
@@ -1809,6 +1810,8 @@ body.tr-on{overflow:hidden}
 <section id="s-fou">
  <button class="btn sec back" onclick="go('devis')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
  <div class="pg-h"><h1 class="pg-t">Fournisseurs</h1><button class="btn sm" onclick="fouEdit()"><svg class="i i-sm"><use href="#i-plus"/></svg><span>Nouveau</span></button></div>
+ <form class="srch" onsubmit="prxGo();return false"><svg class="i i-sm"><use href="#i-globe"/></svg><input type="search" id="prxQ" placeholder="Prix d'un matériau en ligne" enterkeyhint="search" autocomplete="off" oninput="if(!this.value)prxGo()"></form>
+ <div id="prxRes"></div>
  <button class="btn" onclick="impPick('cam')"><svg class="i"><use href="#i-cam"/></svg><span>Photo d'un devis ou d'une facture</span></button>
  <button class="btn sec" onclick="impPick('file')"><svg class="i"><use href="#i-doc"/></svg><span>Fichier (PDF ou image)</span></button>
  <div id="fouDue"></div>
@@ -3333,6 +3336,30 @@ function listHtml(list,q,sub){
  return L.map(x=>`<button class="it it-main" data-sw="${sub}:${x.id}" onclick="${sub}Edit('${x.id}')"><span class="it-t"><b data-noi18n>${esc(x.nom)}</b><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></span>
   ${x.tel||x.adr?`<span class="mut it-s" data-noi18n>${esc([x.tel,x.adr].filter(Boolean).join(' · '))}</span>`:''}</button>`).join('')||'<div class="lst-empty mut">Aucun résultat.</div>'}
 function cliRender(){$('cliList').innerHTML=listHtml(db.clients,$('cliQ').value,'cli')}
+/* prix des matériaux en ligne : le serveur casô interroge le service (sa clé reste sur le serveur) ;
+   prix publics TTC ; ajoutés à Mes prix en HT (TVA 20 %), le magasin devient le fournisseur */
+let PRX=[],PRX_N=0;
+function prxPays(){const r=String(navigator.language||'').split('-')[1];return /^(FR|BE|CH|LU|ES|PT|IT|DE|NL|GB|US|CA|RO|PL|TR|MA)$/.test(r||'')?r:'FR'}
+function prxPrix(x){if(x.devise==='EUR')return eur(x.prix);try{return new Intl.NumberFormat(document.documentElement.lang||'fr',{style:'currency',currency:x.devise}).format(x.prix)}catch(e){return x.prix+' '+x.devise}}
+async function prxGo(){
+ const box=$('prxRes'),q=$('prxQ').value.trim(),n=++PRX_N,msg=t=>{if(n===PRX_N)box.innerHTML=`<div class="lst"><div class="lst-empty mut">${esc(i18nT(t))}</div></div>`};
+ PRX=[];if(q.length<2){box.innerHTML='';return}
+ if(navigator.onLine===false)return msg('Pas de connexion.');
+ msg('Recherche…');
+ const ac=new AbortController(),to=setTimeout(()=>ac.abort(),25000);
+ try{const r=await fetch((window.CASO_APPRIS||'https://api.caso.fr')+'/api/prix?q='+encodeURIComponent(q)+'&pays='+prxPays(),{signal:ac.signal,credentials:'omit'});
+  const v=await r.json().catch(()=>null);if(n!==PRX_N)return;
+  if(!r.ok||!Array.isArray(v))return msg(v&&v.error||'Le service de prix ne répond pas, réessaie plus tard.');
+  PRX=v.filter(x=>x&&x.produit&&x.magasin&&+x.prix>0);if(!PRX.length)return msg('Aucun résultat.');
+  box.innerHTML='<div class="lst">'+PRX.map((x,i)=>{const u=/^https:\/\//i.test(x.url||'')?x.url:'';
+   return `<div class="it prx-it"><${u?`a href="${esc(u)}" target="_blank" rel="noopener noreferrer"`:'span'} class="it-main"><span class="it-t"><b data-noi18n>${esc(x.produit)}</b><b data-noi18n>${esc(prxPrix(x))}</b></span><span class="mut it-s"><span data-noi18n>${esc(x.magasin)}</span> · <span>TTC</span></span></${u?'a':'span'}>`+
+    (x.devise==='EUR'?`<button class="btn sm sec" type="button" aria-label="${esc(i18nT('Ajouter à mes prix'))}" onclick="prxAdd(${i},this)"><svg class="i i-sm"><use href="#i-plus"/></svg></button>`:'')+'</div>'}).join('')+'</div>';
+ }catch(e){msg('Le service de prix ne répond pas, réessaie plus tard.')}finally{clearTimeout(to)}}
+function prxAdd(i,btn){const x=PRX[i];if(!x)return;
+ const nom=x.produit.slice(0,80),ht=Math.round(x.prix/1.2*100)/100,ex=db.prices.find(p=>p.nom.toLowerCase()===nom.toLowerCase());
+ if(ex){ex.prix=ht;ex.four=x.magasin}else db.prices.push({id:uid(),nom,unit:'u',prix:ht,tva:20,four:x.magasin});
+ save();try{renderPrices();renderQuick()}catch(e){}
+ if(btn){btn.disabled=true;btn.innerHTML='<svg class="i i-sm"><use href="#i-check"/></svg>'}toast(i18nT('Ajouté à tes prix'));fouRender()}
 function fouRender(){syncSuppliersFromPrices();const fd=$('fouDue');if(fd)fd.innerHTML=fouDueHtml();$('fouList').innerHTML=listHtml(db.suppliers,$('fouQ').value,'fou')}
 function formFill(sid,x,title){
  $(sid+'FT').textContent=title;

@@ -12,7 +12,7 @@
    Le même fichier peut être embarqué dans une application (voir createServer / start). */
 'use strict';
 const http=require('http'),fs=require('fs'),path=require('path'),crypto=require('crypto'),os=require('os');
-const webpush=require('./webpush.js');
+const webpush=require('./webpush.js'),prixLib=require('./prix.js');
 
 const COLL=['prices','quotes','hist','chantiers','people','pts','prof','clients','suppliers','projects','plans','events','invoices'];
 const ROLE_PUSH={patron:COLL,chef:COLL,ouvrier:['pts']};
@@ -55,6 +55,7 @@ function createServer(opts={}){
  if(!data.invIds)data.invIds={};
  if(!data.signs)data.signs={};if(!data.sigreg)data.sigreg=Object.create(null);if(!data.subs)data.subs=[];if(!data.remSent)data.remSent={};if(!data.invSeq)data.invSeq={};if(!data.invShares)data.invShares={};if(!data.ics)data.ics={};
  if(!data.vapid){data.vapid=webpush.vapidKeys();try{const t=FILE+'.tmp';fs.writeFileSync(t,JSON.stringify(data));fs.renameSync(t,FILE)}catch(e){}}
+ const prix=opts.prix||prixLib.creer();// prix des matériaux en ligne (clé SEARCHAPI_KEY ou SERPAPI_KEY)
  const pushSend=opts.pushSend||((sub,payload)=>webpush.send(sub,payload,data.vapid,{subject:process.env.VAPID_SUBJECT}));
  /* --- apprentissage partagé du chat : phrases apprises par les usagers, sans rien de personnel (fichier à part) --- */
  const APF=path.join(DIR,'appris.json'),APL=['fr','en','es','pt','it','ro','pl','tr','ru','ar'];
@@ -455,6 +456,10 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
     const u=data.users[inv.user];
     if(!u)return send(res,404,{error:'Ce compte n\'existe plus.'});
     return send(res,200,newToken(u))}
+
+   /* prix des matériaux en ligne (sans compte) : la clé du service reste ici, limites par jour et par adresse */
+   if(req.method==='GET'&&url==='/api/prix'){const sp=new URLSearchParams(req.url.split('?')[1]||'');
+    const [c,b]=await prix.chercher(sp.get('q')||'',sp.get('pays')||'FR',ip);return send(res,c,b)}
 
    /* apprentissage partagé du chat (sans compte) : chaque appareil envoie ses phrases apprises, reçoit celles des autres */
    if(url==='/api/appris'){
