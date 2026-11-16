@@ -1,6 +1,7 @@
 # casô · enveloppe Android
 
 Le site casô à la racine reste une PWA. Ce dossier l'emballe dans une appli Android qui pointe toute seule.
+Le pointage par la position vit dans `pointage/` (racine) et sert les deux : Android en arrière-plan, téléphone sur le site casô ouvert (`pointage/geo-web.js`).
 Dans `index.html`, trois petites modifications du module Pointage y parlent de ce pointage ; elles ne font rien sur le site web.
 
 ## Obtenir l'APK de test
@@ -29,17 +30,17 @@ Sinon il reste, avec l'état au-dessus. Les entrées et sorties sont écrites da
 
 - Pour chaque rendez-vous d'aujourd'hui et de demain où la personne est dans l'équipe, avec une adresse :
   recherche des coordonnées (service de l'État, une fois par chantier), zone de 100 m inscrite auprès d'Android.
-- Android note l'heure d'entrée et de sortie, casô fermé. Au réveil, `web/pointage-auto.js` (le moteur) traite ces passages.
+- Android note l'heure d'entrée et de sortie, casô fermé. Au réveil, `pointage/pointage-auto.js` (le moteur, à la racine du dépôt) traite ces passages.
   Arrivée : 60 s dans la zone. Sortie : 10 min sans retour. Cas douteux : « à vérifier ».
 - Personne de ce téléphone : utilisateur de l'entreprise, sinon prénom du compte, sinon l'unique personne de la liste.
-- Les textes sont traduits dans les 9 langues de casô (`web/caso-native.js`), sans écraser les traductions existantes.
+- Les textes sont traduits dans les 9 langues de casô (`pointage/caso-native.js`), sans écraser les traductions existantes.
 
 ## Tests
 
 ```
 cd android-app
-npm test            # moteur (18 tests) et pont (23 tests), sans dépendance
-npm run test:e2e    # 6 tests : vrai casô dans un navigateur avec un faux Android (demande playwright)
+npm test            # moteur (18), position web (5) et pont (23), sans dépendance
+npm run test:e2e    # 10 tests : vrai casô dans un navigateur avec un faux Android (demande playwright)
 ```
 
 `npm test` tourne aussi dans la construction de l'APK.

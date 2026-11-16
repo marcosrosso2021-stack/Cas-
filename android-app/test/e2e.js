@@ -42,7 +42,8 @@ function fakeAndroid(opts) {
 }
 
 async function open(browser, base, opts) {
-  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, locale: opts.locale || 'fr-FR' });
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, locale: opts.locale || 'fr-FR', hasTouch: !!opts.touch,
+    ...(opts.geo ? { geolocation: opts.geo, permissions: ['geolocation'] } : {}) });
   await ctx.route('https://data.geopf.fr/**', r => r.fulfill({
     status: 200, contentType: 'application/json',
     body: JSON.stringify({ features: [{ geometry: { coordinates: [2.35, 48.85] } }] })
@@ -123,6 +124,44 @@ const ptText = page => page.evaluate(() => { go('pt'); return document.getElemen
   await check('un ancien lien de tag ?p= ne pointe plus rien', async () => {
     const { ctx, page, errors } = await open(browser, base, { native: false, perm: {}, query: '?p=abc&n=Test' });
     assert.strictEqual(await page.evaluate(() => (db.pts || []).length), 0);
+    assert.deepStrictEqual(errors, []);
+    await ctx.close();
+  });
+
+  await check('iPhone / site web : pointage par la position, casô ouvert', async () => {
+    const here = { latitude: 48.85, longitude: 2.35, accuracy: 20 };
+    const { ctx, page, errors } = await open(browser, base, { native: false, touch: true, geo: here, perm: {} });
+    await page.waitForFunction(() => !!window.CasoAuto);
+    const { now } = await seed(page);
+    await page.evaluate(() => CasoAuto.run());              // zones inscrites, première lecture : arrivée
+    await page.clock.fastForward(70000);
+    await page.evaluate(() => CasoAuto.run());              // présence confirmée
+    let txt = await ptText(page);
+    assert.ok(txt.includes('Sur place'), txt.slice(0, 300));
+    assert.ok(!(await page.evaluate(() => !!document.getElementById('ptGo'))), 'pas de bouton quand ça pointe tout seul');
+    assert.ok(!/toujours/i.test(txt));
+    if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'pointage-web-gps.png') });
+    assert.strictEqual(await page.evaluate(() => db.pts.length), 1);
+    assert.strictEqual(await page.evaluate(() => db.pts[0].t), 'in');
+    await ctx.setGeolocation({ latitude: 48.86, longitude: 2.35, accuracy: 20 });   // il part (≈ 1 km)
+    await page.clock.fastForward(60000);
+    await page.evaluate(() => CasoAuto.run());
+    await page.clock.fastForward(11 * 60000);
+    await page.evaluate(() => CasoAuto.run());
+    const pts = await page.evaluate(() => db.pts.map(p => p.t));
+    assert.deepStrictEqual(pts, ['in', 'out']);
+    assert.deepStrictEqual(errors, []);
+    await ctx.close();
+  });
+
+  await check('iPhone / site web : sans autorisation, une phrase et « Autoriser »', async () => {
+    const { ctx, page, errors } = await open(browser, base, { native: false, touch: true, perm: {} });
+    await page.waitForFunction(() => !!window.CasoAuto);
+    await seed(page);
+    await page.evaluate(() => CasoAuto.run());
+    const txt = await ptText(page);
+    assert.ok(txt.includes('Autoriser') && txt.includes('casô est ouvert') && !/toujours/i.test(txt), txt.slice(0, 300));
+    assert.ok(await page.evaluate(() => !!document.getElementById('ptC')), 'le pointage manuel reste');
     assert.deepStrictEqual(errors, []);
     await ctx.close();
   });
