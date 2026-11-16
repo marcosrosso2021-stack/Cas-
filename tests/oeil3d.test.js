@@ -98,7 +98,18 @@ function evaluate(name,spec){
    V.oeilEnrich(spec2,tr,oe);if(process.env.OEIL_DEBUG)console.log('fr',h0,JSON.stringify(spec2.objects.map(o=>[o.cls,o.h])));const fr2=spec2.objects.find(o=>o.type==='fridge');
    ok('apprentissage : hauteur corrigée appliquée (médiane des corrections)',!!fr2&&Math.abs(fr2.h-h0*0.9)<0.02,fr2&&(h0+' → '+fr2.h));
    ok('apprentissage : classe toujours supprimée écartée et signalée',!spec2.objects.some(o=>o.type==='chair')&&spec2.notes.some(n=>/écarté/.test(n)));
-   Q.spec=spec;}
+   Q.spec=spec;
+   // prises : une détection (comme D-FINE) sur une image, placée sur le mur est puis sur le poteau
+   {const pi=V.PLC.findIndex(x=>/prise/i.test(x.nom));ok('bibliothèque : la prise est une plaque repérée par D-FINE',pi>=0);
+    const room=(k,u,v)=>{const f=tr.fR*Math.max(k.w,k.h),z=k.depth(u,v),X=(u-k.w/2)/f*z,Y=(v-k.h/2)/f*z,C=k.C,P=[C[0]*X+C[3]*Y+C[6]*z+k.O[0],C[1]*X+C[4]*Y+C[7]*z+k.O[1],C[2]*X+C[5]*Y+C[8]*z+k.O[2]];return{x:P[0]+ROOM.cx,y:ROOM.camH-P[1],z:ROOM.cz-P[2]}};
+    const find=t2=>{for(const k of tr.keys)for(let v=20;v<k.h-20;v+=4)for(let u=20;u<k.w-20;u+=4){const r=room(k,u,v);if(t2(r))return{k,u,v,r}}return null};
+    const wallP=find(r=>r.x>ROOM.W/2-0.03&&Math.abs(r.y-0.35)<0.04&&Math.abs(r.z)<ROOM.D/2-0.8),pilP=find(r=>Math.abs(r.x-0.25)<0.03&&Math.abs(r.z+0.2)<0.08&&Math.abs(r.y-0.5)<0.05);
+    ok('prises : points d\'essai trouvés sur le mur et le poteau',!!wallP&&!!pilP);
+    if(wallP&&pilP&&pi>=0){const keep=tr.keys.map(k=>k.pl);tr.keys.forEach(k=>{k.pl=[]});wallP.k.pl.push({k:pi,sc:0.8,cx:wallP.u,cy:wallP.v,w:12,h:12});pilP.k.pl.push({k:pi,sc:0.8,cx:pilP.u,cy:pilP.v,w:12,h:12});
+     const cl2=V.buildCloud(tr.keys,tr.fR),sp2=V.reconstruct(cl2),s2={x:sp2.camera.x-ROOM.cx,z:sp2.camera.z-ROOM.cz};sp2.objects.forEach(o=>{o.x-=s2.x;o.z-=s2.z});tr.keys.forEach((k,i)=>{k.pl=keep[i]});
+     const P=sp2.objects.filter(o=>o.type==='socket'),pm=P.find(o=>o.support==='mur'),pp=P.find(o=>o.support==='poteau');
+     ok('prises : celle du mur est posée sur le mur, à sa hauteur',!!pm&&Math.abs(pm.x-ROOM.W/2)<0.25&&Math.abs(pm.z-wallP.r.z)<0.25&&Math.abs(pm.y+pm.h/2-0.35)<0.2,pm&&[pm.x,pm.z,pm.y].join(' '));
+     ok('prises : celle du poteau est posée sur le poteau',!!pp&&Math.hypot(pp.x-0.4,pp.z+0.2)<0.35,pp?[pp.x,pp.z].join(' '):JSON.stringify(P.map(o=>[o.x,o.z,o.support])));}}}
   // 2) caméra qui se déplace dans la pièce (1,6 m) en tournant
   {const poses=[];for(let i=0;i<10;i++){const a=(-40+i*22)*Math.PI/180;poses.push({C:mm(rotX(-0.1),rotY(a)),O:[0.16*i,0,-0.05*i]})}
    const tr=film(cast,poses,{sc:0.06}),T=tr.keys.map(k=>k.O.map(x=>x/2.5));tr.keys.forEach((k,i)=>{k.T=T[i]});   // déplacement connu à une échelle près (comme la série de photos)
