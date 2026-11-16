@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/ https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1/ https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/ https://cdnjs.cloudflare.com/ajax/libs/onnxruntime-web/1.20.1/; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: mediastream:; font-src 'self' data:; connect-src 'self' https: http://localhost:* http://127.0.0.1:*; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<script>/* anciens QR de signature (?sig=CS-…) : vers la page de vérification */(function(){var q=location.search.match(/[?&]sig=(CS-[0-9A-HJKMNP-TV-Z-]{11})(?:&|$)/);if(q)location.replace(location.origin+'/v/'+q[1])})()</script>
 <script>if(/[?&]reset\b/.test(location.search)){if(!confirm('Effacer toutes les données de casô sur cet appareil ?')){try{history.replaceState(null,'',location.pathname)}catch(e){}}else(async()=>{try{localStorage.clear()}catch(e){}try{sessionStorage.clear()}catch(e){}
  try{if(indexedDB.databases)for(const d of await indexedDB.databases())if(d.name)indexedDB.deleteDatabase(d.name)}catch(e){}
  try{for(const k of await caches.keys())await caches.delete(k)}catch(e){}
@@ -81,6 +82,7 @@ window.VAULT=(()=>{
   BG:5*60e3,IDLE:15*60e3,prot,
   has:()=>!!getMeta(),
   bioSet:()=>{const m=getMeta();return !!(m&&m.b)},
+  hasPw:()=>{const m=getMeta();return !!(m&&m.p)},
   // remplace getItem/setItem/removeItem de localStorage (fenêtre principale et cadres de même origine)
   shim(win){try{const P=win.Storage.prototype,L=win.localStorage;if(P.__caso)return;const g=P.getItem,s=P.setItem,r=P.removeItem;
    P.getItem=function(k){if(this===L&&V.on&&prot(k=String(k)))return k in V.cache?V.cache[k]:null;return g.call(this,k)};
@@ -100,6 +102,16 @@ window.VAULT=(()=>{
    const ks=raw.keys().filter(prot);ks.forEach(k=>{V.cache[k]=raw.get(k)});
    V.on=true;V.shim(window);V.shimFrames();
    ks.forEach(queue);await settle();await V.backup();V.photos();V.watch();return true},
+  // compte Google / Outlook : pas de mot de passe, Face ID (ou l'empreinte) ouvre le coffre. Si Face ID échoue, rien n'est créé.
+  async createBio(u){if(!C||V.on||getMeta())return false;
+   V.dk=await C.generateKey({name:'AES-GCM',length:256},true,['encrypt','decrypt']);
+   putMeta({v:1});V.on=true;
+   try{await V.bioOn(u)}catch(e){V.on=false;V.dk=null;raw.del(META);throw e}
+   const ks=raw.keys().filter(prot);ks.forEach(k=>{V.cache[k]=raw.get(k)});
+   V.shim(window);V.shimFrames();
+   ks.forEach(queue);await settle();await V.backup();V.photos();V.watch();return true},
+  // redemande Face ID pour confirmer une action sensible (compte sans mot de passe)
+  async bioCheck(){const m=getMeta();if(!m||!m.b)throw new Error('bio');const out=await V.bioPrf(unb64(m.b.c),unb64(m.b.s));await unwrap('b',await kekBio(out),m.b);return true},
   async unlockPw(pw){const m=getMeta();await V.open(await unwrap('p',await kekPw(pw,unb64(m.p.s),m.p.i),m.p))},
   async unlockCode(code){const m=getMeta();if(!m||!m.r)throw new Error('code');await V.open(await unwrap('r',await kekPw(code,unb64(m.r.s),m.r.i),m.r))},
   async wrapPass(pw){if(!V.on)return;const m=getMeta();m.p=await slotPw('p',pw);putMeta(m)},
@@ -169,7 +181,7 @@ window.VAULT=(()=>{
   if(!st||!$('lgForm')){go();return}
   const on0=[...document.querySelectorAll('section.on')];on0.forEach(s=>s.classList.remove('on'));
   B.classList.add('starting');st.classList.add('on');
-  const hideEls=[...st.querySelectorAll('.st-alt,.st-lang,#acForm')],hid0=hideEls.map(e=>e.hidden);hideEls.forEach(e=>e.hidden=true);
+  const hideEls=[...st.querySelectorAll('.st-alt,.st-lang,.st-sso,#acForm')],hid0=hideEls.map(e=>e.hidden);hideEls.forEach(e=>e.hidden=true);
   $('lgForm').hidden=false;$('fgForm').hidden=true;
   if(acc&&acc.email)$('lgMail').value=acc.email;
   const mailEls=[$('lgMail'),st.querySelector('label[for="lgMail"]')].filter(Boolean),mail0=mailEls.map(e=>e.hidden);
@@ -182,6 +194,9 @@ window.VAULT=(()=>{
    $('lgGo').before(nt)}
   const bioB=$('lgBio');
   if(bioB){bioB.lastChild.textContent=/iPhone|iPad|Macintosh/.test(navigator.userAgent)?'Face ID':'Empreinte';bioB.hidden=!(mode==='unlock'&&m&&m.b)}
+  /* compte sans mot de passe (Google / Outlook) : seul Face ID est proposé, le code de secours reste en dépannage */
+  const nopw=mode==='unlock'&&!!(m&&!m.p&&m.b),fg0=$('lgForgot').textContent;
+  if(nopw){$('lgForm').classList.add('nopw');$('lgForgot').hidden=!m.r;$('lgForgot').textContent='Code de secours'}
   let busy=false;
   const err=(id,t)=>{const e=$(id);e.textContent=t||'';e.hidden=!t};
   const lk=()=>{try{return JSON.parse(raw.get('caso_lk'))||{n:0,u:0}}catch(e){return{n:0,u:0}}};
@@ -195,7 +210,7 @@ window.VAULT=(()=>{
    if(fini)return;fini=true;
    ['click','submit','input'].forEach(t=>document.removeEventListener(t,H[t],true));
    st.classList.remove('on');B.classList.remove('starting');on0.forEach(s=>s.classList.add('on'));
-   hideEls.forEach((e,i)=>e.hidden=hid0[i]);if(bioB)bioB.hidden=true;mailEls.forEach((e,i)=>e.hidden=mail0[i]);
+   hideEls.forEach((e,i)=>e.hidden=hid0[i]);if(bioB)bioB.hidden=true;$('lgForm').classList.remove('nopw');$('lgForgot').textContent=fg0;mailEls.forEach((e,i)=>e.hidden=mail0[i]);
    $('lgGo').textContent=go0;if(pa0)$('lgPass').setAttribute('autocomplete',pa0);if(nt)nt.remove();
    ['lgPass','fgPass','fgCode'].forEach(id=>{if($(id))$(id).value=''});['lgErr','fgErr'].forEach(id=>err(id,''));
    raw.del('caso_locked');raw.del('caso_lk');
@@ -229,7 +244,7 @@ window.VAULT=(()=>{
   // essai automatique à l'ouverture : il ne bloque ni n'occupe l'écran ; le mot de passe reste utilisable
   async function bio(user){
    if(user){if(busy)return;busy=true;wait(bioB,true)}
-   try{await V.unlockBio()}catch(e){if(user){busy=false;wait(bioB,false);err('lgErr','Face ID n’a pas fonctionné. Entre ton mot de passe.')}return}
+   try{await V.unlockBio()}catch(e){if(user){busy=false;wait(bioB,false);err('lgErr',nopw?'Face ID non confirmé. Réessaie.':'Face ID n’a pas fonctionné. Entre ton mot de passe.')}return}
    if(user){wait(bioB,false);busy=false}done()}
   function wipe(){
    if(!confirm('Effacer le compte et les données de ce téléphone ? Si ton téléphone est relié à ton entreprise, tu retrouveras tes données en la rejoignant.'))return;
@@ -249,7 +264,7 @@ window.VAULT=(()=>{
    input(e){if(!st.contains(e.target))return;e.stopPropagation();err('lgErr','');err('fgErr','')}};
   ['click','submit','input'].forEach(t=>document.addEventListener(t,H[t],true));
   if(bioB&&!bioB.hidden)bio(false);
-  else setTimeout(()=>{try{$(acc&&acc.email?'lgPass':'lgMail').focus()}catch(e){}},50)}
+  else if(!nopw)setTimeout(()=>{try{$(acc&&acc.email?'lgPass':'lgMail').focus()}catch(e){}},50)}
  return V})();
 </script>
 <script>/* ?neuf : repartir de zéro (intro, connexion, création du compte) */
@@ -687,6 +702,10 @@ header .cso-tile{width:38px;height:38px}
 .st-f .st-logo{margin:28px 0 18px}
 .st-f .h1{text-align:center;font-size:26px;margin:0 0 6px}
 .st-f .btn{margin-top:20px}
+.st-f .st-sso{display:flex;justify-content:center;gap:14px;margin-top:16px}
+.st-f .st-sso[hidden]{display:none}
+.st-f .st-sso .btn{flex:none;width:56px;height:56px;min-height:0;padding:0;margin:0;display:grid;place-items:center;border-radius:50%}
+#lgForm.nopw>label,#lgForm.nopw>input,#lgForm.nopw>.pw,#lgForm.nopw>#lgGo,#lgForm.sso>label,#lgForm.sso>input,#lgForm.sso>.pw,#lgForm.sso>#lgGo,#lgForm.sso>.lnk,#lgForm.sso>.lang-sel,#lgForm.sso>.st-sso{display:none!important}
 body.starting #hd{display:none}
 #m3d{position:fixed;inset:0;z-index:9000;background:var(--bg)}
 #dvx{position:fixed;inset:0;z-index:8000;background:var(--bg)}
@@ -866,6 +885,15 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;justify-conten
 .pg-h .pg-t{margin:0}
 .pg-h .btn{width:auto;margin:0;display:inline-flex;align-items:center;gap:6px}
 .srch{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:0 12px;margin:0 0 12px}
+.it.prx-it{flex-direction:row;align-items:center;gap:10px;animation:prxIn .28s both}.prx-it .it-main{flex:1;min-width:0;text-decoration:none}.prx-it .it-t{align-items:flex-start}.prx-it .it-t b:last-child{white-space:nowrap}.prx-it .btn{flex:none;margin:0}
+.prx-it.best .it-t b:last-child{color:var(--ok)}
+.fou-new{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;min-height:44px;margin:0 0 14px;padding:0;border:0;background:none;color:var(--mut);font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.prx-it .fav{flex:none;display:flex;align-items:center;justify-content:center;width:40px;height:44px;margin:0 -6px 0 -4px;padding:0;border:0;background:none;color:var(--mut);cursor:pointer}.prx-it .fav.on{color:var(--acc)}.prx-it .fav.on svg{fill:currentColor}
+.fou-imp{display:flex;gap:10px;margin:0 0 12px}.fou-imp .btn{flex:1;margin:0}
+.prx-rec{margin:0 0 12px}.prx-rec:empty{display:none}.prx-rec .chip{padding:8px 14px;font:inherit;font-size:14px;cursor:pointer}
+.prx-sk{display:flex;flex-direction:column;gap:8px;padding:14px;border-bottom:1px solid var(--line)}.prx-sk:last-child{border-bottom:0}.prx-sk i{display:block;height:12px;border-radius:6px;background:var(--line);animation:prxSk 1.1s ease-in-out infinite}.prx-sk i:last-child{width:40%;opacity:.7}
+@keyframes prxSk{50%{opacity:.35}}@keyframes prxIn{from{opacity:0;transform:translateY(6px)}}
+@media (prefers-reduced-motion:reduce){.prx-sk i,.it.prx-it{animation:none}}
 .srch input{border:0;background:transparent;min-height:46px;padding:0;margin:0;box-shadow:none;outline:0}
 .lst{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden;margin:0 0 14px}
 .it{display:flex;flex-direction:column;gap:2px;padding:12px 14px;border-bottom:1px solid var(--line)}
@@ -1525,7 +1553,7 @@ body.tr-on{overflow:hidden}
 <symbol id="i-doc" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 13h6M9 17h6"/></symbol>
 <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
 <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
-<symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol><symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+<symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z"/></symbol><symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol><symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
 <symbol id="i-logout" viewBox="0 0 24 24"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 8l-4 4 4 4M6 12h10"/></symbol>
 <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></symbol>
 <symbol id="i-phone" viewBox="0 0 24 24"><path d="M6.5 3.5h3l1.5 4-2 1.5a11 11 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2 2A16.5 16.5 0 0 1 4.5 5.5a2 2 0 0 1 2-2z"/></symbol>
@@ -1568,6 +1596,10 @@ body.tr-on{overflow:hidden}
   <div id="lgErr" class="err" hidden role="alert"></div>
   <button class="btn" type="submit" id="lgGo">Connexion</button>
   <button class="btn sec" type="button" id="lgBio" hidden><svg class="i"><use href="#i-shield"/></svg><span>Face ID</span></button>
+  <div class="st-sso" id="lgSso">
+   <button class="btn sec" type="button" aria-label="Continuer avec Google" title="Google" onclick="authVia('google')"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><text x="12" y="17.5" text-anchor="middle" font-size="17" font-weight="700" fill="currentColor">G</text></svg></button>
+   <button class="btn sec" type="button" aria-label="Continuer avec Outlook" title="Outlook" onclick="authVia('microsoft')"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><text x="12" y="17.5" text-anchor="middle" font-size="17" font-weight="700" fill="currentColor">O</text></svg></button>
+  </div>
   <button class="lnk lg-forgot" type="button" id="lgForgot" onclick="forgotOpen()">Mot de passe oublié ?</button>
   <button class="lnk st-alt" type="button" onclick="stShow('ac')">Pas encore de compte ? <span>Créer ton compte</span></button>
   <select class="lang-sel st-lang" aria-label="Langue" onchange="vnSetLang(this.value)"></select>
@@ -1588,6 +1620,10 @@ body.tr-on{overflow:hidden}
   <label for="acPass">Mot de passe</label><div class="pw"><input id="acPass" type="password" autocomplete="new-password" placeholder="8 caractères minimum" enterkeyhint="done"><button type="button" class="pw-eye" aria-label="Afficher le mot de passe" aria-pressed="false" onclick="pwEye(this,'acPass')"><svg class="i" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
   <div id="acErr" class="err" hidden role="alert"></div>
   <button class="btn" type="submit" id="acGo">Créer mon compte</button>
+  <div class="st-sso" id="acSso">
+   <button class="btn sec" type="button" aria-label="Continuer avec Google" title="Google" onclick="authVia('google')"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><text x="12" y="17.5" text-anchor="middle" font-size="17" font-weight="700" fill="currentColor">G</text></svg></button>
+   <button class="btn sec" type="button" aria-label="Continuer avec Outlook" title="Outlook" onclick="authVia('microsoft')"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><text x="12" y="17.5" text-anchor="middle" font-size="17" font-weight="700" fill="currentColor">O</text></svg></button>
+  </div>
   <button class="lnk st-alt st-inv" type="button" onclick="$('stJoin').hidden=!$('stJoin').hidden">J'ai une invitation</button>
   <div id="stJoin" class="mut" hidden>Scanne le QR code de ton patron avec l'appareil photo.</div>
  </form>
@@ -1807,13 +1843,17 @@ body.tr-on{overflow:hidden}
 </section>
 <section id="s-fou">
  <button class="btn sec back" onclick="go('devis')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
- <div class="pg-h"><h1 class="pg-t">Fournisseurs</h1><button class="btn sm" onclick="fouEdit()"><svg class="i i-sm"><use href="#i-plus"/></svg><span>Nouveau</span></button></div>
- <button class="btn" onclick="impPick('cam')"><svg class="i"><use href="#i-cam"/></svg><span>Photo d'un devis ou d'une facture</span></button>
- <button class="btn sec" onclick="impPick('file')"><svg class="i"><use href="#i-doc"/></svg><span>Fichier (PDF ou image)</span></button>
- <div id="fouDue"></div>
- <button class="btn sec" hidden onclick="go('imp')"><svg class="i"><use href="#i-scan"/></svg>Importer une facture ou une liste</button>
- <div class="srch"><svg class="i i-sm"><use href="#i-search"/></svg><input type="search" id="fouQ" placeholder="Chercher" oninput="fouRender()"></div>
- <div id="fouList" class="lst"></div>
+ <div class="pg-h"><h1 class="pg-t">Fournisseurs</h1></div>
+ <div class="seg" id="fouSeg"><button type="button" class="on" data-m="mes" onclick="fouMode('mes')">Mes fournisseurs</button><button type="button" data-m="web" onclick="fouMode('web')">Prix en ligne</button></div>
+ <form class="srch" onsubmit="fouGo();return false"><svg class="i i-sm"><use id="fouIc" href="#i-search"/></svg><input type="search" id="fouQ" placeholder="Chercher" enterkeyhint="search" autocomplete="off" oninput="fouType()"></form>
+ <div id="fouMes">
+  <div class="fou-imp"><button class="btn sec" type="button" onclick="impPick('cam')"><svg class="i"><use href="#i-cam"/></svg><span>Photo</span></button><button class="btn sec" type="button" onclick="impPick('file')"><svg class="i"><use href="#i-doc"/></svg><span>Fichier</span></button></div>
+  <div id="fouDue"></div>
+  <button class="btn sec" hidden onclick="go('imp')"><svg class="i"><use href="#i-scan"/></svg>Importer une facture ou une liste</button>
+  <div id="fouList"></div>
+  <button class="fou-new" type="button" onclick="fouEdit()"><svg class="i i-sm"><use href="#i-plus"/></svg><span>Nouveau</span></button>
+ </div>
+ <div id="fouWeb" hidden><div id="prxRec" class="chips prx-rec"></div><div id="prxFav"></div><div id="prxRes" aria-live="polite"></div></div>
 </section>
 <section id="s-fouf">
  <button class="btn sec back" onclick="go('fou')"><svg class="i i-flip"><use href="#i-back"/></svg>Fournisseurs</button>
@@ -2290,7 +2330,7 @@ body.tr-on{overflow:hidden}
  <button class="dw-i" onclick="drawerGo('cpt:bk')"><svg class="i"><use href="#i-shield"/></svg><span>Sauvegarde</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
 </aside>
 <aside class="dw dw-r" id="dwR" hidden aria-label="Compte">
- <div class="dw-h"><span class="dw-av"><svg class="i"><use href="#i-user"/></svg></span><div class="dw-who"><b id="dwName"></b><span id="dwMail" class="mut"></span></div><button class="dw-x" onclick="drawerClose()" aria-label="Fermer"><svg class="i"><use href="#i-x"/></svg></button></div>
+ <div class="dw-h"><span class="dw-av"><svg class="i"><use href="#i-user"/></svg></span><div class="dw-who"><b id="dwName"></b><span id="dwMail" class="mut"></span><span id="dwPlan" class="mut" hidden></span></div><button class="dw-x" onclick="drawerClose()" aria-label="Fermer"><svg class="i"><use href="#i-x"/></svg></button></div>
  <p class="dw-g">Moi et mon entreprise</p>
  <button class="dw-i" onclick="drawerGo('cpt:ent')"><svg class="i"><use href="#i-building"/></svg><span>Mon entreprise</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
  <button class="dw-i" onclick="drawerGo('agenda')"><svg class="i"><use href="#i-cal"/></svg><span>Mon planning</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
@@ -3207,10 +3247,45 @@ function dwLocked(){
  const st=$('s-start');if(st&&st.classList.contains('on'))return true;
  try{if(localStorage.getItem('caso_locked')==='1')return true}catch(e){}
  return false}
+/* module AUTH (lib/auth.js) : « Continuer avec Google / Outlook » sur les écrans Connexion et Créer mon compte ; l'offre en une ligne dans le menu profil */
+const AUTH_OFFRES={artisan_curieux:'Essai Artisan pro',artisan_fin_essai:'Essai terminé',artisan:'Artisan',artisan_pro:'Artisan pro',bricoleur:'Bricoleur du dimanche',bricoleur_pro:'Bricoleur du dimanche pro'};
+function authLigne(){
+ const A=window.CasoAuth,c=A&&A.compte(),pl=$('dwPlan');if(!pl)return;
+ let t=c&&AUTH_OFFRES[c.offre]?i18nT(AUTH_OFFRES[c.offre]):'';
+ if(t&&c.offre==='artisan_curieux'&&c.essaiFin){const d=new Date(c.essaiFin);t+=' · '+String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')}
+ pl.textContent=t;pl.hidden=!t}
+function authVia(k){if(navigator.onLine===false){toast(i18nT('Pas de connexion.'));return}window.CasoAuth&&CasoAuth.connecter(k)}
+window.CasoAuthProfil=()=>{const a=accountGet()||{};return{mode:a.mode==='bricoleur'?'bricoleur':'artisan',nom:db.prof.nom||'',siret:db.prof.siret||''}};
+window.addEventListener('caso-auth',e=>{const d=e.detail||{};authLigne();if(d.erreur)toast(i18nT(d.erreur));if(d.retour&&d.compte&&!accountGet())ssoBegin(d.compte)});
+/* retour de Google / Outlook sans compte sur ce téléphone : le compte est créé sans mot de passe, Face ID (ou l'empreinte) ouvre le coffre.
+   Un seul appui, sur le bouton Face ID de l'écran Connexion. Téléphone sans Face ID : on retombe sur « Créer mon compte », e-mail déjà rempli. */
+const SSO={c:null,busy:false};
+async function ssoBegin(c){SSO.c=c;let bio=false;
+ try{bio=!!(window.VAULT&&!VAULT.on&&!VAULT.has()&&await VAULT.bioOk())}catch(e){}
+ if(!bio){ssoFallback();return}
+ stScreen('s-start');stShow('lg');const b=$('lgBio');$('lgForm').classList.add('sso');
+ b.lastChild.textContent=/iPhone|iPad|Macintosh/.test(navigator.userAgent)?'Face ID':i18nT('Empreinte');b.hidden=false;b.onclick=ssoGo}
+function ssoEnd(){const b=$('lgBio');$('lgForm').classList.remove('sso');b.hidden=true;b.disabled=false;b.onclick=null}
+function ssoFallback(){ssoEnd();stScreen('s-start');stShow('ac');$('acMail').value=(SSO.c&&SSO.c.email)||'';
+ $('acErr').textContent=i18nT('{1} n’est pas disponible sur ce téléphone.').replace('{1}',bioNom());$('acErr').hidden=false}
+async function ssoGo(){if(SSO.busy)return;SSO.busy=true;const c=SSO.c,b=$('lgBio');b.disabled=true;$('lgErr').hidden=true;
+ const mail=String(c.email||'').toLowerCase();
+ const acc={v:1,id:'u'+uid(),prenom:c.prenom||mail.split('@')[0]||'casô',email:mail,sso:c.via,iter:ACC_ITER(),createdAt:Date.now()};
+ try{if(!accountPut(acc))throw new Error('stockage');if(!(await VAULT.createBio(acc)))throw new Error('coffre')}
+ catch(e){try{localStorage.removeItem(ACC_KEY)}catch(x){}SSO.busy=false;b.disabled=false;
+  if(e&&e.name==='NotAllowedError'){$('lgErr').textContent=i18nT('Face ID non confirmé. Réessaie.');$('lgErr').hidden=false;return}/* annulé : on reste là */
+  ssoFallback();return}
+ db.me=Object.assign({},db.me||{},{prenom:acc.prenom});db.prof=Object.assign({},db.prof||{},{email:acc.email});db.profAt=Date.now();save();
+ ssoEnd();fillProf();renderAcct();bkSet('devis_welcomed',1);
+ try{ONB.code=await rcSet()}catch(e){ONB.code=null}
+ SSO.busy=false;modeOpen(false)}
+/* compte sans mot de passe : une action sensible se confirme avec Face ID */
+const sansMdp=()=>!!(window.VAULT&&VAULT.on&&!VAULT.hasPw());
+async function bioConf(){try{return await VAULT.bioCheck()}catch(e){toast(i18nT('Face ID non confirmé. Réessaie.'));return false}}
 function drawer(side){
  if(dwLocked()){drawerClose(true);return}
  const d=$(side==='L'?'dwL':'dwR');if(!d)return;
- if(side==='R'){const a=accountGet()||{},c=getSync();$('dwName').textContent=a.prenom||c.user||'';$('dwMail').textContent=a.email||''}
+ if(side==='R'){const a=accountGet()||{},c=getSync();$('dwName').textContent=a.prenom||c.user||'';$('dwMail').textContent=a.email||'';authLigne()}
  $('dwBg').hidden=false;d.hidden=false;requestAnimationFrame(()=>{$('dwBg').classList.add('on');d.classList.add('on')});
  document.body.classList.add('dw-open')}
 function drawerClose(now){
@@ -3238,6 +3313,7 @@ async function logout(){
 function stShow(w){if(w==='ac'&&accountGet()){$('lgForm').hidden=false;$('acForm').hidden=true;$('lgErr').textContent='Il y a déjà un compte sur ce téléphone. Connecte-toi, ou touche « Mot de passe oublié ? ».';$('lgErr').hidden=false;$('lgForgot').hidden=false;return}
  $('lgForm').hidden=w!=='lg';$('acForm').hidden=w!=='ac';$('fgForm').hidden=true;['lgErr','acErr'].forEach(k=>$(k).hidden=true);
  if(w==='lg'){const a=accountGet();$('lgForgot').hidden=!a;if(a&&!$('lgMail').value)$('lgMail').value=a.email||''}
+ document.querySelectorAll('.st-sso').forEach(e=>e.hidden=!!accountGet());
  window.scrollTo(0,0)}
 function pwEye(b,id){const i=$(id),on=i.type==='password';i.type=on?'text':'password';b.setAttribute('aria-pressed',on);b.setAttribute('aria-label',on?'Masquer le mot de passe':'Afficher le mot de passe')}
 function showLogin(){
@@ -3300,7 +3376,7 @@ function modePick(m){if(m==='artisan'&&!sirOk((db.prof||{}).siret)){$('mdArt').c
 function rc2Copy(){const c=$('rc2Code').textContent;
  (navigator.clipboard?navigator.clipboard.writeText(c):Promise.reject()).then(()=>{toast(i18nT('Code copié.'));$('rc2Copy').classList.add('done')},()=>{try{getSelection().selectAllChildren($('rc2Code'))}catch(e){}})}
 function rc2Next(){ONB.code=null;$('rc2Code').textContent='';modeEnter()}
-function modeEnter(){const a=accountGet();
+function modeEnter(){const a=accountGet();try{window.CasoAuth&&CasoAuth.profil()}catch(e){}
  if(a&&a.mode==='bricoleur'){stScreen('s-mode');m3dOpen(true);return}
  document.body.classList.remove('starting');go('devis')}
 
@@ -3332,7 +3408,70 @@ function listHtml(list,q,sub){
  return L.map(x=>`<button class="it it-main" data-sw="${sub}:${x.id}" onclick="${sub}Edit('${x.id}')"><span class="it-t"><b data-noi18n>${esc(x.nom)}</b><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></span>
   ${x.tel||x.adr?`<span class="mut it-s" data-noi18n>${esc([x.tel,x.adr].filter(Boolean).join(' · '))}</span>`:''}</button>`).join('')||'<div class="lst-empty mut">Aucun résultat.</div>'}
 function cliRender(){$('cliList').innerHTML=listHtml(db.clients,$('cliQ').value,'cli')}
-function fouRender(){syncSuppliersFromPrices();const fd=$('fouDue');if(fd)fd.innerHTML=fouDueHtml();$('fouList').innerHTML=listHtml(db.suppliers,$('fouQ').value,'fou')}
+/* Fournisseurs : une seule barre, deux onglets. « Mes fournisseurs » filtre la liste ; « Prix en ligne » interroge le serveur casô
+   (sa clé reste sur le serveur) : prix publics TTC, ajoutés à Mes prix en HT (TVA 20 %), le magasin devient le fournisseur */
+let FOU_M='mes',PRX=[],PRX_N=0,PRX_B='';const PRX_C=new Map();
+function prxPays(){const r=String(navigator.language||'').split('-')[1];return /^(FR|BE|CH|LU|ES|PT|IT|DE|NL|GB|US|CA|RO|PL|TR|MA)$/.test(r||'')?r:'FR'}
+function prxPrix(x){if(x.devise==='EUR')return eur(x.prix);try{return new Intl.NumberFormat(document.documentElement.lang||'fr',{style:'currency',currency:x.devise}).format(x.prix)}catch(e){return x.prix+' '+x.devise}}
+/* où est le serveur casô : celui qui a déjà répondu, l'adresse fixée, le site ouvert (appli servie par le serveur), le poste de l'entreprise, puis l'adresse par défaut */
+function prxBases(){const L=[],a=u=>{u=String(u||'').replace(/\/+$/,'');if(/^https?:\/\//.test(u)&&!L.includes(u))L.push(u)};
+ a(PRX_B);a(window.CASO_APPRIS);a(location.origin);try{a(getSync().url)}catch(e){}a('https://api.caso.fr');return L}
+async function prxAsk(q){let err='';
+ for(const b of prxBases()){const ac=new AbortController(),to=setTimeout(()=>ac.abort(),22000);
+  try{const r=await fetch(b+'/api/prix?q='+encodeURIComponent(q)+'&pays='+prxPays(),{signal:ac.signal,credentials:'omit'}),v=await r.json().catch(()=>null);
+   if(r.ok&&Array.isArray(v)){PRX_B=b;return {v}}
+   if(v&&typeof v.error==='string'&&r.status!==404&&r.status!==401){PRX_B=b;return {err:v.error}}
+  }catch(e){}finally{clearTimeout(to)}}
+ return {err:err||'Le service de prix ne répond pas, réessaie plus tard.'}}
+function prxRecGet(){try{const v=JSON.parse(localStorage.getItem('caso_prx_rec'));return Array.isArray(v)?v.filter(x=>typeof x==='string').slice(0,6):[]}catch(e){return []}}
+function prxRecAdd(q){try{const L=prxRecGet().filter(x=>x.toLowerCase()!==q.toLowerCase());L.unshift(q.slice(0,60));localStorage.setItem('caso_prx_rec',JSON.stringify(L.slice(0,6)))}catch(e){}}
+function prxRecShow(){const L=prxRecGet();$('prxRec').innerHTML=$('fouQ').value.trim()?'':L.map((x,i)=>`<button type="button" class="chip" data-noi18n onclick="prxPick(${i})">${esc(x)}</button>`).join('')}
+function prxPick(i){const x=prxRecGet()[i];if(!x)return;$('fouQ').value=x;prxGo()}
+/* favoris : produits gardés depuis les prix en ligne (prix, magasin et date du relevé), affichés quand la barre est vide */
+function favKey(x){return (x.produit+'|'+x.magasin).toLowerCase()}
+function favList(){return Array.isArray(db.favs)?db.favs:(db.favs=[])}
+function prxRow(x,i,o){const u=/^https:\/\//i.test(x.url||'')?x.url:'',fav=o.fav,on=fav||favList().some(f=>favKey(f)===favKey(x)),
+  ex=db.prices.some(p=>p.nom.toLowerCase()===x.produit.slice(0,80).toLowerCase()&&p.four===x.magasin),ref=fav?`'${x.id}'`:i;
+ return `<div class="it prx-it${o.best?' best':''}"${fav?` data-sw="fav:${x.id}"`:''} style="animation-delay:${Math.min(i,12)*35}ms"><${u?`a href="${esc(u)}" target="_blank" rel="noopener noreferrer"`:'span'} class="it-main"><span class="it-t"><b data-noi18n>${esc(x.produit)}</b><b data-noi18n>${esc(prxPrix(x))}</b></span><span class="mut it-s"><span data-noi18n>${esc(x.magasin)}</span> · <span>TTC</span>${fav&&x.maj?` · <span data-noi18n>${esc(dFR(x.maj))}</span>`:''}</span></${u?'a':'span'}>`+
+  `<button class="fav${on?' on':''}" type="button" aria-pressed="${on}" aria-label="${esc(i18nT('Mes favoris'))}" onclick="favToggle(${ref},this)"><svg class="i i-sm"><use href="#i-star"/></svg></button>`+
+  (x.devise==='EUR'?`<button class="btn sm sec" type="button" aria-label="${esc(i18nT('Ajouter à mes prix'))}" ${ex?'disabled':''} onclick="prxAdd(${ref},this)"><svg class="i i-sm"><use href="#i-${ex?'check':'plus'}"/></svg></button>`:'')+'</div>'}
+function prxShow(){$('prxRes').innerHTML='<div class="lst">'+PRX.map((x,i)=>prxRow(x,i,{best:i===0&&PRX.length>1})).join('')+'</div>'}
+function favShow(){const L=favList(),box=$('prxFav');if(!box)return;
+ box.innerHTML=!L.length||$('fouQ').value.trim()?'':`<h2 class="grp"><span>Mes favoris</span><span class="cnt">${L.length}</span></h2><div class="lst">`+L.map((x,i)=>prxRow(x,i,{fav:true})).join('')+'</div>'}
+function favToggle(ref,btn){const L=favList(),x=typeof ref==='number'?PRX[ref]:L.find(f=>f.id===ref);if(!x)return;
+ const k=favKey(x),i=L.findIndex(f=>favKey(f)===k);
+ if(i>=0)L.splice(i,1);else L.unshift({id:uid(),produit:x.produit,prix:x.prix,devise:x.devise,magasin:x.magasin,url:x.url||'',maj:x.maj||ymdL()});
+ save();if(typeof ref==='number'){btn.classList.toggle('on',i<0);btn.setAttribute('aria-pressed',i<0)}else favShow()}
+function prxHome(){prxRecShow();favShow()}
+async function prxGo(){
+ const box=$('prxRes'),q=$('fouQ').value.trim().replace(/\s+/g,' '),n=++PRX_N,msg=t=>{if(n===PRX_N)box.innerHTML=`<div class="lst"><div class="lst-empty mut">${esc(i18nT(t))}</div></div>`};
+ PRX=[];$('prxRec').innerHTML='';$('prxFav').innerHTML='';if(q.length<2){box.innerHTML='';prxHome();return}
+ const k=prxPays()+'|'+q.toLowerCase(),c=PRX_C.get(k);
+ if(c&&Date.now()-c.t<36e5){PRX=c.v;return prxShow()}
+ if(navigator.onLine===false)return msg('Pas de connexion.');
+ box.innerHTML='<div class="lst" role="status" aria-label="'+esc(i18nT('Recherche…'))+'">'+'<div class="prx-sk"><i></i><i></i></div>'.repeat(4)+'</div>';
+ const r=await prxAsk(q);if(n!==PRX_N)return;
+ if(r.err)return msg(r.err);
+ PRX=r.v.filter(x=>x&&x.produit&&x.magasin&&+x.prix>0);if(!PRX.length)return msg('Aucun résultat.');
+ PRX_C.set(k,{t:Date.now(),v:PRX});prxRecAdd(q);prxShow()}
+function prxAdd(ref,btn){const x=typeof ref==='number'?PRX[ref]:favList().find(f=>f.id===ref);if(!x)return;
+ const nom=x.produit.slice(0,80),ht=Math.round(x.prix/1.2*100)/100,ex=db.prices.find(p=>p.nom.toLowerCase()===nom.toLowerCase());
+ if(ex){ex.prix=ht;ex.four=x.magasin}else db.prices.push({id:uid(),nom,unit:'u',prix:ht,tva:20,four:x.magasin});
+ save();try{renderPrices();renderQuick()}catch(e){}
+ if(btn){btn.disabled=true;btn.innerHTML='<svg class="i i-sm"><use href="#i-check"/></svg>'}toast(i18nT('Ajouté à tes prix'))}
+function fouMode(m){FOU_M=m==='web'?'web':'mes';const w=FOU_M==='web';
+ [...$('fouSeg').children].forEach(b=>b.classList.toggle('on',b.dataset.m===FOU_M));$('fouMes').hidden=w;$('fouWeb').hidden=!w;
+ $('fouIc').setAttribute('href',w?'#i-globe':'#i-search');$('fouQ').placeholder=i18nT(w?"Prix d'un matériau en ligne":'Chercher');
+ if(w){if($('fouQ').value.trim().length>1)prxGo();else{$('prxRes').innerHTML='';prxHome()}}else fouRender()}
+function fouType(){if(FOU_M==='mes')return fouRender();if(!$('fouQ').value.trim()){PRX_N++;$('prxRes').innerHTML='';prxHome()}}
+function fouGo(){if(FOU_M==='web'){try{$('fouQ').blur()}catch(e){}prxGo()}else fouRender()}
+/* liste : rien quand il n'y a encore aucun fournisseur ; si le mot cherché n'est chez aucun fournisseur, on propose de le chercher en ligne */
+function fouRender(){syncSuppliersFromPrices();const fd=$('fouDue');if(fd)fd.innerHTML=fouDueHtml();
+ const q=$('fouQ').value.trim(),k=vnNorm(q),n=db.suppliers.filter(x=>!k||vnNorm(x.nom+' '+(x.tel||'')+' '+(x.adr||'')).includes(k)).length,box=$('fouList');
+ if(FOU_M!=='mes')return;
+ if(n){box.className='lst';box.innerHTML=listHtml(db.suppliers,q,'fou')}
+ else if(q.length>1){box.className='lst';box.innerHTML=`<button type="button" class="it it-main" onclick="fouMode('web')"><span class="it-t"><b><span>Prix en ligne</span> : <span data-noi18n>${esc(q)}</span></b><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></span></button>`}
+ else{box.className='';box.innerHTML=''}}
 function formFill(sid,x,title){
  $(sid+'FT').textContent=title;
  ['Nom','Tel','Mail','Adr','Note'].forEach(f=>{$(sid+f).value=x?(x[{Nom:'nom',Tel:'tel',Mail:'email',Adr:'adr',Note:'note'}[f]]||''):''});
@@ -3739,6 +3878,48 @@ function chatMultiUndo(){const m=CHAT.m[CHAT.m.length-1];if(!m||!m.mUndo||!MULTI
  CHAT.m.splice(MULTI_UNDO.i);MULTI_UNDO=null;CHAT.qid=q.id;fillForm();save();try{renderPrices();renderQuick()}catch(e){}chatSave();chatRender();return true}
 /* « FONTAINE » tapé en majuscules : Fontaine */
 function chatCasse(n){return n&&n===n.toUpperCase()&&/\p{L}{2}/u.test(n)?n.toLowerCase().replace(/(^|[\s'’.-])(\p{L})/gu,(m,a,b)=>a+b.toUpperCase()):n}
+/* ---------- planning de la semaine : carte, tournée, temps prévu, résumé, chantier d'un jour, matériaux (15 novembre) ----------
+   Réponses tirées des vraies données (rendez-vous, clients, chantiers, devis) ; rien n'est inventé. La carte s'ouvre dans l'appli de cartes du téléphone. */
+function planRoute(t0){const r=' '+String(t0).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/['’]/g,' ').replace(/[?!.,;:]/g,' ').replace(/\s+/g,' ')+' ';
+ const has=re=>re.test(r);if(!has(/\b(semaine|lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche|demain|creneau)\b/))return false;
+ const P=n=>String(n).padStart(2,'0'),key=x=>x.getFullYear()+'-'+P(x.getMonth()+1)+'-'+P(x.getDate());
+ const now=new Date();now.setHours(12,0,0,0);const mon=o=>{const x=new Date(now);x.setDate(x.getDate()-((x.getDay()+6)%7)+7*o);return x};
+ const JOURS=['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+ const wk=has(/\bsemaine prochaine\b/)?1:has(/\bsemaine (derniere|passee)\b/)?-1:0;
+ const evs=(a,b)=>(db.events||[]).filter(e=>e.d>=a&&e.d<=b&&e.t!=='conge').sort((x,y)=>(x.d+(x.a||'')).localeCompare(y.d+(y.a||'')));
+ const cli=e=>(db.clients||[]).find(c=>c.id===e.cid)||null,adr=e=>{const ch=(db.chantiers||[]).find(c=>c.cid===e.cid);return ch&&ch.adr||cli(e)&&cli(e).adr||''};
+ const jour=d=>{const x=new Date(d+'T12:00:00');return JOURS[x.getDay()]+' '+x.getDate()+'/'+P(x.getMonth()+1)},hrs=e=>{const f=s=>{const m=/(\d{1,2}):(\d{2})/.exec(s||'');return m?+m[1]+m[2]/60:null};const a=f(e.a),b=f(e.b);return a!=null&&b!=null&&b>a?b-a:0};
+ const maps=L=>'https://www.google.com/maps/dir/'+L.map(a=>encodeURIComponent(a)).join('/');
+ const out=(html)=>{CHAT.m.push({who:'me',text:t0});CHAT.m.push({who:'bot',html:'<div data-noi18n>'+html+'</div>'});return true};
+ // un jour précis : « lundi prochain », « mardi », « demain »
+ let dayO=null;for(let i=0;i<7;i++)if(has(new RegExp('\\b'+JOURS[i]+'\\b'))){const base=mon(has(/\bprochain\b/)||wk===1?1:wk);const x=new Date(base);x.setDate(x.getDate()+((i+6)%7));if(!has(/\bprochain|semaine\b/)&&key(x)<key(now))x.setDate(x.getDate()+7);dayO=key(x)}
+ if(has(/\bdemain\b/)){const x=new Date(now);x.setDate(x.getDate()+1);dayO=key(x)}
+ // créneau urgent
+ if(has(/\b(creneau|urgen\w*|libre|disponib\w*)\b/)&&dayO){const L=evs(dayO,dayO),matin=has(/\bmatin\b/),fin=matin?12:18;let t=8;const busyS=L.map(e=>[(/(\d+):(\d+)/.exec(e.a)||[0,8,0]),(/(\d+):(\d+)/.exec(e.b)||[0,9,0])]).map(([a,b])=>[+a[1]+a[2]/60,+b[1]+b[2]/60]).sort((x,y)=>x[0]-y[0]);
+   let slot=null;for(const[a,b]of busyS){if(a-t>=1){slot=[t,a];break}t=Math.max(t,b)}if(!slot&&fin-t>=1)slot=[t,fin];const hh=v=>Math.floor(v)+' h'+(v%1?P(Math.round(v%1*60)):'');
+   let nxt='';if(!slot){for(let k=1;k<=10&&!nxt;k++){const x=new Date(dayO+'T12:00:00');x.setDate(x.getDate()+k);if(x.getDay()===0||x.getDay()===6)continue;const kd=key(x),B=evs(kd,kd).map(e=>[(/(\d+):(\d+)/.exec(e.a)||[0,8,0]),(/(\d+):(\d+)/.exec(e.b)||[0,9,0])]).map(([a,b])=>[+a[1]+a[2]/60,+b[1]+b[2]/60]).sort((x,y)=>x[0]-y[0]);let u=8,sl=null;for(const[a,b]of B){if(a-u>=1){sl=[u,a];break}u=Math.max(u,b)}if(!sl&&fin-u>=1)sl=[u,fin];if(sl)nxt=`Prochain créneau ${matin?'le matin ':''}: ${jour(kd)} de ${hh(sl[0])} à ${hh(sl[1])}.`}}
+   const we=/^(samedi|dimanche)/.test(jour(dayO));return out(`${nxt?'<p>'+nxt+'</p>':''}<p>${slot?`Créneau libre ${jour(dayO)} de ${hh(slot[0])} à ${hh(slot[1])}`:`${jour(dayO)} : pas de créneau libre ${matin?'le matin':''}`}${we?' (jour habituellement non travaillé)':''}.</p>${L.length?`<p>Déjà prévu ce jour-là : ${L.map(e=>esc((e.a||'')+' '+e.title)).join(' · ')}</p>`:''}<p>Dites « ajoute un rendez-vous ${jour(dayO).split(' ')[0]} à ${slot?hh(slot[0]):'8 h'} chez … » pour le réserver.</p>`)}
+ if(dayO&&has(/\b(chantier|travaille|interviens|materiaux|fournitures|materiel|infos?|informations|montre|prevu)\b/)){const L=evs(dayO,dayO);if(!L.length)return out(`<p>Rien de prévu ${esc(jour(dayO))}.</p>`);
+   const parts=L.map(e=>{const c=cli(e),q=c?(db.quotes||[]).filter(x=>x.client===c.nom).sort((a,b)=>String(b.date).localeCompare(String(a.date))):[];
+     if(has(/\b(materiaux|fournitures|materiel)\b/)){const lines=q[0]?q[0].lines.filter(l=>!/main d|heure|deplacement/i.test(l.label)):[];return`<p><b>${esc(e.title)}</b> (${esc(c?c.nom:'')}) — d'après le devis ${q[0]?esc(q[0].num):'(aucun devis)'} :</p>${lines.length?'<ul>'+lines.map(l=>`<li>${esc(l.label)} : ${l.qty} ${esc(l.unit||'')}</li>`).join('')+'</ul>':'<p>Aucun matériau dans le devis.</p>'}`}
+     return`<p><b>${esc(jour(dayO))}, ${esc(e.a||'')}–${esc(e.b||'')} : ${esc(e.title)}</b><br>${esc(c?c.nom:'')}${c&&c.tel?' · '+esc(c.tel):''}<br>${esc(adr(e))} — <a href="${maps([adr(e)])}" target="_blank" rel="noopener">voir sur la carte</a>${q.length?`<br>Devis : ${q.map(x=>esc(x.num+' ('+(x.status||'')+')')).join(', ')}`:''}</p>`});
+   return out(parts.join(''))}
+ if(!has(/\bsemaine\b/))return false;
+ const a=key(mon(wk)),fri=new Date(mon(wk));fri.setDate(fri.getDate()+6);const b=key(fri),L=evs(a,b),lab=wk===1?'la semaine prochaine':wk===-1?'la semaine dernière':'cette semaine';
+ /* seulement les demandes de planning : « combien d'heures cette semaine » (heures pointées) reste au pointage */
+ const qT=has(/\b(combien de temps|temps prevu|duree|heures? (prevues?|planifiees?|de (travail|chantier) prevues?))\b/)||has(/\bheures?\b/)&&has(/\b(prevu\w*|planning|rendez|rdv|chantiers?|clients?|interventions?|passer|consacr\w*)\b/);
+ if(!(qT||has(/\b(carte|lieux|adresses?|ou (je|j)|itineraire|tournee|trajets?|deplacements?|organise|ordre|photos?|mesures?|historique|retrouve|resume|recap\w*|bilan|rapport|synthese|projets?|maisons)\b/)))return false;
+ if(!L.length)return out(`<p>Aucun rendez-vous ${lab}.</p>`);
+ if(has(/\b(carte|lieux|adresses?|ou (je|j)|itineraire|tournee|trajets?|deplacements?|organise|ordre)\b/)){const A=L.map(adr).filter(Boolean),villes={};L.forEach(e=>{const v=(adr(e).split(',').pop()||'').trim()||'?';(villes[v]=villes[v]||[]).push(e)});
+   const opt=has(/\b(limiter|optimis|organise|ordre|moins)\b/);
+   return out(`<p>Vos lieux de travail ${lab} :</p><ul>${L.map(e=>`<li>${esc(jour(e.d))} ${esc(e.a||'')} — ${esc(cli(e)?cli(e).nom:e.title)} : ${esc(adr(e)||'adresse inconnue')}</li>`).join('')}</ul><p><a href="${maps(A)}" target="_blank" rel="noopener">Ouvrir l'itinéraire de la semaine sur la carte</a></p>${opt?`<p>${Object.keys(villes).length} villes : ${Object.entries(villes).map(([v,es])=>esc(v)+' ('+es.length+')').join(', ')}. ${Object.values(villes).some(es=>es.length>1)?'Regroupez les chantiers d\'une même ville sur des jours qui se suivent.':'Chaque chantier est dans une ville différente : l\'ordre ne se raccourcit qu\'en déplaçant des rendez-vous.'} Je n'ai pas les distances (aucun service de calcul d'itinéraire n'est relié) : la carte les donne.</p>`:''}`)}
+ if(qT){const T={};L.forEach(e=>{const k=cli(e)?cli(e).nom:e.title;T[k]=(T[k]||0)+hrs(e)});const tot=Object.values(T).reduce((x,y)=>x+y,0);
+   return out(`<p>Temps prévu ${lab} : ${planH(tot)}</p><ul>${Object.entries(T).map(([k,h])=>`<li>${esc(k)} : ${planH(h)}</li>`).join('')}</ul>`)}
+ if(has(/\b(photos?|mesures?|historique|retrouve)\b/)){const cs=[...new Set(L.map(e=>e.cid))].map(id=>(db.clients||[]).find(c=>c.id===id)).filter(Boolean);return out(`<p>${lab[0].toUpperCase()+lab.slice(1)}, vous êtes intervenu chez : ${cs.map(c=>esc(c.nom)).join(', ')||'—'}.</p><ul>${L.map(e=>`<li>${esc(jour(e.d))} : ${esc(e.title)} — ${esc(adr(e))}</li>`).join('')}</ul><p>Photos et mesures : je ne trouve rien d’enregistré pour ${cs.length>1?'ces chantiers':'ce chantier'} dans casô. Les maquettes 3D filmées sont dans la Maquette 3D, avec leurs mesures.</p>`)}
+ if(has(/\b(resume|recap\w*|bilan|rapport|synthese|projets?|maisons)\b/)){const cs=[...new Set(L.map(e=>e.cid))].map(id=>(db.clients||[]).find(c=>c.id===id)).filter(Boolean);
+   const tot=L.reduce((x,e)=>x+hrs(e),0);return out(`<p>${lab[0].toUpperCase()+lab.slice(1)} : ${L.length} intervention${L.length>1?'s':''}, ${cs.length} chantier${cs.length>1?'s':''}, ${planH(tot)} prévues.</p><ul>${L.map(e=>`<li>${esc(jour(e.d))} ${esc(e.a||'')}–${esc(e.b||'')} : ${esc(e.title)} — ${esc(adr(e))}</li>`).join('')}</ul>${cs.map(c=>{const q=(db.quotes||[]).filter(x=>x.client===c.nom);return q.length?`<p>${esc(c.nom)} : devis ${q.map(x=>esc(x.num+' '+(x.status||''))).join(', ')}</p>`:''}).join('')}`)}
+ return false}
+function planH(h){const H=Math.floor(h),M=Math.round((h-H)*60);return H+' h'+(M?' '+String(M).padStart(2,'0'):'')}
 function chatSend(text){
  const inp=$('chatIn');const t0=String(text??inp.value).trim();if(!t0)return;
  /* une phrase à plusieurs demandes est en cours : la suivante attend son tour */
@@ -3750,6 +3931,13 @@ function chatSend(text){
  /* réponse à la question que le chat vient de poser (chantier, fournisseur, plan ou document) */
  const adrSeule=chAdrSeule(t0);
  if(CH_ASK&&chReponse(t0)){inp.value='';chatGrow(inp);qkUpdate();chatSave();chatRender(true);return}
+ /* planning de la semaine, d'un jour, créneau : réponses tirées des rendez-vous, clients et devis */
+ {let pr=false;try{pr=!chatSend.multi&&planRoute(t0)}catch(e){try{console.error(e)}catch(_){}}if(pr){inp.value='';chatGrow(inp);qkUpdate();chatSave();chatRender(true);return}}
+ /* ce qui se voit sur une vidéo ou des photos (inventaire, défauts, surfaces, cloisons, chantier filmé) : le travail de l'œil 3D */
+ {const r=' '+t0.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/['’]/g,' ')+' ';
+  if(!chatSend.multi&&/\b(identifie|analyse|inventaire|reconnais|reconstrui\w*|modele 3d|maquette 3d|representation 3d|fissures?|humidite|degradations?|surface (des murs|de cette|du sol|de la facade)|variantes? d amenagement|cloisons?|outils|machines|parpaings?|palettes?|materiaux visibles|equipements de securite|travaux .{0,20}realis\w*|zones de stockage)\b/.test(r)&&/\b(cette|ce|ces|cet|cette video|mes photos|ma|mon)\b/.test(r)&&!/\b(devis|facture|client|fournisseur|rendez|rdv|planning)\b/.test(r)){
+   CHAT.m.push({who:'me',text:t0});CHAT.m.push({who:'bot',html:'<p data-noi18n>C’est un travail pour l’œil 3D. Ouvrez la Maquette 3D, partie Rénovation : filmez la pièce ou le chantier (ou choisissez une photo de face de chaque mur), puis reposez votre question dans son chat. Je vous donnerai alors les éléments, les surfaces ou les défauts repérés, avec leur niveau de confiance.</p>'});
+   inp.value='';chatGrow(inp);qkUpdate();chatSave();chatRender(true);return}}
  /* « non » juste après une action : comme le bouton Annuler de sa bulle */
  if(/^(non|nan|no|não|nao|nu|nie|hayır|hayir|нет|لا)[.!]*$/i.test(t0)&&chatNonUndo()){inp.value='';chatGrow(inp);qkUpdate();CHAT.m.push({who:'me',text:t0});CHAT.m.push({who:'bot',html:`<p data-noi18n>${esc(window.casoPont&&casoPont.ready?casoPont.tr('D’accord, j’ai annulé. ').trim():'D’accord, j’ai annulé.')}</p>`});try{if(!(casoPont.refuser&&casoPont.refuser())){casoPont.B.S.lastTurn=null;casoPont.B.S.pending=null}}catch(e){}chatSave();chatRender(true);return}
  if(window.casoPont&&casoPont.ready&&!adrSeule){
@@ -3836,13 +4024,16 @@ function delOpen(){const c=getSync();
  $('delTx').textContent=c.token&&c.role==='patron'?"Ton compte, toutes les données de ce téléphone et tout l'espace de ton entreprise sur le serveur (équipe, devis, factures) seront effacés. Ça ne peut pas être annulé."
   :c.token?"Ton compte et les données de ce téléphone seront effacés. Les données de l'entreprise restent chez ton patron."
   :"Ton compte et toutes les données de ce téléphone (devis, factures, clients, planning) seront effacés. Ça ne peut pas être annulé.";
+ {const np=sansMdp();$('delPw').hidden=np;$('delPw').previousElementSibling.hidden=np}
  $('delPw').value='';$('delSrv').value='';$('delSrvB').hidden=!(c.token&&c.role==='patron');$('delErr').hidden=true;$('delBg').hidden=false;$('delSh').hidden=false;requestAnimationFrame(()=>{$('delSh').classList.add('on');$('delBg').classList.add('on')})}
 function delClose(){$('delSh').classList.remove('on');$('delBg').classList.remove('on');setTimeout(()=>{$('delSh').hidden=true;$('delBg').hidden=true},200)}
 async function delGo(){const a=accountGet(),err=t=>{$('delErr').textContent=t;$('delErr').hidden=false};
  {const w=lkWait();if(w){err(lkMsg(w));return}}
- if(!a||!(await accountCheck(a.email,$('delPw').value))){lkFail();const w=lkWait();err(w?lkMsg(w):'Mot de passe incorrect.');return}
+ if(sansMdp()){if(!a||!(await bioConf()))return}
+ else if(!a||!(await accountCheck(a.email,$('delPw').value))){lkFail();const w=lkWait();err(w?lkMsg(w):'Mot de passe incorrect.');return}
  lkOk();
  const c=getSync(),b=$('delGo');b.disabled=true;
+ if(window.CasoAuth&&CasoAuth.connecte()){try{await CasoAuth.supprimer()}catch(e){b.disabled=false;err('Pas de connexion.');return}}
  if(c.url&&c.token){try{const r=await fetch(c.url+'/api/account/delete',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+c.token},body:JSON.stringify({confirm:'SUPPRIMER',password:$('delSrv').value})});
    if(r.status===403){b.disabled=false;err('Mot de passe du serveur incorrect.');return}
    if(r.status===429){b.disabled=false;err(lkMsg(60));return}
@@ -3886,9 +4077,10 @@ function forgotWipe(){
    Tracé → Face ID / empreinte (passkey, la clé privée ne quitte jamais le téléphone) → enregistrement électronique :
    identifiant CS-… dérivé de l'empreinte SHA-256 (e-mail du compte | date | tracé), QR affiché sur les devis.
    Stocké ici : caso_sig (tracé), caso_sig_reg (identifiant, e-mail, date, empreinte, n° de clé Face ID, clé publique).
-   Sauvegardé avec le reste de casô (Store.flush) ; à envoyer au serveur casô pour la vérification du QR. */
+   Sauvegardé avec le reste de casô (Store.flush) et envoyé au serveur casô (/api/sig/register) : le QR ouvre /v/CS-…,
+   page publique qui décrit le signataire et l'entreprise (données de « Mon entreprise »). */
 let SPAD=null;
-const sgVerify=()=>new URL('./',location.href).href+'?sig=';
+const sgVerify=()=>{const c=getSync();return String(c.url||location.origin).replace(/\/+$/,'')+'/v/'};
 function sgReg(){try{return JSON.parse(localStorage.getItem('caso_sig_reg')||'null')}catch(e){return null}}
 function sgOk(){const r=sgReg();return sgSigImg()&&r&&r.faceid?r:null}
 const sgHex=b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
@@ -3908,11 +4100,20 @@ async function sgFaceId(hash,prev){
  const c=await navigator.credentials.create({publicKey:{rp:{id:location.hostname,name:'casô'},user:{id:new TextEncoder().encode(mail),name:mail,displayName:a.prenom||mail},challenge:ch,
   pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required',residentKey:'preferred'},attestation:'none',timeout:60000}});
  return{credential_id:sgB64(c.rawId),public_key:c.response.getPublicKey&&c.response.getPublicKey()?sgB64(c.response.getPublicKey()):null}}
+let sgPushing=false;
+async function sgPush(force){
+ const r=sgReg(),c=getSync();if(!r||!r.faceid||!c.url||!c.token||sgPushing)return;
+ const p=db.prof||{};if(!force&&r.srv&&(r.srvAt||0)>=(db.profAt||0))return;
+ sgPushing=true;
+ try{await apiTeam('/api/sig/register',{id:r.id,hash:r.hash,at:r.at,faceid:r.faceid,pk:r.pk||null,img:sgSigImg(),nom:(accountGet()||{}).prenom||c.user||'',
+   entreprise:{nom:p.nom,forme:p.forme,siret:p.siret,adresse:p.adr,tel:p.tel,email:p.email||r.email,rm:p.rm,assur:p.assur,zone:p.zone}});
+  const r2=sgReg();if(r2&&r2.id===r.id){r2.srv=1;r2.srvAt=Date.now();try{localStorage.setItem('caso_sig_reg',JSON.stringify(r2))}catch(e){}}}
+ catch(e){}finally{sgPushing=false}}
 function spState(){const e=!SPAD||SPAD.empty();$('spGo').disabled=e;$('spHint').hidden=!e}
 function spRender(){
  const r=sgOk(),done=r&&!spRender.redo;
  $('spNew').hidden=!!done;$('spDone').hidden=!done;
- if(done){$('spImg').src=sgSigImg();$('spQr').innerHTML=qrSvg(sgVerify()+r.id,4);$('spId').textContent=r.id;$('spAt').textContent=(r.email?r.email+' · ':'')+sgDate(r.at);return}
+ if(done){sgPush();$('spImg').src=sgSigImg();$('spQr').innerHTML=qrSvg(sgVerify()+r.id,4);$('spId').textContent=r.id;$('spAt').textContent=(r.email?r.email+' · ':'')+sgDate(r.at);return}
  setTimeout(()=>{const cv=$('spPad');if(!SPAD){SPAD=SigPad(cv);['pointerdown','pointerup','pointercancel','pointerleave'].forEach(t=>cv.addEventListener(t,()=>setTimeout(spState,0)))}
   SPAD.size();SPAD.clear();const old=sgSigImg();if(old&&!spRender.redo){SPAD.load(old);setTimeout(spState,150)}spState()},60)}
 function spClear(){if(SPAD)SPAD.clear();spState()}
@@ -3931,6 +4132,7 @@ function spDelete(){try{localStorage.removeItem('caso_sig');localStorage.removeI
 function entSigRender(){const el=$('entSig');if(!el)return;const r=sgOk();
  const w=$('entSigW');if(w)w.hidden=!r;
  if(!r){el.innerHTML='';return}
+ sgPush();
  el.innerHTML=`<div class="sg-ro" aria-readonly="true"><img src="${esc(sgSigImg())}" alt=""><div class="sg-qr">${qrSvg(sgVerify()+r.id,4)}</div><div class="sg-meta"><b data-noi18n>${esc(r.id)}</b><span data-noi18n>${esc(r.email||'')}${r.email?' · ':''}${sgDate(r.at)}<svg class="i sg-lk"><use href="#i-lock"/></svg></span></div></div>`}
 
 /* ---------- Plan à partir d'une photo ----------
@@ -6175,6 +6377,9 @@ function askPw(title){return new Promise(res=>{const w=document.createElement('d
  document.body.appendChild(w);setTimeout(()=>i.focus(),50)})}
 /* « Télécharger mes données » : fichier chiffré avec le mot de passe quand le coffre est actif */
 async function exportAll(){const j=JSON.stringify(db);
+ if(sansMdp()){if(!(await bioConf()))return;const pw=await askPw(i18nT('Mot de passe du fichier'));if(pw==null)return;
+  if(pw.length<8){toast(i18nT('8 caractères minimum.'));return}
+  dl('devis-btp-sauvegarde.json',await VAULT.seal(j,pw),'application/json');return}
  if(window.VAULT&&VAULT.on){const pw=await askPw(i18nT('Mot de passe'));if(pw==null)return;
   if(!(await VAULT.checkPw(pw))){toast(i18nT('Mot de passe incorrect.'));return}
   dl('devis-btp-sauvegarde.json',await VAULT.seal(j,pw),'application/json');return}
@@ -6198,13 +6403,16 @@ addEventListener('pagehide',()=>{if(profT){clearTimeout(profT);saveProf()}});
 const ibanMask=v=>{v=String(v||'').replace(/\s+/g,'');return v.length>8?v.slice(0,4)+' •••• •••• '+v.slice(-4):v};
 function ibanShow(){const e=$('eIban');if(!e)return;e.dataset.open='';e.value=ibanMask((db.prof||{}).iban)}
 async function ibanOpen(e){if(e.dataset.open==='1'||e.dataset.ask)return;
- if(window.VAULT&&VAULT.on){e.dataset.ask='1';e.blur();const pw=await askPw(i18nT('Mot de passe'));delete e.dataset.ask;
+ if(sansMdp()){e.dataset.ask='1';e.blur();const ok=await bioConf();delete e.dataset.ask;if(!ok)return}
+ else if(window.VAULT&&VAULT.on){e.dataset.ask='1';e.blur();const pw=await askPw(i18nT('Mot de passe'));delete e.dataset.ask;
   if(pw==null)return;if(!(await VAULT.checkPw(pw))){toast(i18nT('Mot de passe incorrect.'));return}}
  e.dataset.open='1';e.value=(db.prof||{}).iban||'';e.focus()}
-async function ibanSet(v){const pw=await askPw(i18nT('Mot de passe'));if(pw==null)return;
- if(!(await VAULT.checkPw(pw))){toast(i18nT('Mot de passe incorrect.'));return}
+async function ibanSet(v){
+ if(sansMdp()){if(!(await bioConf()))return}
+ else{const pw=await askPw(i18nT('Mot de passe'));if(pw==null)return;
+  if(!(await VAULT.checkPw(pw))){toast(i18nT('Mot de passe incorrect.'));return}}
  db.prof=Object.assign({},db.prof||{},{iban:v});db.profAt=Date.now();save();ibanShow();toast(i18nT('Enregistré.'))}
-function saveProf(){clearTimeout(profT);profT=0;db.prof=Object.assign({},db.prof||{},{nom:$('eNom').value,adr:$('eAdr').value,siret:$('eSiret').value,siren:$('eSiren').value.replace(/\D/g,'')||$('eSiret').value.replace(/\D/g,'').slice(0,9),tel:$('eTel').value,assur:$('eAssur').value,valid:$('eValid').value,forme:$('eForme').value,rm:$('eRm').value,tvai:$('eTvai').value,email:$('eMail').value,zone:$('eZone').value,iban:$('eIban').dataset.open==='1'?$('eIban').value:((db.prof||{}).iban||''),bic:$('eBic').value,delai:$('eDelai').value,capital:$('eCapital').value,franchise:$('eFranch').checked,rcpro:$('eRcpro').value,mediateur:$('eMed').value,tauxH:$('eTauxH').value,depl:$('eDepl').value,acompteType:$('eAccT').value,acomptePct:$('eAccP').value});if(typeof entExtra==='function')entExtra();db.profAt=Date.now();save()}
+function saveProf(){clearTimeout(profT);profT=0;setTimeout(()=>{try{window.CasoAuth&&CasoAuth.profil()}catch(e){}},0);db.prof=Object.assign({},db.prof||{},{nom:$('eNom').value,adr:$('eAdr').value,siret:$('eSiret').value,siren:$('eSiren').value.replace(/\D/g,'')||$('eSiret').value.replace(/\D/g,'').slice(0,9),tel:$('eTel').value,assur:$('eAssur').value,valid:$('eValid').value,forme:$('eForme').value,rm:$('eRm').value,tvai:$('eTvai').value,email:$('eMail').value,zone:$('eZone').value,iban:$('eIban').dataset.open==='1'?$('eIban').value:((db.prof||{}).iban||''),bic:$('eBic').value,delai:$('eDelai').value,capital:$('eCapital').value,franchise:$('eFranch').checked,rcpro:$('eRcpro').value,mediateur:$('eMed').value,tauxH:$('eTauxH').value,depl:$('eDepl').value,acompteType:$('eAccT').value,acomptePct:$('eAccP').value});if(typeof entExtra==='function')entExtra();db.profAt=Date.now();save()}
 
 /* ---------- Historique ---------- */
 const ST={brouillon:'Brouillon',envoye:'En cours de signature',accepte:'Validé',paye:'Payé',refuse:'Refusé',expire:'Expiré'};
@@ -7070,10 +7278,10 @@ async function acSubmit(){
 function renderAcct(){const a=accountGet(),c=$('acctCard');if(!c)return;c.hidden=!a;if(a){$('acctName').textContent=a.prenom;$('acctMail').textContent=a.email}bioRender()}
 /* ouvrir casô avec Face ID / empreinte : la passkey du téléphone ouvre le coffre (le mot de passe reste valable) */
 const bioNom=()=>/iPhone|iPad|Macintosh/.test(navigator.userAgent)?'Face ID':'empreinte';
-async function bioRender(){const b=$('bioBtn');if(!b)return;const V=window.VAULT;if(!V||!V.on||!(await V.bioOk())){b.hidden=true;return}
+async function bioRender(){const b=$('bioBtn');if(!b)return;const V=window.VAULT;if(!V||!V.on||!V.hasPw()||!(await V.bioOk())){b.hidden=true;return}
  b.lastChild.textContent=i18nT(V.bioSet()?'Ne plus ouvrir avec {1}':'Ouvrir casô avec {1}').replace('{1}',bioNom());b.hidden=false}
 async function bioToggle(){const V=window.VAULT;if(!V||!V.on)return;
- if(V.bioSet()){V.bioOff();bioRender();return}
+ if(V.bioSet()){if(!V.hasPw())return;V.bioOff();bioRender();return}
  try{await V.bioOn(accountGet());toast(i18nT('Enregistré.'))}catch(e){toast(i18nT('{1} n’est pas disponible sur ce téléphone.').replace('{1}',bioNom()))}bioRender()}
 /* ---------- Sauvegarde ---------- */
 function bkGet(k){try{return Number(localStorage.getItem(k))||0}catch(e){return 0}}
@@ -7739,6 +7947,7 @@ const SW_DEL={
  cli:id=>{const x=db.clients.find(c=>c.id===id);if(!x||!confirm(i18nT('Supprimer ce client ?')))return;db.clients=db.clients.filter(c=>c.id!==id);save();cliRender()},
  fou:id=>{const x=db.suppliers.find(c=>c.id===id);if(!x||!confirm(i18nT('Supprimer ce fournisseur ?')))return;db.suppliers=db.suppliers.filter(c=>c.id!==id);save();fouRender()},
  pr:id=>delPrice(id),
+ fav:id=>{db.favs=favList().filter(f=>f.id!==id);save();favShow()},
  q:id=>{const x=db.quotes.find(y=>y.id===id);if(!x||!swQ(x)||!confirm(i18nT('Supprimer ce devis ?')))return;db.quotes=db.quotes.filter(y=>y.id!==id);save();renderHisto()},
  ch:id=>delCh(id),
  pe:id=>delPerson(id)};
@@ -7835,5 +8044,6 @@ function entExtra(){const p=db.prof||{},v=$('eLogoV');if(v)v.innerHTML=p.logo?`<
 VAULT.start(()=>{document.querySelectorAll('script[type="text/x-caso"]').forEach(t=>{const e=document.createElement('script');
  if(t.dataset.src){e.src=t.dataset.src;e.async=false}else e.textContent=t.textContent;t.replaceWith(e)})});
 </script>
+<script src="lib/auth.js" defer></script>
 </body>
 </html>
