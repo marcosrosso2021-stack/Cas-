@@ -13,6 +13,16 @@ await t('Pour qui : oui, non, ou « si tu fais partie de… » quand on ne sait 
  assert.strictEqual(V.concerne({},{pros:['micro-entrepreneurs']}).etat,'peut');
  assert.deepStrictEqual(V.concerne({forme:'SARL'},{pros:['sous-traitants','employeurs']}),{etat:'peut',texte:'Si tu fais partie des sous-traitants, employeurs'});
  assert.strictEqual(V.concerne({forme:'SARL'},{pros:['micro-entrepreneurs','sous-traitants']}).etat,'peut')});
+await t('Pour qui, avec le métier de « Mon entreprise »',()=>{
+ assert.deepStrictEqual(V.concerne({metier:'électriciens'},{pros:['électriciens']}),{etat:'oui',texte:'Oui, toi : électriciens'});
+ assert.deepStrictEqual(V.concerne({metier:'peintres'},{pros:['électriciens']}),{etat:'non',texte:'Non, pas toi'});assert.strictEqual(V.concerne({metier:'autre'},{pros:['couvreurs','maçons']}).etat,'non');
+ assert.strictEqual(V.concerne({},{pros:['électriciens']}).etat,'peut');assert.strictEqual(V.concerne({metier:'plusieurs'},{pros:['électriciens']}).etat,'peut');
+ assert.strictEqual(V.concerne({metier:'peintres'},{pros:['électriciens','employeurs']}).texte,'Si tu fais partie des employeurs');
+ assert.strictEqual(V.concerne({metier:'peintres',forme:'micro'},{pros:['électriciens','micro-entrepreneurs']}).etat,'oui');
+ assert.strictEqual(V.concerne({metier:'peintres'},{pros:['artisans du bâtiment']}).etat,'oui');
+ const A2=require('../serveur/veille/analyse.js'),html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8'),sel=html.match(/<select id="eMetier"[\s\S]*?<\/select>/)[0];
+ const vals=[...sel.matchAll(/value="([^"]*)"/g)].map(m=>m[1]).filter(x=>x&&x!=='plusieurs'&&x!=='autre');
+ assert.ok(vals.length===7&&vals.every(x=>A2.analyser({titre:'x',categorie:'confirme'},{}).pros&&Object.prototype.hasOwnProperty.call(require('../serveur/veille/analyse.js').PROS||{},x)))});
 await t('Quand : date en clair et délai ; une proposition ne change rien',()=>{
  assert.strictEqual(V.quand({dateVigueur:'2027-01-01'},A),'1er janvier 2027, dans 46 jours');assert.strictEqual(V.quand({dateVigueur:'2026-11-17'},A),'17 novembre 2026, demain');
  assert.strictEqual(V.quand({dateVigueur:'2026-11-16'},A),'Aujourd\'hui');assert.strictEqual(V.quand({dateVigueur:'2026-11-04'},A),'Depuis le 4 novembre 2026');

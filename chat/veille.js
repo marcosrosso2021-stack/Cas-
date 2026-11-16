@@ -6,6 +6,8 @@
 (function(racine){
 'use strict';
 var BASE=(racine.CASO_APPRIS||'https://api.caso.fr'),K='caso_veille',PERIODE=6*36e5;
+/* les métiers de « Mon entreprise » : les mêmes mots que l'analyse du serveur */
+var METIERS=['électriciens','plombiers-chauffagistes','maçons','couvreurs','menuisiers','peintres','diagnostiqueurs'];
 var MOIS=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 function jour(d){return (d||new Date()).toISOString().slice(0,10)}
@@ -16,8 +18,11 @@ function dateFr(d){var j=+d.slice(8,10);return (j===1?'1er':j)+' '+MOIS[+d.slice
 function concerne(prof,item){
  prof=prof||{};var pros=(item.pros||[]).filter(Boolean),micro=/micro/i.test(prof.forme||'')||prof.franchise===true,formeConnue=!!prof.forme;
  if(!pros.length||pros.indexOf('artisans du bâtiment')>=0)return {etat:'oui',texte:'Oui, toi'};
- var oui=false,inconnu=[];
- pros.forEach(function(p){if(p==='micro-entrepreneurs'){if(micro)oui=true;else if(!formeConnue)inconnu.push(p)}else inconnu.push(p)});
+ var oui=false,inconnu=[],metier=prof.metier||'';
+ pros.forEach(function(p){
+  if(p==='micro-entrepreneurs'){if(micro)oui=true;else if(!formeConnue)inconnu.push(p)}
+  else if(METIERS.indexOf(p)>=0){if(metier===p)oui=true;else if(!metier||metier==='plusieurs')inconnu.push(p)}   // un autre métier choisi : ce n'est pas lui
+  else inconnu.push(p)});
  if(oui)return {etat:'oui',texte:'Oui, toi : '+pros.join(', ')};
  if(!inconnu.length)return {etat:'non',texte:'Non, pas toi'};
  return {etat:'peut',texte:'Si tu fais partie des '+inconnu.join(', ')};
