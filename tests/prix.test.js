@@ -39,6 +39,22 @@ await t('recherche trop courte : 400 ; service en panne : 502 sans détail',asyn
  assert.strictEqual((await p.chercher('a','FR','1'))[0],400);const [c,b]=await p.chercher('placo','FR','1');assert.strictEqual(c,502);assert.ok(!/k\b|Invalid/.test(b.error))});
 await t('SerpApi « aucun résultat » : liste vide, pas une panne',async()=>{const p=creer({env:{SERPAPI_KEY:'k'},log:()=>{},fetch:faux({error:"Google hasn't returned any results for this query."})});
  const [c,b]=await p.chercher('xyzxyz','FR','1');assert.strictEqual(c,200);assert.deepStrictEqual(b,[])});
+await t('photos : petite image ou hôte du service seulement',async()=>{
+ const v=convertir({shopping_results:[
+  {title:'A',extracted_price:1,source:'S',thumbnail:'https://encrypted-tbn0.gstatic.com/shopping?q=tbn:x'},
+  {title:'B',extracted_price:2,source:'S',thumbnail:'https://pirate.example/x.jpg',serpapi_thumbnail:'https://serpapi.com/images/url/abc'},
+  {title:'C',extracted_price:3,source:'S',thumbnail:'data:image/jpeg;base64,AAAA'},
+  {title:'D',extracted_price:4,source:'S',thumbnail:'data:text/html;base64,AAAA'},
+  {title:'E',extracted_price:5,source:'S',thumbnail:'http://encrypted-tbn0.gstatic.com/x'},
+  {title:'F',extracted_price:6,source:'S',thumbnail:'https://gstatic.com.pirate.example/x'}]},'EUR');
+ assert.deepStrictEqual(v.map(x=>x.photo),['https://encrypted-tbn0.gstatic.com/shopping?q=tbn:x','https://serpapi.com/images/url/abc','data:image/jpeg;base64,AAAA','','','']);
+ const img=(type,n)=>async()=>({ok:true,status:200,headers:{get:()=>type},arrayBuffer:async()=>new Uint8Array(n).buffer});
+ const p=creer({env:{SEARCHAPI_KEY:'k'},fetch:img('image/jpeg; charset=x',10)});
+ assert.strictEqual((await p.image('https://pirate.example/x.jpg'))[0],400);
+ assert.strictEqual((await p.image('http://127.0.0.1/x'))[0],400);
+ const [c,o]=await p.image('https://encrypted-tbn0.gstatic.com/shopping?q=tbn:x');assert.strictEqual(c,200);assert.strictEqual(o.type,'image/jpeg');assert.strictEqual(o.buf.length,10);
+ assert.strictEqual((await creer({env:{},fetch:img('text/html',10)}).image('https://serpapi.com/a'))[0],502);
+ assert.strictEqual((await creer({env:{},fetch:img('image/png',5e5)}).image('https://serpapi.com/a'))[0],502)});
 await t('serveur : GET /api/prix sans compte',async()=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'caso-prix-'));
  const {createServer}=require('../serveur/server.js');
