@@ -3462,7 +3462,7 @@ function prxPays(){const r=String(navigator.language||'').split('-')[1];return /
 function prxPrix(x){if(x.devise==='EUR')return eur(x.prix);try{return new Intl.NumberFormat(document.documentElement.lang||'fr',{style:'currency',currency:x.devise}).format(x.prix)}catch(e){return x.prix+' '+x.devise}}
 /* où est le serveur casô : celui qui a déjà répondu, l'adresse fixée, le site ouvert (appli servie par le serveur), le poste de l'entreprise, puis l'adresse par défaut */
 function prxBases(){const L=[],a=u=>{u=String(u||'').replace(/\/+$/,'');if(/^https?:\/\//.test(u)&&!L.includes(u))L.push(u)};
- a(PRX_B);a(window.CASO_APPRIS);a(location.origin);try{a(getSync().url)}catch(e){}a('https://api.caso.fr');return L}
+ a(PRX_B);a(window.CASO_APPRIS);a(location.origin);try{a(getSync().url)}catch(e){}a('https://app-e6c6e91c-8623-4524-95ef-2cefb8b67f7b.cleverapps.io');return L}
 async function prxAsk(q){let err='';
  for(const b of prxBases()){const ac=new AbortController(),to=setTimeout(()=>ac.abort(),22000);
   try{const r=await fetch(b+'/api/prix?q='+encodeURIComponent(q)+'&pays='+prxPays(),{signal:ac.signal,credentials:'omit'}),v=await r.json().catch(()=>null);

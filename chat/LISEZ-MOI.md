@@ -106,7 +106,7 @@ message l'attend au plus 4 s.
   ni ceux déjà tapés avec une majuscule), sans texte, sans nombre écrit en clair. L'appareil reçoit une fois par jour celles des
   autres. Elles ne servent que si le chat ne comprend pas la phrase lui-même, et toujours en proposition (« Tu veux : … ? ») ;
   ce que l'usager a appris lui-même passe avant ; un « non » l'efface chez lui. Serveur : `window.CASO_APPRIS`
-  (défaut https://api.caso.fr).
+  (défaut https://app-e6c6e91c-8623-4524-95ef-2cefb8b67f7b.cleverapps.io).
 - **Contrôle chaque semaine** : `.github/workflows/chat-semaine.yml` lance `outils/chat/controle.js` (363 phrases de contrôle,
   exemples dans les 10 langues), `outils/chat/fautes.js` (une faute de frappe sur 100 phrases par langue, seuil 80 % compris)
   et `outils/chat/essai-appli.js` (essais dans l'appli). `node outils/chat/controle.js --base`

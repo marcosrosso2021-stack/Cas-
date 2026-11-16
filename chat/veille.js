@@ -7,7 +7,7 @@
    - le texte des cartes reste en français, comme les textes officiels */
 (function(racine){
 'use strict';
-var BASE=(racine.CASO_APPRIS||'https://api.caso.fr'),K='caso_veille',PERIODE=6*36e5;
+var BASE=(racine.CASO_APPRIS||'https://app-e6c6e91c-8623-4524-95ef-2cefb8b67f7b.cleverapps.io'),K='caso_veille',PERIODE=6*36e5;
 /* les métiers de « Mon entreprise » : les mêmes mots que l'analyse du serveur */
 var METIERS=['électriciens','plombiers-chauffagistes','maçons','couvreurs','menuisiers','peintres','diagnostiqueurs'];
 var MOIS=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
