@@ -59,6 +59,7 @@ function createServer(opts={}){
  const prix=opts.prix||prixLib.creer();// prix des matériaux en ligne (clé SEARCHAPI_KEY ou SERPAPI_KEY)
  /* veille réglementaire : un passage par jour sur les sources officielles ; rien n'est envoyé aux artisans sans validation */
  const veille=opts.veille||veilleLib.creer({dir:DIR});
+ const vEssais=new Map();// mauvaises clés par adresse : 10 essais par quart d'heure
  if(!opts.noTimers&&HOSTED){const vt=setInterval(()=>{if(veille.aFaire(new Date()))veille.passer().catch(()=>{})},9e5);if(vt.unref)vt.unref()}
  const pushSend=opts.pushSend||((sub,payload)=>webpush.send(sub,payload,data.vapid,{subject:process.env.VAPID_SUBJECT}));
  /* --- apprentissage partagé du chat : phrases apprises par les usagers, sans rien de personnel (fichier à part) --- */
@@ -497,13 +498,22 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
       if(o){if(!o.u.includes(u)&&o.u.length<50){o.u.push(u);n++}o.at=Date.now()}else{const ks=Object.keys(L);if(ks.length>=2000){let v=null;for(const kk of ks)if(L[kk].u.length<2&&(!v||L[kk].at<L[v].at))v=kk;if(!v)return;delete L[v]}L[x.t]={u:[u],s:x.s==='3d'?'3d':'chat',at:Date.now()};n++}});
      if(n)inSave();return send(res,200,{ok:n})}}
 
-   /* veille réglementaire : lecture réservée au propriétaire de casô, avec sa clé */
-   if(req.method==='GET'&&(url==='/api/veille/etat'||url==='/api/veille/textes')){const cle=process.env.CASO_CLE_IA||'';
-    if(!cle||String(req.headers['x-caso-cle']||'')!==cle)return send(res,404,{error:'Introuvable.'});
-    if(url==='/api/veille/etat')return send(res,200,veille.etat());
-    const sp=new URLSearchParams(req.url.split('?')[1]||''),fi={},c=sp.get('categorie')||'',b=sp.get('bloque');
-    if(Object.prototype.hasOwnProperty.call(veilleLib.CAT,c))fi.categorie=c;if(b==='1'||b==='0')fi.bloque=b==='1';
-    return send(res,200,veille.liste(fi).slice(0,200))}
+   /* veille réglementaire : tableau de bord et validation réservés au propriétaire de casô, avec sa clé (même origine seulement) */
+   if(req.method==='GET'&&url==='/veille'){let html;try{html=fs.readFileSync(path.join(__dirname,'veille.html'),'utf8')}catch(e){return send(res,404,{error:'introuvable'})}
+    res.writeHead(200,Object.assign({'content-type':'text/html; charset=utf-8','cache-control':'no-store','x-robots-tag':'noindex','content-security-policy':CSP_PUB},SEC));return res.end(html)}
+   if(url.startsWith('/api/veille/')){const cle=process.env.CASO_CLE_IA||'',e=vEssais.get(ip),t=Date.now();
+    if(e&&e.n>=10&&t-e.t<9e5)return send(res,429,{error:'Trop d\'essais, réessaie plus tard.'});
+    if(!cle||String(req.headers['x-caso-cle']||'')!==cle){if(!e||t-e.t>=9e5)vEssais.set(ip,{n:1,t});else e.n++;if(vEssais.size>5000)vEssais.clear();return send(res,404,{error:'Introuvable.'})}
+    if(req.method==='GET'&&url==='/api/veille/etat')return send(res,200,Object.assign(veille.etat(),{modules:veilleLib.MODULES,domaines:veilleLib.DOMAINES}));
+    if(req.method==='GET'&&url==='/api/veille/journal')return send(res,200,veille.journal(100));
+    if(req.method==='GET'&&url==='/api/veille/textes'){
+     const sp=new URLSearchParams(req.url.split('?')[1]||''),fi={},c=sp.get('categorie')||'',b=sp.get('bloque'),v=sp.get('validation')||'',p=sp.get('priorite')||'',d=sp.get('domaine')||'';
+     if(Object.prototype.hasOwnProperty.call(veilleLib.CAT,c))fi.categorie=c;if(b==='1'||b==='0')fi.bloque=b==='1';
+     if(['attente','valide','refuse'].includes(v))fi.validation=v;if(veilleLib.PRIORITES.includes(p))fi.priorite=p;if(veilleLib.DOMAINES.includes(d))fi.domaine=d;
+     return send(res,200,veille.liste(fi).slice(0,500))}
+    if(POST&&url==='/api/veille/decider'){const b=await readBody(req),[c,o]=veille.decider(String(b.id||''),String(b.decision||''),b.corrections);return send(res,c,o)}
+    if(POST&&url==='/api/veille/passer')return send(res,200,await veille.passer());
+    return send(res,404,{error:'Introuvable.'})}
 
    m=null;
    const user=authUser(req);
