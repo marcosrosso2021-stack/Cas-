@@ -1,0 +1,797 @@
+[
+{
+"m": "carrelage",
+"p": "faut peter le vieux carlage et remettre du neuf",
+"a": [
+"déposer l'ancien carrelage",
+"du carrelage"
+],
+"s": [
+"neuf",
+"carlage",
+"peter"
+]
+},
+{
+"m": "carrelage",
+"p": "faut faire sauter la vieille fayence de la sdb",
+"a": [
+"déposer l'ancienne faïence",
+"salle de bain"
+],
+"s": [
+"fayence",
+"sdb"
+]
+},
+{
+"m": "carrelage",
+"p": "dep comp sol sdb + pose carrelage",
+"a": [
+"dépose complète",
+"salle de bain",
+"pose carrelage"
+],
+"s": [
+"dep comp",
+"+"
+]
+},
+{
+"m": "carrelage",
+"p": "devis Martin : 12 m² de carelage et des plintes",
+"a": [
+"carrelage",
+"plinthes"
+],
+"s": [
+"carelage",
+"plintes"
+]
+},
+{
+"m": "carrelage",
+"p": "faut virer le carrelage et faire un ragrehage",
+"a": [
+"déposer le carrelage",
+"ragréage"
+],
+"s": [
+"virer",
+"ragrehage"
+]
+},
+{
+"m": "carrelage",
+"p": "poser une mozaique dans la douche italienne",
+"a": [
+"mosaïque"
+],
+"s": [
+"mozaique"
+]
+},
+{
+"m": "carrelage",
+"p": "faut casser la chappe de la cuisine",
+"a": [
+"déposer la chape"
+],
+"s": [
+"chappe",
+"casser"
+]
+},
+{
+"m": "sol",
+"p": "faut arracher la vieille moquete du salon",
+"a": [
+"déposer l'ancienne moquette"
+],
+"s": [
+"moquete",
+"arracher"
+]
+},
+{
+"m": "sol",
+"p": "devis Dupont : parket flottant 20 m² + sous couche",
+"a": [
+"parquet flottant",
+"sous-couche"
+],
+"s": [
+"parket",
+" + "
+]
+},
+{
+"m": "sol",
+"p": "faut degager le lino et mettre du stratifier",
+"a": [
+"déposer le lino",
+"stratifié"
+],
+"s": [
+"degager",
+"stratifier"
+]
+},
+{
+"m": "sol",
+"p": "ponçage et vitrification du parqué",
+"a": [
+"parquet"
+],
+"s": [
+"parqué"
+]
+},
+{
+"m": "platrerie",
+"p": "faut virer le vieux placo et mettre du ba13",
+"a": [
+"déposer l'ancien placo",
+"BA13"
+],
+"s": [
+"virer"
+]
+},
+{
+"m": "platrerie",
+"p": "faut faire les bandes dans la chambre",
+"a": [
+"bandes à joint"
+],
+"s": []
+},
+{
+"m": "platrerie",
+"p": "monter une cloizon en plaquo dans le garage",
+"a": [
+"cloison",
+"placo"
+],
+"s": [
+"cloizon",
+"plaquo"
+]
+},
+{
+"m": "platrerie",
+"p": "faut tomber le faux plafond du couloir",
+"a": [
+"déposer le faux plafond"
+],
+"s": [
+"tomber"
+]
+},
+{
+"m": "platrerie",
+"p": "devis Martin : doublage 30 m² + bandes",
+"a": [
+"doublage",
+"bandes"
+],
+"s": [
+" + "
+]
+},
+{
+"m": "platrerie",
+"p": "refoutre du placo hydro dans la sdb",
+"a": [
+"poser du placo hydro",
+"salle de bain"
+],
+"s": [
+"refoutre"
+]
+},
+{
+"m": "peinture",
+"p": "faut passer un coup de peinture dans le salon",
+"a": [
+"refaire la peinture"
+],
+"s": []
+},
+{
+"m": "peinture",
+"p": "faut detapisser la chambre et mettre de la toile de verre",
+"a": [
+"toile de verre"
+],
+"s": []
+},
+{
+"m": "peinture",
+"p": "devis Martin : painture plafond 15 m²",
+"a": [
+"peinture"
+],
+"s": [
+"painture"
+]
+},
+{
+"m": "peinture",
+"p": "faut reboucher les trous et passer en blanc",
+"a": [
+"refaire la peinture"
+],
+"s": []
+},
+{
+"m": "peinture",
+"p": "faut arracher le vieux papier peint",
+"a": [
+"déposer l'ancien papier peint"
+],
+"s": [
+"arracher"
+]
+},
+{
+"m": "plomberie",
+"p": "faut changer le chauffe eau",
+"a": [
+"chauffe-eau"
+],
+"s": []
+},
+{
+"m": "plomberie",
+"p": "y a une fuite sous l'evier",
+"a": [
+"évier"
+],
+"s": []
+},
+{
+"m": "plomberie",
+"p": "faut virer la vieille baignoir et mettre une douche italienne",
+"a": [
+"déposer l'ancienne baignoire"
+],
+"s": [
+"baignoir ",
+"virer"
+]
+},
+{
+"m": "plomberie",
+"p": "faut demonter le lavabeau",
+"a": [
+"déposer le lavabo"
+],
+"s": [
+"lavabeau",
+"demonter"
+]
+},
+{
+"m": "plomberie",
+"p": "devis Martin : wc suspendu + meuble vasque",
+"a": [
+"wc suspendu",
+"meuble vasque"
+],
+"s": [
+" + "
+]
+},
+{
+"m": "plomberie",
+"p": "changer le syphon de l'évier",
+"a": [
+"siphon"
+],
+"s": [
+"syphon"
+]
+},
+{
+"m": "electricite",
+"p": "faut tirer une ligne pour le four",
+"a": [
+"ligne électrique"
+],
+"s": [
+"tirer"
+]
+},
+{
+"m": "electricite",
+"p": "devis Dupont : 3 prises, 2 inter et un disjonteur",
+"a": [
+"interrupteur",
+"disjoncteur"
+],
+"s": [
+"disjonteur",
+" inter "
+]
+},
+{
+"m": "electricite",
+"p": "faut changer le tableau elec",
+"a": [
+"tableau"
+],
+"s": []
+},
+{
+"m": "electricite",
+"p": "faut passer un cable jusqu'au garage",
+"a": [
+"câble électrique"
+],
+"s": []
+},
+{
+"m": "electricite",
+"p": "mettre 6 spots dans le faux plafond",
+"a": [
+"spots",
+"faux plafond"
+],
+"s": []
+},
+{
+"m": "electricite",
+"p": "faire une saignee pour la gaine",
+"a": [
+"saignée"
+],
+"s": []
+},
+{
+"m": "chauffage",
+"p": "faut virer les vieux radiateurs",
+"a": [
+"déposer",
+"anciens radiateurs"
+],
+"s": [
+"virer"
+]
+},
+{
+"m": "chauffage",
+"p": "faut changer la chaudiere",
+"a": [
+"chaudière"
+],
+"s": []
+},
+{
+"m": "chauffage",
+"p": "devis Martin : seche serviettes sdb",
+"a": [
+"sèche-serviettes",
+"salle de bain"
+],
+"s": [
+"sdb"
+]
+},
+{
+"m": "chauffage",
+"p": "devis Martin : installer une pac",
+"a": [
+"pompe à chaleur"
+],
+"s": []
+},
+{
+"m": "maconnerie",
+"p": "faut casser le mur entre la cuisine et le salon",
+"a": [
+"déposer le mur"
+],
+"s": [
+"casser"
+]
+},
+{
+"m": "maconnerie",
+"p": "monter un mur en parpins dans le garage",
+"a": [
+"parpaing"
+],
+"s": [
+"parpins"
+]
+},
+{
+"m": "maconnerie",
+"p": "faut reprendre les fisures de la façade",
+"a": [
+"fissure"
+],
+"s": [
+"fisures"
+]
+},
+{
+"m": "maconnerie",
+"p": "couler une dalle beton de 20 m²",
+"a": [
+"dalle béton"
+],
+"s": []
+},
+{
+"m": "maconnerie",
+"p": "poser un ipn pour l'ouverture",
+"a": [
+"ipn"
+],
+"s": []
+},
+{
+"m": "menuiserie interieure",
+"p": "faut refaire le bati et changer 2 fenetre",
+"a": [
+"bâti",
+"fenêtre"
+],
+"s": [
+"bati ",
+"fenetre"
+]
+},
+{
+"m": "menuiserie interieure",
+"p": "faut virer la vieille porte et le bati",
+"a": [
+"déposer l'ancienne porte",
+"bâti"
+],
+"s": [
+"virer"
+]
+},
+{
+"m": "menuiserie interieure",
+"p": "devis Martin : 3 blocs portes + plintes",
+"a": [
+"plinthes"
+],
+"s": [
+"plintes",
+" + "
+]
+},
+{
+"m": "menuiserie interieure",
+"p": "poser une credence dans la cuisine",
+"a": [
+"crédence"
+],
+"s": []
+},
+{
+"m": "menuiserie interieure",
+"p": "changer le plan de travail et la hotte",
+"a": [
+"plan de travail",
+"hotte"
+],
+"s": []
+},
+{
+"m": "menuiserie exterieure",
+"p": "changer 2 fenettre pvc",
+"a": [
+"fenêtre"
+],
+"s": [
+"fenettre"
+]
+},
+{
+"m": "menuiserie exterieure",
+"p": "faut demonter les vieux volets",
+"a": [
+"déposer",
+"anciens volets"
+],
+"s": [
+"demonter"
+]
+},
+{
+"m": "menuiserie exterieure",
+"p": "poser un velux dans la chambre",
+"a": [
+"velux"
+],
+"s": []
+},
+{
+"m": "menuiserie exterieure",
+"p": "changer la porte d'entree",
+"a": [
+"porte d'entrée"
+],
+"s": []
+},
+{
+"m": "menuiserie exterieure",
+"p": "remplacer le vitrage de la baie vitree",
+"a": [
+"baie vitrée"
+],
+"s": []
+},
+{
+"m": "isolation",
+"p": "faut virer la vieille laine de verre des combles",
+"a": [
+"déposer l'ancienne laine de verre"
+],
+"s": [
+"virer"
+]
+},
+{
+"m": "isolation",
+"p": "devis Dupont : iso combles 60 m²",
+"a": [
+"isolation"
+],
+"s": [
+" iso "
+]
+},
+{
+"m": "isolation",
+"p": "mettre du polystirene sous la dalle",
+"a": [
+"polystyrène"
+],
+"s": [
+"polystirene"
+]
+},
+{
+"m": "isolation",
+"p": "isolation des rampants en laine de roche",
+"a": [
+"laine de roche"
+],
+"s": []
+},
+{
+"m": "demolition",
+"p": "faut tout peter dans la sdb",
+"a": [
+"salle de bain"
+],
+"s": [
+"sdb"
+]
+},
+{
+"m": "demolition",
+"p": "evacuation des gravas à la benne",
+"a": [
+"gravats"
+],
+"s": [
+"gravas"
+]
+},
+{
+"m": "demolition",
+"p": "demol cloison + evacuation gravats",
+"a": [
+"cloison",
+"gravats"
+],
+"s": [
+" + "
+]
+},
+{
+"m": "demolition",
+"p": "faut bazarder les vieux placards",
+"a": [
+"déposer",
+"anciens placards"
+],
+"s": [
+"bazarder"
+]
+},
+{
+"m": "couverture",
+"p": "faut changer les tuilles cassées",
+"a": [
+"tuile"
+],
+"s": [
+"tuilles"
+]
+},
+{
+"m": "couverture",
+"p": "refaire la gouttiere",
+"a": [
+"gouttière"
+],
+"s": []
+},
+{
+"m": "inchange",
+"p": "vire le client Dupont",
+"a": [],
+"s": [],
+"id": true
+},
+{
+"m": "inchange",
+"p": "change le prix du carrelage à 50 €",
+"a": [],
+"s": [],
+"id": true
+},
+{
+"m": "inchange",
+"p": "ajoute 2 sacs de colle",
+"a": [],
+"s": [],
+"id": true
+},
+{
+"m": "inchange",
+"p": "enlève la colle",
+"a": [],
+"s": [],
+"id": true
+},
+{
+"m": "inchange",
+"p": "remplace le carrelage par du parquet",
+"a": [],
+"s": [],
+"id": true
+},
+{
+"m": "inchange",
+"p": "nouveau devis pour Martin",
+"a": [],
+"s": [],
+"id": true
+},
+{
+"m": "inchange",
+"p": "rdv demain 9h chez Martin",
+"a": [],
+"s": [],
+"id": true
+},
+{
+"m": "inchange",
+"p": "relance Martin",
+"a": [],
+"s": [],
+"id": true
+},
+{
+"m": "inchange",
+"p": "Martin a tout payé",
+"a": [],
+"s": [],
+"id": true
+},
+{
+"m": "inchange",
+"p": "combien ça fait ?",
+"a": [],
+"s": [],
+"id": true
+},
+{
+"m": "inchange",
+"p": "le carrelage est à combien ?",
+"a": [],
+"s": [],
+"id": true
+},
+{
+"m": "inchange",
+"p": "monte le prix de la faïence à 55 €",
+"a": [],
+"s": [],
+"id": true
+},
+{
+"m": "inchange",
+"p": "casse pas le prix",
+"a": [],
+"s": [],
+"id": true
+},
+{
+"m": "inchange",
+"p": "supprime le devis",
+"a": [],
+"s": [],
+"id": true
+},
+{
+"m": "inchange",
+"p": "mes devis en attente",
+"a": [],
+"s": [],
+"id": true
+},
+{
+"m": "inchange",
+"p": "colle carrelage 3 sacs",
+"a": [],
+"s": [],
+"id": true
+},
+{
+"m": "inchange",
+"p": "ajoute une porte au devis",
+"a": [],
+"s": [],
+"id": true
+},
+{
+"m": "inchange",
+"p": "décale le rdv de Martin à jeudi 14h",
+"a": [],
+"s": [],
+"id": true
+},
+{
+"m": "inchange",
+"p": "j'ai quoi cette semaine ?",
+"a": [],
+"s": [],
+"id": true
+},
+{
+"m": "inchange",
+"p": "c'est quoi un ragréage ?",
+"a": [],
+"s": [],
+"id": true
+},
+{
+"m": "inchange",
+"p": "devis pour Martin : 12 m² de carrelage",
+"a": [],
+"s": [],
+"id": true
+},
+{
+"m": "inchange",
+"p": "neuf sacs de colle",
+"a": [],
+"s": [],
+"id": true
+},
+{
+"m": "inchange",
+"p": "ajoute neuf prises",
+"a": [],
+"s": [],
+"id": true
+},
+{
+"m": "inchange",
+"p": "faut refaire les joints",
+"a": [],
+"s": [],
+"id": true
+}
+]

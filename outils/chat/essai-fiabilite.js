@@ -101,6 +101,66 @@ const ESSAIS=[
  ["fr",["dernier devis de Petit"],[/D2026-002.*accepté 2 425,50 € TTC/]],
  ["fr",["rdv demain 9h chez Martin","mets-le plutôt à 10h","finalement annule"],["","js:db.events.filter(e=>e.src==='chat'&&e.cid==='c1').length===1&&db.events.find(e=>e.src==='chat'&&e.cid==='c1').a==='10:00'","js:db.events.find(e=>e.src==='chat'&&e.cid==='c1').a==='09:00'"]],
  ["fr",["devis pour Martin : 12 m² de carrelage","arrondis à 600 €"],["","js:q.lines.length===1&&!db.prices.some(p=>/arrondi/i.test(p.nom))"]],
+ /* ---- langage de chantier (chat/langage.js) : fautes, abréviations, parler familier ---- */
+ ["fr",["faut refaire le bati et changer 2 fenetre"],[/À faire : Refaire le bâti et changer 2 fenêtre/]],
+ /* un mot à plusieurs sens : la ligne garde le mot tapé, une seule question, la réponse (touchée ou tapée) précise la ligne */
+ ["fr",["devis pour Martin : faut refaire le bati et changer 2 fenetre","de porte"],[/Bâti 1 u.*Fenêtre 2 u.*« Bâti » : bâti de porte, bâti de fenêtre, ou bâti-support de WC \?/,"js:q.lines.some(l=>l.label==='Bâti de porte'&&l.qty==1)&&q.lines.length===3"]],
+ ["fr",["Il faut changer le rail.","de cloison"],[/À faire : Changer le rail.*« Rail » : rail de cloison, rail de porte coulissante, ou rail de volet ou de store \?/,"js:(q.notes||[]).some(n=>n.t==='Changer le rail de cloison')"]],
+ ["fr",["Il faut changer le rail du placard."],[/^(?![\s\S]*« Rail »)[\s\S]*À faire : Changer le rail du placard/]],
+ ["fr",["devis Martin : cloison placo 12 m²","faut changer le rail"],["",/^(?![\s\S]*« Rail »)[\s\S]*rail de cloison/]],
+ /* un projet décrit en plusieurs messages ; les murs ne sont pas devinés */
+ ["fr",["Je dois refaire ma salle de bain.","Elle fait 8 mètres carrés.","On enlève tout le carrelage.","On met du nouveau au sol et aux murs.","Fais-moi le devis.","18 m²"],
+  [/Salle de bain : je note/,/Salle de bain : 8 m²/,/Noté : dépose carrelage/,/Noté : carrelage, carrelage mural/,/Dépose carrelage 8 m² × 15 €.*Carrelage 8 m² × 45 €.*Carrelage mural m².*Quantités à préciser : Carrelage mural \(m²\)/,"js:q.lines.some(l=>l.label==='Carrelage mural'&&l.qty==18)&&q.lines.some(l=>l.label==='Carrelage'&&l.qty==8)"]],
+ ["fr",["Je dois refaire la cuisine de Martin","4 m sur 3","faut virer le vieux lino","on met du parquet","et on change l'évier","fais le devis"],
+  ["","","","","","js:q.client==='Martin'&&q.lines.some(l=>/pose lino/i.test(l.label)&&l.qty==12&&!l.pu)&&q.lines.some(l=>l.label==='Parquet'&&l.qty==12)&&q.lines.some(l=>l.label==='Évier'&&l.qty==1)"]],
+ ["fr",["Je dois refaire ma salle de bain.","Fais-moi le devis."],["",/Dis-moi d’abord les travaux/]],
+ /* douze mots à plusieurs sens ; un mot fort de la même phrase suffit (« doublage + bandes ») */
+ ["fr",["devis Martin : doublage 30 m² + bandes"],[/^(?![\s\S]*« Bandes »)[\s\S]*Doublage 30 m².*Bandes à joint m²/]],
+ ["fr",["faut refaire les joints","silicone"],[/À faire : Refaire les joints.*« Joints » : joints de carrelage, joints silicone, ou joints de plaques de plâtre \?/,"js:(q.notes||[]).some(n=>n.t==='Refaire les joints silicone')"]],
+ ["fr",["faut refaire les joints de la baignoire"],[/^(?![\s\S]*« Joints »)[\s\S]*À faire : Refaire les joints de la baignoire/]],
+ ["fr",["devis Martin : changer la plaque et la hotte"],[/^(?![\s\S]*« Plaque »)[\s\S]*Plaque de cuisson 1 u.*Hotte 1 u/]],
+ ["fr",["il faut changer la colonne","de douche"],[/« Colonne » : colonne de douche, colonne d'évacuation, ou colonne électrique \?/,"js:(q.notes||[]).some(n=>n.t==='Changer la colonne de douche')"]],
+ ["fr",["devis Martin : poser une trappe"],[/Trappe 1 u.*« Trappe » : trappe de visite ou trappe de combles \?/]],
+ ["fr",["devis Martin : 10 plaques de BA13"],["js:q.lines.some(l=>/plaques (de )?BA13/i.test(l.label)&&l.qty==10&&l.unit==='u')"]],
+ ["fr",["devis Martin : carrelage 10 m² et joints"],[/Carrelage 10 m².*oints de carrelage/]],
+ /* un travail dit sans « faut » : gardé dans les notes À faire au lieu de « Je n'ai pas compris » */
+ ["fr",["refaire la gouttiere"],[/À faire : Refaire la gouttière/]],
+ ["fr",["evacuation des gravas à la benne"],[/À faire : Évacuation des gravats à la benne/]],
+ ["fr",["poser un ipn pour l ouverture"],["js:(q.notes||[]).some(n=>n.k==='todo'&&/ipn/i.test(n.t))"]],
+ ["fr",["azfk qsdjl mwx"],[/Je n’ai pas compris/]],
+ /* constats rédigés : le mot familier devient le mot du compte rendu, accordé ; la phrase tapée est gardée avec la note */
+ ["fr",["le sol est mort"],["js:(q.notes||[]).some(n=>n.t===\"Sol hors d'usage\"&&n.o==='le sol est mort')"]],
+ ["fr",["les plinthes sont pourries"],[/Remarques : Plinthes dégradées/]],
+ ["fr",["La fenêtre est abimee","Celle de la cuisine."],[/Remarques : Fenêtre abîmée/,/Remarques : Fenêtre de la cuisine abîmée/]],
+ /* les autres langues : projet en plusieurs messages, constats, mots du lexique dans un devis */
+ ["en",["I have to redo my bathroom.","It is 8 square meters.","We remove all the tiling.","We put new tiles on the floor and on the walls.","Make me the quote.","18 m²"],[/Noted\. Give me the area/,/Area: 8 m²/,/Noted: dépose carrelage/,/Noted: carrelage, carrelage mural/,/Dépose carrelage 8 m².*Carrelage 8 m².*Carrelage mural m².*Quantities to be specified: Carrelage mural/,"js:q.lines.some(l=>l.label==='Carrelage mural'&&l.qty==18)"]],
+ ["es",["Tengo que reformar el baño.","Mide 8 metros cuadrados.","Quitamos todo el alicatado.","Ponemos azulejos nuevos en el suelo y en las paredes.","Hazme el presupuesto."],["","","","","js:q.lines.some(l=>l.label==='Dépose carrelage'&&l.qty==8)&&q.lines.some(l=>l.label==='Carrelage'&&l.qty==8)&&q.lines.some(l=>l.label==='Carrelage mural'&&l.qty==null)"]],
+ ["pt",["Tenho de renovar a casa de banho.","Tem 8 metros quadrados.","Tiramos todo o azulejo.","Pomos azulejo novo no chão e nas paredes.","Faz-me o orçamento."],["","","","","js:q.lines.length===3&&q.lines.some(l=>l.label==='Carrelage mural'&&l.qty==null)&&q.lines.some(l=>l.label==='Carrelage'&&l.qty==8)"]],
+ ["it",["Devo rifare il bagno.","Misura 8 metri quadrati.","Togliamo tutte le piastrelle.","Mettiamo piastrelle nuove a pavimento e alle pareti.","Fammi il preventivo."],["","","","","js:q.lines.length===3&&q.lines.some(l=>l.label==='Carrelage mural'&&l.qty==null)&&q.lines.some(l=>l.label==='Dépose carrelage'&&l.qty==8)"]],
+ ["ro",["Trebuie să refac baia.","Are 8 metri pătrați.","Scoatem toată gresia.","Punem gresie nouă pe jos și faianță pe pereți.","Fă-mi devizul."],["","","","","js:q.lines.some(l=>l.label==='Carrelage'&&l.qty==8)&&q.lines.some(l=>l.label==='Faïence'&&l.qty==null)"]],
+ ["pl",["Muszę wyremontować łazienkę.","Ma 8 metrów kwadratowych.","Zrywamy wszystkie płytki.","Kładziemy nowe płytki na podłodze i na ścianach.","Zrób mi kosztorys."],["","","","","js:q.lines.length===3&&q.lines.some(l=>l.label==='Carrelage mural'&&l.qty==null)"]],
+ ["tr",["Banyoyu yenilemem lazım.","8 metrekare.","Bütün fayansları söküyoruz.","Yere ve duvarlara yeni fayans döşüyoruz.","Bana teklifi hazırla."],["","","","","js:q.lines.length===3&&q.lines.some(l=>l.label==='Carrelage mural'&&l.qty==null)"]],
+ ["ru",["Мне нужно переделать ванную.","Она 8 квадратных метров.","Снимаем всю плитку.","Кладём новую плитку на пол и на стены.","Сделай мне смету."],["","","","","js:q.lines.length===3&&q.lines.some(l=>l.label==='Carrelage mural'&&l.qty==null)"]],
+ ["ar",["يجب أن أجدد الحمام.","مساحته 8 متر مربع.","نزيل كل البلاط.","نضع بلاطاً جديداً على الأرض والجدران.","جهز لي عرض السعر."],["","","","","js:q.lines.length===3&&q.lines.some(l=>l.label==='Carrelage mural'&&l.qty==null)"]],
+ ["en",["The wall is damaged."],["js:(q.notes||[]).some(n=>n.t==='The wall is damaged')"]],
+ ["es",["La pared está dañada."],["js:(q.notes||[]).some(n=>n.t==='La pared está dañada')"]],
+ ["en",["quote for Martin: replace the water heater, 3 sockets and plasterboard 20 m²"],[/Chauffe-eau 1 u.*Prise 3 u.*Placo 20 m²/]],
+ /* constats : gardés dans les notes du devis, sans rien en déduire */
+ ["fr",["Le mur est abîmé.","Celui de droite.","Il faut le reprendre aussi derrière la porte."],[/Remarques : Mur abîmé/,/Remarques : Mur de droite abîmé/,/À faire : Reprendre le mur de droite, aussi derrière la porte/]],
+ /* devis d'après un modèle du métier : pas de surface ni d'heures inventées */
+ ["fr",["fais un devis pour Dupont pour refaire sa cuisine"],[/Quantités à préciser : Crédence \(m²\), Main d’œuvre \(h\)/]],
+ ["fr",["faut peter le vieux carlage et remettre du neuf"],[/^(?![\s\S]*9)[\s\S]*À faire : Déposer l'ancien carrelage et remettre du carrelage/]],
+ ["fr",["faut peter le vieux carlage et remettre du neuf"],["js:CHAT.m.some(m=>m.who==='me'&&m.text==='faut peter le vieux carlage et remettre du neuf')"]],
+ ["fr",["devis Martin faut peter le vieux carlage et remettre du neuf","12 m²"],[/Dépose carrelage m² × 15 €.*Carrelage m² × 45 €.*Quantités à préciser/,/Dépose carrelage 12 m².*Carrelage 12 m²/]],
+ ["fr",["dep comp sol sdb + pose carrelage"],[/À faire : Dépose complète sol salle de bain et pose carrelage/]],
+ ["fr",["devis Martin : dep comp sol sdb + pose carrelage"],[/Dépose complète sol salle de bain m².*Carrelage m² × 45 €.*Quantités à préciser/]],
+ /* la surface dite avec un travail est la sienne : plus de « 43,1 m² » calculés */
+ ["fr",["devis Martin : virer le vieux placo 20 m² et mettre du ba13, faire les bandes"],[/^(?![\s\S]*43,1)[\s\S]*Dépose placo 20 m².*BA13 m².*Bandes à joint m².*Quantités à préciser : BA13 \(m²\), Bandes à joint \(m²\)/]],
+ ["fr",["devis Martin : dépose placo 20 m²"],["js:q.lines.some(l=>l.label==='Dépose placo'&&l.qty==20&&!l.pu)&&!q.lines.some(l=>l.label==='Dépose carrelage')"]],
+ ["fr",["devis Martin : remplacer le chauffe-eau, tirer une ligne pour le four, et repeindre le salon 25 m²"],[/Chauffe-eau 1 u.*Ligne électrique pour le four 1 u.*Peinture.*estimés pour une pièce carrée de 25 m²/]],
+ ["fr",["devis Dupont : 3 prises, 2 inter, 1 radiateur et de la laine de verre dans les combles"],[/Prises 3 u.*Interrupteur 2 u.*Radiateur 1 u.*aine de verre dans les combles m²/]],
+ /* une commande de l'appli sort du nettoyage identique */
+ ["fr",["passe le carrelage à 48 € le m²"],["js:db.prices.find(p=>p.nom==='Carrelage').prix==48"]],
  /* jamais la rénovation d'un autre client */
  ["fr",["mets la rénovation sur le devis de Dupont","oui","mets la rénovation sur le devis de Petit"],[/n’est liée à aucun client.*devis de Dupont/,/Rebouchage de fissures 3 ml/,/Aucune rénovation enregistrée pour Petit/]],
  ["fr",["mets la rénovation sur le devis de Dupont","oui","fiche chantier Dupont","fiche chantier Martin"],[/aucun client/,/Rebouchage/,/Chantier Dupont.*Rénovation 3D.*2 postes/,/^(?![\s\S]*Rénovation 3D)[\s\S]*Chantier Martin/]],
