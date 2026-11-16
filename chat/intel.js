@@ -143,23 +143,40 @@ var META=/^(?:(?:calcule|calculer|fais le calcul|fais|faire)\s+(?:de |des |les |
 /* plusieurs demandes dont une description de travaux (« nouveau devis pour Dupont et ajoute du carrelage ») : morceaux à mettre sur le devis */
 var PARTS=null;
 function marque(t){var P0=PARTS;if(!P0||Date.now()-P0.at>60000)return false;var h=hn(t);return P0.L.some(function(x){return h.indexOf(x)===0;});}
+function ote(x){return String(x).replace(/\b(devis|pour|chez|une?|la|le|les|de|du|des|d|l|a|faire|refaire|fais|prevoir|prevois|prevoit|mettre|mets|met|ajoute|rajoute|installe|installer|remplace|remplacer|change|changer|pose de|pose|poser|nouveau|nouvelle|neuf|neuve|complete?|total|totale|salle|bain|bains|il|faut|aussi|ensuite|egalement|au|aux|chantier|s|remettre|remets|remet|reposer|creer|cree|realiser|realisation)\b/g," ").replace(/\s+/g," ").trim();}
 function lire(t,force){var c=fr(t),s=c.p;if(B().isQuestion&&B().isQuestion(t))return null;
   var surf=s.match(/(\d+(?:\.\d+)?)\s*(?:m2|m²|metres? carres?)/g)||[];if(surf.length>1)return false;
   var A=surf.length?parseFloat(surf[0]):null,pc=s.match(PIECES),items=[],autreQte=false,perdu=false,cl0=clientDe(t),ncl=cl0?hn(cl0):"";
   /* chaque morceau de la phrase tapée (virgules, « et », « avec », « + »), traduit en français */
+  var LG=window.CASO_LANGAGE,BA={"10":"badix","13":"batreize","15":"baquinze","18":"badixhuit"};
   String(t).split(/\s*(?:[,;+]|\s(?:et|puis|avec|plus|and|y|e|și|i|ve|и|و|with|con|com|cu|z|ile|с)\s)\s*/i).forEach(function(b0){var b=fr(b0).p,aSurf=/(\d+(?:\.\d+)?)\s*(?:m2|m²|metres? carres?)/.test(b);
+    /* « BA13 » est un nom de plaque, pas une quantité ; « déposer l'ancien carrelage » = « dépose carrelage » */
+    b=b.replace(/\bba ?(10|13|15|18)\b/g,function(_,n){return BA[n];}).replace(/\bdeposer\b/g,"depose").replace(/\b(?:l |le |la |les |de l )?(?:ancien|ancienne|anciens|anciennes|vieux|vieille|vieilles|existante?s?)\b/g," ").replace(/\s+/g," ").trim();
+    b=b.replace(/\s*:\s*/g," ").replace(/^(?:et|puis|ensuite|aussi) /,"").trim();var tm=LG?LG.terme(b0):null;
     if(!aSurf&&/\d+(?:\.\d+)?\s*(?:m2|m²|m3|ml|m|h|heures?|kg|l|sacs?|pots?|jours?)\b/.test(b))autreQte=true;
     /* une autre commande dans la phrase (nouveau devis, rendez-vous, envoi…) : ce n'est pas qu'une description de travaux */
     if(/\b(nouveau|nouvelle|cree|creer|envoie|envoyer|rendez vous|rdv|facture|facturer|appelle|rappelle|signe|duplique|acompte|tva|remise|marge|enleve|enlever|retire|retirer|supprime|supprimer|efface|effacer|deplace|annule|au lieu)\b/.test(" "+b+" "))perdu=true;
     /* « remplace le carrelage » = refaire le carrelage ; « remplace le carrelage par du parquet » = changer une ligne */
     if(/\b(remplace|remplacer|change|changer|modifie|modifier)\b.*\b(par|avec|en)\b/.test(b))perdu=true;
     if(META.test(b.replace(PIECES," ").replace(/\s+/g," ").trim()))return;
-    var x=b.replace(/(\d+(?:\.\d+)?)\s*(?:m2|m²|metres? carres?)/," ").replace(PIECES," ").replace(/\b(devis|pour|chez|une?|la|le|les|de|du|des|d|l|a|faire|refaire|fais|prevoir|prevois|prevoit|mettre|mets|met|ajoute|rajoute|installe|installer|remplace|remplacer|change|changer|pose de|pose|poser|nouveau|nouvelle|neuf|neuve|complete?|total|totale|salle|bain|bains|il|faut|aussi|ensuite|egalement|au|aux|chantier|s)\b/g," ");x=x.replace(/\s+/g," ").trim();if(ncl)x=(" "+x+" ").split(" "+ncl+" ").join(" ").replace(/\s+/g," ").trim();
-    var g=genre(" "+b+" ");if(!x)return;if(!g){if(!aSurf&&!PIECES.test(" "+b+" ")&&!/^(?:pour|chez)\s/.test(b))perdu=true;return;}var nb=x.match(/^(\d+)\s+/);if(/\d/.test(x.replace(/^\d+\s+/,""))&&g!=="u"){perdu=true;return;}
+    var x=b.replace(/(\d+(?:\.\d+)?)\s*(?:m2|m²|metres? carres?)/," ").replace(PIECES," ").replace(/\b(devis|pour|chez|une?|la|le|les|de|du|des|d|l|a|faire|refaire|fais|prevoir|prevois|prevoit|mettre|mets|met|ajoute|rajoute|installe|installer|remplace|remplacer|change|changer|pose de|pose|poser|nouveau|nouvelle|neuf|neuve|complete?|total|totale|salle|bain|bains|il|faut|aussi|ensuite|egalement|au|aux|chantier|s|remettre|remets|remet|reposer|creer|cree|realiser|realisation)\b/g," ");x=x.replace(/\s+/g," ").trim();if(ncl)x=(" "+x+" ").split(" "+ncl+" ").join(" ").replace(/\s+/g," ").trim();
+    var g=genre(" "+b+" ");
+    /* un mot du lexique de chantier (chauffe-eau, bandes à joint, ligne électrique…) : la ligne est acceptée, avec sa façon de compter */
+    if(tm&&!g)g=tm.g;
+    if(!x)return;if(!g){if(!aSurf&&!PIECES.test(" "+b+" ")&&!/^(?:pour|chez)\s/.test(b))perdu=true;return;}var nb=x.match(/^(\d+)\s+/);if(/\d/.test(x.replace(/^\d+\s+/,""))&&g!=="u"){perdu=true;return;}
     var lab=x.replace(/^\d+\s+/,"");
     /* libellé en français tel qu'il est tapé (accents) quand la phrase est en français */
-    if((fr(t).lang||"fr")==="fr"){var r0=String(b0).replace(/(\d+(?:[.,]\d+)?)\s*(?:m2|m²|mètres? carrés?|metres? carres?)/i," ").replace(/^\s*(?:\d+\s+)?(?:(?:la|le|les|l['’]|une?|des?|du|d['’])\s*)*(?:pose\s+(?:de\s+|d['’])?|poser\s+)?/i,"").replace(/\s+/g," ").trim();if(r0&&hn(r0)===lab)lab=r0;}
-    items.push({lab:lab,g:g,n:nb?+nb[1]:1});});
+    if((fr(t).lang||"fr")==="fr"||tm){var r0=String(b0).replace(/^.*:\s*/,"").replace(/^\s*(?:et|puis|ensuite|aussi)\s+/i,"").replace(/(\d+(?:[.,]\d+)?)\s*(?:m2|m²|mètres? carrés?|metres? carres?)/i," ").replace(/^\s*(?:(?:il\s+)?(?:faut|faudra|faudrait)\s+)?(?:(?:faire|refaire|fais|mettre|remettre|mets|met|poser|reposer|installer|installe|prévoir|prevoir|prévois|prevois|prévoit|ajoute|rajoute|changer|change|remplacer|remplace|créer|creer)\s+)?(?:\d+\s+)?(?:(?:de la|les|la|le|une?|des|du|de)\s+|(?:de l|l|d)['’]\s*)*(?:pose\s+(?:de\s+|d['’])?|poser\s+)?/i,"").replace(/[.!;]+\s*$/,"").replace(/\s+/g," ").trim();
+      /* le libellé tapé, avec ses accents et ses petits mots (« laine de verre dans les combles ») */
+      if(r0&&(hn(r0)===lab||ote(hn(r0))===lab))lab=r0;}
+    lab=lab.replace(/\b(badix|batreize|baquinze|badixhuit)\b/g,function(w){return w==="badix"?"BA10":w==="batreize"?"BA13":w==="baquinze"?"BA15":"BA18";});
+    /* le mot écrit avec ses accents (« chauffe-eau », « fenêtres ») quand la ligne n'est que ce mot */
+    if(tm&&LG&&LG.nz(lab)===tm.k)lab=tm.ecrit;
+    lab=lab.replace(/^depose\b/,"dépose");
+    /* la surface dite avec ce travail est la sienne (« dépose placo 20 m² ») ; celle d'un sol est aussi celle de la pièce */
+    var own=aSurf&&x&&!/^(?:piece|surface)$/.test(x)?parseFloat((b.match(/(\d+(?:\.\d+)?)\s*(?:m2|m²|metres? carres?)/)||[])[1]):null;
+    items.push({lab:lab,g:g,n:nb?+nb[1]:1,own:own!=null&&!PIECES.test(" "+b+" ")?own:null});});
+  if(A!=null&&items.some(function(it){return it.own!=null&&it.g!=="sol";}))A=null;
   if(autreQte||perdu)return null;
   /* « refaire le sol … mettre du carrelage » : le carrelage dit déjà comment refaire le sol */
   ["sol","mur","murs"].forEach(function(gen){var g0=gen==="sol"?"sol":"mur";if(items.some(function(it){return it.g===g0&&hn(it.lab)!==gen;}))items=items.filter(function(it){return !(it.g===g0&&hn(it.lab)===gen);});});
@@ -239,8 +256,8 @@ P.decrire=function(t){langue();if(!P.ready||typeof db==="undefined"||typeof q===
   var before=JSON.stringify(q),out=[],cl=clientDe(t),nc=cl&&cliNom(cl)?cliNom(cl).nom:null;choisirDevis(nc);
   if(nc)q.client=nc;
   q.lines=q.lines.filter(function(l){return l.label||l.pu;});
-  var nouv=[],aMesurer=[];items.forEach(function(it){var qte,un;if(it.g==="mur"){qte=murs;un="m²";}else if(it.g==="sol"||it.g==="plafond"){qte=aire;un="m²";}else if(it.g==="peinture"){qte=murs+aire;un="m²";}else if(it.g==="perim"){qte=per-0.8;un="ml";}else if(it.g==="forfait"){qte=1;un="forfait";}else{qte=it.n;un="u";}
-    if(inconnu&&un!=="u"&&un!=="forfait")qte=null;
+  var nouv=[],aMesurer=[];items.forEach(function(it){var qte,un;if(it.own!=null&&it.g!=="sol"){qte=it.own;un="m²";}else if(it.g==="surf"){qte=null;un="m²";}else if(it.g==="lin"){qte=null;un="ml";}else if(it.g==="vol"){qte=null;un="m³";}else if(it.g==="mur"){qte=murs;un="m²";}else if(it.g==="sol"||it.g==="plafond"){qte=aire;un="m²";}else if(it.g==="peinture"){qte=murs+aire;un="m²";}else if(it.g==="perim"){qte=per-0.8;un="ml";}else if(it.g==="forfait"){qte=1;un="forfait";}else{qte=it.n;un="u";}
+    if(inconnu&&un!=="u"&&un!=="forfait"&&!(it.own!=null&&it.g!=="sol"))qte=null;
     var pr=null,bs=0,dep=/\b(depose|demolition|arrachage|enleve|retire|arrache)\b/;(db.prices||[]).forEach(function(x){if(dep.test(hn(it.lab))!==dep.test(hn(x.nom)))return;if(autreChose(it.lab,x.nom))return;var v=Math.min(proche(it.lab,x.nom),proche(x.nom,it.lab)+0.5);if(v>bs){bs=v;pr=x;}});if(bs<0.5)pr=null;
     if(pr&&pr.unit&&pr.unit!==un&&!(un==="u"&&/^(u|forfait)$/.test(pr.unit))&&!(un==="forfait"&&pr.unit==="u"))pr=null;
     var lab=pr?pr.nom:it.lab.charAt(0).toUpperCase()+it.lab.slice(1);if(qte!=null)qte=Math.round(qte*10)/10;
@@ -254,7 +271,7 @@ P.decrire=function(t){langue();if(!P.ready||typeof db==="undefined"||typeof q===
     out.push('<p class="vn-w" dir="auto" data-noi18n>'+e(T("Quantités à préciser : {0}.",[aMesurer.map(function(l){return l.label+" ("+l.unit+")";}).join(", ")]))+'</p>');
     out.push(p(T("Donne la surface de la pièce (par exemple « 20 m² » ou « 4 m sur 3,5 m ») et je les calcule.")));
     SUITE={qid:q.id,at:Date.now(),lignes:aMesurer.map(function(l){return {label:l.label,unit:l.unit};})};}
-  else if(mq||nouv.some(function(l){var g=genre(" "+hn(l.label)+" ");return g==="mur"||g==="peinture"||g==="perim";})){SUITE=null;out.push('<p class="mut" dir="auto" data-noi18n>'+e(mq?T("Mesures de la maquette ({0}).",[mq.nom]):T("Murs et plinthes estimés pour une pièce carrée de {0} m².",[N(A)]))+'</p>');}
+  else if(A!=null&&(mq||nouv.some(function(l){var g=genre(" "+hn(l.label)+" ");return g==="mur"||g==="peinture"||g==="perim";}))){SUITE=null;out.push('<p class="mut" dir="auto" data-noi18n>'+e(mq?T("Mesures de la maquette ({0}).",[mq.nom]):T("Murs et plinthes estimés pour une pièce carrée de {0} m².",[N(A)]))+'</p>');}
   var vf=P.verifier(q);if(vf)out.push(vf.replace("<p ","<p data-noi18n "));
   out.push('<div class="msg-tot"><span>Total du devis</span><b data-noi18n>'+e(E(tt.ttc))+' TTC</b></div><div class="msg-act"><button class="btn sm sec" onclick="go(\'edit\')"><svg class="i"><use href="#i-quote"/></svg>Voir le devis</button></div>');
   bulle(t,out.join(""),{undo:before},true);return true;};

@@ -244,3 +244,16 @@ Source du moteur et outils de traduction : le module « caso-ia » (moteur, cata
 - état d'un devis : « le devis de Martin est signé », « Martin a refusé le devis » demandent un Oui avant de changer l'état ; « est-ce que Martin a signé ? », « mes devis en attente », « dernier devis de Petit » donnent la liste ;
 - prix : « quel est le prix du carrelage ? » donne mon prix ; sinon le prix payé chez les fournisseurs (« combien coûte une plaque de BA13 ? ») ; « ajoute un service : pose de parquet 35 € le m² » enregistre « Pose de parquet » ;
 - clients et factures : « nouveau client : Mme Leroy, 06…, 5 rue des Roses à Lyon » (avant : un client « Lyon ») ; « Martin a tout payé » encaisse le reste dû après un Oui (avant : une ligne de devis) ; « relance Martin » prépare la relance de sa facture ; « combien d'heures chez Martin ? » donne les heures pointées.
+
+**Langage de chantier, étape 1 (16 nov. 2026)** — nouveaux `chat/lexique-btp.js` et `chat/langage.js`, placés devant le moteur (rien n'est retiré) :
+- `lexique-btp.js` : 166 termes du parler de chantier en français, 12 métiers. Une ligne par terme : nom, métier, type, façon de compter (m² de la pièce, m² à donner, ml, à l'unité, forfait), variantes et fautes, abréviations, parler familier. Un « ? » marque un mot à plusieurs sens (bâti, rail, ligne, bandes, tableau, chape) : rien n'est encore tranché, c'est l'étape 2. `lexique.js` (définitions, ordre des travaux) ne change pas.
+- `langage.js` : `CASO_LANGAGE.nettoie(phrase)` réécrit la phrase avant le moteur, par `casoPont.renvoi` ; le texte tapé reste affiché tel quel.
+  - fautes sur les mots du métier (« carlage » → carrelage, « fenetre » → fenêtre) ;
+  - abréviations (« sdb », « dep comp », « inter », « ba13 » → BA13), seulement avec un devis, un « faut » ou un autre mot du métier dans la phrase ;
+  - parler familier devant un mot du métier (« péter / virer / faire sauter le vieux carrelage » → « déposer l'ancien carrelage », « tirer une ligne » → « poser une ligne électrique », « faire les bandes » → « faire les bandes à joint ») ;
+  - « remettre du neuf » : du neuf du dernier matériau dit, et plus jamais le chiffre 9 ;
+  - un synonyme n'est pas remplacé (« cumulus » reste « cumulus ») ; une commande de l'appli sort identique (« vire le client Dupont », « change le prix du carrelage »).
+- `intel.js` (`lire`, `decrire`) : un mot du lexique donne une ligne de devis (chauffe-eau, ligne électrique, bandes à joint, laine de verre…) avec sa façon de compter ; « BA13 » n'est plus lu comme une quantité ; la surface dite avec un travail est la sienne (« dépose placo 20 m² » = 20 m², avant 43,1 m² de murs calculés) ; libellés avec accents, sans « : » devant.
+- `index.html` (`vnMatch`) : « dépose placo » ne prend plus le prix de « Dépose carrelage ».
+- essais : `outils/chat/essai-langage.js` (sans navigateur : 88 phrases de `corpus-langage.json`, et les 1 348 phrases du contrôle du moteur qui doivent sortir identiques) ; 13 contrôles dans `essai-fiabilite.js`.
+- pas encore : question sur un mot à plusieurs sens, projet décrit sur plusieurs messages, constats (« le sol est mort »), vocabulaire personnel, libellé professionnel, autres langues.

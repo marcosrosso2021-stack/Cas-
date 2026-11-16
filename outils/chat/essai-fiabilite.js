@@ -101,6 +101,21 @@ const ESSAIS=[
  ["fr",["dernier devis de Petit"],[/D2026-002.*accepté 2 425,50 € TTC/]],
  ["fr",["rdv demain 9h chez Martin","mets-le plutôt à 10h","finalement annule"],["","js:db.events.filter(e=>e.src==='chat'&&e.cid==='c1').length===1&&db.events.find(e=>e.src==='chat'&&e.cid==='c1').a==='10:00'","js:db.events.find(e=>e.src==='chat'&&e.cid==='c1').a==='09:00'"]],
  ["fr",["devis pour Martin : 12 m² de carrelage","arrondis à 600 €"],["","js:q.lines.length===1&&!db.prices.some(p=>/arrondi/i.test(p.nom))"]],
+ /* ---- langage de chantier (chat/langage.js) : fautes, abréviations, parler familier ---- */
+ ["fr",["faut refaire le bati et changer 2 fenetre"],[/À faire : Refaire le bâti et changer 2 fenêtre/]],
+ ["fr",["devis pour Martin : faut refaire le bati et changer 2 fenetre"],[/Bâti 1 u.*Fenêtre 2 u/]],
+ ["fr",["faut peter le vieux carlage et remettre du neuf"],[/^(?![\s\S]*9)[\s\S]*À faire : Déposer l'ancien carrelage et remettre du carrelage/]],
+ ["fr",["faut peter le vieux carlage et remettre du neuf"],["js:CHAT.m.some(m=>m.who==='me'&&m.text==='faut peter le vieux carlage et remettre du neuf')"]],
+ ["fr",["devis Martin faut peter le vieux carlage et remettre du neuf","12 m²"],[/Dépose carrelage m² × 15 €.*Carrelage m² × 45 €.*Quantités à préciser/,/Dépose carrelage 12 m².*Carrelage 12 m²/]],
+ ["fr",["dep comp sol sdb + pose carrelage"],[/À faire : Dépose complète sol salle de bain et pose carrelage/]],
+ ["fr",["devis Martin : dep comp sol sdb + pose carrelage"],[/Dépose complète sol salle de bain m².*Carrelage m² × 45 €.*Quantités à préciser/]],
+ /* la surface dite avec un travail est la sienne : plus de « 43,1 m² » calculés */
+ ["fr",["devis Martin : virer le vieux placo 20 m² et mettre du ba13, faire les bandes"],[/^(?![\s\S]*43,1)[\s\S]*Dépose placo 20 m².*BA13 m².*Bandes à joint m².*Quantités à préciser : BA13 \(m²\), Bandes à joint \(m²\)/]],
+ ["fr",["devis Martin : dépose placo 20 m²"],["js:q.lines.some(l=>l.label==='Dépose placo'&&l.qty==20&&!l.pu)&&!q.lines.some(l=>l.label==='Dépose carrelage')"]],
+ ["fr",["devis Martin : remplacer le chauffe-eau, tirer une ligne pour le four, et repeindre le salon 25 m²"],[/Chauffe-eau 1 u.*Ligne électrique pour le four 1 u.*Peinture.*estimés pour une pièce carrée de 25 m²/]],
+ ["fr",["devis Dupont : 3 prises, 2 inter, 1 radiateur et de la laine de verre dans les combles"],[/Prises 3 u.*Interrupteur 2 u.*Radiateur 1 u.*aine de verre dans les combles m²/]],
+ /* une commande de l'appli sort du nettoyage identique */
+ ["fr",["passe le carrelage à 48 € le m²"],["js:db.prices.find(p=>p.nom==='Carrelage').prix==48"]],
  /* jamais la rénovation d'un autre client */
  ["fr",["mets la rénovation sur le devis de Dupont","oui","mets la rénovation sur le devis de Petit"],[/n’est liée à aucun client.*devis de Dupont/,/Rebouchage de fissures 3 ml/,/Aucune rénovation enregistrée pour Petit/]],
  ["fr",["mets la rénovation sur le devis de Dupont","oui","fiche chantier Dupont","fiche chantier Martin"],[/aucun client/,/Rebouchage/,/Chantier Dupont.*Rénovation 3D.*2 postes/,/^(?![\s\S]*Rénovation 3D)[\s\S]*Chantier Martin/]],
