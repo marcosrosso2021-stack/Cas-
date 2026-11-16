@@ -231,3 +231,9 @@ Source du moteur et outils de traduction : le module « caso-ia » (moteur, cata
 - un service enregistré n'est plus pris pour un autre (« douche italienne » ≠ « receveur de douche »).
 - « crée le client Bernard et ajoute de la faïence » : la ligne va sur un devis de Bernard, et « 12 m² » juste après la calcule ;
 - « envoie le devis de Martin », « appelle Martin et envoie-lui le devis » : le devis de Martin pas encore envoyé (celui ouvert d'abord, sinon le plus récent), même si un autre devis est ouvert ; aucun → « Je ne trouve pas de devis à envoyer pour Martin » (`pont.js`).
+
+**Questions et modifications, pas une mauvaise action (16 nov. 2026)** — `intel.js`, `chantier.js` :
+- « remplace le carrelage (de cette salle de bain) par du parquet imitation bois », « change la peinture en parquet chez Martin » : la ligne du devis change de libellé et de prix (Mes services, sinon prix à remplir), la quantité reste (autre unité → à préciser) ; « non » juste après annule. Dans les 10 langues (« replace … with … », « cambia … por … », « замени … на … » ; noms reconnus par le lexique). Un devis déjà envoyé n'est pas modifié. « change le sol en beige » sans ligne au devis reste pour la maquette 3D ;
+- « montre-moi ce qu'on a fait la semaine dernière chez Martin » : travaux faits, passages et heures pointées de cette période ; « montre-moi Martin » : la fiche du chantier ;
+- « y a-t-il des conflits dans mon planning ? » : les rendez-vous qui se chevauchent sur 30 jours (ou la période dite), chacun cliquable vers le planning ;
+- « enlève … », « remplace … par … » ne sont plus pris pour une description de travaux.

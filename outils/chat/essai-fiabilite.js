@@ -13,7 +13,7 @@ db.invoices.push({id:'f1',kind:'facture',num:'F2026-001',qid:'q1',date:'2026-10-
 db.suppliers.push({id:'s1',nom:'Point P'},{id:'s2',nom:'Cedeo'});
 db.achats=[{id:'a1',four:'Point P',type:'facture',date:'2026-10-14',ttc:300,ht:250,cid:'c1',lines:[]}];
 db.hist.push({date:'2026-10-14',nom:'PLAQUE BA13 STD 2500x1200',four:'Point P',prix:8.95,unit:'u'},{date:'2026-10-02',nom:'Plaque BA13',four:'Cedeo',prix:9.4,unit:'u'},{date:'2026-10-14',nom:'Faïence',four:'Point P',prix:21,unit:'m²'});
-db.events.push({id:'e1',t:'rdv',d:d(-1),a:'10:00',b:'11:00',title:'Dupont',cid:'c2'},{id:'e2',t:'rdv',d:agAdd(agWeekStart(agToday()),-5),a:'08:00',b:'17:00',title:'Pose carrelage',cid:'c1'},{id:'e3',t:'rdv',d:agAdd(agWeekStart(agToday()),8),a:'08:00',b:'12:00',title:'Plinthes',cid:'c1'},{id:'e4',t:'rdv',d:agAdd(agWeekStart(agToday()),9),a:'14:00',b:'16:00',title:'Devis cuisine',cid:'c3'});
+db.events.push({id:'e1',t:'rdv',d:agToday()===agWeekStart(agToday())?agToday():d(-1),a:'10:00',b:'11:00',title:'Dupont',cid:'c2'},{id:'e2',t:'rdv',d:agAdd(agWeekStart(agToday()),-5),a:'08:00',b:'17:00',title:'Pose carrelage',cid:'c1'},{id:'e3',t:'rdv',d:agAdd(agWeekStart(agToday()),8),a:'08:00',b:'12:00',title:'Plinthes',cid:'c1'},{id:'e4',t:'rdv',d:agAdd(agWeekStart(agToday()),9),a:'14:00',b:'16:00',title:'Devis cuisine',cid:'c3'},{id:'e5',t:'rdv',d:agAdd(agWeekStart(agToday()),8),a:'09:00',b:'10:00',title:'Métré',cid:'c2'});
 db.plans.push({id:'pl1',pid:'pr1',cid:'c1',nom:'Salle de bain',date:Date.now()-864e5,th:'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==',pts:[],wm:[],h:{ok:true},ops:[]});
 db.quotes.push({id:'q3',num:'',client:'Martin',date:'2026-11-10',status:'brouillon',lines:[{label:'Peinture',qty:25,unit:'m²',pu:20,tva:10}],remise:0});
 db.chantiers=db.chantiers||[];db.pts=db.pts||[];db.chantiers.push({id:'ch1',cid:'c1',nom:'Martin',adr:'3 rue Victor Hugo, Lyon'});
@@ -45,6 +45,20 @@ const ESSAIS=[
  ["fr",["nouveau devis pour Dupont","carrelage 10 m² à 40 €","envoie le devis de Martin"],["","","js:q.client==='Martin'&&q.id==='q3'"]],
  ["fr",["envoie le devis de Dupont"],[/Je ne trouve pas de devis à envoyer pour Dupont/]],
  ["fr",["nouveau devis pour Dupont","carrelage 10 m² à 40 €","ajoute du carrelage et des plinthes au devis de Martin"],["","","js:(db.quotes.find(o=>o.client==='Dupont'&&o.status!=='accepte')||{lines:[]}).lines.every(l=>l.label!=='Plinthes')"]],
+ /* une question ou une modification, pas une mauvaise action */
+ ["fr",["Montre-moi ce qu'on a fait la semaine dernière chez Martin."],[/Chantier Martin.*Passages.*Pose carrelage.*Heures pointées : 16 h/]],
+ ["fr",["montre-moi Martin"],[/Chantier Martin.*Prochains rendez-vous/]],
+ ["fr",["nouveau devis pour Dupont","carrelage 10 m² à 40 €","Remplace le carrelage de cette salle de bain par du parquet imitation bois.","non"],["","",/Carrelage remplacé par Parquet imitation bois.*Parquet imitation bois 10 m².*prix à remplir/,"js:q.lines[0].label==='Carrelage'&&q.lines[0].pu==40"]],
+ ["fr",["remplace la peinture par du parquet dans le devis de Martin"],["js:q.id==='q3'&&q.lines[0].label==='Parquet'&&q.lines[0].qty==25&&q.lines[0].pu==null"]],
+ ["en",["replace the paint with parquet in Martin's quote"],["js:q.id==='q3'&&q.lines[0].label==='Parquet'"]],
+ ["es",["cambia la pintura por parquet en el presupuesto de Martin"],["js:q.id==='q3'&&q.lines[0].label==='Parquet'"]],
+ ["ru",["замени покраску на паркет в смете Martin"],["js:q.id==='q3'&&q.lines[0].label==='Parquet'"]],
+ ["fr",["remplace le carrelage par de la faïence dans le devis de Dupont"],[/Aucun devis en cours pour Dupont/]],
+ ["fr",["change le sol en beige"],[/maquette 3D/]],
+ ["fr",["enlève les plinthes du devis"],[/Je ne trouve pas « plinthes »/]],
+ ["fr",["y a-t-il des conflits dans mon planning ?"],[/1 conflit dans ton planning.*8h – 12h Martin \/ 9h – 10h Dupont/]],
+ ["en",["are there any conflicts in my schedule?"],[/1 conflict in your schedule/]],
+ ["fr",["des conflits la semaine dernière ?"],[/Aucun conflit sur cette période/]],
  /* jamais la rénovation d'un autre client */
  ["fr",["mets la rénovation sur le devis de Dupont","oui","mets la rénovation sur le devis de Petit"],[/n’est liée à aucun client.*devis de Dupont/,/Rebouchage de fissures 3 ml/,/Aucune rénovation enregistrée pour Petit/]],
  ["fr",["mets la rénovation sur le devis de Dupont","oui","fiche chantier Dupont","fiche chantier Martin"],[/aucun client/,/Rebouchage/,/Chantier Dupont.*Rénovation 3D.*2 postes/,/^(?![\s\S]*Rénovation 3D)[\s\S]*Chantier Martin/]],
