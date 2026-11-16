@@ -28,8 +28,9 @@ jobs:
       - name: Installer Capacitor et le plugin de zones
         working-directory: android-app
         run: |
+          # Capacitor ne trouve les plugins que dans les dépendances du package.json (modifié ici seulement, pour l'iPhone)
+          npm pkg set dependencies.@capacitor/ios='^7.0.0' dependencies.caso-geofence='file:plugins/caso-geofence'
           npm install
-          npm install --no-save @capacitor/ios@^7.0.0 ./plugins/caso-geofence
 
       - name: Préparer le site casô
         working-directory: android-app
