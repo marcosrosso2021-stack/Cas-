@@ -39,24 +39,6 @@
 },
 {
 "m": "carrelage",
-"p": "faut refaire les joints",
-"a": [
-"joints de carrelage"
-],
-"s": []
-},
-{
-"m": "carrelage",
-"p": "refaire les joints de la baignoire",
-"a": [
-"joints de la baignoire"
-],
-"s": [
-"joints de carrelage"
-]
-},
-{
-"m": "carrelage",
 "p": "devis Martin : 12 m² de carelage et des plintes",
 "a": [
 "carrelage",
@@ -801,6 +783,13 @@
 {
 "m": "inchange",
 "p": "ajoute neuf prises",
+"a": [],
+"s": [],
+"id": true
+},
+{
+"m": "inchange",
+"p": "faut refaire les joints",
 "a": [],
 "s": [],
 "id": true

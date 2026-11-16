@@ -16,7 +16,7 @@ t:[
 "mosaique|mosaïque|carrelage|mat|mur|mosaiques;mozaique||",
 "plinthe|plinthes|carrelage|mat|perim|plinthe;plintes;plinte;plainthes;plainthe||",
 "mortiercolle|mortier-colle|carrelage|mat|sol|mortier colle;colle a carrelage;colle carrelage;ciment colle||",
-"joint|joints de carrelage|carrelage|ouv|sol|joint carrelage;joints carrelage;jointoiement||",
+"joint|joints de carrelage|carrelage|ouv?|sol|joint;joints;joint carrelage;joints carrelage;jointoiement||",
 "ragreage|ragréage|sol|ouv|sol|ragreage;ragrehage;ragréages;ragrage;ragreyage;reagreage||",
 "chape|chape|maconnerie|ouv|sol|chappe;chapes;chape liquide;chape seche||",
 "receveur|receveur de douche|plomberie|eq|u|receveur;recepteur de douche;bac de douche;bac a douche||",
@@ -38,13 +38,13 @@ t:[
 "cloison|cloison|platrerie|ouv|mur|cloisons;cloizon;cloison placo;cloison seche|clois|",
 "doublage|doublage|platrerie|ouv|mur|doublages;doublage placo;doublage colle;doublage sur ossature;contre cloison;contre-cloison||",
 "fauxplafond|faux plafond|platrerie|ouv|plafond|faux plafond;faux-plafond;fauxplafond;plafond suspendu;faux plafonds||",
-"bandes|bandes à joint|platrerie|ouv|mur|bandes a joint;bande a joint;bandes a joints;bandes placo;les bandes;joints placo;joints de placo||",
+"bandes|bandes à joint|platrerie|ouv?|mur|bande;bandes;bandes a joint;bande a joint;bandes a joints;bandes placo;joints placo;joints de placo||",
 "rail|rail de cloison|platrerie|mat?|lin|rail;rails;rail placo;rail r48;rail de cloison||",
 "montant|montant métallique|platrerie|mat|u|montants;montant m48;montant placo||",
 "ossature|ossature métallique|platrerie|ouv|mur|ossature;ossature metallique;ossature placo||",
 "platre|plâtre|platrerie|mat|mur|platre;plâtre;platres||",
 "carreauplatre|carreaux de plâtre|platrerie|mat|mur|carreau de platre;carreaux de platre||",
-"trappe|trappe de visite|platrerie|eq|u|trappe;trappe de visite;trappes||",
+"trappe|trappe de visite|platrerie|eq?|u|trappe;trappe de visite;trappes||",
 /* ---- peinture, finitions ---- */
 "peinture|peinture|peinture|ouv|peinture|peintures;painture;peintur;pinture|peint|repeindre;peindre;repeins;repeint",
 "souscouchepeinture|sous-couche de peinture|peinture|mat|peinture|impression;couche d impression;sous couche peinture||",
@@ -86,7 +86,7 @@ t:[
 "disjoncteur|disjoncteur|electricite|eq|u|disjoncteur;disjoncteurs;disjonteur;disj;differentiel;différentiel;interrupteur differentiel||",
 "ligne|ligne électrique|electricite|ouv|u|ligne electrique;ligne elec;circuit electrique;circuit specialise;circuit spécialisé;ligne dediee;ligne dédiée||",
 "cable|câble électrique|electricite|mat|lin|cable;cables;câble;câbles;cable electrique;fil electrique;fils electriques||",
-"gaine|gaine électrique|electricite|mat|lin|gaine;gaines;gaine icta;gaine electrique||",
+"gaine|gaine électrique|electricite|mat?|lin|gaine;gaines;gaine icta;gaine electrique||",
 "spot|spot encastré|electricite|eq|u|spot;spots;spot encastre;spots encastres;spot led;spots led||",
 "luminaire|point lumineux|electricite|eq|u|luminaire;luminaires;point lumineux;points lumineux;plafonnier;applique;appliques||",
 "saignee|saignée|electricite|ouv|lin|saignee;saignees;saignée;saignées;rainure;rainurage||",
@@ -105,7 +105,7 @@ t:[
 "secheserviettes|sèche-serviettes|chauffage|eq|u|seche serviettes;seche serviette;sèche-serviettes;seche-serviettes;radiateur seche serviettes||",
 "thermostat|thermostat|chauffage|eq|u|thermostat;thermostats;tete thermostatique;robinet thermostatique||",
 "poele|poêle|chauffage|eq|u|poele;poêle;poele a bois;poele a granules;poele a pellets;insert||",
-"conduit|conduit de fumée|chauffage|ouv|lin|conduit de fumee;conduit;tubage;tubage du conduit||",
+"conduit|conduit de fumée|chauffage|ouv?|lin|conduit;conduits;conduit de fumee;tubage;tubage du conduit||",
 "clim|climatisation|climatisation|eq|u|climatisation;climatiseur;split;splits;clim reversible|clim|",
 "desembouage|désembouage|chauffage|ouv|forfait|desembouage;désembouage;desembouer||",
 /* ---- maçonnerie, gros œuvre ---- */
@@ -163,7 +163,7 @@ t:[
 "rampants|isolation des rampants|isolation|ouv|surf|rampants;rampant;sous rampants;isolation sous toiture||",
 /* ---- démolition, préparation ---- */
 "depose|dépose|demolition|ouv|surf|depose;dépose;deposes;demontage;démontage;enlevement;enlèvement;arrachage|dep|",
-"demolition|démolition|demolition|ouv|surf|demolition;démolition;demolitions;demol;casse;abattage||démol",
+"demolition|démolition|demolition|ouv|surf|demolition;démolition;demolitions;casse;abattage|demol;démol|",
 "gravats|évacuation des gravats|demolition|ouv|forfait|gravats;gravas;gravat;evacuation des gravats;evacuation gravats;dechets;déchets;decombres||",
 "benne|benne|demolition|eq|forfait|benne;bennes;location de benne;big bag;big bags||",
 "protection|protection du chantier|demolition|ouv|forfait|protection;protections;bachage;bâchage;protection des sols||",
@@ -177,6 +177,11 @@ t:[
 "zinguerie|zinguerie|couverture|ouv|lin|zinguerie;zinc;solin;solins;noue;noues;rive;rives||",
 "charpente|charpente|charpente|ouv|forfait|charpente;charpentes;chevron;chevrons;panne;pannes;ferme;fermettes||",
 "demoussage|démoussage|couverture|ouv|surf|demoussage;démoussage;demousser;nettoyage toiture||",
+/* ---- mots seuls à plusieurs sens (voir « sens » plus bas) ---- */
+"plaque|plaque|divers|mat?|u|plaque;plaques||",
+"colonne|colonne|divers|eq?|u|colonne;colonnes||",
+"coffre|coffre|divers|ouv?|u|coffre;coffres||",
+"cadre|cadre|menuiserie interieure|ouv?|u|cadre;cadres||",
 /* ---- pièces ---- */
 "sdb|salle de bain|piece|piece|u|salle de bain;salle de bains;salle d eau|sdb;s.d.b|",
 "cuisine|cuisine|piece|piece|u|cuisine;cuisines|cuis|",
@@ -203,7 +208,6 @@ expr:[
  ["tirer une ligne|tirer la ligne|tire une ligne|passer une ligne","poser une ligne électrique"],
  ["tirer un cable|tirer le cable|passer un cable|tirer des cables","poser un câble électrique"],
  ["faire les bandes|fais les bandes|passer les bandes|tirer les bandes","faire les bandes à joint"],
- ["faire les joints|refaire les joints|fais les joints","refaire les joints de carrelage"],
  ["mettre un coup de peinture|passer un coup de peinture|un coup de peinture|coup de blanc|repasser en blanc|passer en blanc","refaire la peinture"],
  ["mettre en peinture|passer en peinture","refaire la peinture"],
  ["remettre ca propre|remettre propre|mettre propre|rendre propre","remettre en état"],
@@ -214,12 +218,31 @@ expr:[
    chaque sens : son nom, puis les mots qui le désignent quand ils sont dans la phrase, le devis en cours ou les derniers messages.
    Un seul sens désigné → il est pris. Aucun ou plusieurs → la ligne garde le mot tapé et le chat pose une question. */
 sens:{
- bati:[["bâti de porte","porte|portes|bloc porte|huisserie|serrure|poignee|placard"],["bâti de fenêtre","fenetre|fenetres|vitrage|volet|volets|baie|velux"],["bâti-support de WC","wc|toilettes|suspendu|lavabo|geberit"]],
- rail:[["rail de cloison","placo|cloison|cloisons|doublage|montant|montants|ossature|ba13|plaque|plaques|faux plafond"],["rail de porte coulissante","porte|coulissante|coulissant|placard|galandage|dressing"],["rail de volet ou de store","volet|volets|store|stores|rideau|rideaux"]],
- tableau:[["tableau électrique","disjoncteur|disjoncteurs|electrique|electricite|elec|differentiel|ligne|prise|prises|compteur|consuel|circuit|cable"],["tableau de fenêtre","fenetre|fenetres|baie|appui|embrasure|volet|enduit|macon|maconnerie"]]
+ /* « ! » devant un mot : il suffit, même s'il n'est que dans la même phrase (« doublage + bandes » : bandes à joint).
+    Sans « ! » : il compte s'il suit le mot (« le bâti de la porte »), ou dans le devis en cours et les messages d'avant. */
+ bati:[["bâti de porte","porte|portes|bloc porte|huisserie|serrure|poignee|placard"],["bâti de fenêtre","fenetre|fenetres|vitrage|volet|volets|baie|velux"],["bâti-support de WC","wc|toilettes|suspendu|lavabo|!geberit"]],
+ rail:[["rail de cloison","!placo|!cloison|!cloisons|!doublage|!montant|!montants|!ossature|!ba13|plaque|plaques|faux plafond"],["rail de porte coulissante","porte|!coulissante|!coulissant|placard|!galandage|dressing"],["rail de volet ou de store","volet|volets|store|stores|rideau|rideaux"]],
+ tableau:[["tableau électrique","!disjoncteur|!disjoncteurs|electrique|electricite|elec|!differentiel|ligne|prise|prises|!compteur|!consuel|circuit|cable"],["tableau de fenêtre","fenetre|fenetres|baie|appui|embrasure|volet|enduit|macon|maconnerie"]],
+ bandes:[["bandes à joint","!placo|!ba13|!cloison|!cloisons|!doublage|!plaque|!plaques|!faux plafond|plafond|enduit|peinture"],["bande d'étanchéité","!etancheite|!receveur|douche|baignoire|!spec|terrasse|fenetre"],["bande de rive","!rive|!toiture|toit|!tuile|!tuiles|zinc|gouttiere"]],
+ joint:[["joints de carrelage","!carrelage|!faience|!carreaux|!mosaique|sol"],["joints silicone","!silicone|!baignoire|!lavabo|!evier|!receveur|!vasque|douche|fenetre"],["joints de plaques de plâtre","!placo|!ba13|!plaque|!plaques|!bandes|cloison"]],
+ plaque:[["plaque de plâtre","!placo|!ba13|!cloison|!doublage|!bandes|plafond|platre|!rail|!montant"],["plaque de cuisson","!cuisson|!induction|!four|!hotte|cuisine|gaz|!vitroceramique"],["plaque de regard","!egout|!regard|!trottoir|cour|jardin|!fonte"]],
+ colonne:[["colonne de douche","!douche|!mitigeur|!receveur|!paroi|salle de bain"],["colonne d'évacuation","!evacuation|!eaux usees|!chute|!fonte|wc|immeuble"],["colonne électrique","!electrique|!tableau|!compteur|!disjoncteur"]],
+ gaine:[["gaine électrique","!electrique|!cable|!cables|!prise|!prises|!icta|!interrupteur|!tableau|!saignee|!saignees"],["gaine de ventilation","!vmc|!ventilation|!bouche|!extraction|!hotte|!clim"],["gaine technique","!technique|colonne|placo|coffrage|palier"]],
+ conduit:[["conduit de fumée","!fumee|!poele|!cheminee|!insert|!tubage|!chaudiere"],["conduit de ventilation","!vmc|!ventilation|!aeration|!hotte"]],
+ coffre:[["coffre de volet roulant","!volet|!volets|!roulant|!store|fenetre"],["coffrage de tuyaux","!tuyau|!tuyaux|!evacuation|placo|wc|gaine|!habillage"]],
+ cadre:[["cadre de porte","porte|portes|huisserie|serrure"],["cadre de fenêtre","fenetre|fenetres|vitrage|volet"]],
+ trappe:[["trappe de visite","!visite|!baignoire|placo|gaine|!faux plafond|!tablier"],["trappe de combles","!combles|!grenier|escalier|!echelle"]]
 },
 /* « le sol est mort » : un constat, pas une quantité ni un travail décidé */
 etat:"mort|morte|morts|mortes|foutu|foutue|foutus|foutues|naze|nazes|pourri|pourrie|pourris|pourries|hs|h.s|hors service|flingue|flinguee|cuit|cuite|nique|niquee|bousille|bousillee|abime|abimee|abimes|abimees|casse|cassee|fichu|fichue|degueulasse|crade|a refaire",
+/* un constat rédigé : le mot familier → le mot du compte rendu ; « * » = s'accorde (dégradée, dégradés) */
+etatPro:[
+ ["mort|morte|morts|mortes|foutu|foutue|foutus|foutues|fichu|fichue|naze|nazes|hs|h.s|hors service|cuit|cuite|nique|niquee|flingue|flinguee|bousille|bousillee","hors d'usage"],
+ ["pourri|pourrie|pourris|pourries","*dégradé"],["degueulasse|crade","*encrassé"],
+ ["abime|abimee|abimes|abimees","*abîmé"],["casse|cassee|casses|cassees","*cassé"],["fissure|fissuree|fissures|fissurees","*fissuré"],["decolle|decollee|decolles|decollees","*décollé"],
+ ["gonfle|gonflee|gonfles|gonflees","*gonflé"],["use|usee|uses|usees","*usé"],["rouille|rouillee|rouilles|rouillees","*rouillé"],["moisi|moisie|moisis|moisies","*moisi"],["humide|humides","*humide"],
+ ["a refaire","à refaire"],["a changer","à changer"],["a reprendre","à reprendre"]
+],
 /* « le vieux carrelage » */
 ancien:"vieux|vieille|vieil|vieilles|ancien|ancienne|anciens|anciennes|existant|existante|existants|existantes"
 };

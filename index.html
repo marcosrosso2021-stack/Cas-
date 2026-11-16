@@ -4014,6 +4014,8 @@ function chatSend(text){
   CHAT.m.push({who:'bot',html:out.join(''),undo:before});
  }else if(pick||cand||R.adr||R.dims||(R.dim1||[]).length){
   fillForm();save();CHAT.m.push({who:'bot',html:out.join('')});
+ }else if(window.casoPont&&casoPont.travail&&casoPont.travail(t)){
+  /* dernier recours : un travail dit sans « faut » (« refaire la gouttière ») est gardé dans les notes À faire du devis */
  }else{
   save();
   CHAT.m.push({who:'bot',html:`<p data-noi18n>${esc(window.casoPont&&casoPont.ready?casoPont.incompris():'Je n’ai pas compris.')}</p>`});

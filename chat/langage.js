@@ -116,7 +116,7 @@ function terme(x){var H=trouve(String(x||"")).hits.filter(function(h){return h.f
 /* ---------- mots à plusieurs sens ----------
    leve(id, contexte) → {sur:"bâti de porte"|null, choix:[noms]} : un seul sens désigné par le contexte → il est sûr. */
 var SENS=D.sens||{};
-function leve(id,ctx){var S=SENS[id];if(!S)return {sur:null,choix:[]};var c=" "+nz(ctx).replace(/[^a-z0-9]+/g," ")+" ",vus=S.filter(function(x){return x[1].split("|").some(function(w){return c.indexOf(" "+w+" ")>=0;});});
+function leve(id,ctx,fort){var S=SENS[id];if(!S)return {sur:null,choix:[]};var c=" "+nz(ctx).replace(/[^a-z0-9]+/g," ")+" ",vus=S.filter(function(x){return x[1].split("|").some(function(w){var f=w.charAt(0)==="!";if(fort&&!f)return false;return c.indexOf(" "+(f?w.slice(1):w)+" ")>=0;});});
   return {sur:vus.length===1?vus[0][0]:null,choix:S.map(function(x){return x[0];})};}
 /* le mot seul (« bâti », « rail ») dans une phrase : [{id, a, b, mot}] */
 function ambigus(t){var X=trouve(String(t||"")),out=[];X.hits.forEach(function(h){var o=h.f.t;if(!o.amb||!SENS[o.id])return;
@@ -159,7 +159,10 @@ P.renvoi=function(t){var r=null,aDemander=null;try{var lg=(P.B&&P.B.translate?P.
       /* un mot à plusieurs sens : le contexte tranche, sinon la question vient après la réponse du chat */
       /* ce qui tranche : le mot qui suit (« le rail du placard »), sinon le devis en cours et les messages d'avant.
          Un autre travail cité dans la même phrase (« refaire le bâti et changer 2 fenêtres ») ne suffit pas : la question est posée. */
-      var A=ambigus(txt);if(A.length){var ctx=contexte(null),R2=[];A.forEach(function(a){var apres=txt.slice(a.b).split(/[,;.]|\s(?:et|puis|avec)\s/)[0].split(/\s+/).slice(0,5).join(" "),v=leve(a.id,apres);if(!v.sur)v=leve(a.id,ctx);if(v.sur)R2.push({a:a.a,b:a.b,par:v.sur});else if(!aDemander)aDemander=a;});if(R2.length)txt=applique(txt,R2);}
+      var A=ambigus(txt);if(A.length){var ctx=contexte(null),R2=[];A.forEach(function(a){var apres=txt.slice(a.b).split(/[,;.]|\s(?:et|puis|avec)\s/)[0].split(/\s+/).slice(0,5).join(" "),v=leve(a.id,apres);
+          /* « le rail du placard », « 10 plaques de BA13 » : la suite du mot le précise déjà — ni réécriture, ni question */
+          if(v.sur)return;
+          v=leve(a.id,txt.slice(0,a.a)+" "+txt.slice(a.b),true);if(!v.sur)v=leve(a.id,ctx);if(v.sur)R2.push({a:a.a,b:a.b,par:v.sur});else if(!aDemander)aDemander=a;});if(R2.length)txt=applique(txt,R2);}
       if(txt!==String(t))r=txt;}}catch(x){if(window.console)console.error(x);}
   if(aDemander){var n0=typeof CHAT!=="undefined"&&CHAT.m?CHAT.m.length:0,essais=0,att=function(){essais++;try{var M=CHAT.m,der=M[M.length-1];
         /* la réponse du chat est arrivée : la question suit, si le mot est bien resté sur une ligne ou une note */
