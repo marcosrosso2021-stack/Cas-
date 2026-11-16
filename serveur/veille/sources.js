@@ -1,0 +1,118 @@
+/* casô : veille réglementaire — le collecteur (sources officielles seulement)
+   - BOFiP et Entreprendre.service-public : flux publics, sans clé
+   - Légifrance (Journal officiel) : API PISTE, gratuite après inscription ; variables PISTE_CLIENT_ID et PISTE_CLIENT_SECRET.
+     Sans elles la source est inactive, sans erreur.
+   Une source en panne n'arrête pas les autres : l'erreur est rendue dans « erreurs ».
+   Brut : {source, idSource, titre, url, datePub, resume, texte, nature, numero, nor, dateVigueur, complet} */
+'use strict';
+
+const HOTES=new Set(['legifrance.gouv.fr','www.legifrance.gouv.fr','bofip.impots.gouv.fr','www.service-public.gouv.fr',
+ 'entreprendre.service-public.gouv.fr','entreprendre.service-public.fr']);
+const BOFIP='https://bofip.impots.gouv.fr/bofip/ext/rss.xml?actualites=1&series=TVA:TVA-CHAMP:TVA-BASE:TVA-LIQ:TVA-DED:TVA-DECLA:TVA-PROCD:TVA-SECT:TVA-IMM:BIC:IS&maxR=50&maxJ=14';
+const ENTREPRENDRE='https://www.service-public.gouv.fr/abonnements/rss/actu-actu-pro.rss';
+const PISTE_JETON='https://oauth.piste.gouv.fr/api/oauth/token',PISTE_API='https://api.piste.gouv.fr/dila/legifrance/lf-engine-app';
+/* sans accents, en minuscules ; un mot compte s'il commence un mot du titre ou du résumé */
+const MOTS=['batiment','construction','travaux','renovation','artisan','tva','taxe sur la valeur ajoutee','facture','facturation electronique','devis',
+ 'sous-traitance','decennale','assurance construction','performance energetique','maprimerenov','economies d\'energie','amiante','plomb','accessibilite',
+ 'urbanisme','permis de construire','declaration prealable','dechets','chantier','re2020','donnees personnelles','signature electronique','micro-entrepr','cotisations'];
+
+const ENT={amp:'&',lt:'<',gt:'>',quot:'"',apos:'\'',nbsp:' ',eacute:'é',egrave:'è',ecirc:'ê',euml:'ë',agrave:'à',acirc:'â',ccedil:'ç',ocirc:'ô',ucirc:'û',ugrave:'ù',
+ icirc:'î',iuml:'ï',oelig:'œ',laquo:'«',raquo:'»',rsquo:'’',lsquo:'‘',ndash:'–',mdash:'—',hellip:'…',deg:'°',euro:'€',Eacute:'É',Agrave:'À'};
+const entites=s=>s.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi,(m,k)=>{
+ if(k[0]==='#'){const n=k[1]==='x'||k[1]==='X'?parseInt(k.slice(2),16):parseInt(k.slice(1),10);return n>31&&n<0x110000?String.fromCodePoint(n):' '}
+ return Object.prototype.hasOwnProperty.call(ENT,k)?ENT[k]:m});
+/* texte d'un flux -> texte simple : ni balises, ni scripts, ni entités */
+function propre(s,n){
+ s=entites(String(s==null?'':s).replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g,'$1'));
+ s=s.replace(/<(script|style)\b[\s\S]*?<\/\1\s*>/gi,' ').replace(/<[^>]*>/g,' ');
+ return entites(s).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim().slice(0,n||4000)}
+const plat=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[’`]/g,'\'');
+
+function hoteAdmis(url){try{const u=new URL(String(url||''));return u.protocol==='https:'&&HOTES.has(u.hostname)}catch(e){return false}}
+function pertinent(titre,resume){const t=' '+plat(titre)+' '+plat(resume)+' ';
+ return MOTS.some(m=>{let i=-1;while((i=t.indexOf(m,i+1))>=0)if(!/[a-z0-9]/.test(t[i-1]))return true;return false})}
+
+const NATURE={bofip:'DOCTRINE',entreprendre:'ACTU'};
+function dateFlux(bloc,desc){
+ const iso=(bloc.match(/<(?:dc:date|updated|published)[^>]*>\s*(\d{4}-\d\d-\d\d)/i)||[])[1];if(iso)return iso;
+ const p=(bloc.match(/<pubDate[^>]*>([\s\S]*?)<\/pubDate>/i)||[])[1];
+ if(p){const d=new Date(p.trim());if(!isNaN(d))return d.toISOString().slice(0,10)}
+ const f=desc.match(/publié le (\d\d)\/(\d\d)\/(\d{4})/i);return f?f[3]+'-'+f[2]+'-'+f[1]:''}
+
+/* un flux RSS (ou Atom) -> Brut[] ; un article sans date ou sans identifiant n'est pas rendu */
+function lireRss(xml,source){
+ xml=String(xml||'');if(!/<(rss|feed|rdf:RDF)[\s>]/i.test(xml))throw new Error('ce n\'est pas un flux');
+ const out=[],vus=new Set(),blocs=xml.match(/<(item|entry)[\s>][\s\S]*?<\/\1>/gi)||[];
+ const champ=(b,n)=>{const m=b.match(new RegExp('<'+n+'(?:\\s[^>]*)?>([\\s\\S]*?)</'+n+'>','i'));return m?m[1]:''};
+ for(const b of blocs){
+  const titre=propre(champ(b,'title'),400),resume=propre(champ(b,'description')||champ(b,'summary')||champ(b,'content'),4000);
+  const lien=propre(champ(b,'link'),600)||((b.match(/<link[^>]*href="([^"]+)"/i)||[])[1]||''),guid=propre(champ(b,'guid')||champ(b,'id'),300);
+  const url=hoteAdmis(lien)?lien:'',datePub=dateFlux(b,resume);
+  let idSource=guid||url,numero='';
+  if(source==='bofip'){const m=(lien+' '+resume+' '+guid).match(/ACTU-\d{4}-\d{5}/);if(m)idSource=numero=m[0]}
+  if(source==='entreprendre'){const m=(guid+' '+lien).match(/\bA\d{4,}\b/);if(m)idSource=m[0]}   // l'identifiant de l'article, pas celui du jour
+  if(!titre||!idSource||!datePub||vus.has(idSource))continue;vus.add(idSource);
+  out.push({source,idSource,titre,url,datePub,resume,texte:resume,nature:NATURE[source]||'',numero,nor:'',dateVigueur:''})}
+ return out}
+
+/* Journal officiel : tous les textes d'un sommaire, hors mesures nominatives */
+function lireJorf(json,datePub){
+ const out=[],vus=new Set();
+ (function voir(o,nominatif){
+  if(Array.isArray(o))return o.forEach(x=>voir(x,nominatif));
+  if(!o||typeof o!=='object')return;
+  const titre=typeof o.titre==='string'?o.titre:typeof o.title==='string'?o.title:'';
+  if(/mesures nominatives/i.test(titre))nominatif=true;
+  if(typeof o.id==='string'&&/^JORFTEXT\d{12}$/.test(o.id)&&titre&&!nominatif&&!vus.has(o.id)){vus.add(o.id);
+   out.push({source:'legifrance',idSource:o.id,titre:propre(titre,400),url:'https://www.legifrance.gouv.fr/jorf/id/'+o.id,datePub,resume:'',texte:propre(titre,400),
+    nature:/^(LOI|ORDONNANCE|DECRET|ARRETE)$/.test(o.nature)?o.nature:'',numero:'',nor:typeof o.nor==='string'?propre(o.nor,20):'',dateVigueur:'',complet:false})}
+  for(const k of Object.keys(o))voir(o[k],nominatif)})(json,false);
+ return out}
+/* le texte complet d'une fiche du Journal officiel : tout ce qui se lit */
+function texteJorf(json){const m=[];(function voir(o,k){
+  if(typeof o==='string'){if(/^(content|notice|texte|visa|nota|titre|title)$/i.test(k||'')&&o.length>3)m.push(o);return}
+  if(Array.isArray(o))return o.forEach(x=>voir(x,k));
+  if(o&&typeof o==='object')for(const c of Object.keys(o))voir(o[c],c)})(json,'');
+ return propre(m.join(' '),40000)}
+const jourMs=v=>{const d=typeof v==='number'?new Date(v):new Date(String(v||''));return isNaN(d)?'':d.toISOString().slice(0,10)};
+
+function creer(opts={}){
+ const env=opts.env||process.env,F=opts.fetch||globalThis.fetch,log=opts.log||console.error;
+ const ID=env.PISTE_CLIENT_ID||'',SEC=env.PISTE_CLIENT_SECRET||'';
+ const actives=()=>['bofip','entreprendre'].concat(ID&&SEC?['legifrance']:[]);
+ async function appel(url,init){const ac=new AbortController(),to=setTimeout(()=>ac.abort(),20000);
+  try{const r=await F(url,Object.assign({signal:ac.signal},init||{}));if(!r.ok)throw new Error('réponse '+r.status);return r}finally{clearTimeout(to)}}
+ async function flux(url,source){const r=await appel(url,{headers:{accept:'application/rss+xml, application/xml, text/xml'}});return lireRss(await r.text(),source)}
+
+ let jeton='',fin=0;
+ async function piste(chemin,corps){
+  if(!jeton||Date.now()>fin){
+   const r=await appel(PISTE_JETON,{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded'},
+    body:new URLSearchParams({grant_type:'client_credentials',client_id:ID,client_secret:SEC,scope:'openid'}).toString()});
+   const j=await r.json();if(!j||typeof j.access_token!=='string')throw new Error('jeton refusé');
+   jeton=j.access_token;fin=Date.now()+Math.max(60,(+j.expires_in||3600)-120)*1000}
+  const r=await appel(PISTE_API+chemin,{method:'POST',headers:{authorization:'Bearer '+jeton,'content-type':'application/json',accept:'application/json'},body:JSON.stringify(corps)});
+  return r.json()}
+ async function legifrance(){
+  const dern=await piste('/consult/lastNJo',{nbElement:3}),out=[];
+  const conts=(dern&&(dern.containers||dern.results||dern.items)||[]).filter(c=>c&&typeof c.id==='string').slice(0,3);
+  if(!conts.length)throw new Error('aucun Journal officiel rendu');
+  for(const c of conts){
+   const som=await piste('/consult/jorfCont',{id:c.id,pageNumber:1,pageSize:100});
+   out.push(...lireJorf(som,jourMs(c.datePubli||c.dateParution||c.date)).filter(b=>b.datePub&&pertinent(b.titre,'')))}
+  /* le texte complet des textes gardés (30 au plus par passage) : sans lui, aucune date d'entrée en vigueur n'est déduite */
+  for(const b of out.slice(0,30)){try{const t=texteJorf(await piste('/consult/jorf',{textCid:b.idSource}));if(t.length>=40&&t!==b.texte){b.texte=t;b.complet=true}}
+   catch(e){log('[casô] veille : texte complet non lu',b.idSource)}}
+  return out}
+
+ async function collecter(){
+  const bruts=[],erreurs=[],L=[['bofip',()=>flux(BOFIP,'bofip')],['entreprendre',()=>flux(ENTREPRENDRE,'entreprendre')]];
+  if(ID&&SEC)L.push(['legifrance',legifrance]);
+  for(const [source,lire] of L){
+   try{const v=await lire();bruts.push(...(source==='legifrance'?v:v.filter(b=>pertinent(b.titre,b.resume))))}
+   catch(e){const erreur=String(e&&e.name==='AbortError'?'délai dépassé':e&&e.message||'erreur').slice(0,120);erreurs.push({source,erreur});log('[casô] veille : source en erreur',source,erreur)}}
+  return {bruts,erreurs}}
+ return {collecter,actives};
+}
+
+module.exports={creer,lireRss,lireJorf,texteJorf,pertinent,hoteAdmis,propre,HOTES,MOTS};

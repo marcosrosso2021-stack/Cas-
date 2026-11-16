@@ -1,0 +1,7 @@
+{"_note":"Forme reconstruite d'après la documentation de l'API Légifrance, pas une réponse réelle : à remplacer par une vraie réponse dès que les clés PISTE sont en place.",
+ "items":[{"joCont":{"id":"JORFCONT000052000001","titre":"JORF n°0263 du 11 novembre 2026","structure":{"tms":[
+  {"titre":"Décrets, arrêtés, circulaires","tms":[{"titre":"Textes généraux","liensTxt":[
+    {"id":"JORFTEXT000052000101","titre":"Décret n° 2026-1234 du 10 novembre 2026 relatif aux mentions obligatoires des devis de travaux","nature":"DECRET","nor":"ECOC2612345D"},
+    {"id":"JORFTEXT000052000102","titre":"Arrêté du 9 novembre 2026 fixant le calendrier scolaire","nature":"ARRETE"},
+    {"id":"JORFTEXT000052000103","titre":"Arrêté du 9 novembre 2026 relatif aux certificats d'économies d'énergie pour la rénovation des bâtiments","nature":"ARRETE","nor":"ENER2612346A"}]}]},
+  {"titre":"Mesures nominatives","liensTxt":[{"id":"JORFTEXT000052000201","titre":"Arrêté du 9 novembre 2026 portant nomination (bâtiment)","nature":"ARRETE"}]}]}}}]}
