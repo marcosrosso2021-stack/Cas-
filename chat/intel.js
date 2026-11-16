@@ -655,7 +655,7 @@ P.question=function(t){langue();if(!P.ready||typeof db==="undefined")return fals
   return false;};
 
 /* ---------- apprentissage partagé (aucun affichage, rien de personnel) ---------- */
-var URL0=(window.CASO_APPRIS||"https://api.caso.fr")+"/api/appris",AK="caso_ia_partage";
+var URL0=(window.CASO_APPRIS||"https://app-e6c6e91c-8623-4524-95ef-2cefb8b67f7b.cleverapps.io")+"/api/appris",AK="caso_ia_partage";
 function etat(){try{return JSON.parse(localStorage.getItem(AK)||"null")||{};}catch(x){return {};}}
 function etatSet(o){try{localStorage.setItem(AK,JSON.stringify(o));}catch(x){}}
 function idAppareil(o){if(!o.id){var a=new Uint8Array(16);(window.crypto||{}).getRandomValues?crypto.getRandomValues(a):a.forEach(function(v,i){a[i]=Math.random()*256|0;});o.id=Array.prototype.map.call(a,function(b){return (b<16?"0":"")+b.toString(16);}).join("");}return o.id;}

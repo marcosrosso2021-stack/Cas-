@@ -3,7 +3,7 @@
    masquées (« @c » client, « # » nombre, « @d » jour) et sont remplies ici avec des valeurs d'exemple.
    node outils/mini/apprendre-partage.js [adresse du serveur]   → écrit le nombre de phrases ajoutées */
 const fs=require("fs"),path=require("path"),MINI=require("../../chat/caso-mini.js");
-const SRV=(process.argv[2]||process.env.CASO_APPRIS||"https://api.caso.fr").replace(/\/$/,"");
+const SRV=(process.argv[2]||process.env.CASO_APPRIS||"https://app-e6c6e91c-8623-4524-95ef-2cefb8b67f7b.cleverapps.io").replace(/\/$/,"");
 const LAB=JSON.parse(fs.readFileSync(path.join(__dirname,"labels.json"),"utf8")),FB=path.join(__dirname,"feedback.jsonl");
 const NOMS=["Martin","Dupont","Moreau","Lefebvre","García","Rossi","Kowalski","Yılmaz","Popescu","Silva"],JOURS={fr:"demain",en:"tomorrow",es:"mañana",pt:"amanhã",it:"domani",ro:"mâine",pl:"jutro",tr:"yarın",ru:"завтра",ar:"غدا"};
 const vu=new Set(fs.readFileSync(FB,"utf8").split("\n").filter(Boolean).map(l=>{try{const x=JSON.parse(l);return x.lang+"|"+x.text}catch(e){return ""}}));
