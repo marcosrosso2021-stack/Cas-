@@ -22,7 +22,8 @@ db.maq3d=[{id:'m1',at:Date.now(),d:{estimation:{lignes:[{poste:'Rebouchage de fi
 /* [langue, phrases, textes attendus dans les réponses (dans l'ordre des phrases ; "" = pas de contrôle)] */
 const ESSAIS=[
  ["fr",["Il faut refaire le sol chez Martin, mettre du carrelage et prévoir les plinthes."],[/./]],
- ["fr",["Reprends le chantier de la semaine dernière."],[/Chantier Martin/]],
+ /* le lundi, le rendez-vous Dupont « hier » tombe aussi la semaine dernière : le chat demande alors lequel */
+ ["fr",["Reprends le chantier de la semaine dernière."],[/Chantier Martin|Plusieurs chantiers : Martin, Dupont/]],
  ["fr",["Il faut faire un ragréage avant le parquet."],[/D’abord ragréage, puis parquet/]],
  ["fr",["ragréage avant le parquet"],[/D’abord ragréage, puis parquet/]],
  ["fr",["Montre-moi tous les chantiers de la semaine prochaine."],[/Chantiers de la semaine prochaine.*Martin.*Petit/]],

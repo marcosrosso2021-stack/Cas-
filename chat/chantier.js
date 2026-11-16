@@ -139,7 +139,7 @@ function etatFa(f){try{return faState(f);}catch(x){return "";}}
 var ETFA={payee:"payée",attente:"en attente",retard:"en retard",partielle:"payée en partie",brouillon:"brouillon",avoir:"avoir",annulee:"annulée"};
 var ETDV={brouillon:"brouillon",envoye:"envoyé",accepte:"accepté",refuse:"refusé",paye:"payé",signe:"signé"};
 function occ(ev){try{return ev.rr?agNextOcc(ev,ev.d):ev.d;}catch(x){return ev.d;}}
-function heuresEntre(cid,r){var h=0;try{var C=(db.chantiers||[]).filter(function(c){return c.cid===cid;}).map(function(c){return c.id;}),A=new Date(r.a+"T00:00").getTime(),Bf=new Date(r.b+"T23:59").getTime();
+function heuresEntre(cid,r){var h=0;try{var C=(db.chantiers||[]).filter(function(c){return !cid||c.cid===cid;}).map(function(c){return c.id;}),A=new Date(r.a+"T00:00").getTime(),Bf=new Date(r.b+"T23:59").getTime();
   if(C.length&&typeof sessions==="function")sessions().forEach(function(x){if(x.a&&x.b&&C.indexOf(x.c)>=0&&x.a>=A&&x.a<=Bf)h+=(x.b-x.a)/36e5;});}catch(x){}return Math.round(h*10)/10;}
 function jour(d){try{return agFmtD(d,{weekday:"short",day:"numeric",month:"numeric"});}catch(x){return d;}}
 function heure(ev){try{return ev.a?agFmtR(ev):"";}catch(x){return ev.a||"";}}
@@ -214,6 +214,9 @@ function plage(s){if(typeof agWeekStart!=="function"||typeof agAdd!=="function")
 var TITRE={sp:"Chantiers de la semaine prochaine :",sd:"Chantiers de la semaine dernière :",cs:"Chantiers de cette semaine :",ad:"Chantiers d’après-demain :",de:"Chantiers de demain :",ah:"Chantiers d’avant-hier :",hi:"Chantiers d’hier :",au:"Chantiers d’aujourd’hui :"};
 var AUCUN={sp:"Aucun chantier la semaine prochaine.",sd:"Aucun chantier la semaine dernière.",cs:"Aucun chantier cette semaine.",ad:"Aucun chantier après-demain.",de:"Aucun chantier demain.",ah:"Aucun chantier avant-hier.",hi:"Aucun chantier hier.",au:"Aucun chantier aujourd’hui."};
 function evenements(r){var out=[];if(typeof agDayEvents!=="function")return out;for(var d=r.a;d<=r.b;d=agAdd(d,1))agDayEvents(d).forEach(function(x){if(x.t==="rdv")out.push({e:x,d:d});});return out;}
+var PREVU=W("j ai quoi|quoi de prevu|qu est ce que j ai|qu est ce qu il y a|qu est ce qui est prevu|de prevu|mon programme|what do i have|what s on|what have i got|que tengo|o que tenho|cosa ho|che ho|ce am|co mam|neyim var|ne var|что у меня|ماذا لدي|ماذا عندي"),
+ HRS=W("combien d heures|nombre d heures|heures pointees|heures faites|heures passees|how many hours|hours worked|cuantas horas|quantas horas|quante ore|cate ore|ile godzin|kac saat|сколько часов|كم ساعة"),
+ RIEN={sp:"Rien de prévu la semaine prochaine.",sd:"Rien au planning la semaine dernière.",cs:"Rien de prévu cette semaine."};
 var JOB=W("chantiers?|travaux|jobs?|sites?|obras?|cantier[ei]|lucrar\\p{L}*|santier\\p{L}*|budow\\p{L}*|prac\\p{L}*|isler\\p{L}*|isi|santiye\\p{L}*|объект\\p{L}*|работ\\p{L}*|ورش\\p{L}*|الورش\\p{L}*"),
  JOBS=W("chantiers|jobs|sites|obras|cantieri|lucrarile|lucrari|santiere|budowy|prace|isler\\p{L}*|объекты|работы|ورشات|الورشات"),
  FICHE=W("fiche|dossier|rapport|bilan|resume|recap\\p{L}*|etat|suivi|infos?|informations?|tout sur|report|summary|overview|informe|resumen|ficha|relatorio|resumo|rapporto|riepilogo|scheda|raport|fisa|rezumat|podsumowanie|rapor|ozet|отчет|сводк\\p{L}*|карточк\\p{L}*|تقرير|ملخص|ملف"),
@@ -236,6 +239,13 @@ P.chantier=function(t){if(!P.ready||typeof db==="undefined")return false;var c=f
   if(r&&(JOB.test(s)||/\binterventions?\b/.test(s))&&!cl&&(MONTRE.test(s)||JOBS.test(s))){langue();var V=evenements(r);
     if(!V.length){bulle(t,p(T(AUCUN[r.k])));return true;}
     bulle(t,p(T(TITRE[r.k]))+'<div class="msg-lines">'+V.slice(0,20).map(function(x){var n=x.e.cid&&cliDe(x.e.cid);return ml(jour(x.d)+(x.e.a?" · "+heure(x.e):""),[n?n.nom:"",x.e.title||"",x.e.adr||""].filter(Boolean).join(" · "),"",typeof agOpen==="function"?"agOpen('"+e(x.d)+"')":"");}).join("")+'</div>');return true;}
+  /* « j'ai quoi cette semaine ? », « qu'est-ce que j'ai de prévu la semaine prochaine ? » : la liste, pas seulement l'écran */
+  if(r&&!cl&&/^(sp|sd|cs)$/.test(r.k)&&PREVU.test(s)){langue();TOUR.t=null;var V2=evenements(r);
+    if(!V2.length){bulle(t,p(T(RIEN[r.k])));return true;}
+    bulle(t,'<div class="msg-lines">'+V2.slice(0,20).map(function(x){var n=x.e.cid&&cliDe(x.e.cid);return ml(jour(x.d)+(x.e.a?" · "+heure(x.e):""),[n?n.nom:"",x.e.title&&(!n||cle(x.e.title)!==cle(n.nom))?x.e.title:"",x.e.adr||""].filter(Boolean).join(" · "),"",typeof agOpen==="function"?"agOpen('"+e(x.d)+"')":"");}).join("")+'</div>');return true;}
+  /* « combien d'heures chez Martin ? », « combien d'heures cette semaine ? » : les heures pointées */
+  if(HRS.test(s)&&(cl||r)){langue();TOUR.t=null;var hh=r?heuresEntre(cl?cl.id:null,r):Math.round(heures(cl.id)*10)/10;
+    bulle(t,p(cl?T("Heures pointées chez {0} : {1} h",[cl.nom,N(hh)]):T("Heures pointées : {0} h",[N(hh)])));return true;}
   if(/\d/.test(t))return false;
   /* « montre-moi Martin », « affiche Martin » : la fiche du chantier (pas « mettre à jour la fiche ») */
   if(cl&&MONTRE.test(s)&&!(" "+c.p+" ").replace(/\b(montre|montrez|affiche|voir|moi|m|le|la|les|l|du|de|d|chantier|client|fiche|dossier|chez|tout|sur|show|me|display)\b/g," ").split(" "+cle(cl.nom)+" ").join(" ").trim())return fiche(t,cl,"fiche");

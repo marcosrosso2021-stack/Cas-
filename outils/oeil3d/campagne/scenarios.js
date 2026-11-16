@@ -1,0 +1,122 @@
+/* Les 100 utilisateurs de la campagne ŒIL 3D.
+   mode : b = particulier (mode Bricoleur), a = professionnel (mode Artisan)
+   media : video = vraie vidéo de la chambre ; photos = 5 vraies photos de la même chambre ; plan = plan dessiné (vérité : 10 × 8 m)
+           absent:<quoi> = la donnée adaptée n'existe pas dans l'environnement de test (pas de vraie vidéo de salon, de façade…)
+           none = la demande n'en a pas besoin
+   sec  : où le travail 3D se fait (reno, cons) ; main = appli principale seulement
+   but  : ce que le résultat doit montrer (contrôlé sur l'état réel de casô, pas sur la seule réponse)
+   kw   : notions qu'une réponse pertinente doit contenir
+   suite: correction ou poursuite envoyée ensuite (étape 10 du protocole) */
+const S=[
+// A — rénovation et aménagement personnel
+[1,'A','Rénovation chambre','particulier, 34 ans, aucune connaissance technique','b','video','reno',"Je voudrais savoir à quoi va ressembler ma chambre après une rénovation. Je veux conserver mon lit, mais changer les murs, le sol et les couleurs.",'finish+keepbed',/mur|sol|couleur|peinture|parquet/,"mets plutôt du parquet clair au sol"],
+[2,'A','Salon moderne','couple, salon à moderniser','b','absent:vidéo de salon','reno',"Voici une vidéo de mon salon. Je voudrais un salon plus moderne, avec un canapé d'angle et un meuble TV.",'add:sofa,tv',/canap|meuble tv|tv/,"enlève le meuble tv"],
+[3,'A','Cuisine îlot','propriétaire, refait sa cuisine','b','absent:vidéo de cuisine','reno',"Je veux remplacer toute ma cuisine. Peux-tu me montrer une cuisine moderne avec un îlot central ?",'add:island',/cuisine|îlot|ilot/,"plus grand l'îlot"],
+[4,'A','Douche italienne','retraitée, salle de bain','b','absent:vidéo de salle de bain','reno',"Je veux remplacer ma baignoire par une douche italienne. Montre-moi le résultat.",'add:shower',/douche|baignoire/,""],
+[5,'A','Petite chambre','étudiant, 9 m²','b','video','reno',"Ma chambre est très petite. Comment pourrais-je gagner de la place sans perdre mon armoire ?",'layout',/place|rangement|armoire|aménag/,""],
+[6,'A','Appartement ancien','acheteur récent','b','absent:vidéo de plusieurs pièces','reno',"Je viens d'acheter cet appartement ancien. Je veux voir ce qu'il pourrait devenir après une rénovation complète.",'reco',/rénov|pièce|travaux/,""],
+[7,'A','Carrelage → parquet','particulier précis','b','video','reno',"Remplace uniquement mon carrelage par un parquet clair. Ne change rien d'autre.",'floor_only',/parquet|sol/,"en fait un peu plus foncé"],
+[8,'A','3 peintures','indécise sur les couleurs','b','absent:vidéo de salon','reno',"Je voudrais voir mon salon avec des murs blancs, beige et gris. Fais-moi trois propositions.",'variants3',/blanc|beige|gris/,""],
+[9,'A','Dressing','veut un dressing sur mesure','b','video','reno',"Je veux transformer ce mur en dressing sur mesure. Peux-tu me montrer le résultat ?",'add:wardrobe',/dressing|placard|armoire/,""],
+[10,'A','Chambre 2 enfants','parent de deux enfants','b','video','reno',"Transforme cette chambre en chambre pour deux enfants avec deux lits, deux bureaux et des rangements.",'add:bed2,desk2',/lit|bureau|rangement/,"ajoute une étagère"],
+// B — maison et projets immobiliers
+[11,'B','Maison complète','propriétaire, prépare des travaux','b','absent:vidéo de toute une maison','reno',"Voici une vidéo de ma maison. Je voudrais obtenir un modèle 3D complet pour préparer mes travaux.",'reco',/3d|maquette|pièce/,""],
+[12,'B','Extension 25 m²','famille qui s\'agrandit','b','none','cons',"Je veux ajouter une extension de 25 m² à ma maison. Montre-moi ce que cela pourrait donner.",'extension',/extension|25|m²|agrand/,""],
+[13,'B','Combles','veut une chambre sous les toits','b','absent:vidéo des combles','reno',"Je voudrais transformer mes combles en chambre. Peux-tu me montrer les possibilités ?",'reco',/comble|toit|pente|chambre/,""],
+[14,'B','Garage → studio','investisseur locatif','b','absent:vidéo du garage','reno',"Transforme mon garage en studio indépendant avec une salle de bain et une kitchenette.",'reco',/studio|salle de bain|kitchenette|cuisine/,""],
+[15,'B','Terrasse bois','propriétaire de maison','b','absent:photos de la façade et du terrain','cons',"Je voudrais construire une terrasse en bois devant ma maison.",'ext',/terrasse|bois/,""],
+[16,'B','Piscine','propriétaire avec jardin','b','absent:photos du jardin','cons',"Ajoute une piscine rectangulaire dans mon jardin et montre-moi le résultat.",'ext',/piscine|jardin/,""],
+[17,'B','Façade moderne','maison des années 80','b','absent:photos de façade','cons',"Je veux moderniser la façade de ma maison sans modifier les fenêtres.",'ext',/façade|facade|fenêtre/,""],
+[18,'B','Toiture tuiles','toiture vieillissante','b','absent:photos de toiture','cons',"Je voudrais voir ma maison avec une nouvelle toiture en tuiles modernes.",'roof',/toit|tuile/,""],
+[19,'B','Maison à acheter','futur acheteur','b','absent:vidéo de visite','reno',"Je souhaite acheter cette maison. Peux-tu identifier les travaux visibles à prévoir ?",'defects',/travaux|défaut|vérifier/,""],
+[20,'B','Avant/après','compare ses travaux','b','absent:photos avant et après','reno',"Voici des photos de ma maison avant les travaux et après les travaux. Compare les deux.",'compare',/avant|après|compar/,""],
+// C — professionnels du BTP
+[21,'C','Carreleur','artisan carreleur','a','absent:vidéo de salle de bain','reno',"Je dois carreler cette salle de bain. Calcule la surface du sol et estime le nombre de carreaux nécessaires.",'surface',/m²|m2|carreau|surface/,""],
+[22,'C','Peintre','artisan peintre','a','video','reno',"Voici une pièce. Je voudrais connaître la surface totale des murs à peindre.",'surface',/m²|m2|surface|mur/,"et le plafond ?"],
+[23,'C','Plaquiste','artisan plaquiste','a','video','reno',"Je dois créer une cloison de séparation dans cette pièce. Montre-moi où la placer et estime les matériaux nécessaires.",'partition',/cloison|plaque|rail|ba13/,""],
+[24,'C','Plombier','artisan plombier','a','absent:vidéo de salle de bain ou cuisine','reno',"Identifie les équipements sanitaires et les canalisations visibles sur cette vidéo.",'inventory',/sanitaire|lavabo|évier|wc|canalisation|aucun/,""],
+[25,'C','Électricien','artisan électricien','a','video','reno',"Identifie toutes les prises, interrupteurs et points lumineux de cette pièce.",'inventory_elec',/prise|interrupteur|lumi|plafonnier/,""],
+[26,'C','Menuisier','artisan menuisier','a','absent:vidéo montrant la porte','reno',"Je veux remplacer cette porte par une porte coulissante. Montre-moi comment elle s'intégrerait.",'door',/porte|coulissante/,""],
+[27,'C','Maçon','artisan maçon','a','video','reno',"Analyse ce mur et estime ses dimensions pour préparer mon intervention.",'wall_dims',/mur|m\b|longueur|hauteur|largeur/,""],
+[28,'C','Couvreur','artisan couvreur','a','absent:photos de toiture','reno',"Voici des photos de ma toiture. Identifie les éléments et les dégradations visibles.",'defects',/toit|tuile|gouttière|dégrad/,""],
+[29,'C','Façadier','artisan façadier','a','absent:photos de façade','reno',"Je voudrais calculer la surface de cette façade pour préparer un devis d'isolation extérieure.",'surface',/façade|surface|m²|isolation/,""],
+[30,'C','Plâtrier','artisan plâtrier','a','video','reno',"Identifie les murs, plafonds et surfaces à enduire dans cette pièce.",'surface',/mur|plafond|surface|m²/,""],
+// D — diagnostic et dégradations
+[31,'D','Fissure','particulier inquiet','b','video','reno',"Est-ce que tu peux identifier cette fissure sur mon mur et la localiser dans le modèle 3D ?",'defects',/fissure/,""],
+[32,'D','Humidité','locataire','b','video','reno',"J'ai des traces d'humidité dans ma chambre. Identifie les zones concernées.",'defects',/humidit|tache|moisi/,""],
+[33,'D','Plafond','propriétaire','b','video','reno',"Voici une vidéo de mon plafond. Est-ce que tu peux repérer les dégradations visibles ?",'defects',/plafond|dégrad|fissure|tache/,""],
+[34,'D','Carrelage cassé','particulier','b','video','reno',"Mon carrelage est cassé à plusieurs endroits. Localise chaque défaut.",'defects',/carrelage|cass|défaut/,""],
+[35,'D','Peinture abîmée','particulier','b','video','reno',"Identifie les zones où la peinture est détériorée.",'defects',/peinture|écaill|détérior/,""],
+[36,'D','Fenêtres','particulier','b','video','reno',"Je voudrais savoir si mes fenêtres présentent des défauts visibles.",'defects',/fenêtre/,""],
+[37,'D','Façade dégradée','syndic bénévole','b','absent:photos de façade','reno',"Analyse cette façade et identifie les fissures, les décollements et les traces d'humidité.",'defects',/façade|fissure|humidit/,""],
+[38,'D','Fuite évier','particulier','b','absent:vidéo sous l\'évier','reno',"Identifie les éventuelles fuites visibles sous mon évier.",'defects',/fuite|évier|siphon/,""],
+[39,'D','Toiture endommagée','particulier','b','absent:photos de toiture','reno',"Analyse ma toiture et indique les éléments qui semblent endommagés.",'defects',/toit|tuile/,""],
+[40,'D','Évolution 6 mois','propriétaire','b','absent:deux vidéos à 6 mois d\'intervalle','reno',"Compare ces deux vidéos prises à six mois d'intervalle et identifie l'évolution des dégradations.",'compare',/compar|évolution|avant|après/,""],
+// E — chantiers et suivi
+[41,'E','Matériaux chantier','chef de chantier','a','absent:vidéo de chantier','reno',"Voici une vidéo de mon chantier. Identifie tous les matériaux présents.",'inventory',/matériau|parpaing|sac|plaque/,""],
+[42,'E','Travaux réalisés','conducteur de travaux','a','absent:vidéo de chantier','main',"Je voudrais savoir quels travaux ont déjà été réalisés sur ce chantier.",'chantier',/chantier|travaux|réalis/,""],
+[43,'E','Lundi / vendredi','chef de chantier','a','absent:photos de chantier à deux dates','reno',"Compare les photos de mon chantier prises lundi et vendredi.",'compare',/compar|lundi|vendredi/,""],
+[44,'E','Outils et machines','chef de chantier','a','absent:vidéo de chantier','reno',"Identifie les outils et les machines présents sur cette zone de travaux.",'inventory',/outil|machine|échelle|bétonnière/,""],
+[45,'E','Palettes de parpaings','maçon','a','absent:vidéo de chantier','reno',"Combien de palettes de parpaings sont visibles sur cette vidéo ?",'count',/palette|parpaing/,""],
+[46,'E','Cloisons posées','plaquiste','a','absent:vidéo de chantier','reno',"Identifie les cloisons qui sont déjà posées et celles qui restent à réaliser.",'partition',/cloison/,""],
+[47,'E','Inventaire matériaux','chef de chantier','a','absent:vidéo de chantier','reno',"Fais un inventaire des matériaux visibles sur ce chantier.",'inventory',/matériau|inventaire/,""],
+[48,'E','Stockage et circulation','coordinateur sécurité','a','absent:vidéo de chantier','reno',"Identifie les zones de stockage et les zones de circulation.",'zones',/stockage|circulation/,""],
+[49,'E','Chantier en 3D','conducteur de travaux','a','video','reno',"Je voudrais obtenir une représentation 3D de ce chantier dans son état actuel.",'reco',/3d|maquette|pièce/,""],
+[50,'E','Sécurité','coordinateur SPS','a','absent:vidéo de chantier','reno',"Identifie les équipements de sécurité visibles et les éventuels risques apparents.",'defects',/sécurité|risque|garde/,""],
+// F — organisation et planning
+[51,'F','Carte de la semaine','artisan multi-chantiers','a','none','main',"Je voudrais voir mes lieux de travail prévus pour la semaine prochaine sur une carte.",'planning_map',/lundi|mardi|mercredi|jeudi|vendredi|rue|avenue|carte/,""],
+[52,'F','Préparer intervention','plombier','a','photos','reno',"Demain, je dois intervenir dans une maison. Voici les photos. Prépare-moi une vue 3D pour que je puisse comprendre les travaux avant d'arriver.",'reco',/3d|maquette|photo/,""],
+[53,'F','Tournée optimisée','électricien','a','none','main',"Organise mes différents chantiers de la semaine prochaine pour limiter les déplacements.",'route',/ordre|trajet|km|lundi|déplacement/,""],
+[54,'F','Chantier de lundi','carreleur','a','none','main',"Montre-moi le chantier sur lequel je travaille lundi prochain et les informations que j'ai enregistrées dessus.",'planning',/lundi|Martin|Dupont|Petit|Bernard|Leroy|rue|avenue/,""],
+[55,'F','Matériaux de mardi','maçon','a','none','main',"Pour mon chantier de mardi, prépare la liste des matériaux dont j'aurai besoin.",'materials',/mardi|matériau|carrelage|colle|liste/,""],
+[56,'F','Historique','peintre','a','none','main',"Retrouve les photos et les mesures du chantier sur lequel je suis intervenu la semaine dernière.",'history',/chantier|photo|mesure|semaine/,""],
+[57,'F','Trois maisons','entrepreneur','a','none','main',"Je dois travailler sur trois maisons différentes cette semaine. Je veux voir les trois projets dans une seule interface.",'projects',/projet|chantier|maison/,""],
+[58,'F','Urgence','dépanneur','a','none','main',"J'ai une intervention urgente demain matin. Trouve-moi un créneau compatible avec mon planning.",'slot',/\d{1,2} ?h|libre|créneau|disponib/,""],
+[59,'F','Temps prévu','artisan','a','none','main',"Combien de temps ai-je prévu sur chaque chantier cette semaine ?",'time',/\d+ ?h|heure|jour/,""],
+[60,'F','Rapport hebdo','artisan','a','none','main',"Prépare-moi un résumé de mes interventions, travaux et chantiers de cette semaine.",'summary',/semaine|chantier|intervention|rendez/,""],
+// G — achat, vente, immobilier
+[61,'G','Visite virtuelle','acheteuse','b','photos','reno',"Je veux visiter virtuellement cette maison à partir de mes photos.",'reco',/3d|visite|maquette/,""],
+[62,'G','Deux appartements','investisseur','b','absent:médias de deux appartements','reno',"Compare ces deux appartements et indique lequel nécessite le moins de travaux visibles.",'compare',/compar|travaux/,""],
+[63,'G','Deux logements','investisseur','b','absent:vidéo de l\'appartement','cons',"Je voudrais transformer cet appartement en deux logements indépendants.",'split',/logement|diviser|séparer/,""],
+[64,'G','Surfaces et volumes','agent immobilier','b','video','reno',"Analyse les surfaces et les volumes de cette maison pour préparer une estimation de rénovation.",'surface',/m²|m³|surface|volume/,""],
+[65,'G','Annonce immobilière','acheteur','b','absent:annonce et photos','main',"Voici une annonce immobilière et des photos. Identifie les travaux potentiels à prévoir.",'defects',/travaux|annonce/,""],
+[66,'G','Home staging','vendeur','b','absent:vidéo d\'appartement vide','reno',"Je veux meubler cet appartement vide virtuellement pour préparer sa mise en vente.",'furnish',/meubl/,""],
+[67,'G','Local commercial','commerçant','b','absent:vidéo du local','cons',"Montre-moi plusieurs possibilités d'aménagement pour ce local commercial.",'variants3',/aménag|local/,""],
+[68,'G','Commerce → appartement','investisseur','b','absent:vidéo du commerce','cons',"Je voudrais transformer cet ancien commerce en appartement.",'reco',/appartement|commerce/,""],
+[69,'G','Immeuble 3D','gestionnaire','b','absent:photos d\'immeuble','cons',"Fais-moi une représentation 3D de cet immeuble à partir des photos disponibles.",'reco',/immeuble|3d/,""],
+[70,'G','Comparer deux maisons','acheteur hésitant','b','absent:médias de deux maisons','reno',"Compare l'état apparent de ces deux maisons avant que je prenne ma décision d'achat.",'compare',/compar|état/,""],
+// H — architecture et conception
+[71,'H','Plain-pied 3 ch.','futur constructeur','b','none','cons',"Dessine-moi une maison de plain-pied avec trois chambres et un garage.",'design',/chambre|garage|plain/,""],
+[72,'H','Plan à la main','autoconstructeur','b','plan','cons',"Voici un plan dessiné à la main. Transforme-le en modèle 3D.",'plan',/3d|maquette|plan/,"la chambre 2 fait 18 m²"],
+[73,'H','Déplacer la cuisine','propriétaire','b','plan','cons',"Je veux déplacer la cuisine pour la mettre dans cette pièce. Est-ce possible d'étudier cette configuration ?",'move_room',/cuisine/,""],
+[74,'H','Variantes 20 m²','architecte d\'intérieur','a','absent:vidéo d\'une pièce de 20 m²','reno',"Crée plusieurs variantes d'aménagement pour cette pièce de 20 m².",'variants3',/variante|aménag/,""],
+[75,'H','Ajouter fenêtre','particulier','b','video','reno',"Je voudrais ajouter une fenêtre sur ce mur. Montre-moi le résultat conceptuel.",'add_window',/fenêtre/,"plus large la fenêtre"],
+[76,'H','Bureau en deux','profession libérale','b','absent:vidéo du bureau','reno',"Transforme ce bureau en deux espaces de travail séparés.",'partition',/cloison|séparer|bureau/,""],
+[77,'H','Style contemporain','propriétaire','b','video','reno',"Je veux voir cette maison avec un style contemporain, mais conserver sa structure.",'style',/contemporain|moderne|style/,""],
+[78,'H','Extension baie vitrée','architecte','a','none','cons',"Crée une extension avec une grande baie vitrée donnant sur le jardin.",'extension',/extension|baie/,""],
+[79,'H','Escaliers','propriétaire','b','absent:vidéo de l\'espace','cons',"Je veux comparer un escalier droit et un escalier quart tournant dans cet espace.",'stairs',/escalier/,""],
+[80,'H','Circulation','architecte','a','plan','cons',"Propose trois configurations pour optimiser la circulation dans cet appartement.",'variants3',/circulation|configuration/,""],
+// I — demandes complexes et multimodales
+[81,'I','Vidéo + plan','particulier méthodique','b','plan','cons',"Voici une vidéo et un plan papier de la même maison. Combine les informations pour créer une reconstruction 3D.",'plan',/3d|plan|vidéo/,""],
+[82,'I','5 photos sans doublon','particulier','b','photos','reno',"Voici cinq photos de la même pièce prises sous différents angles. Reconstruis une seule scène sans dupliquer les meubles.",'reco_nodup',/pièce|photo|3d/,""],
+[83,'I','Zones manquantes','particulier','b','video','reno',"J'ai filmé ma maison, mais certaines zones ne sont pas visibles. Identifie ce qui manque pour terminer le modèle.",'missing',/non vu|manque|derrière|filmer/,""],
+[84,'I','Meuble caché','particulier','b','photos','reno',"Voici une photo avec un meuble partiellement caché. Reconnais ce qui est visible sans inventer les parties cachées.",'reco',/meuble|visible/,""],
+[85,'I','Mesure laser','artisan rigoureux','a','video','reno',"J'ai pris une photo avec mon téléphone et une mesure laser de la largeur du mur. Le mur du fond mesure 4,60 m. Utilise cette référence pour améliorer les dimensions du modèle.",'calib',/4[,.]6|mesur|dimension/,""],
+[86,'I','Pièce chargée','particulier','b','video','reno',"Voici une pièce avec beaucoup de meubles et de décorations. Je veux une reconstruction détaillée.",'reco',/pièce|3d|élément/,""],
+[87,'I','Chantier positions réelles','chef de chantier','a','video','reno',"Transforme cette vidéo de chantier en modèle 3D et conserve les objets à leur position réelle.",'reco',/3d|maquette/,""],
+[88,'I','Changements 2 vidéos','propriétaire','b','absent:deux vidéos à deux dates','reno',"J'ai deux vidéos prises à des dates différentes. Identifie les changements de position des objets et les travaux réalisés.",'compare',/changement|compar/,""],
+[89,'I','Objets sélectionnables','particulier curieux','b','video','reno',"Reconstruis cette pièce et donne-moi la possibilité de sélectionner chaque objet pour connaître ses caractéristiques.",'select',/objet|élément|touche|sélection/,""],
+[90,'I','Vider les meubles','particulier','b','video','reno',"Je veux supprimer virtuellement tous les meubles et conserver uniquement la structure architecturale.",'empty',/meuble|vide|enlev/,"remets les meubles"],
+// J — demandes imprécises ou particulières
+[91,'J','Idées','particulier indécis','b','photos','reno',"Je ne sais pas exactement ce que je veux faire dans cette pièce. Regarde la photo et propose-moi des idées.",'ideas',/idée|propos|peut/,""],
+[92,'J','Plus lumineux','particulier','b','video','reno',"Je voudrais que cette maison soit plus lumineuse sans changer toute la décoration.",'light',/lumi|clair|blanc/,""],
+[93,'J','Moderne petit budget','étudiant','b','video','reno',"Fais-moi quelque chose de moderne avec un petit budget.",'style_budget',/budget|€|moderne/,""],
+[94,'J','Réorganiser','particulier','b','video','reno',"Je veux garder absolument tous mes meubles, mais changer l'organisation de la pièce.",'rearrange',/meuble|organis|déplac/,""],
+[95,'J','5 matériaux','particulier','b','video','reno',"Je voudrais voir ce mur dans cinq matériaux différents.",'variants5',/matériau|brique|bois|pierre|béton|papier/,""],
+[96,'J','PMR','aidant familial','b','absent:vidéo du logement','cons',"Je veux une maison adaptée à une personne qui a des difficultés à se déplacer.",'pmr',/pmr|accessib|fauteuil|plain/,""],
+[97,'J','Deux devis','particulier','b','video','reno',"J'aimerais comparer le coût estimatif de deux solutions de rénovation.",'cost2',/€|coût|estimat/,""],
+[98,'J','Noms techniques','particulier novice','b','photos','reno',"Je voudrais que tu reconnaisses les objets dans cette photo même si je ne connais pas leurs noms techniques.",'reco',/objet|lit|frigo|réfrigérateur|chaise/,""],
+[99,'J','Jumeau numérique','propriétaire organisé','b','video','reno',"Je veux créer une copie numérique de mon appartement pour pouvoir préparer plusieurs rénovations futures.",'save',/projet|enregistr|copie|maquette/,""],
+[100,'J','Analyse complète','particulier exigeant','b','video','reno',"Je veux que tu analyses entièrement cette maison, que tu identifies tous les éléments, que tu crées son modèle 3D et que tu me proposes les améliorations possibles.",'full',/élément|amélior|3d|travaux/,""]
+];
+module.exports=S.map(([id,cat,titre,profil,mode,media,sec,texte,but,kw,suite])=>({id,cat,titre,profil,mode,media,sec,texte,but,kw,suite}));
