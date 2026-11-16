@@ -5162,11 +5162,13 @@ function chatFix(t,lang){
 const PR_LEAD=/^(?:(?:change|changer|modifie|modifier|mets|met|mettre|passe|passer|fixe|fixer|nouveau|nouvelle|enregistre|set|update|change|cambia|actualiza|muda|altera|cambia|aggiorna|modifica|schimba|seteaza|degistir|zmien|ustaw|измени|поставь|غير|عدل)\s+)?(?:(?:le|la|mon|ma|mes|the|my|el|mi|o|meu|il|mio|pretul|cena|цену|السعر)\s+)?(?:(?:prix|tarif|price|rate|precio|preco|preço|prezzo|pret|preț|fiyat|cena|цена|سعر)\s+(?:de\s+la\s+|de\s+l'|du\s+|des\s+|de\s+|d'|pour\s+(?:la\s+|le\s+|l')?|of\s+(?:the\s+)?|for\s+(?:the\s+)?|del\s+|da\s+|do\s+|della\s+|dello\s+|di\s+|pentru\s+|за\s+|на\s+)?)?/i;
 const PR_UNIT=[[/^(m2|m²|metres? carres?|mètres? carrés?|le m2|le m²|sqm)$/i,'m²'],[/^(ml|metre lineaire|mètre linéaire|le ml|m)$/i,'ml'],[/^(m3|m³)$/i,'m³'],[/^(h|heure|l'heure|de l'heure|hour|hr|hora|ora|saat|godz|час|ساعة)$/i,'h'],[/^(jour|j|journee|journée|day|dia|día|giorno|zi|gun|gün|dzien|день|يوم)$/i,'jour'],[/^(forfait|flat|fixed)$/i,'forfait'],[/^(u|unite|unité|piece|pièce|unit|pce)$/i,'u']];
 const PR_ADD=/^(?:ajoute|ajouter|ajoutes|rajoute|rajouter|mets|met|mettre|insere|inserer|add|put|anade|agrega|pon|adiciona|coloca|aggiungi|metti|adauga|pune|ekle|dodaj|добавь|أضف|اضف)(?:[\s-]+(?:moi|nous|me|-moi|-nous))?(?:\s+(?:au|sur le|dans le|to the|to my|al|ao|nel|в)\s+(?:devis|quote|presupuesto|orcamento|orçamento|preventivo|deviz|teklif|kosztorys|смету))?\s+/i;
-function prParse(t){let raw=String(t).trim().replace(/\s+/g,' ');const add=PR_ADD.test(raw);if(add)raw=raw.replace(PR_ADD,'');
+function prParse(t){let raw=String(t).trim().replace(/\s+/g,' ');let add=PR_ADD.test(raw);if(add)raw=raw.replace(PR_ADD,'');
+ /* « ajoute un service : pose de parquet 35 € le m² » : un service à enregistrer (pas une ligne), sans « Service : » dans son nom */
+ {const sv=/^(?:(?:nouveau|nouvelle|un|une|le|mon)\s+)?(?:service|prestation)\s*:?\s+(?=\p{L})/iu;if(sv.test(raw)){raw=raw.replace(sv,'');add=false}}
  const m=/^(.*?)(?:\s*(?:[:=]|->|→))?(?:\s+(?:à|a|est de|est à|est a|c'est|coûte|coute|vaut|au prix de|is|costs?|cuesta|costa|kosztuje|стоит))?\s*(\d+(?:[.,]\d{1,2})?)\s*(?:€|euros?|eur)(?![\p{L}])\.?\s*(?:ht|ttc)?\s*(?:(?:le|la|les|par|per|por|pour|the|de)\s+|\/\s*)?(?:l')?([\p{L}²³0-9' ]{0,24}?)\s*(?:ht|ttc)?\s*[.!]?$/iu.exec(raw);
  if(!m)return null;let name=m[1].replace(PR_LEAD,'').replace(/^(le|la|les|l'|un|une|the|el|la|il|o|a)\s+/i,'').replace(/[\s:,-]+$/,'').trim();
  if(name.length<2||name.length>60||/\d/.test(name)||!/\p{L}/u.test(name))return null;
- if(/^(total|acompte|remise|tva|reste|solde)$/i.test(vnNorm(name)))return null;
+ if(/^(total|acompte|remise|tva|reste|solde|arrondis?|arrondir|arrondit)$/i.test(vnNorm(name)))return null;
  if(/^(client|cliente|fournisseur|chez|pour|mme|mlle|m\.|monsieur|madame|acompte|remise|facture|devis)(\s|$)/i.test(vnNorm(name)))return null;
  const u0=(m[3]||'').trim();let unit=null;if(u0){const e=PR_UNIT.find(([re])=>re.test(u0));if(!e)return null;unit=e[1]}
  return{name,prix:Math.round(parseFloat(m[2].replace(',','.'))*100)/100,unit,add}}
@@ -5191,6 +5193,12 @@ function prixChat(t){const x=prParse(t);if(!x)return false;
  if($('s-prix')&&$('s-prix').classList.contains('on'))renderPrices();return true}
 function prAddLine(t,x){const p=prFind(x.name);CHAT.m.push({who:'me',text:t});
  readForm();const before=JSON.stringify(q);
+ /* la ligne est déjà au devis : son prix change, sa quantité reste (pas de deuxième ligne « 1 m² ») */
+ {const k=vnNorm(p?p.nom:x.name),ex=(q.lines||[]).filter(y=>y.label&&vnNorm(y.label)===k);
+  if(ex.length===1){const l=ex[0];l.pu=x.prix;if(x.unit&&l.qty==null)l.unit=x.unit;fillForm();store();const tt=totals(q),diff=p&&+p.prix!==x.prix;
+   CHAT.m.push({who:'bot',undo:before,html:`<div class="msg-lines"><div class="ml"><div><b data-noi18n lang="fr">${esc(l.label)}</b><div class="mut" data-noi18n>${l.qty==null?'':fmtN(l.qty)+' '}${esc(l.unit)} × ${eur(l.pu)}</div></div><b>${l.qty==null?'':eur(l.qty*l.pu)}</b></div></div><div class="msg-tot"><span>Total du devis</span><b>${eur(tt.ttc)} TTC</b></div>`+
+    `<div class="msg-act">${diff?`<button class="btn sm sec" onclick="prSave(this,'${p.id}',${x.prix})"><svg class="i"><use href="#i-tag"/></svg><span>Garder ce prix dans Mes services</span></button>`:''}<button class="btn sm sec" onclick="go('edit')"><svg class="i"><use href="#i-quote"/></svg>Voir le devis</button></div>`});
+   chatSave();chatRender(true);return true}}
  const l={label:p?p.nom:x.name.charAt(0).toUpperCase()+x.name.slice(1),qty:1,unit:x.unit||(p&&p.unit)||'forfait',pu:x.prix,tva:p&&p.tva!=null?+p.tva:20};
  q.lines=q.lines.filter(y=>y.label||y.pu);q.lines.push(l);fillForm();store();
  const tt=totals(q),diff=p&&+p.prix!==x.prix;
@@ -7816,11 +7824,13 @@ function agChat(t){
   const L=[];for(let x=d;x<=d2;x=agAdd(x,1))agDayEvents(x).forEach(e=>{if(!e.d2||x===d||x===e.d)L.push([e,x])});
   out.push(`<p><svg class="i i-sm"><use href="#i-cal"/></svg> <b data-noi18n>${esc(o.date?agFmtD(d):i18nT('Les 7 prochains jours'))}</b></p>`+(L.length?L.map(([e,x])=>agCard(e,null,x)).join(''):`<p class="mut">Rien de prévu.</p>`)+(agDispo()?`<p class="mut"><span>Créneaux de travail</span> : <span data-noi18n>${esc(agDispoTxt(agDispo()))}</span></p>`:''));act.push(goBtn(d))}
  else if(P.intent==='cancel'||P.intent==='move'){
-  const cl=P.who?findBy(db.clients,P.who.nom):null;
+  /* « décale le rdv de Martin à jeudi 14h » : Martin est dans le titre ; sans lui, on déplaçait le premier rendez-vous venu */
+  const clT=!P.who&&P.title?(findBy(db.clients,P.title)||knownClient(P.title)):null,cl=P.who?findBy(db.clients,P.who.nom):clT;
   if(P.intent==='move'&&o.ranges.length===1&&o.times.length<2){o.times=[o.ranges[0][0],o.ranges[0][1]];o.ranges=[]}   // « de 14h à 16h » = déplacer de 14h vers 16h
   const narrow=!!(cl||P.who||o.date||o.times.length||(P.team&&P.team.length));
   let C=narrow?db.events.filter(e=>e.t==='rdv').map(e=>({e,n:agNextOcc(e,agToday())})).filter(x=>x.n):[];
-  if(cl)C=C.filter(x=>x.e.cid===cl.id);else if(P.who)C=C.filter(x=>nameKey(x.e.title).includes(nameKey(P.who.nom)));
+  if(cl)C=C.filter(x=>x.e.cid===cl.id||(!x.e.cid&&nameKey(x.e.title).includes(nameKey(cl.nom))));else if(P.who)C=C.filter(x=>nameKey(x.e.title).includes(nameKey(P.who.nom)));
+  else if(P.title&&/^\p{Lu}/u.test(P.title)){const k=nameKey(P.title),Cn=C.filter(x=>nameKey(x.e.title).includes(k));if(Cn.length||t.trim().indexOf(P.title)>0)C=Cn}
   if(P.team&&P.team.length&&!cl)C=C.filter(x=>(x.e.who||[]).some(id=>P.team.includes(id)));
   if(P.intent==='cancel'&&o.date)C=C.filter(x=>agOccurs(x.e,o.date)).map(x=>({e:x.e,n:o.date}));
   if(P.intent==='move'&&o.dates.length>1)C=C.filter(x=>agOccurs(x.e,o.dates[0])).map(x=>({e:x.e,n:o.dates[0]}));
@@ -7851,6 +7861,8 @@ function agChat(t){
   if(P.who){sup=findBy(db.suppliers,P.who.nom);if(!sup){const M=cliMatches(P.who.nom);
    if(M.length===1&&!M.fz)cl=M[0];else if(M.length)pickM=M;else{const r=upsert('clients',{nom:chatCasse(P.who.nom)});cl=r.x;isNew=r.isNew}}}
   else{const kc=knownClient(t);if(kc){const M=cliMatches(kc.nom);if(M.length>1)pickM=M;else cl=kc}}
+  if(cl&&P.title){const k=nameKey(cl.nom),w=P.title.split(/\s+/),nb=cl.nom.trim().split(/\s+/).length;
+   if(nameKey(w.slice(0,nb).join(' '))===k&&w.length>nb){const r=w.slice(nb).join(' ').replace(/^(?:pour|:|-)\s*(?:le\s+|la\s+|les\s+|l['’]\s*|un\s+|une\s+|du\s+|des\s+)?/i,'').trim();if(r)P.title=r.charAt(0).toUpperCase()+r.slice(1)}}
   const ev={id:uid(),t:'rdv',d,d2:o.drange?o.drange[1]:undefined,a,b,title:P.title||(sup?sup.nom:'')||(pickM&&P.who?P.who.nom:''),cid:cl?cl.id:undefined,adr:cl&&cl.adr||'',src:'chat',at:Date.now()};
   if(rr)ev.rr=rr;if(P.team&&P.team.length)ev.who=P.team.slice();agRemCompute(ev);
   if(sup&&!/chez/i.test(ev.title))ev.title=(P.title?P.title+' · ':'')+sup.nom;

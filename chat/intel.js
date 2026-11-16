@@ -68,6 +68,8 @@ function motifTape(m){var cls={a:"[aàâä]",e:"[eéèêë]",i:"[iîï]",o:"[oô
   return new RegExp(m.trim().split(" ").map(function(w){return w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&").replace(/[aeiouyc]/g,function(ch){return cls[ch];});}).join("[\\s'’-]+"),"iu");}
 var ATT=null;
 P.renvoi=function(t){if(!P.ready||typeof db==="undefined")return null;
+  /* « finalement annule », « en fait laisse tomber » juste après une action : comme « non » */
+  try{var dm=typeof CHAT!=="undefined"&&CHAT.m&&CHAT.m[CHAT.m.length-1];if(dm&&dm.who==="bot"&&(dm.undo||dm.agUndo||dm.pUndo||dm.prUndo||dm.mUndo)&&/^(?:(?:finalement|en fait|non|bon)[ ,]+(?:annule|laisse tomber|oublie)(?: ca| le| la| tout)?|laisse tomber|oublie(?: ca)?)$/.test(hn(t).replace(/[.!]+/g,"").trim()))return "non";}catch(x){}
   /* réponse à « Lequel ? » : le nom choisi remplace le renvoi dans la demande de départ */
   if(ATT){var a=ATT;ATT=null;var k=cle(t).replace(/^(c est |plutot |)/,"");if(Date.now()-a.at<5*60000&&k.split(" ").length<=3){var ch=a.L.filter(function(x){return cle(x.nom)===k||cle(x.nom).split(" ").indexOf(k)>=0;})[0];if(ch)return a.ref(ch);}}
   var c=fr(t),s=" "+c.p+" ",m,qui=null;
@@ -148,7 +150,9 @@ function lire(t,force){var c=fr(t),s=c.p;if(B().isQuestion&&B().isQuestion(t))re
   String(t).split(/\s*(?:[,;+]|\s(?:et|puis|avec|plus|and|y|e|și|i|ve|и|و|with|con|com|cu|z|ile|с)\s)\s*/i).forEach(function(b0){var b=fr(b0).p,aSurf=/(\d+(?:\.\d+)?)\s*(?:m2|m²|metres? carres?)/.test(b);
     if(!aSurf&&/\d+(?:\.\d+)?\s*(?:m2|m²|m3|ml|m|h|heures?|kg|l|sacs?|pots?|jours?)\b/.test(b))autreQte=true;
     /* une autre commande dans la phrase (nouveau devis, rendez-vous, envoi…) : ce n'est pas qu'une description de travaux */
-    if(/\b(nouveau|nouvelle|cree|creer|envoie|envoyer|rendez vous|rdv|facture|facturer|appelle|rappelle|signe|duplique|acompte|tva|remise|marge)\b/.test(" "+b+" "))perdu=true;
+    if(/\b(nouveau|nouvelle|cree|creer|envoie|envoyer|rendez vous|rdv|facture|facturer|appelle|rappelle|signe|duplique|acompte|tva|remise|marge|enleve|enlever|retire|retirer|supprime|supprimer|efface|effacer|deplace|annule|au lieu)\b/.test(" "+b+" "))perdu=true;
+    /* « remplace le carrelage » = refaire le carrelage ; « remplace le carrelage par du parquet » = changer une ligne */
+    if(/\b(remplace|remplacer|change|changer|modifie|modifier)\b.*\b(par|avec|en)\b/.test(b))perdu=true;
     if(META.test(b.replace(PIECES," ").replace(/\s+/g," ").trim()))return;
     var x=b.replace(/(\d+(?:\.\d+)?)\s*(?:m2|m²|metres? carres?)/," ").replace(PIECES," ").replace(/\b(devis|pour|chez|une?|la|le|les|de|du|des|d|l|a|faire|refaire|fais|prevoir|prevois|prevoit|mettre|mets|met|ajoute|rajoute|installe|installer|remplace|remplacer|change|changer|pose de|pose|poser|nouveau|nouvelle|neuf|neuve|complete?|total|totale|salle|bain|bains|il|faut|aussi|ensuite|egalement|au|aux|chantier|s)\b/g," ");x=x.replace(/\s+/g," ").trim();if(ncl)x=(" "+x+" ").split(" "+ncl+" ").join(" ").replace(/\s+/g," ").trim();
     var g=genre(" "+b+" ");if(!x)return;if(!g){if(!aSurf&&!PIECES.test(" "+b+" ")&&!/^(?:pour|chez)\s/.test(b))perdu=true;return;}var nb=x.match(/^(\d+)\s+/);if(/\d/.test(x.replace(/^\d+\s+/,""))&&g!=="u"){perdu=true;return;}
@@ -177,7 +181,54 @@ function melange(t){var s=fr(t).p,nv=String(t).match(/\b(?:client|cliente|klient
   /* la description garde le client de la phrase (« crée le client Bernard et ajoute de la faïence » : sur le devis de Bernard) */
   if(nc){var lg=fr(t).lang||"fr";dsc.forEach(function(i){if((" "+hn(out[i])+" ").indexOf(" "+hn(nc)+" ")<0)out[i]=P.avecClient?P.avecClientForce(out[i],nc,lg):out[i];});}
   PARTS={at:Date.now(),L:dsc.map(function(i){return hn(out[i]);})};return out;}
+/* « remplace le carrelage de cette salle de bain par du parquet imitation bois » : la ligne du devis change, la quantité reste */
+var REMPL=/^\s*(?:remplace|remplacer|change|changer|substitue)\s+(?:le |la |les |l |du |de la |des |un |une )?(.+?)\s+(?:par|avec)\s+(?:du |de la |de l |des |un |une |le |la |les |l )?(.+?)\s*$/;
+/* dans les autres langues, sur la phrase tapée (la traduction mot à mot rend mal « replace … with … ») */
+var REMPLX=[/^\s*(?:replace|swap|change|switch)\s+(?:the\s+)?(.+?)\s+(?:with|by|for|to)\s+(?:some\s+|a\s+|an\s+|the\s+)?(.+?)\s*$/,
+ /^\s*(?:cambia|reemplaza|sustituye|cambiar|reemplazar)\s+(?:el\s+|la\s+|los\s+|las\s+)?(.+?)\s+por\s+(?:un\s+|una\s+|el\s+|la\s+)?(.+?)\s*$/,
+ /^\s*(?:substitui|substituir|troca|trocar|muda|mudar)\s+(?:o\s+|a\s+|os\s+|as\s+)?(.+?)\s+por\s+(?:um\s+|uma\s+|o\s+|a\s+)?(.+?)\s*$/,
+ /^\s*(?:sostituisci|cambia|rimpiazza|sostituire)\s+(?:il\s+|la\s+|lo\s+|i\s+|le\s+|gli\s+|l\s+)?(.+?)\s+con\s+(?:il\s+|la\s+|un\s+|una\s+|del\s+|della\s+)?(.+?)\s*$/,
+ /^\s*(?:inlocuieste|schimba|inlocuiti)\s+(.+?)\s+cu\s+(.+?)\s*$/,
+ /^\s*(?:zamien|wymien|zmien)\s+(.+?)\s+na\s+(.+?)\s*$/,
+ /^\s*(.+?)\s+yerine\s+(.+?)\s+(?:koy|kullan|yaz)\s*$/,
+ /^\s*(?:замени|заменить|поменяй)\s+(.+?)\s+на\s+(.+?)\s*$/,
+ /^\s*(?:استبدل|غير|بدل)\s+(.+?)\s+(?:ب|بـ)\s*(.+?)\s*$/];
+var LEXN=null;function lexFr(x){try{var L=window.CASO_LEXIQUE;if(!L)return null;if(!LEXN){LEXN=[];Object.keys(L.t).forEach(function(k){var n=L.t[k].n,fr0=String(n.fr).split("|")[0];Object.keys(n).forEach(function(lg){String(n[lg]).split("|").forEach(function(a){LEXN.push([hn(a),fr0]);});});});LEXN.sort(function(a,b){return b[0].length-a[0].length;});}
+  var h=" "+hn(x)+" ";for(var i=0;i<LEXN.length;i++)if(LEXN[i][0]&&h.indexOf(" "+LEXN[i][0]+" ")>=0)return LEXN[i][1];}catch(e){}return null;}
+P.remplacer=function(t){var c=fr(t),s=c.p.replace(/[.!]+$/,"").trim(),m=(c.lang||"fr")==="fr"?s.match(REMPL):null,etr=false,enEn=false;
+  if(!m&&(c.lang||"fr")==="fr"&&(m=s.match(/^\s*(?:change|transforme|passe)\s+(?:le |la |les |l )?(.+?)\s+en\s+(.+?)\s*$/)))enEn=true;
+  if(!m&&(c.lang||"fr")!=="fr"){var raw0=String(t).toLowerCase().replace(/[’']/g," ").replace(/[.!?]+\s*$/,"").replace(/\s+/g," ").trim();for(var ri=0;ri<REMPLX.length&&!m;ri++)m=raw0.match(REMPLX[ri]);etr=!!m;}
+  if(!m)return false;
+  var cl=clientDe(t),nc=cl&&cliNom(cl)?cliNom(cl).nom:null,cible=null;
+  var net=function(x){return x.replace(/\s+(?:a|au|dans|sur|pour|de|du|en)\s+(?:\S+\s+){0,3}(?:devis|quote)\b.*$/,"").replace(/\b(?:dans|sur|pour|chez|de|du|des|en)\s+(?:le |la |les |l |ce |cette |cet |mon |ma )?(?:devis|chantier|client)\b.*$/,"").replace(/\s+(?:de|du|dans|pour|chez)\s+(?:la |le |l |cette |ce |cet |sa |son )?(?:salle de bains?|salle d eau|cuisine|chambre|salon|sejour|wc|toilettes|entree|couloir|bureau|piece)\b.*$/,"").replace(/\s+(?:chez|pour)\s+\S+$/,"").trim();};
+  /* en français, le nouveau libellé garde les accents tapés (« faïence », pas « faience ») */
+  if((c.lang||"fr")==="fr"&&!enEn){var raw=String(t).toLowerCase().replace(/[’']/g," ").replace(/[.!]+\s*$/,"").replace(/\s+/g," ").trim(),mr=raw.match(/\s(?:par|avec)\s+(?:du |de la |de l |des |un |une |le |la |les |l )?(.+)$/);if(mr)m[2]=mr[1];}
+  var X=net(m[1]),Y=net(m[2]);
+  if(etr){var kc=nc?hn(nc):"";var netx=function(x){return hn(x).replace(/\s+(?:in|on|for|en|el|del|de|do|da|nel|della|del|din|w|na|в|для|في)\s+.*$/,"").replace(kc?new RegExp("\\b"+kc+"\\b.*$"):/$^/,"").trim();};
+    var Xf=lexFr(X)||fr(netx(X)).p,Yf=lexFr(Y);X=Xf;Y=Yf||netx(Y);}
+  if(nc){var kn=hn(nc);X=(" "+X+" ").split(" "+kn+" ").join(" ").trim();Y=(" "+Y+" ").split(" "+kn+" ").join(" ").trim();}
+  if(!X||!Y||/\d/.test(X+Y))return false;
+  if(nc){cible=q&&q.client===nc&&brouil(q)?q:(db.quotes||[]).filter(function(o){return brouil(o)&&o.client===nc;}).sort(function(a,b){return String(b.date||"").localeCompare(String(a.date||""));})[0]||null;}
+  else cible=typeof q!=="undefined"&&q&&(q.lines||[]).length?q:null;
+  langue();
+  if(!cible){if(enEn)return false;bulle(t,p(nc?T("Aucun devis en cours pour {0}.",[nc]):T("Le devis n’a pas encore de lignes.")));return true;}
+  if(!brouil(cible)){bulle(t,p(T("Ce devis est déjà envoyé : je ne le change pas.")));return true;}
+  var bs=0,li=-1;(cible.lines||[]).forEach(function(l,i){var v=Math.max(proche(X,l.label||""),cle(l.label||"")===cle(X)?1:0);if(v>bs){bs=v;li=i;}});
+  if(bs<0.5){if(enEn)return false;bulle(t,p(T("Je ne trouve pas « {0} » dans le devis.",[X])));return true;}
+  if(cible!==q)q=JSON.parse(JSON.stringify(cible));var before=JSON.stringify(cible),l=q.lines[li],ancien=l.label;
+  var pr=null,b2=0;(db.prices||[]).forEach(function(x){if(autreChose(Y,x.nom))return;var v=Math.min(proche(Y,x.nom),proche(x.nom,Y)+0.5);if(v>b2){b2=v;pr=x;}});if(b2<0.75)pr=null;
+  var un=pr&&pr.unit?pr.unit:l.unit;
+  l.label=pr?pr.nom:Y.charAt(0).toUpperCase()+Y.slice(1);l.pu=pr?nombre(pr.prix):null;if(pr&&pr.tva!=null)l.tva=pr.tva;
+  /* même unité : la quantité reste ; autre unité (m² → ml) : à préciser */
+  if(String(un||"")!==String(l.unit||""))l.qty=null;l.unit=un;
+  fillForm();store();CHAT.qid=q.id;var tt=totals(q),out=[];
+  out.push('<p dir="auto" data-noi18n>'+e(T("{0} remplacé par {1}.",[ancien,l.label]))+'</p>');
+  out.push('<div class="msg-lines"><div class="ml"><div><b data-noi18n lang="fr">'+e(l.label)+'</b><div class="mut" data-noi18n>'+e((l.qty==null?"":N(l.qty)+" ")+l.unit)+(l.pu?' × '+e(E(l.pu)):'')+'</div>'+(l.pu?'':'<div class="vn-w">Pas dans tes prix : prix à remplir</div>')+'</div><b data-noi18n>'+(l.pu&&l.qty!=null?e(E(l.qty*l.pu)):'')+'</b></div></div>');
+  var vf=P.verifier(q);if(vf)out.push(vf.replace("<p ","<p data-noi18n "));
+  out.push('<div class="msg-tot"><span>Total du devis</span><b data-noi18n>'+e(E(tt.ttc))+' TTC</b></div><div class="msg-act"><button class="btn sm sec" onclick="go(\'edit\')"><svg class="i"><use href="#i-quote"/></svg>Voir le devis</button></div>');
+  bulle(t,out.join(""),{undo:before},true);return true;};
 P.decrire=function(t){langue();if(!P.ready||typeof db==="undefined"||typeof q==="undefined")return false;
+  if(P.remplacer(t))return true;
   if(suite(t,fr(t).p))return true;
   var L0=lire(t);if(!L0)return false;var A=L0.A,pc=L0.pc,items=L0.items,cl0=L0.cl0;
   /* mesures : la pièce de la maquette, sinon une pièce carrée de cette surface (2,50 m sous plafond) */
@@ -306,7 +357,117 @@ function ligneMarge(x){var ch=coutH();if(ch&&x.h>=0.5){var bn=x.ca-x.ach-x.h*ch;
   var s=T("{0} : {1} HT, {2} d’achats, marge {3}",[x.nom,E(x.ca),E(x.ach),E(x.marge)]);if(x.h>=1)s+=T(" · {0} h ({1}/h)",[N(x.h),E(x.marge/x.h)]);return s;}
 var ATTCH=false;function demanderCH(M){if(coutH()||ATTCH||!M.some(function(x){return x.h>=0.5;}))return "";ATTCH=true;return p(T("Combien te coûte une heure de travail (salaire et charges) ? Je l’enlève de la marge."));}
 function poserCH(v){db.prof=db.prof||{};db.prof.coutH=v;try{save();}catch(x){}ATTCH=false;}
+/* ---------- finesse d'usage : le devis en cours, les prix, l'état d'un devis ---------- */
+function enCours(){return typeof q!=="undefined"&&q&&brouil(q)&&(q.lines||[]).some(function(l){return l.label;});}
+/* la ligne du devis dont on parle (« la colle » → « Colle carrelage ») ; le même nom exact d'abord */
+function ligneDe(X,L){var bs=0,li=-1;(L||[]).forEach(function(l,i){var n=l.label||l.nom;if(!n)return;var v=cle(n)===cle(X)?2:Math.max(proche(X,n),proche(n,X)*0.9);if(v>bs){bs=v;li=i;}});return bs>=0.5?li:-1;}
+function carteL(l){return '<div class="msg-lines"><div class="ml"><div><b data-noi18n lang="fr">'+e(l.label)+'</b><div class="mut" data-noi18n>'+e((l.qty==null?"":N(l.qty)+" ")+(l.unit||""))+(l.pu?' × '+e(E(l.pu)):'')+'</div></div><b data-noi18n>'+(l.pu&&l.qty!=null?e(E(l.qty*l.pu)):'')+'</b></div></div>';}
+function piedDevis(){var tt=totals(q),vf=P.verifier(q);return (vf?vf.replace("<p ","<p data-noi18n "):"")+'<div class="msg-tot"><span>Total du devis</span><b data-noi18n>'+e(E(tt.ttc))+' TTC</b></div><div class="msg-act"><button class="btn sm sec" onclick="go(\'edit\')"><svg class="i"><use href="#i-quote"/></svg>Voir le devis</button></div>';}
+function uni(u){u=hn(String(u||""));return /^(m2|m²|metres? carres?)$/.test(u)?"m2":/^(h|heures?)$/.test(u)?"h":/^(sacs?)$/.test(u)?"sac":/^(pots?)$/.test(u)?"pot":/^(jours?|j)$/.test(u)?"jour":u;}
+var QN="(\\d+(?:[.,]\\d+)?)\\s*(m2|m²|metres? carres?|ml|m3|m|h|heures?|sacs?|pots?|kg|jours?|u)",
+ CORR="(?:en fait|finalement|plutot|non|pardon|correction|erreur|je me suis trompe|au final)",
+ Q0=new RegExp("^"+CORR+"[ ,:]*(?:mets|met|c est|ce sera|fais|il y a|ca fait|il faut|plutot)?\\s*(\\d+(?:[.,]\\d+)?)$"),
+ Q1=new RegExp("^"+CORR+"[ ,:]*(?:mets|met|c est|ce sera|fais|il y a|ca fait|il faut)?\\s*"+QN+"(?:\\s+(?:de |d |pour le |pour la |pour les |pour l )(.+))?$"),
+ Q2=new RegExp("^(?:"+CORR+"[ ,:]*)?(?:le |la |les |l )?(.+?)\\s+(?:en fait |finalement )?(?:c est|ca fait|fait|ce sera|il y a|il faut)\\s+"+QN+"(?:\\s+(?:pas|et pas|au lieu de|et non|non pas)\\s+\\d.*)?$"),
+ Q3=new RegExp("^(?:"+CORR+"[ ,:]*)?(?:mets|met|passe|change|modifie)\\s+(?:le |la |les |l )?(.+?)\\s+a\\s+"+QN+"$"),
+ TOT1=/^(?:et |alors )?(?:c est quoi |quel est |donne moi |dis moi |on en est ou sur )?(?:le |mon )?(?:total|montant)(?: du devis| de ce devis)?(?: en)?(?: ht| ttc)?$/,
+ TOT2=/^(?:et |alors )?(?:ca|cela|on en est a|on est a|le devis|ce devis|tout ca)?\s*(?:nous )?(?:fait|donne|monte a|est a|fera|coute)?\s*combien(?: ca fait| ca donne| on en est| (?:fait |coute )?(?:le|ce) devis| le total| ca coute)?(?: en tout| au total| pour l instant)?(?: en)?(?: ht| ttc)?$/,
+ SUPL=/^(?:enleve|enlever|retire|retirer|supprime|supprimer|efface|effacer|vire|ote)\s+(?:moi\s+)?(?:la ligne (?:de |du |des |d )?|la |le |les |l |du |des )?(.+?)(?:\s+(?:du|au|dans le|sur le|de ce) devis)?$/,
+ PRX1=/^(?:quel est |c est quoi |donne moi |dis moi |rappelle moi )?(?:le |mon )?(?:prix|tarif) (?:de la |de l |du |des |de |d |pour la |pour le |pour les |pour l |pour )(.+)$/,
+ PRX2=/^(?:le |la |les |l )?(.+?) (?:est|c est|sont|je (?:le |la |les )?(?:fais|facture|vends)) a combien$/,
+ PRX4=/^combien (?:ca )?coutent? (?:une? |le |la |les |l |du |de la |des )?(.+)$/,
+ PRX3=/^(?:a )?combien (?:est|sont|coute|coutent|je fais|je prends pour|je facture|je vends) (?:le |la |les |l |du |de la |des )?(.+)$/,
+ ETAT=/\b(?:est|a ete|a|passe|mets|marque|note)\b.*\b(signe|signee|accepte|acceptee|valide|validee|dit oui|d accord|refuse|refusee|dit non|decline|perdu)\b/;
+var STN={brouillon:"brouillon",envoye:"envoyé",accepte:"accepté",paye:"payé",refuse:"refusé",expire:"expiré"};
+function listeDevis(L,avecClient){return '<div class="msg-lines">'+L.map(function(o){return '<div class="ml" role="button" tabindex="0" style="cursor:pointer" onclick="casoPont.voir(\''+e(o.id)+'\')"><div><b data-noi18n>'+e(avecClient&&o.client?o.client:T("Devis {0}",[o.num||""]).trim())+'</b><div class="mut" data-noi18n>'+e([avecClient&&o.num?o.num:"",o.date?dFR(o.date):"",T(STN[o.status||"brouillon"]||"brouillon")].filter(Boolean).join(" · "))+'</div></div><b data-noi18n>'+e(E(totals(o).ttc))+' TTC</b></div>';}).join("")+'</div>';}
+function usage(t,c){var s=c.p.replace(/[?!.…]+/g," ").replace(/\s+/g," ").trim(),m,cl;
+  /* « rdv Petit vendredi 8h pour le métré de la cuisine » : un rendez-vous, pas un plan de pièce */
+  if(/^(?:rdv|rendez vous)\b/.test(s)&&/ pour (?:le |la |l |un |une |du |des )/.test(" "+s)&&typeof agChat==="function")return !!agChat(t);
+  /* « Martin a tout payé », « Petit a réglé le solde » : l'encaissement des factures (avant, la phrase créait une ligne de devis) */
+  /* « Martin a tout payé », « Petit a réglé sa facture » (sans montant) : le reste dû est encaissé après un Oui */
+  if((m=s.match(/^(.+?) (?:m a |a |ont )(?:deja |bien )?(?:tout (?:paye|regle|vire|solde)|(?:paye|regle|vire|solde) (?:tout|le reste|le solde|la totalite|sa facture|toute sa facture|toute la facture|la facture))(?: (?:en |par )(?:especes?|liquide|cheque|carte|cb|virement))?$/))&&(cl=clientDe(t))&&cliNom(cl)&&P.demander&&typeof faDue==="function"&&typeof faPayAdd==="function"){
+    var np=cliNom(cl).nom,FP=(db.invoices||[]).filter(function(x){return x&&x.num&&x.kind!=="avoir"&&x.client&&cle(x.client.nom)===cle(np)&&faDue(x)>0.005;}).sort(function(a,b){return String(a.date).localeCompare(String(b.date));});
+    if(!FP.length){bulle(t,p(T("Aucune facture à encaisser pour {0}.",[np])));return true;}
+    var fx=FP[0],am=faDue(fx),mode=/cheque/.test(s)?"chq":/espece|liquide/.test(s)?"esp":/carte|\bcb\b/.test(s)?"cb":"vir";CHAT.m.push({who:"me",text:t});
+    P.demander(p(T("Enregistrer le paiement du reste dû par {0} : {1} ({2}) ?",[np,E(am),fx.num])),function(){faPayAdd(fx,{d:agToday(),amt:am,mode:mode});try{faAfterPay(fx);}catch(x){}try{save();}catch(x){}try{faShareSync(fx).catch(function(){});}catch(x){}
+      bulle(null,p(T("Paiement enregistré : {0} · {1}.",[E(am),fx.num])));});return true;}
+  /* « relance Martin » */
+  if((m=s.match(/^(?:relance|relancer|envoie une relance a|fais une relance a|fais une relance pour)\s+(.+)$/))&&(cl=clientDe(t))&&cliNom(cl)&&P.relanceCible){var nr=cliNom(cl).nom,cb=P.relanceCible(nr);
+    if(!cb){bulle(t,p(T("Rien à relancer pour {0}.",[nr])));return true;}
+    bulle(t,p(cb.f?T("Relance de la facture {0} ({1} restant dû).",[cb.num,E(cb.du)]):T("Relance du devis de {0}.",[nr])));try{P.relanceFaire(cb);}catch(x){if(window.console)console.error(x);}return true;}
+  /* « nouveau client : Mme Leroy, 06 11 22 33 44, 5 rue des Roses à Lyon » : nom, téléphone, adresse (avant : un client « Lyon ») */
+  if((m=String(t).match(/^\s*(?:nouveau client|nouvelle cliente|nouveau contact|(?:ajoute|ajouter|cr[ée]e|cr[ée]er|enregistre)\s+(?:le |la |un |une )?(?:nouveau |nouvelle )?client(?:e)?)\s*:?\s+(.+)$/i))&&/,|\d{2}[\s.]?\d{2}|@/.test(m[1])&&typeof upsert==="function"){
+    var rest=m[1],tel=(rest.match(/(?:\+\d{2}\s?|0)[1-9](?:[\s.-]?\d{2}){4}/)||[])[0]||"",mail=(rest.match(/[^\s,;]+@[^\s,;]+\.[^\s,;]+/)||[])[0]||"";
+    if(tel)rest=rest.replace(tel," , ");if(mail)rest=rest.replace(mail," , ");
+    var parts=rest.split(/\s*[,;]\s*/).map(function(x){return x.replace(/^(?:tel|tél|téléphone|telephone|portable|mail|email|e-mail|adresse|habite|au)\s*:?\s*$/i,"").replace(/\s+(?:tel|tél|téléphone|portable|au)\s*:?\s*$/i,"").trim();}).filter(Boolean);
+    var nom=(parts.shift()||"").replace(/^(m\.|mme|mlle|monsieur|madame|mr|mrs)\s+/i,"").trim(),adr=parts.join(", ").replace(/^(?:adresse|habite|au)\s*:?\s+/i,"").trim();
+    if(nom&&nom.split(/\s+/).length<=4&&/^[\p{L}' -]+$/u.test(nom)){nom=nom.split(/\s+/).map(function(w){return w.charAt(0).toUpperCase()+w.slice(1);}).join(" ");
+      var r0=upsert("clients",{nom:nom,tel:tel,adr:adr,email:mail}),dt=[tel,mail,adr].filter(Boolean).join(" · ");try{save();}catch(x){}
+      bulle(t,p(r0.isNew?T("Nouveau client : {0}.",[nom]).replace(/\.\s*$/,"")+(dt?" · "+dt:"")+".":T("Fiche de {0} à jour{1}.",[r0.x.nom,dt?" : "+dt:""])));return true;}}
+  /* « mes devis en attente », « les devis pas signés », « le dernier devis de Petit » */
+  if(/^(?:montre moi |montre |affiche |liste |quels sont |ou sont )?(?:mes |les |tous mes |tous les )?devis (?:en attente|en cours|pas (?:encore )?signes?|non signes?|sans reponse|envoyes?|a relancer|pas (?:encore )?acceptes?)$/.test(s)){
+    var LA=(db.quotes||[]).filter(function(o){return o&&/^(|brouillon|envoye)$/.test(o.status||"")&&(o.lines||[]).some(function(l){return l.label;})&&(!/envoye|sans reponse|a relancer/.test(s)||o.status==="envoye");}).sort(function(a,b){return String(b.date||"").localeCompare(String(a.date||""));});
+    bulle(t,LA.length?listeDevis(LA.slice(0,8),true):p(T("Aucun devis en attente.")));return true;}
+  if(/^(?:le |mon |ouvre le |montre le |montre moi le |affiche le |c est quoi le |quel est le )?dernier devis (?:de|du|d|pour|chez)\b/.test(s)&&(cl=clientDe(t))&&cliNom(cl)){var nd=cliNom(cl).nom,LD=(db.quotes||[]).filter(function(o){return o&&o.client===nd&&(o.lines||[]).some(function(l){return l.label;});}).sort(function(a,b){return String(b.date||"").localeCompare(String(a.date||""));});
+    bulle(t,LD.length?listeDevis(LD.slice(0,1)):p(T("Aucun devis pour {0}.",[nd])));return true;}
+  /* juste après un rendez-vous ajouté : « mets-le plutôt à 10h » le déplace (avant : un deuxième rendez-vous « Mets-le plutôt ») */
+  var der=null;if(typeof CHAT!=="undefined"&&CHAT.m)for(var di=CHAT.m.length-1;di>=0&&di>=CHAT.m.length-3;di--){var dm=CHAT.m[di];if(dm.who!=="bot")break;if(dm.ev){der=dm;break;}}
+  if(der&&der.who==="bot"&&der.ev&&(m=s.match(/^(?:(?:mets|met|decale|deplace|change|passe|fais) (?:le|la)|plutot|en fait|finalement|non)[ ,]*(?:plutot |en fait |finalement )?(?:a |pour |vers )?(\d{1,2}) ?h ?(\d{2})?$/))&&+m[1]<24&&typeof agCard==="function"){
+    var ev=(db.events||[]).filter(function(x){return x.id===der.ev;})[0];
+    if(ev){var old=JSON.stringify(ev),mn=function(h){var z=String(h||"").split(":");return (+z[0]||0)*60+(+z[1]||0);},hm=function(n){n=Math.min(1439,n);return (n<600?"0":"")+Math.floor(n/60)+":"+(n%60<10?"0":"")+n%60;},dur=ev.a&&ev.b?mn(ev.b)-mn(ev.a):60,na=(+m[1])*60+(+(m[2]||0));
+      ev.a=hm(na);ev.b=hm(na+dur);ev.at=Date.now();try{agRemCompute(ev);}catch(x){}try{save();}catch(x){}
+      CHAT.m.push({who:"me",text:t});CHAT.m.push({who:"bot",html:'<p><svg class="i i-sm"><use href="#i-clock"/></svg> <span>Rendez-vous déplacé</span></p>'+agCard(ev,agCheck(ev)),agUndo:"mod:"+old,ev:ev.id});chatSave();chatRender(true);
+      var ip=document.getElementById("chatIn");if(ip){ip.value="";try{chatGrow(ip);qkUpdate();}catch(x){}}return true;}}
+  /* « arrondis à 600 € » : pas un nouveau service nommé « Arrondis » */
+  if(/^arrondi[srt]?\b/.test(s)||/^\s*arrondi[srt]?\b/i.test(t)){bulle(t,p(T("Je ne sais pas arrondir un devis. Dis par exemple « remise de 5 % ».")));return true;}
+  /* le devis en cours */
+  if(enCours()){
+    var etr=(c.lang||"fr")!=="fr";
+    if(TOT1.test(s)||TOT2.test(s)&&/combien/.test(s)||etr&&/\b(combien|total)\b/.test(s)&&!/\d/.test(s)&&s.split(" ").length<=5&&ligneDe(s.replace(/\b(combien|total|prix|le|la|dans|est)\b/g," "),db.prices||[])<0){var tt=totals(q);bulle(t,p(q.client?T("Devis en cours ({0}) : {1} HT, {2} TTC.",[q.client,E(tt.ht),E(tt.ttc)]):T("Devis en cours : {0} HT, {1} TTC.",[E(tt.ht),E(tt.ttc)]))+(function(){var vf=P.verifier(q);return vf?vf.replace("<p ","<p data-noi18n "):"";})());return true;}
+    if((m=s.match(SUPL))&&!/\d/.test(m[1])&&!/^(devis|client|rendez vous|rdv|remise|acompte|tva|tout|marge|note|remarque)/.test(m[1])&&!clientDe(t)){var li=ligneDe(m[1],q.lines);
+      if(li>=0){var before=JSON.stringify(q),l0=q.lines[li];q.lines.splice(li,1);fillForm();store();CHAT.qid=q.id;
+        bulle(t,'<p dir="auto" data-noi18n>'+e(T("{0} retiré du devis.",[l0.label]))+'</p>'+piedDevis(),{undo:before},true);return true;}
+      /* un de mes services qui n'est pas dans ce devis : le dire (avant, la phrase ajoutait la ligne) */
+      if(ligneDe(m[1],db.prices||[])>=0){bulle(t,p(T("Je ne trouve pas « {0} » dans le devis.",[m[1]])));return true;}}
+    var X=null,n=null,u=null;
+    if((m=s.match(Q1))){n=m[1];u=m[2];X=m[3]||null;}else if((m=s.match(Q3))||(m=s.match(Q2))){X=m[1];n=m[2];u=m[3];}
+    if(n==null&&(m=s.match(Q0))){n=m[1];u=null;}
+    if(n!=null&&u==null){var lk=q.lines.length-1;while(lk>=0&&!q.lines[lk].label)lk--;if(lk>=0)u=q.lines[lk].unit;}
+    if(n!=null){var v=parseFloat(String(n).replace(",",".")),lj=-1;
+      if(X)lj=ligneDe(X.replace(/\s+(?:du|au|dans le|sur le) devis$/,""),q.lines);
+      else for(var i=q.lines.length-1;i>=0&&lj<0;i--)if(q.lines[i].label&&uni(q.lines[i].unit)===uni(u))lj=i;
+      if(lj>=0&&v>0&&uni(q.lines[lj].unit)===uni(u)){var bf=JSON.stringify(q),l1=q.lines[lj];l1.qty=v;fillForm();store();CHAT.qid=q.id;bulle(t,carteL(l1)+piedDevis(),{undo:bf},true);return true;}}
+  }
+  /* « quel est le prix du carrelage ? », « le carrelage est à combien ? » : mon prix enregistré */
+  if((m=s.match(PRX1)||s.match(PRX2)||s.match(PRX3)||s.match(PRX4))&&!/\b(devis|facture|chantier|client|total)\b/.test(m[1])){
+    var four=null;(db.suppliers||[]).forEach(function(f){if(f&&f.nom&&(" "+s+" ").indexOf(" "+hn(f.nom)+" ")>=0)four=f.nom;});
+    var achat=!!four||/\b(chez|fournisseurs?|achat|achete|achetes?|paye|payes?|moins cher|meilleur|magasin)\b/.test(s),X0=m[1].replace(/\s+(?:chez|au|a|en) .*$/,"").trim();
+    if(!achat&&!/\d/.test(X0)){var pi=ligneDe(X0,db.prices||[]);
+      if(pi>=0){var pr=db.prices[pi];bulle(t,'<p dir="auto" data-noi18n><b lang="fr">'+e(pr.nom)+'</b> : '+e(E(nombre(pr.prix))+" HT"+(pr.unit?" / "+pr.unit:""))+'</p>');return true;}}
+    /* pas un de mes services : le prix payé chez mes fournisseurs (factures d'achat) */
+    var H=(db.hist||[]).filter(function(h){return h.four&&+h.prix>0&&(!four||cle(h.four)===cle(four));}),HW=H.map(function(h){return mots(h.nom);}),pw=mots(X0).filter(function(w){return HW.some(function(L){return L.indexOf(w)>=0;});});
+    if(pw.length){var best={};H.forEach(function(h,i){if(!pw.every(function(w){return HW[i].indexOf(w)>=0;}))return;var k=cle(h.four),o=best[k];if(!o||String(h.date)>String(o.date))best[k]={four:h.four,prix:+h.prix,unit:h.unit,date:h.date};});
+      var LB=Object.keys(best).map(function(k){return best[k];}).sort(function(a,b){return a.prix-b.prix;});
+      if(LB.length){bulle(t,p(T("Prix d’achat de « {0} » : {1}.",[pw.join(" "),LB.slice(0,4).map(function(x){return x.four+" "+E(x.prix)+(x.unit&&x.unit!=="u"?" / "+x.unit:"")+(x.date?" ("+String(x.date).slice(8,10)+"/"+String(x.date).slice(5,7)+")":"");}).join(" · ")])));return true;}}
+    if(s.match(PRX1)&&!achat&&(c.lang||"fr")==="fr"&&X0.split(" ").length<=4&&!/\d/.test(X0)){bulle(t,p(T("« {0} » n’est pas dans tes services.",[X0])));return true;}}
+  else if((c.lang||"fr")!=="fr"&&/\bprix\b/.test(s)&&!/\d/.test(s)&&!/\b(devis|facture|total)\b/.test(s)){var pj=ligneDe(s.replace(/^.*\bprix\b/,"").replace(/\b\p{L}{1,3}\b/gu," "),db.prices||[]);
+    if(pj>=0){var pr2=db.prices[pj];bulle(t,'<p dir="auto" data-noi18n><b lang="fr">'+e(pr2.nom)+'</b> : '+e(E(nombre(pr2.prix))+" HT"+(pr2.unit?" / "+pr2.unit:""))+'</p>');return true;}}
+  /* « est-ce que Martin a signé le devis ? », « où en est le devis de Martin ? » : l'état de ses devis */
+  if(/\bdevis\b/.test(s)&&(B().isQuestion&&B().isQuestion(t)&&(ETAT.test(s)||/\b(ou en est|etat|statut|envoye|repondu|reponse|des nouvelles)\b/.test(s))||/^(?:est ce|ou en est)\b/.test(s)||/^(?:le |quel est le )?(?:prix|montant) (?:du|des) devis\b/.test(s))&&(cl=clientDe(t))&&cliNom(cl)){
+    var nq=cliNom(cl).nom,LQ=(db.quotes||[]).filter(function(x){return x.client===nq&&(x.lines||[]).some(function(l){return l.label;});}).sort(function(a,b){return String(b.date||"").localeCompare(String(a.date||""));});
+    if(!LQ.length){bulle(t,p(T("Aucun devis pour {0}.",[nq])));return true;}
+    bulle(t,listeDevis(LQ.slice(0,5)));return true;}
+  /* « le devis de Martin est signé », « Martin a refusé le devis » : l'état change après un Oui */
+  if(/\bdevis\b/.test(s)&&(m=s.match(ETAT))&&!(B().isQuestion&&B().isQuestion(t))&&!/^(?:est ce|si|quand|des que)\b/.test(s)&&(cl=clientDe(t))&&cliNom(cl)&&P.demander){
+    var nc=cliNom(cl).nom,ref=/^(refuse|refusee|dit non|decline|perdu)$/.test(m[1]),att=function(o){return o&&(o.lines||[]).some(function(l){return l.label;})&&/^(|brouillon|envoye)$/.test(o.status||"")&&!(o.sign&&o.sign.st==="signed");};
+    var o=typeof q!=="undefined"&&q&&q.client===nc&&att(q)&&(db.quotes||[]).filter(function(x){return x.id===q.id;})[0]||(db.quotes||[]).filter(function(x){return x.client===nc&&att(x);}).sort(function(a,b){return String(b.date||"").localeCompare(String(a.date||""));})[0];
+    if(!o){bulle(t,p(T("Je ne trouve pas de devis en attente pour {0}.",[nc])));return true;}
+    CHAT.m.push({who:"me",text:t});var tt2=totals(o),nv=ref?"refuse":"accepte";
+    P.demander(p(T(ref?"Passer le devis de {0} ({1} TTC) en « refusé » ?":"Passer le devis de {0} ({1} TTC) en « accepté » ?",[nc,E(tt2.ttc)])),function(){o.status=nv;if(typeof q!=="undefined"&&q&&q.id===o.id)q.status=nv;try{save();}catch(x){}
+      bulle(null,p(T(ref?"Devis de {0} : refusé.":"Devis de {0} : accepté.",[nc])));});return true;}
+  return false;}
 P.question=function(t){langue();if(!P.ready||typeof db==="undefined")return false;var c=fr(t),s=" "+c.p+" ";
+  try{if(usage(t,c))return true;}catch(x){if(window.console)console.error(x);}
   /* une demande d'action (« ajoute une marge de 10 % », « mets le prix le moins cher ») n'est pas une question sur l'activité */
   if(/^\s*(ajoute|rajoute|mets|met|applique|enleve|retire|change|modifie|fais|cree|envoie|supprime|note|retiens)\b/.test(s)||/%/.test(s))return false;
   /* raisons des devis refusés */
@@ -433,6 +594,11 @@ P.partagerMaintenant=function(){envoyer();};
    var tel=String(c.tel||o.tel||"").replace(/[^\d+]/g,""),b=encodeURIComponent(msg),ios=/iP(hone|ad)/.test(navigator.userAgent);
    var lien=function(h,lab){return '<a class="btn sm sec" href="'+e(h)+'" onclick="casoPont.relance(\''+o.id+'\')">'+e(lab)+'</a>';};
    bot('<p dir="auto">'+e(msg)+'</p><div class="msg-act">'+(tel?lien("sms:"+tel+(ios?"&":"?")+"body="+b,T("SMS"))+lien("https://wa.me/"+tel.replace(/^0/,"33").replace(/^\+/,"")+"?text="+b,"WhatsApp"):"")+lien("mailto:"+encodeURIComponent(c.email||"")+"?subject="+encodeURIComponent(T("Devis")+" "+(o.num||""))+"&body="+b,T("E-mail"))+'</div>');});};
+ /* « relance Martin » : sa facture en retard d'abord (message prêt à envoyer), sinon son devis envoyé sans réponse */
+ P.relanceCible=function(nc){var k=hn(nc),F=(db.invoices||[]).filter(function(x){return x&&x.num&&x.kind!=="avoir"&&x.client&&hn(x.client.nom)===k&&typeof faDue==="function"&&faDue(x)>0.005;}).sort(function(a,b){return String(a.date).localeCompare(String(b.date));})[0];
+  if(F)return {f:F.id,num:F.num,du:faDue(F)};
+  var Q=(db.quotes||[]).filter(function(o){return o&&o.status==="envoye"&&hn(o.client)===k;}).sort(function(a,b){return String(b.date||"").localeCompare(String(a.date||""));})[0];return Q?{q:Q.id}:null;};
+ P.relanceFaire=function(c){if(c.f){ACO=c.f;P.relancer();}else if(c.q){REL=[c.q];P.relancerDevis();}};
  P.relance=function(id){var o=(db.quotes||[]).filter(function(x){return x.id===id;})[0];if(!o)return;o.relances=(o.relances||[]).concat(Date.now());try{storeQ(o);}catch(x){save();}};
  var ACO=null;P.relancer=function(){var id=ACO;ACO=null;if(!id||typeof faShow!=="function")return;faShow(id);if(typeof faRelance==="function")setTimeout(faRelance,400);};
  /* fin de chantier : le dernier jour au planning est passé → facture (de solde s'il y a eu un acompte) */
