@@ -1,0 +1,56 @@
+name: Appli iPhone (vérification)
+
+# Vérifie que l'appli iPhone se construit (simulateur, sans signature).
+# L'envoi vers TestFlight demande le compte développeur Apple : voir android-app/README.md.
+on:
+  push:
+    branches: ['ios-enveloppe*']
+    paths: ['android-app/**', 'pointage/**', 'index.html', 'sw.js', '.github/workflows/ios-app.yml']
+  workflow_dispatch:
+
+jobs:
+  ios:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: Tests du moteur et du pont
+        working-directory: android-app
+        run: |
+          node test/pointage-auto.test.js
+          node test/geo-web.test.js
+          node test/caso-auto.test.js
+
+      - name: Installer Capacitor et le plugin de zones
+        working-directory: android-app
+        run: |
+          npm install
+          npm install --no-save @capacitor/ios@^7.0.0 ./plugins/caso-geofence
+
+      - name: Préparer le site casô
+        working-directory: android-app
+        run: node scripts/prepare-web.js
+
+      - name: Créer le projet iPhone
+        working-directory: android-app
+        run: npx cap add ios
+
+      - name: Ajouter le pointage automatique
+        working-directory: android-app
+        run: node scripts/patch-ios.js
+
+      - name: Synchroniser
+        working-directory: android-app
+        run: npx cap sync ios
+
+      - name: Construire pour le simulateur
+        working-directory: android-app/ios/App
+        run: |
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO build | tail -40
+          test ${PIPESTATUS[0]} -eq 0
