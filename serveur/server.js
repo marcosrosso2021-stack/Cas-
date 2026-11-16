@@ -12,7 +12,7 @@
    Le même fichier peut être embarqué dans une application (voir createServer / start). */
 'use strict';
 const http=require('http'),fs=require('fs'),path=require('path'),crypto=require('crypto'),os=require('os');
-const webpush=require('./webpush.js');
+const webpush=require('./webpush.js'),prixLib=require('./prix.js'),authLib=require('./auth.js');
 
 const COLL=['prices','quotes','hist','chantiers','people','pts','prof','clients','suppliers','projects','plans','events','invoices'];
 const ROLE_PUSH={patron:COLL,chef:COLL,ouvrier:['pts']};
@@ -45,16 +45,18 @@ function createServer(opts={}){
  const HOSTED=!!(opts.hosted||process.env.TRUST_PROXY||process.env.TRUST_CF||process.env.APP_HOME);
  const HTTPS_ONLY=HOSTED&&!opts.allowHttp&&process.env.ALLOW_HTTP!=='1';
 
- let data={rev:0,counter:0,users:{},tokens:{},invites:{},recs:{},tombs:[],signs:{},subs:[],vapid:null};
+ let data={rev:0,counter:0,users:{},tokens:{},invites:{},recs:{},tombs:[],signs:{},sigreg:{},subs:[],vapid:null};
  {let raw=null;try{raw=fs.readFileSync(FILE,'utf8')}catch(e){if(e.code!=='ENOENT')throw e}
   if(raw!==null){let d;try{d=JSON.parse(raw)}catch(e){const bad=FILE+'.illisible-'+Date.now();try{fs.renameSync(FILE,bad)}catch(_){}
     throw new Error('Le fichier de données est illisible. Il a été mis de côté ('+path.basename(bad)+') et rien n\'a été écrasé. Restaure une sauvegarde avant de relancer.')}
    data=Object.assign(data,d)}}
- for(const k of ['users','tokens','invites','recs','signs','invShares','ics','invSeq','remSent'])if(data[k]&&typeof data[k]==='object')Object.setPrototypeOf(data[k],null);
+ for(const k of ['users','tokens','invites','recs','signs','sigreg','invShares','ics','invSeq','remSent'])if(data[k]&&typeof data[k]==='object')Object.setPrototypeOf(data[k],null);
  COLL.forEach(c=>{if(!data.recs[c])data.recs[c]=Object.create(null);else Object.setPrototypeOf(data.recs[c],null)});
  if(!data.invIds)data.invIds={};
- if(!data.signs)data.signs={};if(!data.subs)data.subs=[];if(!data.remSent)data.remSent={};if(!data.invSeq)data.invSeq={};if(!data.invShares)data.invShares={};if(!data.ics)data.ics={};
+ if(!data.signs)data.signs={};if(!data.sigreg)data.sigreg=Object.create(null);if(!data.subs)data.subs=[];if(!data.remSent)data.remSent={};if(!data.invSeq)data.invSeq={};if(!data.invShares)data.invShares={};if(!data.ics)data.ics={};
  if(!data.vapid){data.vapid=webpush.vapidKeys();try{const t=FILE+'.tmp';fs.writeFileSync(t,JSON.stringify(data));fs.renameSync(t,FILE)}catch(e){}}
+ const auth=authLib.creer(Object.assign({dir:DIR,hosted:HOSTED,maintenant:opts.maintenant},opts.auth||{}));// comptes des usagers : connexion Google / Microsoft (module AUTH)
+ const prix=opts.prix||prixLib.creer();// prix des matériaux en ligne (clé SEARCHAPI_KEY ou SERPAPI_KEY)
  const pushSend=opts.pushSend||((sub,payload)=>webpush.send(sub,payload,data.vapid,{subject:process.env.VAPID_SUBJECT}));
  /* --- apprentissage partagé du chat : phrases apprises par les usagers, sans rien de personnel (fichier à part) --- */
  const APF=path.join(DIR,'appris.json'),APL=['fr','en','es','pt','it','ro','pl','tr','ru','ar'];
@@ -87,6 +89,7 @@ function createServer(opts={}){
  try{const a=JSON.parse(fs.readFileSync(INF,'utf8'));if(a&&typeof a==='object')for(const l of APL)if(a[l]&&typeof a[l]==='object'){const L=incompris[l]=Object.create(null);
   for(const k of Object.keys(a[l]).slice(0,2000)){const x=a[l][k];if(x&&inMot(k)&&Array.isArray(x.u)&&x.u.every(v=>typeof v==='string'))L[k]={u:x.u.slice(0,50),s:x.s==='3d'?'3d':'chat',at:+x.at||0}}}}catch(e){}
  const SIGNER=opts.signerFile||path.join(__dirname,'signer.html');
+ const VERIF=opts.verifFile||path.join(__dirname,'verif.html');
  const FACTURE=opts.factureFile||path.join(__dirname,'facture.html');
 
  function tidy(){const now=Date.now();
@@ -227,6 +230,12 @@ function createServer(opts={}){
     remise:num(q.remise),acompte:num(q.acompte),franchise:!!q.franchise,
     lines:(Array.isArray(q.lines)?q.lines:[]).slice(0,300).map(l=>({label:cut(l&&l.label,300),qty:num(l&&l.qty),unit:cut(l&&l.unit,20),pu:num(l&&l.pu),tva:num(l&&l.tva)})),cv:cleanCv(q.cv)},
    prof:{nom:cut(p.nom,120),adr:cut(p.adr,200),siret:cut(p.siret,40),tel:cut(p.tel,40),email:cut(p.email,120),assur:cut(p.assur,200),valid:num(p.valid)||30,forme:cut(p.forme,120),rm:cut(p.rm,80),tvai:cut(p.tvai,40)}}}
+ /* --- signature enregistrée de l'artisan (QR des devis) : fiche publique de vérification --- */
+ const SIG_AL='0123456789ABCDEFGHJKMNPQRSTVWXYZ',SIG_RE=/^CS-[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]$/;
+ function sigIdOf(h){const c=h.slice(0,16).match(/../g).map(x=>SIG_AL[parseInt(x,16)%32]);
+  return 'CS-'+c.slice(0,4).join('')+'-'+c.slice(4,8).join('')+'-'+SIG_AL[c.reduce((s,x,i)=>s+SIG_AL.indexOf(x)*(i+1),0)%32]}
+ function publicSigReg(r){return{id:r.id,status:r.status,at:r.at,replacedAt:r.replacedAt||null,faceid:!!r.faceid,img:r.img,
+  signataire:{nom:r.signataire.nom,qualite:r.signataire.qualite},entreprise:Object.assign({},r.entreprise)}}
  const sha=o=>crypto.createHash('sha256').update(typeof o==='string'?o:JSON.stringify(o)).digest('hex');
  function publicSign(sg){
   return{status:sg.status,doc:sg.doc,docHash:sg.docHash,sentAt:sg.sentAt,expires:sg.expires,
@@ -335,9 +344,9 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
    if(NEWL&&req.method==='GET'&&url==='/devis.html'){/* module Devis, ouvert dans un cadre de l'appli */
     let html;try{html=fs.readFileSync(path.join(ROOT,'devis.html'),'utf8')}catch(e){return send(res,404,{error:'introuvable'})}
     return send(res,200,html,{'content-security-policy':CSP_APP.replace("frame-ancestors 'none'","frame-ancestors 'self'"),'x-frame-options':'SAMEORIGIN'})}
-   if(NEWL&&req.method==='GET'&&!url.includes('..')&&/^\/(?:chat|lib|i18n)\/[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)*\.(?:js|json|wasm|mjs)$/.test(url)){/* fichiers du chat, bibliothèques et traductions */
+   if(NEWL&&req.method==='GET'&&!url.includes('..')&&/^\/(?:chat|lib|i18n)\/[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)*\.(?:js|json|wasm|mjs|onnx)$/.test(url)){/* fichiers du chat, bibliothèques et traductions */
     let b;try{b=fs.readFileSync(path.join(ROOT,url))}catch(e){return send(res,404,{error:'introuvable'})}
-    const ty=url.endsWith('.json')?'application/json; charset=utf-8':url.endsWith('.wasm')?'application/wasm':'text/javascript; charset=utf-8';
+    const ty=url.endsWith('.json')?'application/json; charset=utf-8':url.endsWith('.wasm')?'application/wasm':url.endsWith('.onnx')?'application/octet-stream':'text/javascript; charset=utf-8';
     res.writeHead(200,Object.assign({'content-type':ty,'cache-control':'no-cache'},SEC));return res.end(b)}
    if(NEWL&&req.method==='GET'&&url==='/lib/m3d.html'){/* module 3D : lu par l'appli comme texte, puis mis dans son cadre */
     let b;try{b=fs.readFileSync(path.join(ROOT,'lib','m3d.html'))}catch(e){return send(res,404,{error:'introuvable'})}
@@ -379,6 +388,12 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
     if(m){let b;try{b=fs.readFileSync(path.join(path.dirname(APP),m[1]))}catch(e){return send(res,404,{error:'introuvable'})}
      res.writeHead(200,{'content-type':m[1].endsWith('.png')?'image/png':'application/manifest+json; charset=utf-8','cache-control':'no-cache','x-content-type-options':'nosniff'});return res.end(b)}}/* PWA_FILES */
    if(req.method==='GET'&&url==='/sw.js'){res.writeHead(200,{'content-type':'text/javascript; charset=utf-8','cache-control':'no-cache','service-worker-allowed':'/'});return res.end(SW)}
+   if(req.method==='GET'&&/^\/v\/CS-[0-9A-Z-]{11}$/.test(url)){/* page ouverte par le QR de la signature */
+    let html;try{html=fs.readFileSync(VERIF,'utf8')}catch(e){return send(res,404,{error:'verif.html introuvable'})}
+    res.writeHead(200,Object.assign({'content-type':'text/html; charset=utf-8','cache-control':'no-cache','x-robots-tag':'noindex','content-security-policy':CSP_PUB},SEC));return res.end(html)}
+   {const mv=req.method==='GET'&&url.match(/^\/api\/v\/(CS-[0-9A-Z-]{11})$/);
+    if(mv){const r=SIG_RE.test(mv[1])&&own(data.sigreg,mv[1])?data.sigreg[mv[1]]:null;
+     return r?send(res,200,publicSigReg(r)):send(res,404,{error:'Signature inconnue.'})}}
    let m=url.match(/^\/api\/s\/([a-f0-9]{32})(\/sign)?$/);
    if(m){
     const sg=data.signs[m[1]];
@@ -406,6 +421,9 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
      notifySigned(sg).catch(()=>{});
      return send(res,200,publicSign(sg))}
     return send(res,405,{error:'méthode'})}
+
+   /* module AUTH : connexion directe avec Google ou Microsoft */
+   if(url.startsWith('/api/auth/'))return void await auth.traiter(req,res,{url,ip,send,readBody});
 
    /* ouvert à tous : état du serveur et adresses */
    if(req.method==='GET'&&url==='/api/ping')return send(res,200,{ok:true,app:'devis-btp',schema:3,sign:true});
@@ -442,6 +460,10 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
     const u=data.users[inv.user];
     if(!u)return send(res,404,{error:'Ce compte n\'existe plus.'});
     return send(res,200,newToken(u))}
+
+   /* prix des matériaux en ligne (sans compte) : la clé du service reste ici, limites par jour et par adresse */
+   if(req.method==='GET'&&url==='/api/prix'){const sp=new URLSearchParams(req.url.split('?')[1]||'');
+    const [c,b]=await prix.chercher(sp.get('q')||'',sp.get('pays')||'FR',ip);return send(res,c,b)}
 
    /* apprentissage partagé du chat (sans compte) : chaque appareil envoie ses phrases apprises, reçoit celles des autres */
    if(url==='/api/appris'){
@@ -484,7 +506,7 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
      if(tooMany(ip))return send(res,429,{error:'Trop d\'essais, patiente une minute.'});
      if(!checkPw(user,String(b.password||''))){fail(ip);return send(res,403,{error:'Mot de passe du serveur incorrect.'})}
      const keep={vapid:data.vapid,invSeq:data.invSeq};
-     data={rev:(data.rev||0)+1,counter:0,users:Object.create(null),tokens:Object.create(null),invites:Object.create(null),recs:Object.create(null),tombs:[],signs:Object.create(null),subs:[],
+     data={rev:(data.rev||0)+1,counter:0,users:Object.create(null),tokens:Object.create(null),invites:Object.create(null),recs:Object.create(null),tombs:[],signs:Object.create(null),sigreg:Object.create(null),subs:[],
       invShares:Object.create(null),ics:Object.create(null),invSeq:Object.assign(Object.create(null),keep.invSeq||{}),invIds:{},remSent:Object.create(null),vapid:keep.vapid};
      COLL.forEach(c=>{data.recs[c]=Object.create(null)});
      persist();return send(res,200,{ok:true,scope:'entreprise'})}
@@ -492,6 +514,7 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
     Object.keys(data.tokens).forEach(t=>{if(data.tokens[t].user===me)delete data.tokens[t]});
     Object.keys(data.invites).forEach(c=>{if(data.invites[c].user===me)delete data.invites[c]});
     data.subs=data.subs.filter(x=>x.user!==me);
+    Object.keys(data.sigreg).forEach(k=>{if(data.sigreg[k].user===me)delete data.sigreg[k]});
     Object.keys(data.ics).forEach(k=>{if(k!=='tz'&&data.ics[k]&&data.ics[k].user===me)delete data.ics[k]});
     persist();return send(res,200,{ok:true,scope:'compte'})}
 
@@ -541,6 +564,21 @@ data.invSeq[key]=n;if(iid)data.invIds[key+'|'+iid]=n;persist();return send(res,2
     return send(res,200,{url:u,webcal:u.replace(/^https?:/,'webcal:')})}
 
    /* devis à signer */
+   if(POST&&url==='/api/sig/register'){
+    if(user.role==='ouvrier')return send(res,403,{error:'Réservé au patron et au chef.'});
+    const b=await readBody(req),id=String(b.id||''),hash=String(b.hash||'');
+    if(!/^[a-f0-9]{64}$/.test(hash)||!SIG_RE.test(id)||sigIdOf(hash)!==id)return send(res,400,{error:'Enregistrement invalide.'});
+    if(!okPng(b.img))return send(res,400,{error:'Signature manquante.'});
+    if(!b.faceid)return send(res,400,{error:'Face ID manquant.'});
+    const e=b.entreprise&&typeof b.entreprise==='object'?b.entreprise:{},at=Date.parse(b.at)?new Date(b.at).toISOString():new Date().toISOString();
+    const ent={};['nom','forme','siret','adresse','tel','email','rm','assur','zone'].forEach(k=>{const v=cut(e[k],k==='adresse'||k==='assur'?200:100).trim();if(v)ent[k]=v});
+    if(ent.siret)ent.siret=ent.siret.replace(/\D/g,'').slice(0,14);
+    const now=Date.now();
+    Object.values(data.sigreg).forEach(x=>{if(x.user===user.name&&x.status==='active'&&x.id!==id){x.status='remplacee';x.replacedAt=now}});
+    data.sigreg[id]={id,hash,at,user:user.name,status:'active',faceid:cut(b.faceid,200),pk:b.pk?cut(b.pk,600):null,img:b.img,
+     signataire:{nom:cut(b.nom||user.name,80).trim(),qualite:user.role==='patron'?'Dirigeant':'Chef d\u2019équipe'},entreprise:ent,savedAt:now};
+    persist();return send(res,200,{ok:true,url:baseUrl(req)+'/v/'+id})}
+
    if(url.startsWith('/api/sign/')){
     if(user.role==='ouvrier')return send(res,403,{error:'Réservé au patron et au chef.'});
     if(POST&&url==='/api/sign/new'){
@@ -603,7 +641,7 @@ data.invSeq[key]=n;if(iid)data.invIds[key+'|'+iid]=n;persist();return send(res,2
    return send(res,404,{error:'introuvable'});
   }catch(e){if(!e||!e.pub)console.error('[casô]',req.method,url,e&&e.stack||e);if(!res.headersSent)send(res,400,{error:e&&e.pub?e.message:'Requête invalide.'});else try{res.destroy()}catch(_){}}});
 
- return{server,data:()=>data,remindTick,icsFor};
+ return{server,data:()=>data,remindTick,icsFor,auth};
 }
 
 /* Démarrage prêt à l'emploi : utilisable depuis un lanceur ou depuis une application */

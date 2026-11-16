@@ -116,9 +116,13 @@ input.bad{border-color:var(--ko)}
 .bdg{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 12px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:15px;font-weight:700;cursor:pointer}
 .bdg.ko{border-color:var(--ko);color:var(--ko)}.bdg.warn{border-color:var(--warn);color:var(--warn)}.bdg.ok{color:var(--ok)}
 .ln{border:1px solid var(--line);border-radius:14px;padding:10px;margin-bottom:10px;background:var(--card)}
-.ln .q{display:grid;grid-template-columns:1fr 1fr 1.2fr 1fr;gap:6px;margin-top:6px}
+.ln .q{display:grid;grid-template-columns:1fr 1fr 1.25fr 1.15fr;gap:6px;margin-top:6px}
+.ln .q>div{min-width:0}
 .ln .q label{margin:0;font-size:10px}
-.ln .q input,.ln .q select{min-height:44px;padding:8px;font-size:16px}
+.ln .q input,.ln .q select{min-height:44px;padding:8px;font-size:16px;text-align:right}
+.ln .q select{-webkit-appearance:none;appearance:none;padding-right:24px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23888' stroke-width='1.6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;background-size:11px}
+.ln .q [data-f=unite]{text-align:left}
+.ln .q label{text-align:left}
 .ln .ft{display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap}
 .ln .ft .tl{margin-left:auto;font-family:var(--mono);font-weight:700}
 .ln .tgl{min-height:36px;padding:0 10px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--mut);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
@@ -261,10 +265,13 @@ input.bad{border-color:var(--ko)}
 @container (max-width:470px){
  .cvd .cvt,.cvd .cvt tbody{display:block;width:100%}
  .cvd .cvt thead,.cvd .cvt colgroup{display:none}
- .cvd .cvt tr{display:grid;grid-template-columns:1fr auto auto auto;align-items:baseline;column-gap:12px;padding:9px 4px;border-bottom:1px solid #e4e4e0}
+ .cvd .cvt tr{display:grid;grid-template-columns:1fr 6.6em 3.3em 6.4em;align-items:baseline;column-gap:12px;padding:9px 4px;border-bottom:1px solid #e4e4e0}
  .cvd .cvt.t-brut tr,.cvd .cvt.t-grille tr,.cvd .cvt.t-cadre tr{border-bottom-color:#9a9a96}
  .cvd .cvt td{display:block;border:0!important;padding:0!important;background:none!important}
  .cvd .cvt td:first-child{grid-column:1/-1;margin-bottom:4px}
+ .cvd .cvt td.r{text-align:right;white-space:nowrap}
+ .cvd .cvt.bpu tr{grid-template-columns:1fr 4em 6.6em 3.3em}
+ .cvd .cvt.bpu td:nth-child(3)::before{content:none}
  .cvd .cvt td:nth-child(2){text-align:left;color:#555}
  .cvd .cvt td:nth-child(3)::before{content:'× ';color:#888}
  .cvd .cvt td:last-child{font-weight:700}
@@ -768,7 +775,7 @@ function renderDoc(d,o={}){
       :`<tr class="${l.opt?'cv-opt':''}"><td>${des}</td><td class="r">${has(l.qte)?fq(l.qte)+' '+E(l.unite):'—'}</td><td class="r">${has(l.pu)?eur(cents(l.pu)):'—'}</td><td class="r">${sx?'—':fq(l.tva)+' %'}</td><td class="r">${vide?'—':eur(ligneHT(l))}</td></tr>`)});
   if(aSec)fin();
   const rows=out.join('');
-  const lignes=`<div class="cvb" data-bloc="lignes" data-lock="1"><table class="cvt ${th}">${bpu?'<colgroup><col><col class="c-u"><col class="c-pu"><col class="c-tv"></colgroup>':'<colgroup><col><col class="c-q"><col class="c-pu"><col class="c-tv"><col class="c-t"></colgroup>'}<thead><tr><th>Désignation</th>${bpu?'<th class="r">Unité</th>':'<th class="r">Qté</th>'}<th class="r">PU HT</th><th class="r">TVA</th>${bpu?'':'<th class="r">Total HT</th>'}</tr></thead><tbody>${rows}</tbody></table></div>`;
+  const lignes=`<div class="cvb" data-bloc="lignes" data-lock="1"><table class="cvt ${th}${bpu?' bpu':''}">${bpu?'<colgroup><col><col class="c-u"><col class="c-pu"><col class="c-tv"></colgroup>':'<colgroup><col><col class="c-q"><col class="c-pu"><col class="c-tv"><col class="c-t"></colgroup>'}<thead><tr><th>Désignation</th>${bpu?'<th class="r">Unité</th>':'<th class="r">Qté</th>'}<th class="r">PU HT</th><th class="r">TVA</th>${bpu?'':'<th class="r">Total HT</th>'}</tr></thead><tbody>${rows}</tbody></table></div>`;
   const tot=`<div class="cvb" data-bloc="totaux" data-lock="1"><div class="cv-tot"><div class="cv-tb"><div class="cv-tr"><span>Total HT</span><b>${eur(t.ht)}</b></div>${t.franchise?`<div class="cv-tr sm"><span>${E(T.franchise)}</span></div>`:t.autoliq?`<div class="cv-tr sm"><span>${E(T.autoliq)}</span></div>`:t.detail.map(x=>`<div class="cv-tr sm"><span>TVA ${fq(x.taux)} %</span><b>${eur(x.tva)}</b></div>`).join('')}<div class="cv-tr big"><span>${t.autoliq||t.franchise?'Total':'Total TTC'}</span><b>${eur(t.ttc)}</b></div>${t.options?`<div class="cv-tr sm"><span>${E(T.options)}</span><b>${eur(t.options)} HT</b></div>`:''}</div></div></div>`;
   const trav=`<div class="cvb" data-bloc="travaux" data-lock="1"><div class="cv-h">Travaux</div><p class="cv-lg">Début : ${has(d.debut)?fd(d.debut):'—'} · Durée : ${E(d.duree)||'—'}</p></div>`;
   const cond=`<div class="cvb" data-bloc="conditions" data-lock="1"><div class="cv-h">Conditions</div>${conditions(d).map(x=>`<p class="cv-lg">${E(x)}</p>`).join('')}</div>`;
