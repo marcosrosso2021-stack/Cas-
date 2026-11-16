@@ -276,3 +276,15 @@ Source du moteur et outils de traduction : le module « caso-ia » (moteur, cata
 - **dernier recours** (`casoPont.travail`, appelé juste avant « Je n'ai pas compris ») : un travail dit sans « faut » (« refaire la gouttière », « évacuation des gravats à la benne ») va dans les notes À faire du devis.
 - « 10 plaques de BA13 » se compte à l'unité ; « joints de carrelage » ne prend plus le prix de « Carrelage ».
 - **simulation** : `outils/chat/simulation.js` (nouveau, l'ancien script n'était pas dans le dépôt) — 100 usagers, 10 langues, fautes de frappe, style SMS ; même graine = mêmes messages, pour comparer deux versions. « Compris » veut dire « autre chose que Je n'ai pas compris », pas « bien compris ». 40 usagers chaque semaine.
+
+**Les fonctions arrivées depuis dans les exécutions du chat (16 nov. 2026)** — après la fusion de `main` (Newsletter, Fournisseurs simple, vidéo reprise, sécurité discrète) :
+- **« Mon entreprise » en quatre pages** (`pont.js` → `ecran`) : le chat ouvre la page du réglage demandé. Avant, « mon équipe », « invite un ouvrier », « change la langue », « ouvre les notifications » ouvraient la page Entreprise, où le réglage est caché. La page est lue sur le `data-cp` du réglage : rien à tenir à jour si un réglage change de page.
+- **Newsletter** (`veille.js`) : « ouvre la newsletter », « newsletter » ouvrent la page. « quoi de neuf » répond toujours dans le chat.
+- **métier** (moteur `parseApp`, `APP_METIERS`) : « mon métier c'est plombier », « je suis électricien » règlent le métier de Mon entreprise (celui qui trie la Newsletter), avec Annuler. Un métier hors liste (carreleur, plaquiste…) donne « Autre métier du bâtiment ». Lu sur le texte tapé : la correction des fautes change « carreleur » en « carrelage ».
+- **zone couverte par l'assurance**, et « mon iban », « change mon siret » ouvrent le champ.
+- **prix en ligne** (`app.prix_ligne`) : « cherche le prix du placo en ligne », « compare les prix de la laine de verre » ouvrent Fournisseurs → Prix en ligne et lancent la recherche. « prix du BA13 en magasin » répond toujours depuis les achats enregistrés.
+- **vidéo** (`app.video`) : « filme la pièce pour la maquette », « reprends l'analyse de la vidéo » ouvrent le module 3D ; « où en est la vidéo » donne l'étape en cours.
+- **Face ID / empreinte** (`app.faceid`) : un bouton, comme pour le code de secours ; il ouvre Sauvegarde et fait le réglage, ou dit que le téléphone ne le permet pas.
+- Ces phrases sont comprises en français ; « newsletter » dans les 10 langues. Les réponses sont traduites.
+- essais : 23 contrôles de plus dans `essai-fiabilite.js` (244).
+

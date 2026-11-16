@@ -140,7 +140,10 @@ P.action=function(a){try{
   if(a==="prix"&&typeof exportCsv==="function")return exportCsv();
   if(a==="clients"&&typeof dl==="function"){var L=["Nom;Téléphone;E-mail;Adresse;Note"].concat((db.clients||[]).map(function(c){return [c.nom,c.tel,c.email,c.adr||c.adresse,c.note].map(csv).join(";");}));return dl("mes-clients.csv","\ufeff"+L.join("\n"),"text/csv");}
   if(a==="bricoleur"&&typeof modePick==="function"){if(typeof chatSave==="function")chatSave();return modePick("bricoleur");}
-  if(a==="secours"&&typeof rcNew==="function"){go("cpt");return rcNew();}
+  if(a==="secours"&&typeof rcNew==="function"){if(typeof cptPage==="function")cptPage("bk");else go("cpt");return rcNew();}
+  if(a==="faceid"&&typeof bioToggle==="function"){if(typeof cptPage==="function")cptPage("bk");
+    return Promise.resolve(typeof bioRender==="function"?bioRender():0).then(function(){var b=document.getElementById("bioBtn");
+      if(b&&!b.hidden)return bioToggle();if(typeof toast==="function")toast(i18nT("{1} n’est pas disponible sur ce téléphone.").replace("{1}",typeof bioNom==="function"?bioNom():"Face ID"));});}
   if(a==="deconnexion"&&typeof logout==="function")return logout();
   if(a==="notifs"&&typeof enableNotif==="function")return enableNotif();
   if(a==="restaurer"){var fj=document.getElementById("fJson");if(fj)return fj.click();}
@@ -236,7 +239,10 @@ P.essaie=function(t,force){if(!P.ready||typeof db==="undefined"||typeof q==="und
   return true;};
 /* ---------- les fonctions de l'appli demandées dans le chat (app.* et écrans) ---------- */
 /* ouvrir un écran de casô et amener la carte voulue sous les yeux */
-function ecran(sec,sel,fn){if(typeof go!=="function")return;setTimeout(function(){try{go(sec);if(fn)fn();}catch(x){}
+function ecran(sec,sel,fn){if(typeof go!=="function")return;setTimeout(function(){try{go(sec);
+    /* « Mon entreprise » est en quatre pages (entreprise, équipe, sauvegarde, langue et notifications) : on ouvre celle du réglage demandé */
+    if(sec==="cpt"&&typeof cptPage==="function"){var e0=sel&&document.querySelector(sel),c0=e0&&e0.closest("[data-cp]");cptPage(c0?c0.dataset.cp:"ent");}
+    if(fn)fn();}catch(x){}
   if(sel)setTimeout(function(){try{var el=document.querySelector(sel);if(el){(el.closest(".card")||el).scrollIntoView({block:"center",behavior:"smooth"});}}catch(x){}},150);},250);}
 function devisCourant(){return q&&(q.lines.length||q.client)?q:null;}
 function garderDevis(){try{storeQ(q);if(typeof fillForm==="function")fillForm();}catch(x){}}
@@ -256,9 +262,12 @@ function appFaire(a,o,r,t){var x={says:[],explain:r.explain};var cur=devisCouran
     case "entreprise":
       if(o.champ&&o.v){var k=CHAMPS_ENT[o.champ]||o.champ,v=o.v;if(/^(tauxH|depl|capital|valid)$/.test(k))v=nb(v);if(/^(iban|bic)$/.test(k))v=String(o.v).toUpperCase().replace(/[^A-Z0-9 ]/g,"").trim();
         if(!v){x.says=[P.tr("Je n’ai pas compris la valeur.")];break;}
+        var vAff=v;if(k==="metier"){var om=[].slice.call(document.querySelectorAll("#eMetier option")).filter(function(y){return y.value===v;})[0];if(!om){ecran("cpt","#eMetier");break;}vAff=om.textContent;}
+        if(k==="zone"){var mz=/(?:c[’']est|\best|:|=)\s*(.+?)[\s.!]*$/i.exec(t);if(mz)v=vAff=mz[1];}
         if(k==="iban"&&window.VAULT&&VAULT.on&&typeof ibanSet==="function"){ibanSet(v);x.says=[P.tr("Confirme avec ton mot de passe.")];break;}
-        x.u={prof:JSON.stringify(db.prof||{})};db.prof=Object.assign({},db.prof||{});db.prof[k]=v;db.profAt=Date.now();save();x.says=[P.tr("C’est enregistré : {0}.",[v])];}
-      else ecran("cpt",o.champ?"#e"+({tauxH:"TauxH",depl:"Depl",iban:"Iban",bic:"Bic",siret:"Siret",capital:"Capital",tvai:"Tvai",assur:"Assur",rcpro:"Rcpro",valid:"Valid",delai:"Delai",med:"Med",rm:"Rm",forme:"Forme",nomEnt:"Nom",telEnt:"Tel",mailEnt:"Mail",adrEnt:"Adr"}[o.champ]||"Nom"):"#eNom");break;
+        x.u={prof:JSON.stringify(db.prof||{})};db.prof=Object.assign({},db.prof||{});db.prof[k]=v;db.profAt=Date.now();save();x.says=[P.tr("C’est enregistré : {0}.",[vAff])];
+        if(k==="metier")try{if(window.casoVeille)casoVeille.pastille();if(window.CasoAuth)CasoAuth.profil();}catch(y){}}
+      else ecran("cpt",o.champ?"#e"+({tauxH:"TauxH",depl:"Depl",iban:"Iban",bic:"Bic",siret:"Siret",capital:"Capital",tvai:"Tvai",assur:"Assur",rcpro:"Rcpro",valid:"Valid",delai:"Delai",med:"Med",rm:"Rm",forme:"Forme",nomEnt:"Nom",telEnt:"Tel",mailEnt:"Mail",adrEnt:"Adr",metier:"Metier",zone:"Zone"}[o.champ]||"Nom"):"#eNom");break;
     case "notifs":if(o.on&&typeof enableNotif==="function"){x.bouton={act:"notifs",label:r.explain};x.explain="";}else ecran("cpt","#notifCard");break;
     case "restaurer":x.bouton={act:"restaurer",label:r.explain};x.explain="";break;
     case "traduction":ecran("tr");break;
@@ -294,6 +303,13 @@ function appFaire(a,o,r,t){var x={says:[],explain:r.explain};var cur=devisCouran
     case "chantiers":ecran("pt",null,function(){ptPage("set");});break;
     case "plan":ecran("plan");break;
     case "m3d":x.apres=function(){if(typeof m3dOpen==="function")m3dOpen();};break;
+    case "faceid":{var bn=typeof bioNom==="function"?bioNom():"Face ID";x.bouton={act:"faceid",label:bn.charAt(0).toUpperCase()+bn.slice(1)};}x.explain="";break;
+    case "prix_ligne":ecran("fou",null,function(){var i=document.getElementById("fouQ");if(i)i.value=o.q||"";if(typeof fouMode==="function")fouMode("web");});break;
+    case "video":{var M=typeof M3D!=="undefined"?M3D:null;
+      if(o.etat){x.explain="";if(M&&M.busy)x.says=[P.tr("Analyse de la vidéo en cours : {0}",[(M.lbl&&M.lbl!=="…"?M.lbl:"…")+(M.n?" · "+Math.min(M.n,(M.done||0)+1)+"/"+M.n:"")])];
+        else if(M&&M.ready){x.says=[M.readyLbl||P.tr("Maquette 3D")];x.apres=function(){if(typeof m3dOpen==="function")m3dOpen();};}
+        else x.says=[P.tr("Aucune analyse vidéo en cours.")];break;}
+      x.apres=function(){if(typeof m3dOpen==="function")m3dOpen();};break;}
     case "aide":x.explain="";x.says=[P.tr("Je sais faire ce que fait casô : devis, factures et avoirs, clients et fournisseurs, prix, planning, pointage, plan et maquette 3D, encaissements, équipe et réglages. Dis-le comme tu veux, même avec des fautes.")];break;
   }return x;}
 /* les autres demandes du moteur qui ont un écran ou une action dans casô */

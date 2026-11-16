@@ -1618,10 +1618,20 @@ function create(E,X,saved,opts){
   var APP_CHAMPS=[["iban","iban"],["bic","bic|swift"],["tauxH","taux horaire|tarif horaire|prix de l heure|prix horaire|heure ht|taux de l heure"],
     ["depl","frais de deplacement|deplacement par defaut|prix du deplacement|forfait deplacement"],["capital","capital social|capital"],
     ["rcpro","responsabilite civile|rc pro"],["delai","delai de paiement|delais de paiement"],
-    ["med","mediateur"],["rm","rcs|numero rm|rne|repertoire des metiers"],["forme","forme juridique|statut juridique"],
+    ["zone","zone couverte par l assurance|zone couverte|zone d assurance|zone de l assurance|zone geographique"],["med","mediateur"],["rm","rcs|numero rm|rne|repertoire des metiers"],["forme","forme juridique|statut juridique"],
     ];
   function appChamp(n){for(var i=0;i<APP_CHAMPS.length;i++){var re=new RegExp("\\b(?:mon|ma|mes|notre|nos|le|la|l|les)\\s+(?:"+APP_CHAMPS[i][1]+")\\b(?:\\s+(?:c est|est|sera|devient|passe a|=|:|de|a|au|en))*\\s*(.*)$"),m=re.exec(n);
       if(m)return {champ:APP_CHAMPS[i][0],v:m[1].replace(/\b(euros?|eur|ht|stp|merci)\b/g," ").replace(/\s+/g," ").trim()};}return null;}
+  /* métier de « Mon entreprise » (il sert à la Newsletter) : les valeurs sont celles de la liste de l'appli */
+  var APP_METIERS=[["électriciens","electricien\\w*"],["plombiers-chauffagistes","plombier\\w*(?: chauffagiste\\w*)?|chauffagiste\\w*"],["maçons","macon\\w*"],["couvreurs","couvreur\\w*(?: zingueur\\w*)?|zingueur\\w*"],
+    ["menuisiers","menuisier\\w*"],["peintres","peintre\\w*(?: en batiment)?"],["diagnostiqueurs","diagnostiqueur\\w*"],["plusieurs","plusieurs metiers|multi ?services?|tous? corps d etat"],
+    ["autre","carreleur\\w*|plaquiste\\w*|platrier\\w*|charpentier\\w*|serrurier\\w*|facadier\\w*|terrassier\\w*|paysagiste\\w*|cuisiniste\\w*|solier\\w*|vitrier\\w*|etancheur\\w*|climaticien\\w*|frigoriste\\w*|autre metier(?: du batiment)?"]];
+  function appMetier(x){x=String(x||"").replace(/^(?:\s*(?:c est|est|sera|devient|=|:|en|a|un|une|de|d))+\s+/,"").replace(/\s+(?:de metier|stp|merci)$/,"").trim();
+    for(var i=0;i<APP_METIERS.length;i++)if(new RegExp("^(?:"+APP_METIERS[i][1]+")$").test(x))return APP_METIERS[i][0];return null;}
+  /* le matériau cherché dans « Prix en ligne » : la phrase sans les mots de la demande */
+  function appCherche(n){return n.replace(/\b(?:en ligne|sur internet|sur le web|sur le net|online|chez les fournisseurs|chez mes fournisseurs|dans les magasins|stp|merci)\b/g," ")
+      .replace(/^.*?\b(?:prix|tarifs?)\b\s*(?:du |de la |de l |des |de |d une? |d )?/," ").replace(/^\s*(?:cherche|chercher|trouve|trouver|compare|comparer|recherche|rechercher)\b(?: moi)?\s*(?:le |la |les |l |un |une |des |du |de la )?/," ")
+      .replace(/^\s*combien (?:coute|coutent|vaut|valent)\s*(?:le |la |les |l |un |une |des |du )?/," ").replace(/^\s*1 (?=\D)/," ").replace(/\s+/g," ").trim();}
   function appModele(n){var m=/\b(depannage|diagnostic|dpgf|dqe|bordereau|travaux|libre)\b/.exec(n);return m?m[1]:null;}
   function appDuree(n){var m=/\b(\d+)\s*(jours?|semaines?|mois)\b/.exec(n);return m?{n:+m[1],u:/^s/.test(m[2])?"semaine":/^m/.test(m[2])?"mois":"jour"}:null;}
   var APP_SCENE=/\b(canape|lit|table|chaise|armoire|meuble|meubles|cuisine|salon|chambre|douche|baignoire|mur|murs|sol|parquet|carrelage|peins|peindre|couleur|toit|etage|fenetre|porte|piece|pieces)\b/;
@@ -1634,6 +1644,20 @@ function create(E,X,saved,opts){
     if(/\b(supprime|supprimer|efface|effacer|ferme|fermer|resilie|resilier|detruis|detruire|clore|cloturer)\b.*\b(mon|le|ce) compte\b|\bsuppression (?:de |du )?(?:mon )?compte\b/.test(n))return A("compte",{suppr:true});
     if(/\bcode (?:de )?(?:secours|recuperation)\b/.test(n))return A("secours");
     if(/^(?:ouvre |voir |affiche |montre |va dans )?(?:mon compte|mes reglages|les reglages|reglages|parametres|mes parametres|preferences|mes preferences)$/.test(n)||/\b(reglages|parametres|preferences)\b/.test(n)&&!/\b(porte|fenetre|chaudiere|radiateur|mur)\b/.test(n))return A("compte");
+    /* déverrouillage par le visage ou l'empreinte (Sauvegarde) */
+    if(/\b(face ?id|touch ?id|empreinte digitale|biometri\w*)\b|\bdeverrouill\w*\b.*\b(visage|empreinte)\b/.test(n))return A("faceid");
+    /* métier */
+    var n0=hn(raw).replace(/[^a-z0-9 ]+/g," ").replace(/\s+/g," ").trim();/* le texte tapé : la correction des fautes change « carreleur » en « carrelage » */
+    if((m=/\b(?:mon|notre) metier\b(.*)$/.exec(n0))||(m=/^(?:je suis|on est|nous sommes|je travaille comme|je bosse comme)\s+(.*)$/.exec(n0))){var me=appMetier(m[1]);
+      if(me)return A("entreprise",{champ:"metier",v:me});if(/\bmetier\b/.test(n)&&/^(?:(?:ouvre|voir|affiche|montre|change|changer|modifie|modifier|choisis|choisir)\s+)?(?:mon|notre) metier$/.test(n))return A("entreprise",{champ:"metier"});}
+    if((m=/^(?:ouvre|voir|affiche|montre|change|changer|modifie|modifier|corrige|corriger)\s+(?:mon |ma |le |la |l |notre )?(siret|siren|tva intra\w*|numero de tva|assurance decennale|decennale|validite des devis|logo)$/.exec(n)))
+      return A("entreprise",{champ:/^sire/.test(m[1])?"siret":/tva/.test(m[1])?"tvai":/decennale/.test(m[1])?"assur":/validite/.test(m[1])?"valid":"nomEnt"});
+    /* prix d'un matériau en ligne (écran Fournisseurs) */
+    if(!/\b(devis|facture|client|rdv|rendez)\b/.test(n)&&(/\b(en ligne|sur internet|sur le web|sur le net|online)\b/.test(n)&&/\b(prix|tarifs?|coutent?|combien|cherche|chercher|trouve|trouver|compare|comparer|recherche)\b/.test(n)||/\b(compare|comparer|comparaison)\b.*\b(prix|tarifs?)\b/.test(n)||/\b(cherche|chercher|trouve|trouver)\b.*\bchez (?:les|mes) fournisseurs\b/.test(n)||/^(?:ouvre |voir |affiche |montre )?(?:les )?prix en ligne$/.test(n)))
+      return A("prix_ligne",{q:/^(?:ouvre |voir |affiche |montre )?(?:les )?prix en ligne$/.test(n)?"":appCherche(n)});
+    /* maquette depuis une vidéo : lancer, reprendre, où en est l'analyse */
+    if(/\b(video|analyse)\b/.test(n)&&/\bou en est\b|\b(video|analyse)\b.*\b(avance|terminee?|finie?|prete?)\b/.test(n)&&!/\b(devis|facture|chantier|travaux)\b/.test(n))return A("video",{etat:true});
+    if(/\b(filme|filmer)\b.*\b(piece|pieces|salle|cuisine|chambre|salon|sejour|maison|appartement|chantier|maquette|3d)\b|\b(maquette|3d)\b.*\bvideo\b|\bvideo\b.*\b(maquette|3d)\b|\b(reprends|reprendre|relance|relancer|continue|continuer)\b.*\b(?:analyse|video)\b|\banalyse (?:de la |d une |la )?video\b/.test(n))return A("video",{});
     /* langue de l'appli */
     {var lg=appLang(n);
       if(lg&&!/\b(devis|facture|factures|sms|message|mail)\b/.test(n)&&(/\b(langue|language|appli|application|app|interface|caso|uygulama\w*|dili|dil|aplicacao|aplicacion|aplikacj\w*|aplicatia)\b/.test(n)||/\b(mets|met|mettre|passe|passer|change|changer|bascule|basculer|traduis|traduire|parle|parler|switch|set|convertis|convertir|veux|voudrais)\b/.test(n)||/^en \S+$/.test(n)))return A("langue",{l:lg});
@@ -1646,7 +1670,7 @@ function create(E,X,saved,opts){
     if(!/\b(pointage|pointer|pointe)\b/.test(n)&&(/\b(invite|inviter|invitation|ajoute|ajouter|rajoute|integre|integrer)\b.*\b(ouvrier|ouvriers|salarie|salaries|employe|employes|collegue|collegues|associe|apprenti|chef d equipe|quelqu un|membre)\b/.test(n)||/\b(ouvrier|salarie|employe|collegue|apprenti)\w*\b.*\binvit\w*/.test(n)||/\binvit\w*\b/.test(n)&&!/\b(rdv|rendez|reunion|client)\b/.test(n)||/\binvit\w*\b.*\bequipe\b|\bequipe\b.*\binvit\w*/.test(n)))return A("inviter");
     if(/\b(?:mon|ma|mes|l|notre|nos|dans l|de l)\s+equipe\b|^(?:l )?equipe$|\bmes (?:ouvriers|salaries|employes|collegues)\b|\b(?:montre|affiche|voir|ouvre)(?: moi)? (?:l|la|mon|ma) equipe\b/.test(n))return A("equipe");
     /* « Mon entreprise » : ouvrir ou changer un champ */
-    {var ch=appChamp(n);if(ch&&(ch.v||/^(?:ouvre |voir |affiche |montre |change |modifie )/.test(n)))return A("entreprise",ch.v?ch:{champ:ch.champ});}
+    {var ch=appChamp(n);if(ch&&(ch.v||/^(?:ouvre |voir |affiche |montre |change |modifie )/.test(n)||/^(?:mon|ma|mes|notre|nos) [a-z ]+$/.test(n)))return A("entreprise",ch.v?ch:{champ:ch.champ});}
     if(/\b(mon entreprise|ma societe|mentions legales|mon logo|mes coordonnees pro|infos de l entreprise|informations de l entreprise|fiche entreprise)\b/.test(n)&&!/\b(c est|est|:|=)\b/.test(n.replace(/^(?:ouvre|montre|affiche|voir)\s+/,"")))return A("entreprise",{});
     /* signature de l'artisan */
     if(/\bma signature\b|\bsignature (?:de l artisan|de l entreprise|pro)\b/.test(n)||(/\b(refais|refaire|change|changer|modifie|modifier|enregistre|enregistrer|nouvelle)\b.*\bsignature\b/.test(n)&&!/\b(client|devis)\b/.test(n)))return A("signature");
@@ -1719,9 +1743,9 @@ function create(E,X,saved,opts){
   B.appCmds=appCmds;
   /* rien à faire dans le moteur : c'est casô qui exécute (chat/pont.js) */
   ["langue","compte","secours","deconnexion","entreprise","notifs","restaurer","traduction","equipe","inviter","signature","dictee","devis_module","payant","acompte","autoliq","sanstva","debut","valider","lien","pdf","modele",
-   "avoir","enc_export","encaissements","histo","client_nouveau","contacts","importer","ics","planning","presents","oubli","journal","chantiers","plan","m3d","aide"].forEach(function(k){X_["app."+k]=function(){return {say:"",ui:"app"};};});
+   "avoir","enc_export","encaissements","histo","client_nouveau","contacts","importer","ics","planning","presents","oubli","journal","chantiers","plan","m3d","aide","faceid","prix_ligne","video"].forEach(function(k){X_["app."+k]=function(){return {say:"",ui:"app"};};});
   var LANGN={fr:"français",en:"anglais",es:"espagnol",pt:"portugais",it:"italien",ro:"roumain",pl:"polonais",tr:"turc",ru:"russe",ar:"arabe"};
-  var CHN={iban:"IBAN",bic:"BIC",siret:"SIRET",tauxH:"taux horaire",depl:"frais de déplacement",capital:"capital",tvai:"TVA intracommunautaire",assur:"assurance décennale",rcpro:"responsabilité civile pro",valid:"validité des devis",delai:"délai de paiement",med:"médiateur",rm:"RCS / RM",forme:"forme juridique",nomEnt:"nom de l’entreprise",telEnt:"téléphone de l’entreprise",mailEnt:"e-mail de l’entreprise",adrEnt:"adresse de l’entreprise"};
+  var CHN={iban:"IBAN",bic:"BIC",siret:"SIRET",tauxH:"taux horaire",depl:"frais de déplacement",capital:"capital",tvai:"TVA intracommunautaire",assur:"assurance décennale",rcpro:"responsabilité civile pro",valid:"validité des devis",delai:"délai de paiement",metier:"métier",zone:"zone couverte par l’assurance",med:"médiateur",rm:"RCS / RM",forme:"forme juridique",nomEnt:"nom de l’entreprise",telEnt:"téléphone de l’entreprise",mailEnt:"e-mail de l’entreprise",adrEnt:"adresse de l’entreprise"};
   var MODN={depannage:"dépannage",diagnostic:"diagnostic",dpgf:"décomposition du prix global",dqe:"détail quantitatif estimatif",bordereau:"bordereau des prix",travaux:"devis travaux",libre:"devis libre"};
   var D4={
     "app.langue":function(a){return a.l?tr("Langue de l’appli : {0}",[trw(LANGN[a.l])]):tr("Langue de l’appli");},
@@ -1746,7 +1770,8 @@ function create(E,X,saved,opts){
     "app.ics":function(){return tr("Agenda de l’iPhone");},"app.planning":function(a){return a.vue==="set"?tr("Créneaux de travail"):a.vue==="jour"?tr("Planning du jour"):tr("Planning de la semaine");},
     "app.presents":function(){return tr("Qui est présent");},"app.oubli":function(){return tr("Ajouter un oubli de pointage");},"app.journal":function(){return tr("Journal de pointage");},
     "app.chantiers":function(){return tr("Chantiers et NFC");},"app.plan":function(a){return a.laser?tr("Plan calibré au laser"):tr("Plan d’une pièce");},
-    "app.m3d":function(a){return a.nouveau?tr("Nouveau projet 3D"):tr("Maquette 3D");},"app.aide":function(){return tr("Ce que je sais faire");}};
+    "app.m3d":function(a){return a.nouveau?tr("Nouveau projet 3D"):tr("Maquette 3D");},"app.aide":function(){return tr("Ce que je sais faire");},
+    "app.faceid":function(){return "Face ID";},"app.prix_ligne":function(a){return a.q?tr("Prix en ligne : {0}",[a.q]):tr("Prix en ligne");},"app.video":function(){return tr("Maquette depuis une vidéo");}};
   var _dx4=B.describeExtra;B.describeExtra=function(c){var f=D4[c.m+"."+c.a];return f?f(c.args||{}):_dx4(c);};
   /* ---------- questions du métier (réponses fixes, vérifiées ; pas de conversation libre) ----------
      Règles françaises lues le 13 novembre 2026 : TVA (loi de finances 2025, art. 41), contrat hors établissement
@@ -1900,7 +1925,7 @@ function create(E,X,saved,opts){
   function rawParts(raw,n){var r=String(raw).split(new RegExp(SPLITR.source,"giu")).filter(function(x){return x&&x.trim();});return r.length===n?r:null;}
   function localParse(c){
     var parts=c.p.split(SPLIT).filter(function(x){return x&&x.trim();});
-    var r=(parts.length<2?parseMetier(c)||parseApp(c):null)||parseSys(c);if(r)return r;var q=isQ(c);
+    var r=(parts.length<2?(/^\s*(?:je suis|on est|nous sommes) /i.test(c.raw||"")?parseApp(c):null)||parseMetier(c)||parseApp(c):null)||parseSys(c);if(r)return r;var q=isQ(c);
     var rp=parts.length>1?rawParts(c.raw,parts.length):null;
     var sub=function(x,i){return Object.assign({},c,{p:x,n:x,raw:rp?rp[i]:c.raw});};
     /* plusieurs demandes dans la même phrase : chacune doit être comprise */
