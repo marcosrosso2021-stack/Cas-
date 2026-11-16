@@ -2387,6 +2387,11 @@ function m3dOpen(cli){if(M3D){if(!M3D.bg)return;if(!!cli===M3D.cli){M3D.bg=false
 /* pendant un travail long du module (série de photos, maquette), le quitter le garde ouvert en arrière-plan : le calcul continue (sauf déconnexion) */
 function m3dClose(force){if(!M3D)return;if(M3D.busy&&!force){M3D.bg=true;$('m3d').hidden=true;m3dPill();return}if(M3D.f)M3D.f.remove();M3D=null;$('m3d').hidden=true;m3dPill()}
 function m3dPill(){const b=$('m3d-pill');if(!b)return;const on=!!(M3D&&M3D.bg&&(M3D.busy||M3D.ready));b.hidden=!on;if(!on)return;b.classList.toggle('ok',!M3D.busy);b.lastChild.textContent=M3D.busy?(M3D.lbl||'…')+(M3D.n?' · '+Math.min(M3D.n,M3D.done+1)+'/'+M3D.n:''):(M3D.readyLbl||'')}
+/* analyse vidéo interrompue (appli quittée ou verrouillée) : le module est rouvert en arrière-plan et l'analyse reprend seule ; la pastille la suit */
+function m3dPending(){return new Promise(ok=>{try{const r=indexedDB.open('caso_vjob',1);r.onupgradeneeded=()=>r.result.createObjectStore('s');r.onerror=()=>ok(false);
+  r.onsuccess=()=>{try{const q=r.result.transaction('s').objectStore('s').get('job');q.onsuccess=()=>{const j=q.result;r.result.close();ok(!!(j&&j.file&&Date.now()-j.at<864e5&&(j.tries||0)<3))};q.onerror=()=>ok(false)}catch(e){ok(false)}}}catch(e){ok(false)}})}
+(function m3dReprise(n){setTimeout(()=>{if(typeof db==='undefined'||!accountGet()){if(n<200)m3dReprise(n+1);return}if(M3D)return;
+  m3dPending().then(p=>{if(!p||M3D)return;const a=accountGet()||{};m3dOpen(a.mode==='bricoleur');if(M3D&&a.mode!=='bricoleur'){M3D.bg=true;M3D.busy=true;M3D.lbl='…';$('m3d').hidden=true;m3dPill()}})},n?3000:2500)})(0);
 /* module 3D : préchargé quand le téléphone ne fait rien, pour qu'il s'ouvre vite (et hors ligne) */
 setTimeout(()=>{const go=()=>m3dSrc().catch(()=>{});window.requestIdleCallback?requestIdleCallback(go,{timeout:15000}):go()},8000);
 window.addEventListener('message',e=>{if(!M3D||!M3D.f||e.source!==M3D.f.contentWindow)return;const m=e.data;if(!m||m.source!=='caso-3d')return;
