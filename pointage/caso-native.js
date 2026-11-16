@@ -375,7 +375,7 @@
   function boot() {
     var Cap = root.Capacitor, G, web = false;
     if (!root.CasoPointage) return;
-    if (Cap && Cap.isNativePlatform && Cap.isNativePlatform() && Cap.getPlatform() === 'android') {
+    if (Cap && Cap.isNativePlatform && Cap.isNativePlatform() && (Cap.getPlatform() === 'android' || Cap.getPlatform() === 'ios')) {
       G = Cap.registerPlugin('CasoGeofence');
     } else if (root.CasoGeoWeb && root.navigator && root.navigator.geolocation && root.matchMedia &&
       (root.matchMedia('(pointer: coarse)').matches || root.navigator.maxTouchPoints > 0)) {
