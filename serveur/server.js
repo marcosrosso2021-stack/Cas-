@@ -12,7 +12,7 @@
    Le même fichier peut être embarqué dans une application (voir createServer / start). */
 'use strict';
 const http=require('http'),fs=require('fs'),path=require('path'),crypto=require('crypto'),os=require('os');
-const webpush=require('./webpush.js'),prixLib=require('./prix.js'),authLib=require('./auth.js');
+const webpush=require('./webpush.js'),prixLib=require('./prix.js'),authLib=require('./auth.js'),veilleLib=require('./veille/index.js');
 
 const COLL=['prices','quotes','hist','chantiers','people','pts','prof','clients','suppliers','projects','plans','events','invoices'];
 const ROLE_PUSH={patron:COLL,chef:COLL,ouvrier:['pts']};
@@ -57,6 +57,27 @@ function createServer(opts={}){
  if(!data.vapid){data.vapid=webpush.vapidKeys();try{const t=FILE+'.tmp';fs.writeFileSync(t,JSON.stringify(data));fs.renameSync(t,FILE)}catch(e){}}
  const auth=authLib.creer(Object.assign({dir:DIR,hosted:HOSTED,maintenant:opts.maintenant},opts.auth||{}));// comptes des usagers : connexion Google / Microsoft (module AUTH)
  const prix=opts.prix||prixLib.creer();// prix des matériaux en ligne (clé SEARCHAPI_KEY ou SERPAPI_KEY)
+ /* veille réglementaire : un passage par jour sur les sources officielles ; rien n'est envoyé aux artisans sans validation */
+ const veille=opts.veille||veilleLib.creer({dir:DIR});
+ const DEMARRE=new Date().toISOString();
+ const vEssais=new Map();// mauvaises clés par adresse : 10 essais par quart d'heure
+ /* newsletter : les notifications
+    - un texte important (P0 ou P1) : tout de suite, aux artisans du métier visé (à tous si le texte ne vise aucun métier)
+    - le reste : une seule notification groupée, au plus tous les 14 jours, et seulement s'il y a quelque chose à lire
+    Le métier vient de « Mon entreprise », envoyé avec l'abonnement aux notifications ; rien d'autre du profil ne quitte le téléphone. */
+ const VEILLE_TXT='Du nouveau pour ton métier',V_METIERS=['électriciens','plombiers-chauffagistes','maçons','couvreurs','menuisiers','peintres','diagnostiqueurs'],V_GROUPE=14*864e5;
+ const vPour=(x,sb)=>{const m=(x.pros||[]).filter(p=>V_METIERS.includes(p));return !m.length||m.includes(sb.metier||'')};
+ async function veillePousser(L,texte){let dead=false,n=0;
+  await Promise.all(data.subs.map(async sb=>{const M=L.filter(x=>vPour(x,sb));if(!M.length)return;n++;
+   try{const r=await pushSend(sb.sub,{title:'casô',body:texte(M),url:'/?news=1',tag:'veille'});if(r&&(r.status===404||r.status===410)){sb.dead=1;dead=true}}catch(e){}}));
+  if(dead){data.subs=data.subs.filter(x=>!x.dead);persist()}return n}
+ async function veilleAnnoncer(groupe){
+  const L=veille.aAnnoncer(),U=L.filter(x=>x.priorite==='P0'||x.priorite==='P1'),R=L.filter(x=>!U.includes(x));let n=0;
+  if(U.length){veille.annonce(U.map(x=>x.id));n+=await veillePousser(U,M=>M.length===1?VEILLE_TXT+' : '+String(M[0].titre).slice(0,90):VEILLE_TXT+' ('+M.length+')')}
+  if(groupe&&R.length&&Date.now()-(data.veilleGroupe||0)>=V_GROUPE){data.veilleGroupe=Date.now();veille.annonce(R.map(x=>x.id));persist();
+   n+=await veillePousser(R,M=>'Ta newsletter casô : '+M.length+(M.length>1?' nouveautés à lire':' nouveauté à lire'))}
+  return n}
+ if(!opts.noTimers&&HOSTED){const vt=setInterval(()=>{if(veille.aFaire(new Date()))veille.passer().catch(()=>{});if(new Date().getUTCHours()>=6)veilleAnnoncer(true).catch(()=>{})},9e5);if(vt.unref)vt.unref()}
  const pushSend=opts.pushSend||((sub,payload)=>webpush.send(sub,payload,data.vapid,{subject:process.env.VAPID_SUBJECT}));
  /* --- apprentissage partagé du chat : phrases apprises par les usagers, sans rien de personnel (fichier à part) --- */
  const APF=path.join(DIR,'appris.json'),APL=['fr','en','es','pt','it','ro','pl','tr','ru','ar'];
@@ -464,6 +485,9 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
    /* prix des matériaux en ligne (sans compte) : la clé du service reste ici, limites par jour et par adresse */
    if(req.method==='GET'&&url==='/api/prix'){const sp=new URLSearchParams(req.url.split('?')[1]||'');
     const [c,b]=await prix.chercher(sp.get('q')||'',sp.get('pays')||'FR',ip);return send(res,c,b)}
+   if(req.method==='GET'&&url==='/api/prix/img'){const sp=new URLSearchParams(req.url.split('?')[1]||'');
+    const [c,o]=await prix.image(sp.get('u')||'');if(c!==200)return send(res,c,o);
+    res.writeHead(200,Object.assign({'content-type':o.type,'content-length':o.buf.length,'cache-control':'public, max-age=86400'},SEC,cors));return res.end(o.buf)}
 
    /* apprentissage partagé du chat (sans compte) : chaque appareil envoie ses phrases apprises, reçoit celles des autres */
    if(url==='/api/appris'){
@@ -490,6 +514,34 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
      b.e.slice(0,20).forEach(x=>{if(!x||!APL.includes(x.l)||!inMot(x.t))return;const L=incompris[x.l]||(incompris[x.l]=Object.create(null)),o=L[x.t];
       if(o){if(!o.u.includes(u)&&o.u.length<50){o.u.push(u);n++}o.at=Date.now()}else{const ks=Object.keys(L);if(ks.length>=2000){let v=null;for(const kk of ks)if(L[kk].u.length<2&&(!v||L[kk].at<L[v].at))v=kk;if(!v)return;delete L[v]}L[x.t]={u:[u],s:x.s==='3d'?'3d':'chat',at:Date.now()};n++}});
      if(n)inSave();return send(res,200,{ok:n})}}
+
+   /* veille réglementaire : tableau de bord et validation réservés au propriétaire de casô, avec sa clé (même origine seulement) */
+   if(req.method==='GET'&&url==='/veille'){let html;try{html=fs.readFileSync(path.join(__dirname,'veille.html'),'utf8')}catch(e){return send(res,404,{error:'introuvable'})}
+    res.writeHead(200,Object.assign({'content-type':'text/html; charset=utf-8','cache-control':'no-store','x-robots-tag':'noindex','content-security-policy':CSP_PUB},SEC));return res.end(html)}
+   /* la newsletter validée, lue par l'appli (sans compte, rien n'est envoyé par le téléphone) */
+   if(req.method==='GET'&&url==='/api/veille/lettre')return send(res,200,veille.lettre());
+   if(url.startsWith('/api/veille/')){const cle=process.env.CASO_CLE_IA||'',e=vEssais.get(ip),t=Date.now();
+    if(e&&e.n>=10&&t-e.t<9e5)return send(res,429,{error:'Trop d\'essais, réessaie plus tard.'});
+    if(!cle||String(req.headers['x-caso-cle']||'')!==cle){if(!e||t-e.t>=9e5)vEssais.set(ip,{n:1,t});else e.n++;if(vEssais.size>5000)vEssais.clear();return send(res,404,{error:'Introuvable.'})}
+    if(req.method==='GET'&&url==='/api/veille/etat')return send(res,200,Object.assign(veille.etat(),{modules:veilleLib.MODULES,domaines:veilleLib.DOMAINES}));
+    /* le tableau de bord de casô, pour le propriétaire : des nombres seulement (aucun nom, aucune adresse, aucun devis) */
+    if(req.method==='GET'&&url==='/api/veille/saas'){const t=Date.now(),S=Object.keys(data.signs).map(k=>data.signs[k]),ve=veille.etat(),VL=veille.liste({validation:'attente'});
+     const inc=[];for(const l of APL){const L=incompris[l]||{};for(const k of Object.keys(L))if(L[k].u.length>=3)inc.push({t:k,n:L[k].u.length,l})}
+     return send(res,200,{comptes:auth.resume(),equipes:Object.keys(data.users).length,notifications:data.subs.length,
+      signatures:{envoyees7:S.filter(x=>x.sentAt&&t-x.sentAt<7*864e5).length,signees:S.filter(x=>x.status==='signed').length,enAttente:S.filter(x=>x.status==='sent').length},
+      chat:{apprises:APL.reduce((n,l)=>n+Object.keys(appris[l]||{}).length,0),incomprises:inc.sort((x,y)=>y.n-x.n).slice(0,8)},
+      prix:prix.etat(),veille:{dernierPassage:ve.dernierPassage,erreursDernier:ve.erreursDernier,sources:ve.sources,aValider:VL.filter(f=>!f.bloque).length,aVerifier:VL.filter(f=>f.bloque).length},
+      serveur:{demarre:DEMARRE,memoireMo:Math.round(process.memoryUsage().rss/1048576),node:process.version}})}
+    if(req.method==='GET'&&url==='/api/veille/journal')return send(res,200,veille.journal(100));
+    if(req.method==='GET'&&url==='/api/veille/textes'){
+     const sp=new URLSearchParams(req.url.split('?')[1]||''),fi={},c=sp.get('categorie')||'',b=sp.get('bloque'),v=sp.get('validation')||'',p=sp.get('priorite')||'',d=sp.get('domaine')||'';
+     if(Object.prototype.hasOwnProperty.call(veilleLib.CAT,c))fi.categorie=c;if(b==='1'||b==='0')fi.bloque=b==='1';
+     if(['attente','valide','refuse'].includes(v))fi.validation=v;if(veilleLib.PRIORITES.includes(p))fi.priorite=p;if(veilleLib.DOMAINES.includes(d))fi.domaine=d;
+     return send(res,200,veille.liste(fi).slice(0,500))}
+    if(POST&&url==='/api/veille/decider'){const b=await readBody(req),[c,o]=veille.decider(String(b.id||''),String(b.decision||''),b.corrections);
+     if(c===200)veilleAnnoncer(false).catch(()=>{});return send(res,c,o)}
+    if(POST&&url==='/api/veille/passer')return send(res,200,await veille.passer());
+    return send(res,404,{error:'Introuvable.'})}
 
    m=null;
    const user=authUser(req);
@@ -527,7 +579,7 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
     if(!sub||!okHost||!sub.keys||!sub.keys.p256dh||!sub.keys.auth)return send(res,400,{error:'Abonnement invalide.'});
     data.subs=data.subs.filter(s=>s.sub.endpoint!==sub.endpoint);
     {const mine=data.subs.filter(s=>s.user===user.name.toLowerCase());if(mine.length>=5){const old=mine.sort((a,b)=>a.at-b.at)[0];data.subs=data.subs.filter(s=>s!==old)}}
-    data.subs.push({user:user.name.toLowerCase(),lang:cut(b.lang,5)||'fr',sub:{endpoint:cut(sub.endpoint,1000),keys:{p256dh:cut(sub.keys.p256dh,200),auth:cut(sub.keys.auth,100)}},at:Date.now()});
+    data.subs.push({user:user.name.toLowerCase(),lang:cut(b.lang,5)||'fr',metier:V_METIERS.includes(b.metier)?b.metier:'',sub:{endpoint:cut(sub.endpoint,1000),keys:{p256dh:cut(sub.keys.p256dh,200),auth:cut(sub.keys.auth,100)}},at:Date.now()});
     persist();return send(res,200,{ok:true})}
 
    /* envoyer une facture par lien (mise à jour à chaque paiement) */

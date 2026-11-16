@@ -51,3 +51,21 @@ npm run test:e2e    # 10 tests : vrai casô dans un navigateur avec un faux Andr
 - Les heures sont exactes mais n'arrivent dans casô qu'à son réveil (au moins une ouverture par jour, ou la minute qui suit un passage si l'appli est ouverte).
 - Android peut retarder une alerte de 2 à 6 minutes. Sur Samsung et Xiaomi, exclure casô de l'économie de batterie.
 - Les traductions ont été écrites sans relecteur natif.
+
+## Appli iPhone
+
+Même principe que sur Android : iOS surveille les zones de chantier et réveille l'appli à chaque entrée ou sortie, casô fermé.
+
+- Plugin : `plugins/caso-geofence` (Swift, zones `CLCircularRegion`, 20 zones au plus, limite d'iOS). Même contrat que le plugin Android : le moteur et la carte sont les mêmes.
+- iOS ne donne pas de « présence confirmée » : le plugin la déduit (60 s dans la zone sans sortie).
+- Construction : l'onglet **Actions** > **Appli iPhone (vérification)** construit l'appli pour le simulateur. Cela prouve qu'elle se compile, pas qu'elle pointe.
+- **Autorisation** : iOS demande d'abord « Pendant l'utilisation », puis « Toujours » plus tard. Si la carte réclame encore l'autorisation, le bouton **Autoriser** ouvre les réglages de l'iPhone (Position > Toujours).
+
+### Mettre l'appli sur un iPhone (TestFlight)
+
+Demande un compte Apple Developer (environ 99 $ par an) :
+1. Créer l'appli dans App Store Connect (identifiant `fr.caso.app`).
+2. Créer un certificat de distribution et un profil de provisionnement, et une clé d'API App Store Connect.
+3. Les mettre dans les secrets du dépôt, puis ajouter une étape de signature et d'envoi au workflow (à faire quand le compte existe).
+
+Non testé sur un vrai iPhone : réveil par iOS appli fermée, demande « Toujours », économie de batterie, mode d'économie d'énergie (qui coupe parfois la surveillance des zones).

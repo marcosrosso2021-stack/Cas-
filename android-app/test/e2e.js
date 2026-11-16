@@ -37,7 +37,7 @@ function fakeAndroid(opts) {
     drainEvents: async () => ({ events: window.__q.splice(0) }),
     openSettings: async () => { window.__calls.settings++; }
   };
-  if (opts.native) window.Capacitor = { isNativePlatform: () => true, getPlatform: () => 'android', registerPlugin: () => G };
+  if (opts.native) window.Capacitor = { isNativePlatform: () => true, getPlatform: () => opts.platform || 'android', registerPlugin: () => G };
   try { localStorage.setItem('caso_test', '1'); } catch (e) {}
 }
 
@@ -209,6 +209,20 @@ const ptText = page => page.evaluate(() => { go('pt'); return document.getElemen
     assert.ok(journal.includes('Entrée') && journal.includes('Sortie') && journal.includes('automatique (GPS)'), journal.slice(0, 400));
     const zone = await page.evaluate(() => { ptPage('set'); return document.getElementById('ptBody').innerText; });
     assert.ok(zone.includes('Zone 100 m'));
+    assert.deepStrictEqual(errors, []);
+    await ctx.close();
+  });
+
+  await check('appli iPhone : même carte, même journée', async () => {
+    const { ctx, page, errors } = await open(browser, base, { native: true, platform: 'ios', perm: { location: 'granted', background: 'granted' } });
+    await page.waitForFunction(() => !!window.CasoAuto);
+    const { now } = await seed(page);
+    await page.evaluate(() => CasoAuto.run());
+    assert.ok(await page.evaluate(() => CasoAuto.active()));
+    const cid = await page.evaluate(() => db.chantiers[0].id);
+    await page.evaluate(([n, c]) => { window.__q.push({ site: c, type: 'enter', ts: n - 58 * 60000 }, { site: c, type: 'dwell', ts: n - 57 * 60000 }, { site: c, type: 'exit', ts: n - 12 * 60000 }); }, [now, cid]);
+    await page.evaluate(() => CasoAuto.run());
+    assert.deepStrictEqual(await page.evaluate(() => db.pts.map(p => p.t)), ['in', 'out']);
     assert.deepStrictEqual(errors, []);
     await ctx.close();
   });

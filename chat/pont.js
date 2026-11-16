@@ -250,7 +250,7 @@ function chantierDe(pid,sortie){var E0=(db.pts||[]).filter(function(x){return x.
 function appFaire(a,o,r,t){var x={says:[],explain:r.explain};var cur=devisCourant(),pasDevis=function(){x.says=[P.tr("Il n’y a pas encore de devis.")];};
   switch(a){
     case "langue":if(o.l&&typeof vnSetLang==="function"){x.explain="";try{vnSetLang(o.l);P.B.setLangue(o.l);}catch(y){}x.says=[P.tr("C’est fait.")];}else ecran("cpt","#uiLang");break;
-    case "compte":ecran("cpt",o.suppr?"#acctCard":"#acctName");break;
+    case "compte":ecran("cpt","#acctCard",function(){cptPage("bk");});break;
     case "secours":x.bouton={act:"secours",label:r.explain};x.explain="";break;
     case "deconnexion":x.bouton={act:"deconnexion",label:r.explain};x.explain="";break;
     case "entreprise":
