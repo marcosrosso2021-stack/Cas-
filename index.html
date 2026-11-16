@@ -82,6 +82,7 @@ window.VAULT=(()=>{
   BG:5*60e3,IDLE:15*60e3,prot,
   has:()=>!!getMeta(),
   bioSet:()=>{const m=getMeta();return !!(m&&m.b)},
+  hasPw:()=>{const m=getMeta();return !!(m&&m.p)},
   // remplace getItem/setItem/removeItem de localStorage (fenêtre principale et cadres de même origine)
   shim(win){try{const P=win.Storage.prototype,L=win.localStorage;if(P.__caso)return;const g=P.getItem,s=P.setItem,r=P.removeItem;
    P.getItem=function(k){if(this===L&&V.on&&prot(k=String(k)))return k in V.cache?V.cache[k]:null;return g.call(this,k)};
@@ -101,6 +102,16 @@ window.VAULT=(()=>{
    const ks=raw.keys().filter(prot);ks.forEach(k=>{V.cache[k]=raw.get(k)});
    V.on=true;V.shim(window);V.shimFrames();
    ks.forEach(queue);await settle();await V.backup();V.photos();V.watch();return true},
+  // compte Google / Outlook : pas de mot de passe, Face ID (ou l'empreinte) ouvre le coffre. Si Face ID échoue, rien n'est créé.
+  async createBio(u){if(!C||V.on||getMeta())return false;
+   V.dk=await C.generateKey({name:'AES-GCM',length:256},true,['encrypt','decrypt']);
+   putMeta({v:1});V.on=true;
+   try{await V.bioOn(u)}catch(e){V.on=false;V.dk=null;raw.del(META);throw e}
+   const ks=raw.keys().filter(prot);ks.forEach(k=>{V.cache[k]=raw.get(k)});
+   V.shim(window);V.shimFrames();
+   ks.forEach(queue);await settle();await V.backup();V.photos();V.watch();return true},
+  // redemande Face ID pour confirmer une action sensible (compte sans mot de passe)
+  async bioCheck(){const m=getMeta();if(!m||!m.b)throw new Error('bio');const out=await V.bioPrf(unb64(m.b.c),unb64(m.b.s));await unwrap('b',await kekBio(out),m.b);return true},
   async unlockPw(pw){const m=getMeta();await V.open(await unwrap('p',await kekPw(pw,unb64(m.p.s),m.p.i),m.p))},
   async unlockCode(code){const m=getMeta();if(!m||!m.r)throw new Error('code');await V.open(await unwrap('r',await kekPw(code,unb64(m.r.s),m.r.i),m.r))},
   async wrapPass(pw){if(!V.on)return;const m=getMeta();m.p=await slotPw('p',pw);putMeta(m)},
@@ -170,7 +181,7 @@ window.VAULT=(()=>{
   if(!st||!$('lgForm')){go();return}
   const on0=[...document.querySelectorAll('section.on')];on0.forEach(s=>s.classList.remove('on'));
   B.classList.add('starting');st.classList.add('on');
-  const hideEls=[...st.querySelectorAll('.st-alt,.st-lang,#acForm')],hid0=hideEls.map(e=>e.hidden);hideEls.forEach(e=>e.hidden=true);
+  const hideEls=[...st.querySelectorAll('.st-alt,.st-lang,.st-sso,#acForm')],hid0=hideEls.map(e=>e.hidden);hideEls.forEach(e=>e.hidden=true);
   $('lgForm').hidden=false;$('fgForm').hidden=true;
   if(acc&&acc.email)$('lgMail').value=acc.email;
   const mailEls=[$('lgMail'),st.querySelector('label[for="lgMail"]')].filter(Boolean),mail0=mailEls.map(e=>e.hidden);
@@ -183,6 +194,9 @@ window.VAULT=(()=>{
    $('lgGo').before(nt)}
   const bioB=$('lgBio');
   if(bioB){bioB.lastChild.textContent=/iPhone|iPad|Macintosh/.test(navigator.userAgent)?'Face ID':'Empreinte';bioB.hidden=!(mode==='unlock'&&m&&m.b)}
+  /* compte sans mot de passe (Google / Outlook) : seul Face ID est proposé, le code de secours reste en dépannage */
+  const nopw=mode==='unlock'&&!!(m&&!m.p&&m.b),fg0=$('lgForgot').textContent;
+  if(nopw){$('lgForm').classList.add('nopw');$('lgForgot').hidden=!m.r;$('lgForgot').textContent='Code de secours'}
   let busy=false;
   const err=(id,t)=>{const e=$(id);e.textContent=t||'';e.hidden=!t};
   const lk=()=>{try{return JSON.parse(raw.get('caso_lk'))||{n:0,u:0}}catch(e){return{n:0,u:0}}};
@@ -196,7 +210,7 @@ window.VAULT=(()=>{
    if(fini)return;fini=true;
    ['click','submit','input'].forEach(t=>document.removeEventListener(t,H[t],true));
    st.classList.remove('on');B.classList.remove('starting');on0.forEach(s=>s.classList.add('on'));
-   hideEls.forEach((e,i)=>e.hidden=hid0[i]);if(bioB)bioB.hidden=true;mailEls.forEach((e,i)=>e.hidden=mail0[i]);
+   hideEls.forEach((e,i)=>e.hidden=hid0[i]);if(bioB)bioB.hidden=true;$('lgForm').classList.remove('nopw');$('lgForgot').textContent=fg0;mailEls.forEach((e,i)=>e.hidden=mail0[i]);
    $('lgGo').textContent=go0;if(pa0)$('lgPass').setAttribute('autocomplete',pa0);if(nt)nt.remove();
    ['lgPass','fgPass','fgCode'].forEach(id=>{if($(id))$(id).value=''});['lgErr','fgErr'].forEach(id=>err(id,''));
    raw.del('caso_locked');raw.del('caso_lk');
@@ -230,7 +244,7 @@ window.VAULT=(()=>{
   // essai automatique à l'ouverture : il ne bloque ni n'occupe l'écran ; le mot de passe reste utilisable
   async function bio(user){
    if(user){if(busy)return;busy=true;wait(bioB,true)}
-   try{await V.unlockBio()}catch(e){if(user){busy=false;wait(bioB,false);err('lgErr','Face ID n’a pas fonctionné. Entre ton mot de passe.')}return}
+   try{await V.unlockBio()}catch(e){if(user){busy=false;wait(bioB,false);err('lgErr',nopw?'Face ID non confirmé. Réessaie.':'Face ID n’a pas fonctionné. Entre ton mot de passe.')}return}
    if(user){wait(bioB,false);busy=false}done()}
   function wipe(){
    if(!confirm('Effacer le compte et les données de ce téléphone ? Si ton téléphone est relié à ton entreprise, tu retrouveras tes données en la rejoignant.'))return;
@@ -250,7 +264,7 @@ window.VAULT=(()=>{
    input(e){if(!st.contains(e.target))return;e.stopPropagation();err('lgErr','');err('fgErr','')}};
   ['click','submit','input'].forEach(t=>document.addEventListener(t,H[t],true));
   if(bioB&&!bioB.hidden)bio(false);
-  else setTimeout(()=>{try{$(acc&&acc.email?'lgPass':'lgMail').focus()}catch(e){}},50)}
+  else if(!nopw)setTimeout(()=>{try{$(acc&&acc.email?'lgPass':'lgMail').focus()}catch(e){}},50)}
  return V})();
 </script>
 <script>/* ?neuf : repartir de zéro (intro, connexion, création du compte) */
@@ -688,6 +702,10 @@ header .cso-tile{width:38px;height:38px}
 .st-f .st-logo{margin:28px 0 18px}
 .st-f .h1{text-align:center;font-size:26px;margin:0 0 6px}
 .st-f .btn{margin-top:20px}
+.st-f .st-sso{display:flex;justify-content:center;gap:14px;margin-top:16px}
+.st-f .st-sso[hidden]{display:none}
+.st-f .st-sso .btn{flex:none;width:56px;height:56px;min-height:0;padding:0;margin:0;display:grid;place-items:center;border-radius:50%}
+#lgForm.nopw>label,#lgForm.nopw>input,#lgForm.nopw>.pw,#lgForm.nopw>#lgGo,#lgForm.sso>label,#lgForm.sso>input,#lgForm.sso>.pw,#lgForm.sso>#lgGo,#lgForm.sso>.lnk,#lgForm.sso>.lang-sel,#lgForm.sso>.st-sso{display:none!important}
 body.starting #hd{display:none}
 #m3d{position:fixed;inset:0;z-index:9000;background:var(--bg)}
 #dvx{position:fixed;inset:0;z-index:8000;background:var(--bg)}
@@ -1578,6 +1596,10 @@ body.tr-on{overflow:hidden}
   <div id="lgErr" class="err" hidden role="alert"></div>
   <button class="btn" type="submit" id="lgGo">Connexion</button>
   <button class="btn sec" type="button" id="lgBio" hidden><svg class="i"><use href="#i-shield"/></svg><span>Face ID</span></button>
+  <div class="st-sso" id="lgSso">
+   <button class="btn sec" type="button" aria-label="Continuer avec Google" title="Google" onclick="authVia('google')"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><text x="12" y="17.5" text-anchor="middle" font-size="17" font-weight="700" fill="currentColor">G</text></svg></button>
+   <button class="btn sec" type="button" aria-label="Continuer avec Outlook" title="Outlook" onclick="authVia('microsoft')"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><text x="12" y="17.5" text-anchor="middle" font-size="17" font-weight="700" fill="currentColor">O</text></svg></button>
+  </div>
   <button class="lnk lg-forgot" type="button" id="lgForgot" onclick="forgotOpen()">Mot de passe oublié ?</button>
   <button class="lnk st-alt" type="button" onclick="stShow('ac')">Pas encore de compte ? <span>Créer ton compte</span></button>
   <select class="lang-sel st-lang" aria-label="Langue" onchange="vnSetLang(this.value)"></select>
@@ -1598,6 +1620,10 @@ body.tr-on{overflow:hidden}
   <label for="acPass">Mot de passe</label><div class="pw"><input id="acPass" type="password" autocomplete="new-password" placeholder="8 caractères minimum" enterkeyhint="done"><button type="button" class="pw-eye" aria-label="Afficher le mot de passe" aria-pressed="false" onclick="pwEye(this,'acPass')"><svg class="i" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
   <div id="acErr" class="err" hidden role="alert"></div>
   <button class="btn" type="submit" id="acGo">Créer mon compte</button>
+  <div class="st-sso" id="acSso">
+   <button class="btn sec" type="button" aria-label="Continuer avec Google" title="Google" onclick="authVia('google')"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><text x="12" y="17.5" text-anchor="middle" font-size="17" font-weight="700" fill="currentColor">G</text></svg></button>
+   <button class="btn sec" type="button" aria-label="Continuer avec Outlook" title="Outlook" onclick="authVia('microsoft')"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><text x="12" y="17.5" text-anchor="middle" font-size="17" font-weight="700" fill="currentColor">O</text></svg></button>
+  </div>
   <button class="lnk st-alt st-inv" type="button" onclick="$('stJoin').hidden=!$('stJoin').hidden">J'ai une invitation</button>
   <div id="stJoin" class="mut" hidden>Scanne le QR code de ton patron avec l'appareil photo.</div>
  </form>
@@ -2304,7 +2330,7 @@ body.tr-on{overflow:hidden}
  <button class="dw-i" onclick="drawerGo('cpt:bk')"><svg class="i"><use href="#i-shield"/></svg><span>Sauvegarde</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
 </aside>
 <aside class="dw dw-r" id="dwR" hidden aria-label="Compte">
- <div class="dw-h"><span class="dw-av"><svg class="i"><use href="#i-user"/></svg></span><div class="dw-who"><b id="dwName"></b><span id="dwMail" class="mut"></span></div><button class="dw-x" onclick="drawerClose()" aria-label="Fermer"><svg class="i"><use href="#i-x"/></svg></button></div>
+ <div class="dw-h"><span class="dw-av"><svg class="i"><use href="#i-user"/></svg></span><div class="dw-who"><b id="dwName"></b><span id="dwMail" class="mut"></span><span id="dwPlan" class="mut" hidden></span></div><button class="dw-x" onclick="drawerClose()" aria-label="Fermer"><svg class="i"><use href="#i-x"/></svg></button></div>
  <p class="dw-g">Moi et mon entreprise</p>
  <button class="dw-i" onclick="drawerGo('cpt:ent')"><svg class="i"><use href="#i-building"/></svg><span>Mon entreprise</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
  <button class="dw-i" onclick="drawerGo('agenda')"><svg class="i"><use href="#i-cal"/></svg><span>Mon planning</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
@@ -3221,10 +3247,45 @@ function dwLocked(){
  const st=$('s-start');if(st&&st.classList.contains('on'))return true;
  try{if(localStorage.getItem('caso_locked')==='1')return true}catch(e){}
  return false}
+/* module AUTH (lib/auth.js) : « Continuer avec Google / Outlook » sur les écrans Connexion et Créer mon compte ; l'offre en une ligne dans le menu profil */
+const AUTH_OFFRES={artisan_curieux:'Essai Artisan pro',artisan_fin_essai:'Essai terminé',artisan:'Artisan',artisan_pro:'Artisan pro',bricoleur:'Bricoleur du dimanche',bricoleur_pro:'Bricoleur du dimanche pro'};
+function authLigne(){
+ const A=window.CasoAuth,c=A&&A.compte(),pl=$('dwPlan');if(!pl)return;
+ let t=c&&AUTH_OFFRES[c.offre]?i18nT(AUTH_OFFRES[c.offre]):'';
+ if(t&&c.offre==='artisan_curieux'&&c.essaiFin){const d=new Date(c.essaiFin);t+=' · '+String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')}
+ pl.textContent=t;pl.hidden=!t}
+function authVia(k){if(navigator.onLine===false){toast(i18nT('Pas de connexion.'));return}window.CasoAuth&&CasoAuth.connecter(k)}
+window.CasoAuthProfil=()=>{const a=accountGet()||{};return{mode:a.mode==='bricoleur'?'bricoleur':'artisan',nom:db.prof.nom||'',siret:db.prof.siret||''}};
+window.addEventListener('caso-auth',e=>{const d=e.detail||{};authLigne();if(d.erreur)toast(i18nT(d.erreur));if(d.retour&&d.compte&&!accountGet())ssoBegin(d.compte)});
+/* retour de Google / Outlook sans compte sur ce téléphone : le compte est créé sans mot de passe, Face ID (ou l'empreinte) ouvre le coffre.
+   Un seul appui, sur le bouton Face ID de l'écran Connexion. Téléphone sans Face ID : on retombe sur « Créer mon compte », e-mail déjà rempli. */
+const SSO={c:null,busy:false};
+async function ssoBegin(c){SSO.c=c;let bio=false;
+ try{bio=!!(window.VAULT&&!VAULT.on&&!VAULT.has()&&await VAULT.bioOk())}catch(e){}
+ if(!bio){ssoFallback();return}
+ stScreen('s-start');stShow('lg');const b=$('lgBio');$('lgForm').classList.add('sso');
+ b.lastChild.textContent=/iPhone|iPad|Macintosh/.test(navigator.userAgent)?'Face ID':i18nT('Empreinte');b.hidden=false;b.onclick=ssoGo}
+function ssoEnd(){const b=$('lgBio');$('lgForm').classList.remove('sso');b.hidden=true;b.disabled=false;b.onclick=null}
+function ssoFallback(){ssoEnd();stScreen('s-start');stShow('ac');$('acMail').value=(SSO.c&&SSO.c.email)||'';
+ $('acErr').textContent=i18nT('{1} n’est pas disponible sur ce téléphone.').replace('{1}',bioNom());$('acErr').hidden=false}
+async function ssoGo(){if(SSO.busy)return;SSO.busy=true;const c=SSO.c,b=$('lgBio');b.disabled=true;$('lgErr').hidden=true;
+ const mail=String(c.email||'').toLowerCase();
+ const acc={v:1,id:'u'+uid(),prenom:c.prenom||mail.split('@')[0]||'casô',email:mail,sso:c.via,iter:ACC_ITER(),createdAt:Date.now()};
+ try{if(!accountPut(acc))throw new Error('stockage');if(!(await VAULT.createBio(acc)))throw new Error('coffre')}
+ catch(e){try{localStorage.removeItem(ACC_KEY)}catch(x){}SSO.busy=false;b.disabled=false;
+  if(e&&e.name==='NotAllowedError'){$('lgErr').textContent=i18nT('Face ID non confirmé. Réessaie.');$('lgErr').hidden=false;return}/* annulé : on reste là */
+  ssoFallback();return}
+ db.me=Object.assign({},db.me||{},{prenom:acc.prenom});db.prof=Object.assign({},db.prof||{},{email:acc.email});db.profAt=Date.now();save();
+ ssoEnd();fillProf();renderAcct();bkSet('devis_welcomed',1);
+ try{ONB.code=await rcSet()}catch(e){ONB.code=null}
+ SSO.busy=false;modeOpen(false)}
+/* compte sans mot de passe : une action sensible se confirme avec Face ID */
+const sansMdp=()=>!!(window.VAULT&&VAULT.on&&!VAULT.hasPw());
+async function bioConf(){try{return await VAULT.bioCheck()}catch(e){toast(i18nT('Face ID non confirmé. Réessaie.'));return false}}
 function drawer(side){
  if(dwLocked()){drawerClose(true);return}
  const d=$(side==='L'?'dwL':'dwR');if(!d)return;
- if(side==='R'){const a=accountGet()||{},c=getSync();$('dwName').textContent=a.prenom||c.user||'';$('dwMail').textContent=a.email||''}
+ if(side==='R'){const a=accountGet()||{},c=getSync();$('dwName').textContent=a.prenom||c.user||'';$('dwMail').textContent=a.email||'';authLigne()}
  $('dwBg').hidden=false;d.hidden=false;requestAnimationFrame(()=>{$('dwBg').classList.add('on');d.classList.add('on')});
  document.body.classList.add('dw-open')}
 function drawerClose(now){
@@ -3252,6 +3313,7 @@ async function logout(){
 function stShow(w){if(w==='ac'&&accountGet()){$('lgForm').hidden=false;$('acForm').hidden=true;$('lgErr').textContent='Il y a déjà un compte sur ce téléphone. Connecte-toi, ou touche « Mot de passe oublié ? ».';$('lgErr').hidden=false;$('lgForgot').hidden=false;return}
  $('lgForm').hidden=w!=='lg';$('acForm').hidden=w!=='ac';$('fgForm').hidden=true;['lgErr','acErr'].forEach(k=>$(k).hidden=true);
  if(w==='lg'){const a=accountGet();$('lgForgot').hidden=!a;if(a&&!$('lgMail').value)$('lgMail').value=a.email||''}
+ document.querySelectorAll('.st-sso').forEach(e=>e.hidden=!!accountGet());
  window.scrollTo(0,0)}
 function pwEye(b,id){const i=$(id),on=i.type==='password';i.type=on?'text':'password';b.setAttribute('aria-pressed',on);b.setAttribute('aria-label',on?'Masquer le mot de passe':'Afficher le mot de passe')}
 function showLogin(){
@@ -3314,7 +3376,7 @@ function modePick(m){if(m==='artisan'&&!sirOk((db.prof||{}).siret)){$('mdArt').c
 function rc2Copy(){const c=$('rc2Code').textContent;
  (navigator.clipboard?navigator.clipboard.writeText(c):Promise.reject()).then(()=>{toast(i18nT('Code copié.'));$('rc2Copy').classList.add('done')},()=>{try{getSelection().selectAllChildren($('rc2Code'))}catch(e){}})}
 function rc2Next(){ONB.code=null;$('rc2Code').textContent='';modeEnter()}
-function modeEnter(){const a=accountGet();
+function modeEnter(){const a=accountGet();try{window.CasoAuth&&CasoAuth.profil()}catch(e){}
  if(a&&a.mode==='bricoleur'){stScreen('s-mode');m3dOpen(true);return}
  document.body.classList.remove('starting');go('devis')}
 
@@ -3962,13 +4024,16 @@ function delOpen(){const c=getSync();
  $('delTx').textContent=c.token&&c.role==='patron'?"Ton compte, toutes les données de ce téléphone et tout l'espace de ton entreprise sur le serveur (équipe, devis, factures) seront effacés. Ça ne peut pas être annulé."
   :c.token?"Ton compte et les données de ce téléphone seront effacés. Les données de l'entreprise restent chez ton patron."
   :"Ton compte et toutes les données de ce téléphone (devis, factures, clients, planning) seront effacés. Ça ne peut pas être annulé.";
+ {const np=sansMdp();$('delPw').hidden=np;$('delPw').previousElementSibling.hidden=np}
  $('delPw').value='';$('delSrv').value='';$('delSrvB').hidden=!(c.token&&c.role==='patron');$('delErr').hidden=true;$('delBg').hidden=false;$('delSh').hidden=false;requestAnimationFrame(()=>{$('delSh').classList.add('on');$('delBg').classList.add('on')})}
 function delClose(){$('delSh').classList.remove('on');$('delBg').classList.remove('on');setTimeout(()=>{$('delSh').hidden=true;$('delBg').hidden=true},200)}
 async function delGo(){const a=accountGet(),err=t=>{$('delErr').textContent=t;$('delErr').hidden=false};
  {const w=lkWait();if(w){err(lkMsg(w));return}}
- if(!a||!(await accountCheck(a.email,$('delPw').value))){lkFail();const w=lkWait();err(w?lkMsg(w):'Mot de passe incorrect.');return}
+ if(sansMdp()){if(!a||!(await bioConf()))return}
+ else if(!a||!(await accountCheck(a.email,$('delPw').value))){lkFail();const w=lkWait();err(w?lkMsg(w):'Mot de passe incorrect.');return}
  lkOk();
  const c=getSync(),b=$('delGo');b.disabled=true;
+ if(window.CasoAuth&&CasoAuth.connecte()){try{await CasoAuth.supprimer()}catch(e){b.disabled=false;err('Pas de connexion.');return}}
  if(c.url&&c.token){try{const r=await fetch(c.url+'/api/account/delete',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+c.token},body:JSON.stringify({confirm:'SUPPRIMER',password:$('delSrv').value})});
    if(r.status===403){b.disabled=false;err('Mot de passe du serveur incorrect.');return}
    if(r.status===429){b.disabled=false;err(lkMsg(60));return}
@@ -6304,6 +6369,9 @@ function askPw(title){return new Promise(res=>{const w=document.createElement('d
  document.body.appendChild(w);setTimeout(()=>i.focus(),50)})}
 /* « Télécharger mes données » : fichier chiffré avec le mot de passe quand le coffre est actif */
 async function exportAll(){const j=JSON.stringify(db);
+ if(sansMdp()){if(!(await bioConf()))return;const pw=await askPw(i18nT('Mot de passe du fichier'));if(pw==null)return;
+  if(pw.length<8){toast(i18nT('8 caractères minimum.'));return}
+  dl('devis-btp-sauvegarde.json',await VAULT.seal(j,pw),'application/json');return}
  if(window.VAULT&&VAULT.on){const pw=await askPw(i18nT('Mot de passe'));if(pw==null)return;
   if(!(await VAULT.checkPw(pw))){toast(i18nT('Mot de passe incorrect.'));return}
   dl('devis-btp-sauvegarde.json',await VAULT.seal(j,pw),'application/json');return}
@@ -6327,13 +6395,16 @@ addEventListener('pagehide',()=>{if(profT){clearTimeout(profT);saveProf()}});
 const ibanMask=v=>{v=String(v||'').replace(/\s+/g,'');return v.length>8?v.slice(0,4)+' •••• •••• '+v.slice(-4):v};
 function ibanShow(){const e=$('eIban');if(!e)return;e.dataset.open='';e.value=ibanMask((db.prof||{}).iban)}
 async function ibanOpen(e){if(e.dataset.open==='1'||e.dataset.ask)return;
- if(window.VAULT&&VAULT.on){e.dataset.ask='1';e.blur();const pw=await askPw(i18nT('Mot de passe'));delete e.dataset.ask;
+ if(sansMdp()){e.dataset.ask='1';e.blur();const ok=await bioConf();delete e.dataset.ask;if(!ok)return}
+ else if(window.VAULT&&VAULT.on){e.dataset.ask='1';e.blur();const pw=await askPw(i18nT('Mot de passe'));delete e.dataset.ask;
   if(pw==null)return;if(!(await VAULT.checkPw(pw))){toast(i18nT('Mot de passe incorrect.'));return}}
  e.dataset.open='1';e.value=(db.prof||{}).iban||'';e.focus()}
-async function ibanSet(v){const pw=await askPw(i18nT('Mot de passe'));if(pw==null)return;
- if(!(await VAULT.checkPw(pw))){toast(i18nT('Mot de passe incorrect.'));return}
+async function ibanSet(v){
+ if(sansMdp()){if(!(await bioConf()))return}
+ else{const pw=await askPw(i18nT('Mot de passe'));if(pw==null)return;
+  if(!(await VAULT.checkPw(pw))){toast(i18nT('Mot de passe incorrect.'));return}}
  db.prof=Object.assign({},db.prof||{},{iban:v});db.profAt=Date.now();save();ibanShow();toast(i18nT('Enregistré.'))}
-function saveProf(){clearTimeout(profT);profT=0;db.prof=Object.assign({},db.prof||{},{nom:$('eNom').value,adr:$('eAdr').value,siret:$('eSiret').value,siren:$('eSiren').value.replace(/\D/g,'')||$('eSiret').value.replace(/\D/g,'').slice(0,9),tel:$('eTel').value,assur:$('eAssur').value,valid:$('eValid').value,forme:$('eForme').value,rm:$('eRm').value,tvai:$('eTvai').value,email:$('eMail').value,zone:$('eZone').value,iban:$('eIban').dataset.open==='1'?$('eIban').value:((db.prof||{}).iban||''),bic:$('eBic').value,delai:$('eDelai').value,capital:$('eCapital').value,franchise:$('eFranch').checked,rcpro:$('eRcpro').value,mediateur:$('eMed').value,tauxH:$('eTauxH').value,depl:$('eDepl').value,acompteType:$('eAccT').value,acomptePct:$('eAccP').value});if(typeof entExtra==='function')entExtra();db.profAt=Date.now();save()}
+function saveProf(){clearTimeout(profT);profT=0;setTimeout(()=>{try{window.CasoAuth&&CasoAuth.profil()}catch(e){}},0);db.prof=Object.assign({},db.prof||{},{nom:$('eNom').value,adr:$('eAdr').value,siret:$('eSiret').value,siren:$('eSiren').value.replace(/\D/g,'')||$('eSiret').value.replace(/\D/g,'').slice(0,9),tel:$('eTel').value,assur:$('eAssur').value,valid:$('eValid').value,forme:$('eForme').value,rm:$('eRm').value,tvai:$('eTvai').value,email:$('eMail').value,zone:$('eZone').value,iban:$('eIban').dataset.open==='1'?$('eIban').value:((db.prof||{}).iban||''),bic:$('eBic').value,delai:$('eDelai').value,capital:$('eCapital').value,franchise:$('eFranch').checked,rcpro:$('eRcpro').value,mediateur:$('eMed').value,tauxH:$('eTauxH').value,depl:$('eDepl').value,acompteType:$('eAccT').value,acomptePct:$('eAccP').value});if(typeof entExtra==='function')entExtra();db.profAt=Date.now();save()}
 
 /* ---------- Historique ---------- */
 const ST={brouillon:'Brouillon',envoye:'En cours de signature',accepte:'Validé',paye:'Payé',refuse:'Refusé',expire:'Expiré'};
@@ -7199,10 +7270,10 @@ async function acSubmit(){
 function renderAcct(){const a=accountGet(),c=$('acctCard');if(!c)return;c.hidden=!a;if(a){$('acctName').textContent=a.prenom;$('acctMail').textContent=a.email}bioRender()}
 /* ouvrir casô avec Face ID / empreinte : la passkey du téléphone ouvre le coffre (le mot de passe reste valable) */
 const bioNom=()=>/iPhone|iPad|Macintosh/.test(navigator.userAgent)?'Face ID':'empreinte';
-async function bioRender(){const b=$('bioBtn');if(!b)return;const V=window.VAULT;if(!V||!V.on||!(await V.bioOk())){b.hidden=true;return}
+async function bioRender(){const b=$('bioBtn');if(!b)return;const V=window.VAULT;if(!V||!V.on||!V.hasPw()||!(await V.bioOk())){b.hidden=true;return}
  b.lastChild.textContent=i18nT(V.bioSet()?'Ne plus ouvrir avec {1}':'Ouvrir casô avec {1}').replace('{1}',bioNom());b.hidden=false}
 async function bioToggle(){const V=window.VAULT;if(!V||!V.on)return;
- if(V.bioSet()){V.bioOff();bioRender();return}
+ if(V.bioSet()){if(!V.hasPw())return;V.bioOff();bioRender();return}
  try{await V.bioOn(accountGet());toast(i18nT('Enregistré.'))}catch(e){toast(i18nT('{1} n’est pas disponible sur ce téléphone.').replace('{1}',bioNom()))}bioRender()}
 /* ---------- Sauvegarde ---------- */
 function bkGet(k){try{return Number(localStorage.getItem(k))||0}catch(e){return 0}}
@@ -7961,5 +8032,6 @@ function entExtra(){const p=db.prof||{},v=$('eLogoV');if(v)v.innerHTML=p.logo?`<
 VAULT.start(()=>{document.querySelectorAll('script[type="text/x-caso"]').forEach(t=>{const e=document.createElement('script');
  if(t.dataset.src){e.src=t.dataset.src;e.async=false}else e.textContent=t.textContent;t.replaceWith(e)})});
 </script>
+<script src="lib/auth.js" defer></script>
 </body>
 </html>

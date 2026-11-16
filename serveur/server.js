@@ -12,7 +12,7 @@
    Le même fichier peut être embarqué dans une application (voir createServer / start). */
 'use strict';
 const http=require('http'),fs=require('fs'),path=require('path'),crypto=require('crypto'),os=require('os');
-const webpush=require('./webpush.js'),prixLib=require('./prix.js');
+const webpush=require('./webpush.js'),prixLib=require('./prix.js'),authLib=require('./auth.js');
 
 const COLL=['prices','quotes','hist','chantiers','people','pts','prof','clients','suppliers','projects','plans','events','invoices'];
 const ROLE_PUSH={patron:COLL,chef:COLL,ouvrier:['pts']};
@@ -55,6 +55,7 @@ function createServer(opts={}){
  if(!data.invIds)data.invIds={};
  if(!data.signs)data.signs={};if(!data.sigreg)data.sigreg=Object.create(null);if(!data.subs)data.subs=[];if(!data.remSent)data.remSent={};if(!data.invSeq)data.invSeq={};if(!data.invShares)data.invShares={};if(!data.ics)data.ics={};
  if(!data.vapid){data.vapid=webpush.vapidKeys();try{const t=FILE+'.tmp';fs.writeFileSync(t,JSON.stringify(data));fs.renameSync(t,FILE)}catch(e){}}
+ const auth=authLib.creer(Object.assign({dir:DIR,hosted:HOSTED,maintenant:opts.maintenant},opts.auth||{}));// comptes des usagers : connexion Google / Microsoft (module AUTH)
  const prix=opts.prix||prixLib.creer();// prix des matériaux en ligne (clé SEARCHAPI_KEY ou SERPAPI_KEY)
  const pushSend=opts.pushSend||((sub,payload)=>webpush.send(sub,payload,data.vapid,{subject:process.env.VAPID_SUBJECT}));
  /* --- apprentissage partagé du chat : phrases apprises par les usagers, sans rien de personnel (fichier à part) --- */
@@ -421,6 +422,9 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
      return send(res,200,publicSign(sg))}
     return send(res,405,{error:'méthode'})}
 
+   /* module AUTH : connexion directe avec Google ou Microsoft */
+   if(url.startsWith('/api/auth/'))return void await auth.traiter(req,res,{url,ip,send,readBody});
+
    /* ouvert à tous : état du serveur et adresses */
    if(req.method==='GET'&&url==='/api/ping')return send(res,200,{ok:true,app:'devis-btp',schema:3,sign:true});
    if(req.method==='GET'&&url==='/api/state')return send(res,200,{needsSetup:!Object.keys(data.users).length,local:isLocal(req)});
@@ -637,7 +641,7 @@ data.invSeq[key]=n;if(iid)data.invIds[key+'|'+iid]=n;persist();return send(res,2
    return send(res,404,{error:'introuvable'});
   }catch(e){if(!e||!e.pub)console.error('[casô]',req.method,url,e&&e.stack||e);if(!res.headersSent)send(res,400,{error:e&&e.pub?e.message:'Requête invalide.'});else try{res.destroy()}catch(_){}}});
 
- return{server,data:()=>data,remindTick,icsFor};
+ return{server,data:()=>data,remindTick,icsFor,auth};
 }
 
 /* Démarrage prêt à l'emploi : utilisable depuis un lanceur ou depuis une application */
