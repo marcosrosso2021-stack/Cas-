@@ -5,7 +5,7 @@
      pour corriger l'IA chaque semaine ; seules celles envoyées par au moins 3 usagers sont lisibles.
    Rien n'est affiché. Chargé après chat/intel.js. */
 (function(){
-var BASE=(window.CASO_APPRIS||"https://api.caso.fr"),AK="caso_ia_partage",K3="caso_ia_3d",KI="caso_ia_inc";
+var BASE=(window.CASO_APPRIS||"https://app-e6c6e91c-8623-4524-95ef-2cefb8b67f7b.cleverapps.io"),AK="caso_ia_partage",K3="caso_ia_3d",KI="caso_ia_inc";
 function lit(k,d){try{return JSON.parse(localStorage.getItem(k)||"null")||d;}catch(x){return d;}}
 function ecrit(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(x){}}
 function id(){var o=lit(AK,{});if(!o.id){var a=new Uint8Array(16);try{crypto.getRandomValues(a);}catch(x){for(var i=0;i<16;i++)a[i]=Math.random()*256|0;}
