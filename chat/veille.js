@@ -59,7 +59,7 @@ function carte(it,ouvert,prof,auj,t,rappel){
 
 function plat(x){return String(x||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[’`]/g,"'")}
 /* une question sur les nouveautés ? (seulement des tournures de question : une commande de devis ne passe pas ici) */
-var DEMANDE=/quoi de neuf|nouveaute|newsletter|actualite|qu'?est[- ]ce qui change|ca change quoi|quoi change|qui change|des changements|nouvelles? (?:loi|regle|obligation)|reglementation|quoi de nouveau|du nouveau/;
+var DEMANDE=/quoi de neuf|nouveaute|newsletter|actualite|qu'?est[- ]ce qui change|ca change quoi|quoi change|qui change|des changements|nouvelles? (?:loi|regle|obligation)|reglementation|quoi de nouveau|(?:^|il y a |y a |y a-t-il |as-tu |t'as |tu as )du nouveau|du nouveau\s*(?:\?|$)/;
 function demande(t){return DEMANDE.test(plat(t))}
 /* « ouvre la newsletter », « newsletter » : c'est la page qu'on demande, pas une réponse dans le chat */
 var PAGE=/^(?:(?:ouvr\w*|affich\w*|montr\w*|voir|lire|lis|va (?:dans|sur|a)|open|show|see|read|abr\w*|ver|mostra\w*|apri\w*|vedi|deschide|arata|otworz|pokaz|ac|goster|открой|покажи|افتح|اعرض)\s+)?(?:moi\s+|me\s+)?(?:la |ma |les |the |my |el |a |o |il |le )?newsletters?\s*[.!]*$/;
