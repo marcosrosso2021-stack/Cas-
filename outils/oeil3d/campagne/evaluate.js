@@ -41,7 +41,7 @@ function chk(R){const sc=R.scenario,A=R.avant||{},B=(R.m3d&&R.m3d.apres)||{},rep
     case 'door':T(changed('ops')?1:0,changed('ops')?'ouvertures modifiées':'ouvertures inchangées');break;
     case 'count':T(!NONE.test(txt)&&/palette|parpaing/i.test(txt)&&!/^Tu veux/.test(txt)?1:0,'réponse : '+txt.slice(0,80));break;
     case 'add_window':{const w=(B.ops||[]).filter(o=>o==='window').length-(A.ops||[]).filter(o=>o==='window').length;T(w>0?1:0,w>0?'fenêtre ajoutée':'pas de fenêtre ajoutée');break}
-    case 'empty':{const v=eqB.length;T(v===0&&model?1:v<eqA.length?0.5:0,eqA.length+' → '+v+' éléments');break}
+    case 'empty':{/* grille 2 : le bâti (poteau) reste quand on demande de garder la structure */const v=eqB.filter(e=>!/^F01\.|poteau|pilier/i.test((e.cls||'')+' '+(e.lab||''))).length;T(v===0&&model?1:v<eqA.length?0.5:0,eqA.length+' → '+v+' éléments');break}
     case 'calib':T(B.bbox&&A.bbox&&JSON.stringify(A.bbox)!==JSON.stringify(B.bbox)?1:0,'dimensions '+JSON.stringify(A.bbox)+' → '+JSON.stringify(B.bbox));break;
     case 'save':T(B.pid?1:0,B.pid?'projet enregistré ('+B.pid+')':'pas de projet enregistré');break;
     case 'missing':{const n=JSON.stringify((R.reco&&R.reco.spec&&R.reco.spec.notes)||[]);T(/non vu|derri/i.test(txt)?1:/non vu|derri/i.test(n)?0.5:0,'notes : '+n.slice(0,80));break}
@@ -81,7 +81,7 @@ function score(R){const sc=R.scenario,C=chk(R),txt=C.txt,B=(R.m3d&&R.m3d.apres)|
   else if(m==='plan')pts.geometrie=[0,15];else pts.geometrie=null;
   // qualité 3D : maquette présente, éléments plausibles, demande visible
   if(sc.sec==='main')pts.qualite3d=null;
-  else{const model=(B.walls||0)>=3,eqs=(B.eqs||[]).filter(e=>e.vid),bad=eqs.filter(e=>(e.sh||0)>3.2).length;const cnt={};eqs.forEach(e=>{cnt[e.lab]=(cnt[e.lab]||0)+1});const dup=Object.values(cnt).filter(v=>v>2).length;
+  else{const model=(B.walls||0)>=3,eqs=(B.eqs||[]).filter(e=>e.vid),bad=eqs.filter(e=>(e.sh||0)>3.2&&!/^F01\.|poteau|pilier/i.test((e.cls||'')+' '+(e.lab||''))).length;/* grille 2 : un poteau monte jusqu'au faîtage */const cnt={};eqs.forEach(e=>{cnt[e.lab]=(cnt[e.lab]||0)+1});const dup=Object.values(cnt).filter(v=>v>2).length;
     pts.qualite3d=[model?5+(eqs.length?Math.max(0,5-2*bad-dup):5)+(C.ok>=1?5:C.ok>=0.5?2:0):0,15];}
   pts.coherence=[Math.round(10*C.ok),10];
   const hedge=/estim|environ|à vérifier|non vu|incertain|approximati|supposé|\?|pouvez-vous|voulez-vous|filmez|ajoutez/i.test(txt)||(m==='video'&&R.reco&&R.reco.spec&&R.reco.spec.notes&&R.reco.spec.notes.length>0);
