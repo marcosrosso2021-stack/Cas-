@@ -2891,8 +2891,8 @@ function build3D0(keep){const T=window.THREE;if(!T||!T3)return;if(S.rnvFresh){T3
   for(const e of(T3.struct?[]:T3.elev?S.eqs.filter(q=>eqDef(q.type)&&eqDef(q.type).m!=='out'):S.eqs)){if(!e.type||(low&&ZW.has(e.type)))continue;let m;try{m=S.rnv&&e.ph&&!T3.elec?rnvPhModel(T,e,S.rnv.sl&&eqDef(e.type).m==='ceil'?rnvCeilAt(e.x,e.y):H):eqModel(T,e,M,S.rnv&&S.rnv.sl&&eqDef(e.type).m==='ceil'?rnvCeilAt(e.x,e.y):H,top,night)}catch(err){m=new T.Group();const[w,dp,h]=eqDims(e);const o=new T.Mesh(boxG(w,h,dp),M.lacq);o.position.y=h/2;m.add(o)}
     const d=eqDef(e.type);let y0=d.m==='out'?0:cLv*LHh;if(d.m==='out'){y0=labelAt(e.x,e.y)>0?cLv*LHh:-0.12;if(y0<0&&!SURF.has(e.type)&&e.type!=='pool'&&S.eqs.some(q=>SURF.has(q.type)&&(()=>{const f=fpOf(q);return e.x>f[0]&&e.x<f[2]&&e.y>f[1]&&e.y<f[3]})()))y0=0.005}
     m.position.set(X(e.x),y0,Z(e.y));m.rotation.y=-(e.rot||0)*Math.PI/180;scene.add(m);
-    if(low&&(e.type==='light'||(d.z||0)>=top-0.05||e.type==='hood'))m.traverse(o=>{if(o.isMesh){o.material=M.ghost;o.castShadow=false}});
-    if(!low||true){const NOB=['rug','light','socket','switch','water','mirror','towel','clim','hood','panel','boiler','heater','rad','terrace','pool','tree','frame','kwall','drive','gfence','hedge','flowers'];if(!NOB.includes(e.type)&&(d.z||0)<0.3){const[w,dp]=eqDims(e),bw=w+0.25,bd=dp+0.25;
+    if(low&&(e.type==='light'||(d.z||0)>=top-0.05||e.type==='hood'||e.type==='vcap'&&(e.ez||0)>=top-0.05))m.traverse(o=>{if(o.isMesh){o.material=M.ghost;o.castShadow=false}});
+    if(!low||true){const NOB=['rug','light','socket','switch','water','mirror','towel','clim','hood','panel','boiler','heater','rad','terrace','pool','tree','frame','kwall','drive','gfence','hedge','flowers'];if(!NOB.includes(e.type)&&(d.z||0)<0.3&&!(e.type==='vcap'&&((e.ez||0)>0.25||['ceiling_light','curtain','mirror','socket','switch','rug','radiator'].includes(e.sk)))){const[w,dp]=eqDims(e),bw=w+0.25,bd=dp+0.25;
         const bs=new T.Mesh(blobGeo(),new T.MeshBasicMaterial({map:blobTex(),color:0x000000,transparent:true,opacity:0.42,depthWrite:false}));bs.scale.set(bw,1,bd);bs.position.set(X(e.x),y0+0.009,Z(e.y));bs.rotation.y=-(e.rot||0)*Math.PI/180;bs.renderOrder=1;scene.add(bs);m.userData.blob=bs}}
     T3.eqObj.set(e.id,m);m.traverse(o=>{if(o.isMesh){o.userData.eqId=e.id;pick.push(o)}});
     if(S.sel3===e.id){const bb=new T.Box3().setFromObject(m);scene.add(new T.Box3Helper(bb,0xffc21a))}
@@ -3054,27 +3054,77 @@ const artTex=k=>cvTex('art_'+k,256,(x,n)=>{const P=[['#e8d9c0','#c4553b','#2f4e6
 /* nouveaux objets et arbres plus naturels ; l'escalier peut monter dans l'autre sens (fl) */
 const NEWEQ=new Set(['kwall','frame','sideboard','dresser','bush','flowers','veg','shed','car','drive','bench','bbq','glamp','hedge','gfence']);
 /* élément capté dans une vidéo : sa forme d'après ce qui a été reconnu, sa taille, sa couleur et sa hauteur mesurées */
-function vcapModel(T,e,M){const g=new T.Group(),[w,dp,h]=eqDims(e),y0=e.ez||0,col=e.col||'#9a9a9a',m1=M.S_(col,{roughness:0.8}),m2=M.S_(mixHex(col,'#000000',0.3),{roughness:0.8});
-  const B=(sx,sy,sz,m,x,y,z)=>{const o=new T.Mesh(new T.BoxGeometry(Math.max(0.01,sx),Math.max(0.01,sy),Math.max(0.01,sz)),m);o.position.set(x,y0+y+sy/2,z);o.castShadow=true;o.receiveShadow=true;g.add(o);return o};
-  const C=(rt,rb,hh,m,x,y,z)=>{const o=new T.Mesh(new T.CylinderGeometry(rt,rb,hh,16),m);o.position.set(x,y0+y+hh/2,z);o.castShadow=true;o.receiveShadow=true;g.add(o);return o};
-  const legs=(lh,m,ins)=>{for(const a of[-1,1])for(const b of[-1,1])B(0.04,lh,0.04,m,a*(w/2-ins),0,b*(dp/2-ins))};
-  switch(e.sk){
-    case'bed':{const fh=h*0.55;B(w,fh,dp,m2,0,0,0);B(w*0.96,h-fh,dp*0.94,m1,0,fh,0.02);B(w,Math.max(h+0.3,0.8),0.05,m2,0,0,-dp/2+0.025);break}
-    case'table':case'desk':{B(w,0.04,dp,m1,0,h-0.04,0);legs(h-0.04,m2,0.04);break}
-    case'chair':{const sh=Math.min(0.48,h*0.52);B(w,0.04,dp,m1,0,sh,0);legs(sh,m1,0.03);B(w,h-sh,0.04,m1,0,sh,-dp/2+0.02);break}
-    case'sofa':{const sh=h*0.45;B(w,sh,dp,m1,0,0,0);B(w,h-sh,dp*0.22,m1,0,sh,-dp/2+dp*0.11);break}
-    case'fridge':{B(w,h,dp,M.S_(col,{roughness:0.35,metalness:0.15}),0,0,0);B(w*0.98,0.01,0.005,M.S_('#333333',{}),0,h*0.66,dp/2+0.003);B(0.025,h*0.25,0.03,M.S_('#aaaaaa',{}),-w/2+0.05,h*0.3,dp/2+0.015);break}
-    case'microwave':case'oven':{B(w,h,dp,M.S_(col,{roughness:0.4,metalness:0.3}),0,0,0);B(w*0.6,h*0.65,0.005,M.S_('#111111',{}),-w*0.12,h*0.17,dp/2+0.003);break}
-    case'tv':{B(w,h,dp,M.S_('#151515',{}),0,0,0);break}
-    case'shelf':{const n=Math.max(2,Math.round(h/0.35));B(w,h,0.02,m1,0,0,-dp/2+0.01);for(let i=0;i<=n;i++)B(w,0.02,dp,m1,0,i*(h-0.02)/n,0);break}
-    case'curtain':{for(let i=0;i<6;i++)B(w*(i%2?0.75:1),h,dp/6,M.S_(col,{roughness:1}),0,0,-dp/2+(i+0.5)*dp/6);break}
-    case'lamp':{C(0.015,0.015,h*0.8,m2,0,0,0);C(Math.min(w,dp)*0.25,Math.min(w,dp)*0.45,h*0.2,m1,0,h*0.8,0);break}
-    case'ceiling_light':{const o=B(w,h,dp,new T.MeshStandardMaterial({color:'#f4f4f4',emissive:'#ffffff',emissiveIntensity:0.35,roughness:0.4}),0,0,0);o.castShadow=false;break}
-    case'plant':{C(Math.min(w,dp)*0.3,Math.min(w,dp)*0.24,h*0.3,M.S_('#9a6a44',{}),0,0,0);const s2=new T.Mesh(new T.SphereGeometry(Math.min(w,dp)*0.5,14,10),m1);s2.position.set(0,y0+h*0.65,0);g.add(s2);break}
-    case'pillar':{B(w,h,dp,M.S_(col,{roughness:0.6}),0,0,0);B(w+0.08,0.1,dp+0.08,M.S_(col,{roughness:0.6}),0,h-0.1,0);break}
-    case'toilet':{B(w*0.8,h*0.45,dp*0.7,M.S_('#f5f5f5',{}),0,0,dp*0.1);B(w,h*0.55,dp*0.25,M.S_('#f5f5f5',{}),0,h*0.45,-dp/2+dp*0.125);break}
-    case'sink':{B(w,h,dp,M.S_('#eeeeee',{}),0,0,0);break}
-    default:B(w,h,dp,m1,0,0,0)}
+function vcapModel(T,e,M){const g=new T.Group(),[w,dp,h]=eqDims(e),y0=e.ez||0,col=e.col||'#9a9a9a',dk=k=>mixHex(col,'#000000',k),lt=k=>mixHex(col,'#ffffff',k),m1=M.S_(col,{roughness:0.8}),m2=M.S_(dk(0.3),{roughness:0.8});
+  const add=(o,sh)=>{o.castShadow=sh!==false;o.receiveShadow=true;g.add(o);return o};
+  const B=(sx,sy,sz,m,x,y,z)=>{const o=new T.Mesh(boxG(Math.max(0.004,sx),Math.max(0.004,sy),Math.max(0.004,sz)),m);o.position.set(x,y0+y+sy/2,z);return add(o)};
+  /* bloc aux arêtes adoucies : les arêtes vives donnent un rendu de maquette en carton */
+  const R=(sx,sy,sz,m,x,y,z,r)=>{sx=Math.max(0.006,sx);sy=Math.max(0.006,sy);sz=Math.max(0.006,sz);const o=new T.Mesh(rgeo(sx,sy,sz,r==null?Math.min(sx,sy,sz)*0.18:r),m);o.position.set(x,y0+y+sy/2,z);return add(o)};
+  const C=(rt,rb,hh,m,x,y,z,seg)=>{const o=new T.Mesh(new T.CylinderGeometry(rt,rb,hh,seg||24),m);o.position.set(x,y0+y+hh/2,z);return add(o)};
+  const legs=(lh,m,ins,t)=>{for(const a of[-1,1])for(const b of[-1,1])B(t||0.04,lh,t||0.04,m,a*(w/2-ins),0,b*(dp/2-ins))};
+  const lab=((e.lab||'')+' '+(e.vcls||'')).toLowerCase(),sk=/poubelle|corbeille/.test(lab)?'bin':e.sk;
+  switch(sk){
+    case'bed':{const lg=h>0.4?0.1:0,fh=Math.max(0.12,(h-lg)*0.42),mh=Math.max(0.1,h-lg-fh),hb=Math.max(h+0.3,0.85),mW=M.S_(lt(0.55),{roughness:0.95}),mP=M.S_('#f3f1ec',{roughness:0.95});
+      if(lg)legs(lg,m2,0.05,0.05);R(w,fh,dp,m2,0,lg,0,0.02);R(w*0.97,mh,dp*0.96,mW,0,lg+fh,0.01,Math.min(0.06,mh*0.4));
+      R(w*0.99,mh*0.55,dp*0.62,m1,0,lg+fh+mh*0.55,dp*0.17,Math.min(0.05,mh*0.25));/* couette, de la couleur mesurée */
+      const np=w>1.3?2:1,pw=Math.min(0.62,w/np*0.8);for(let k=0;k<np;k++)R(pw,0.11,0.36,mP,(k-(np-1)/2)*(w/np),lg+fh+mh-0.02,-dp/2+0.26,0.05);
+      R(w,hb,0.05,m2,0,0,-dp/2+0.025,0.015);break}
+    case'table':case'desk':{const tt=0.035,ap=Math.min(0.08,h*0.12);R(w,tt,dp,m1,0,h-tt,0,0.008);legs(h-tt,m2,0.05,0.045);
+      B(w-0.14,ap,0.02,m2,0,h-tt-ap,dp/2-0.05);B(w-0.14,ap,0.02,m2,0,h-tt-ap,-dp/2+0.05);B(0.02,ap,dp-0.14,m2,w/2-0.05,h-tt-ap,0);B(0.02,ap,dp-0.14,m2,-w/2+0.05,h-tt-ap,0);break}
+    case'chair':{const sh=Math.min(0.46,h*0.52),t=0.032,sw=Math.min(w,0.5),sd=Math.min(dp,0.5);R(sw,0.035,sd,m1,0,sh,0,0.012);
+      for(const a of[-1,1]){B(t,sh,t,m2,a*(sw/2-0.03),0,sd/2-0.03);B(t,h,t,m2,a*(sw/2-0.03),0,-sd/2+0.03)}
+      R(sw-0.06,Math.min(0.14,(h-sh)*0.3),0.022,m1,0,h-Math.min(0.14,(h-sh)*0.3),-sd/2+0.03,0.008);if(h-sh>0.3)B(sw-0.06,0.04,0.018,m1,0,sh+(h-sh)*0.42,-sd/2+0.03);
+      B(sw-0.06,0.02,0.02,m2,0,sh*0.4,sd/2-0.03);B(sw-0.06,0.02,0.02,m2,0,sh*0.4,-sd/2+0.03);break}
+    case'sofa':{const sh=h*0.45,ar=Math.min(0.16,w*0.1),n=Math.max(1,Math.round((w-2*ar)/0.7)),cw=(w-2*ar)/n;R(w,sh*0.6,dp,m2,0,0.04,0,0.03);
+      for(let k=0;k<n;k++)R(cw-0.01,sh*0.45,dp*0.74,m1,-w/2+ar+cw*(k+0.5),sh*0.6,dp*0.1,0.04);R(w-2*ar,h-sh*0.6,dp*0.24,m1,0,sh*0.6,-dp/2+dp*0.12,0.05);
+      for(const a of[-1,1])R(ar,h*0.72,dp,m1,a*(w/2-ar/2),0.04,0,0.04);legs(0.04,M.S_('#2a2a2a',{}),0.06,0.04);break}
+    case'fridge':{const mb=M.S_(col,{roughness:0.32,metalness:0.12}),mh=M.S_('#b9bcc0',{roughness:0.3,metalness:0.7}),sp=h>1.2?0.34:0;B(w*0.94,0.05,dp*0.9,M.S_('#222222',{}),0,0,0);
+      R(w,h-0.05,dp-0.04,mb,0,0.05,-0.02,0.015);
+      if(sp){R(w-0.008,(h-0.05)*(1-sp)-0.008,0.04,mb,0,0.054,dp/2-0.02,0.012);R(w-0.008,(h-0.05)*sp-0.008,0.04,mb,0,0.05+(h-0.05)*(1-sp)+0.004,dp/2-0.02,0.012);
+        R(0.02,Math.min(0.5,h*0.28),0.03,mh,-w/2+0.06,0.05+(h-0.05)*(1-sp)-Math.min(0.5,h*0.28)-0.05,dp/2+0.012,0.008);R(0.02,(h-0.05)*sp*0.6,0.03,mh,-w/2+0.06,0.05+(h-0.05)*(1-sp)+0.04,dp/2+0.012,0.008)}
+      else{R(w-0.008,h-0.062,0.04,mb,0,0.054,dp/2-0.02,0.012);R(0.02,h*0.4,0.03,mh,-w/2+0.06,h*0.4,dp/2+0.012,0.008)}break}
+    case'microwave':case'oven':{const mb=M.S_(col,{roughness:0.4,metalness:0.3}),ov=sk==='oven',dw=ov?w*0.9:w*0.66,dx=ov?0:-w*0.14;R(w,h-0.015,dp,mb,0,0.015,0,0.012);
+      for(const a of[-1,1])for(const b of[-1,1])C(0.015,0.015,0.015,M.S_('#1a1a1a',{}),a*(w/2-0.04),0,b*(dp/2-0.04),10);
+      R(dw,h*0.72,0.012,M.S_('#0c0d0f',{roughness:0.12,metalness:0.4}),dx,h*0.16,dp/2+0.004,0.008);R(dw*0.82,h*0.5,0.006,M.S_('#1c2226',{roughness:0.05,metalness:0.6}),dx,h*0.27,dp/2+0.011,0.004);
+      if(ov)R(w*0.7,0.018,0.03,M.S_('#b9bcc0',{roughness:0.3,metalness:0.7}),0,h*0.82,dp/2+0.025,0.008);
+      else{B(0.012,h*0.6,0.02,M.S_('#b9bcc0',{roughness:0.3,metalness:0.7}),dx+dw/2-0.02,h*0.22,dp/2+0.02);for(let k=0;k<3;k++)C(0.014,0.014,0.006,M.S_('#d8d8d8',{}),w/2-w*0.1,h*(0.28+k*0.2),dp/2+0.004,12).rotation.x=Math.PI/2}break}
+    case'tv':{const st=y0<0.05&&h>0.3;R(w,st?h-0.06:h,Math.min(dp,0.05),M.S_('#101012',{roughness:0.5}),0,st?0.06:0,0,0.008);const sc=B(w-0.03,(st?h-0.06:h)-0.03,0.004,M.S_('#06080c',{roughness:0.08,metalness:0.5}),0,(st?0.06:0)+0.015,Math.min(dp,0.05)/2+0.001);sc.castShadow=false;
+      if(st){B(0.06,0.06,0.03,M.S_('#1a1a1a',{}),0,0,0);R(Math.min(0.5,w*0.4),0.012,Math.max(0.16,dp),M.S_('#1a1a1a',{}),0,0,0,0.005)}break}
+    case'shelf':{const n=Math.max(2,Math.round(h/0.35)),t=0.02;B(w,h,0.012,m2,0,0,-dp/2+0.006);B(t,h,dp,m1,-w/2+t/2,0,0);B(t,h,dp,m1,w/2-t/2,0,0);for(let k=0;k<=n;k++)B(w-2*t,t,dp-0.012,m1,0,k*(h-t)/n,0.006);break}
+    case'cabinet':{const pl=h>0.5?0.07:0,n=Math.max(1,Math.round(w/0.5)),dw=w/n,mh=M.S_('#b9bcc0',{roughness:0.3,metalness:0.7});if(pl)B(w-0.04,pl,dp-0.06,m2,0,0,-0.01);R(w,h-pl,dp-0.02,m1,0,pl,-0.01,0.01);
+      for(let k=0;k<n;k++){const x=-w/2+dw*(k+0.5);R(dw-0.008,h-pl-0.012,0.018,M.S_(lt(0.06),{roughness:0.7}),x,pl+0.006,dp/2-0.009,0.006);
+        if(h>1.1)R(0.012,0.14,0.022,mh,x+(k%2?-1:1)*(dw/2-0.04),pl+(h-pl)*0.5,dp/2+0.008,0.005);else R(Math.min(0.14,dw*0.4),0.012,0.022,mh,x,h-0.07,dp/2+0.008,0.005)}break}
+    case'box':{const mt=M.S_(lt(0.25),{roughness:0.9});R(w,h,dp,M.S_(col,{roughness:0.95}),0,0,0,0.006);const lg=w>=dp;B(lg?w+0.002:0.05,0.002,lg?0.05:dp+0.002,mt,0,h,0).castShadow=false;
+      B(lg?0.05:0.002,h*0.22,lg?0.002:0.05,mt,lg?0:w/2,h*0.78,lg?dp/2:0).castShadow=false;B(lg?0.05:0.002,h*0.22,lg?0.002:0.05,mt,lg?0:-w/2,h*0.78,lg?-dp/2:0).castShadow=false;
+      B(lg?w*0.98:0.003,0.003,lg?0.003:dp*0.98,M.S_(dk(0.35),{}),0,h+0.001,0).castShadow=false;break}
+    case'bin':{const r=Math.min(w,dp)/2;C(r,r*0.8,h,m1,0,0,0,28);const rim=new T.Mesh(torG(r,0.012),m2);rim.rotation.x=Math.PI/2;rim.position.set(0,y0+h,0);add(rim);
+      const tp=new T.Mesh(new T.CircleGeometry(r*0.94,28),M.S_(dk(0.6),{roughness:1}));tp.rotation.x=-Math.PI/2;tp.position.set(0,y0+h-0.02,0);add(tp,false);break}
+    case'curtain':{const lg=w>=dp,L=lg?w:dp,th=Math.max(0.05,Math.min(0.12,lg?dp:w)),n=Math.max(4,Math.round(L/0.085)),st=L/n,mc=M.S_(col,{roughness:1}),md=M.S_(dk(0.12),{roughness:1});
+      for(let k=0;k<n;k++){const t=-L/2+st*(k+0.5),r=st*0.62,o=C(r,r*0.92,h-0.03,k%2?md:mc,lg?t:(k%2?0.012:-0.012),0,lg?(k%2?0.012:-0.012):t,10);o.scale.set(lg?1:th/(2*r)*1.1,1,lg?th/(2*r)*1.1:1)}
+      const rod=new T.Mesh(new T.CylinderGeometry(0.012,0.012,L+0.12,10),M.S_('#3a3a3a',{roughness:0.4,metalness:0.6}));rod.rotation[lg?'z':'x']=Math.PI/2;rod.position.set(0,y0+h-0.012,0);add(rod);break}
+    case'lamp':{const r=Math.min(w,dp)/2;if(/porte|manteau/.test(lab)){C(r*0.7,r*0.8,0.03,m2,0,0,0);C(0.018,0.018,h-0.03,m2,0,0.03,0,12);for(let k=0;k<6;k++){const a=k*Math.PI/3,o=C(0.008,0.008,r*0.9,m2,Math.cos(a)*r*0.4,h-0.12,Math.sin(a)*r*0.4,8);o.rotation.z=-Math.cos(a)*1.0;o.rotation.x=Math.sin(a)*1.0}break}
+      C(r*0.55,r*0.6,0.025,m2,0,0,0);C(0.012,0.012,h*0.78,m2,0,0.025,0,10);const sh=C(r*0.55,r,h*0.2,new T.MeshStandardMaterial({color:LIN(lt(0.5)),emissive:LIN('#ffe9c4'),emissiveIntensity:0.25,roughness:0.9,side:T.DoubleSide}),0,h*0.8,0,24);sh.castShadow=false;break}
+    case'ceiling_light':{const me=new T.MeshStandardMaterial({color:LIN('#fbfbf8'),emissive:LIN('#fff6e4'),emissiveIntensity:0.55,roughness:0.35}),mb=M.S_('#e9e9e6',{roughness:0.5}),L=Math.max(w,dp),s=Math.min(w,dp),th=Math.max(0.05,Math.min(h,0.09));
+      if(L>s*2.2){const lg=w>=dp,sw=Math.min(s,0.22);R(lg?L:sw,th*0.45,lg?sw:L,mb,0,h-th*0.45,0,0.008).castShadow=false;R(lg?L-0.04:sw*0.82,th*0.55,lg?sw*0.82:L-0.04,me,0,h-th,0,Math.min(0.03,th*0.25)).castShadow=false;
+        for(const a of[-1,1])B(lg?0.02:sw,th*0.8,lg?sw:0.02,mb,lg?a*(L/2-0.01):0,h-th*0.9,lg?0:a*(L/2-0.01)).castShadow=false}
+      else{const r=s/2;C(r,r,th*0.4,mb,0,h-th*0.4,0,32).castShadow=false;const d=new T.Mesh(new T.SphereGeometry(r*0.92,28,10,0,Math.PI*2,Math.PI/2,Math.PI/2),me);d.scale.y=th*0.6/(r*0.92);d.position.set(0,y0+h-th*0.4,0);add(d,false)}break}
+    case'plant':{const r=Math.min(w,dp)/2,ph=Math.min(h*0.3,0.35);C(r*0.6,r*0.46,ph,M.S_('#a8735a',{roughness:0.9}),0,0,0,20);C(r*0.56,r*0.56,0.01,M.S_('#3b2d22',{roughness:1}),0,ph-0.012,0,20);
+      let sd=((e.x*13+e.y*7)|0)||1;const rn=()=>{sd=(sd*16807)%2147483647;return sd/2147483647},fh=h-ph;for(let k=0;k<7;k++){const rr=r*(0.42+rn()*0.3),o=new T.Mesh(new T.SphereGeometry(rr,12,9),M.S_(mixHex(col,k%2?'#1f3d1c':'#5a8f4a',0.25),{roughness:0.9}));o.position.set((rn()-0.5)*r*0.9,y0+ph+fh*(0.28+rn()*0.55),(rn()-0.5)*r*0.9);o.scale.y=0.85+rn()*0.4;add(o)}break}
+    case'pillar':{const mp=M.S_(col,{roughness:0.65});R(w,h,dp,mp,0,0,0,0.012);R(w+0.05,0.09,dp+0.05,mp,0,0,0,0.01);R(w+0.07,0.1,dp+0.07,mp,0,h-0.1,0,0.012);break}
+    case'mirror':{const lg=w>=dp,t=Math.max(0.02,Math.min(w,dp));R(lg?w:t,h,lg?t:dp,m2,0,0,0,0.008);const gl=B(lg?w-0.05:0.004,h-0.05,lg?0.004:dp-0.05,M.S_('#dfe6ea',{roughness:0.04,metalness:1}),lg?0:t/2+0.001,0.025,lg?t/2+0.001:0);gl.castShadow=false;
+      const g2=B(lg?w-0.05:0.004,h-0.05,lg?0.004:dp-0.05,M.S_('#dfe6ea',{roughness:0.04,metalness:1}),lg?0:-t/2-0.001,0.025,lg?-t/2-0.001:0);g2.castShadow=false;break}
+    case'radiator':{const lg=w>=dp,L=lg?w:dp,t=Math.max(0.05,Math.min(w,dp)),n=Math.max(4,Math.round(L/0.06)),st=L/n,mr=M.S_(lt(0.1),{roughness:0.45,metalness:0.1});
+      for(let k=0;k<n;k++){const u=-L/2+st*(k+0.5);R(lg?st*0.7:t,h-0.04,lg?t:st*0.7,mr,lg?u:0,0.02,lg?0:u,0.012)}B(lg?L:t*0.6,0.03,lg?t*0.6:L,mr,0,h-0.05,0);B(lg?L:t*0.6,0.03,lg?t*0.6:L,mr,0,0.02,0);
+      if(y0<0.08)for(const a of[-1,1])B(0.03,0.04,0.03,m2,lg?a*(L/2-0.08):0,-0.02,lg?0:a*(L/2-0.08));break}
+    case'socket':case'switch':{const lg=w>=dp,t=0.012,s=Math.max(0.08,Math.max(w,dp)),mp=M.S_('#f4f4f1',{roughness:0.45}),o=R(lg?s:t,s,lg?t:s,mp,0,0,0,0.006);o.castShadow=false;
+      for(const f of[-1,1]){if(sk==='socket'){const c=new T.Mesh(new T.CylinderGeometry(s*0.27,s*0.27,0.004,20),M.S_('#e2e2de',{roughness:0.6}));c.rotation[lg?'x':'z']=Math.PI/2;c.position.set(lg?0:f*(t/2+0.001),y0+s/2,lg?f*(t/2+0.001):0);g.add(c);
+          for(const a of[-1,1]){const hx=new T.Mesh(new T.CylinderGeometry(0.004,0.004,0.006,8),M.S_('#222222',{}));hx.rotation[lg?'x':'z']=Math.PI/2;hx.position.set(lg?a*s*0.12:f*(t/2+0.002),y0+s/2,lg?f*(t/2+0.002):a*s*0.12);g.add(hx)}}
+        else{const k=new T.Mesh(boxG(lg?s*0.42:0.006,s*0.62,lg?0.006:s*0.42),M.S_('#fbfbf9',{roughness:0.35}));k.position.set(lg?0:f*(t/2+0.003),y0+s/2,lg?f*(t/2+0.003):0);k.rotation[lg?'x':'z']=f*0.08;g.add(k)}}break}
+    case'bag':{R(w,h*0.92,dp,M.S_(col,{roughness:0.95}),0,0,0,Math.min(w,dp,h)*0.32);const hd=new T.Mesh(torG(Math.min(w,dp)*0.2,0.01),m2);hd.position.set(0,y0+h*0.92,0);hd.rotation.y=w>=dp?0:Math.PI/2;add(hd);break}
+    case'rug':{R(w,Math.max(0.012,h),dp,m1,0,0,0,0.006).castShadow=false;B(w-0.12,0.002,dp-0.12,M.S_(lt(0.12),{roughness:1}),0,Math.max(0.012,h),0).castShadow=false;break}
+    case'toilet':{const mw=M.S_('#f5f5f3',{roughness:0.25});R(w*0.72,h*0.42,dp*0.68,mw,0,0,dp*0.12,0.06);R(w*0.8,0.04,dp*0.7,mw,0,h*0.42,dp*0.12,0.018);R(w,h*0.58,dp*0.24,mw,0,h*0.42,-dp/2+dp*0.12,0.02);break}
+    case'sink':{const mw=M.S_('#f2f2f0',{roughness:0.2});R(w,Math.min(h,0.16),dp,mw,0,h-Math.min(h,0.16),0,0.03);B(w*0.76,0.004,dp*0.6,M.S_('#d9dcde',{roughness:0.15}),0,h,0.02).castShadow=false;
+      C(0.012,0.012,0.12,M.S_('#b9bcc0',{roughness:0.25,metalness:0.8}),0,h,-dp/2+0.05,10);if(h>0.5&&y0<0.1)C(0.06,0.08,h-0.16,mw,0,0,-dp*0.1,16);break}
+    default:R(w,h,dp,m1,0,0,0,Math.min(w,h,dp)*0.1)}
   return g}
 function eqModel(T,e,M,H,top,night){
   if(e.type==='vcap')return vcapModel(T,e,M);
@@ -3327,7 +3377,12 @@ function vidFurnish(spec,k0){const fp=footprint();if(!fp||!S.scale||!spec||!spec
   for(const o of spec.objects){const[x,y]=P(o.x,o.z),r=(o.rotation||0)*Math.PI/180;if((o.type==='socket'||o.type==='switch')&&S.eqs.some(e=>e.type===o.type&&Math.hypot(e.x-x,e.y-y)*sc<0.3))continue;const b=[-Math.sin(r),-Math.cos(r)],bp=[b[0]*dx[0]+b[1]*dx[1],b[0]*dy[0]+b[1]*dy[1]];
     const rot=Math.abs(bp[0])>Math.abs(bp[1])?(bp[0]<0?270:90):(bp[1]<0?0:180);
     const eq={id:nid('eq'),type:'vcap',sk:o.type,x,y,rot,sw:[+o.w.toFixed(2),+o.d.toFixed(2)],sh:+o.h.toFixed(2),ez:+(o.y||0).toFixed(2),...(o.color?{col:o.color}:{}),vid:1,lab:o.label,vcls:o.cls||null,vmes:o.mes||null,vrel:o.rel||null};
-    S.eqs.push(eq);orig.push({id:eq.id,cls:eq.vcls||('vcap.'+o.type),x,y,sw:eq.sw.slice(),sh:eq.sh,col:eq.col||'',src:o.src||''});n++}
+    /* rien ne dépasse des murs : un élément lu à cheval sur un mur (miroir, rideau, lumière en bord de pièce) est ramené contre lui, à l'intérieur */
+    try{const f=fpOf(eq),ix0=ox,iy0=oy,ix1=ox+sX*kx/sc,iy1=oy+sY*ky/sc;if(f[2]-f[0]<ix1-ix0){if(f[0]<ix0)eq.x+=ix0-f[0];else if(f[2]>ix1)eq.x-=f[2]-ix1}if(f[3]-f[1]<iy1-iy0){if(f[1]<iy0)eq.y+=iy0-f[1];else if(f[3]>iy1)eq.y-=f[3]-iy1}}catch(e){}
+    S.eqs.push(eq);orig.push({id:eq.id,cls:eq.vcls||('vcap.'+o.type),x:eq.x,y:eq.y,sw:eq.sw.slice(),sh:eq.sh,col:eq.col||'',src:o.src||''});n++}
+  /* un objet posé au sol ne traverse pas un poteau : il est écarté juste à côté */
+  {const V=S.eqs.filter(e=>e.vid),P0=V.filter(e=>e.sk==='pillar');for(const pl of P0)for(const e of V){if(e===pl||(e.ez||0)>0.3||['ceiling_light','curtain','pillar','bed','table','desk','rug'].includes(e.sk))continue;
+     try{const a=fpOf(pl),f=fpOf(e),ix=Math.min(a[2],f[2])-Math.max(a[0],f[0]),iy=Math.min(a[3],f[3])-Math.max(a[1],f[1]);if(ix<=0||iy<=0)continue;if(ix<iy)e.x+=(e.x>=pl.x?1:-1)*(ix+0.02/sc);else e.y+=(e.y>=pl.y?1:-1)*(iy+0.02/sc)}catch(_){}}}
   // portes et fenêtres vues dans la vidéo, sur leur mur (aussi un mur reconstitué)
   const Hh=S.params.H;
   for(const o of spec.openings||[]){const hw=o.width/2,al=o.along,E={north:[[al-hw,-D/2],[al+hw,-D/2]],south:[[al-hw,D/2],[al+hw,D/2]],west:[[-W/2,al-hw],[-W/2,al+hw]],east:[[W/2,al-hw],[W/2,al+hw]]}[o.wall];if(!E)continue;
