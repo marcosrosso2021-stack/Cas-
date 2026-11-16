@@ -81,4 +81,4 @@ function apprendre(appris,f,modulesAvant,modulesApres){
   for(const m of plus)M[w][m]=Math.min(20,(M[w][m]||0)+1);for(const m of moins)M[w][m]=Math.max(-20,(M[w][m]||0)-1)}
  return plus.length+moins.length}
 
-module.exports={analyser,apprendre,priorite,mots,DOMAINES,MODULES,PRIORITES};
+module.exports={analyser,apprendre,priorite,mots,DOMAINES,MODULES,PRIORITES,PROS};

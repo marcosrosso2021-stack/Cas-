@@ -93,7 +93,9 @@ function carte(f){
  ['P0','P1','P2','P3'].forEach(k=>{const o=el('option',null,k);o.value=k;o.selected=k===f.priorite;sp.append(o)});
  sc.setAttribute('aria-label','Catégorie');sp.setAttribute('aria-label','Priorité');dv.setAttribute('aria-label','Date d\'application');ed.append(sc,sp,dv);c.append(ed);
  const mo=el('div','mod'),cases={};(E.modules||[]).forEach(m=>{const l=el('label'),i=el('input');i.type='checkbox';i.checked=(f.modules||[]).includes(m);cases[m]=i;l.append(i,document.createTextNode(' '+m));mo.append(l)});c.append(mo);
- const act=el('div','ed'),envoyer=async d=>{const co={};if(sc.value!==f.categorie)co.categorie=sc.value;if(sp.value!==f.priorite)co.priorite=sp.value;if(dv.value!==(f.dateVigueur||''))co.dateVigueur=dv.value;
+ const le=el('div','ed'),af=el('input'),lb=el('label'),lc=el('input');af.type='text';af.maxLength=240;af.value=f.aFaire||'';af.placeholder='À faire, pour l\'artisan';af.setAttribute('aria-label','À faire, pour l\'artisan');af.style.flex='1 1 260px';
+ lc.type='checkbox';lc.checked=f.lettre===true;lb.append(lc,document.createTextNode(' Envoyer aux artisans'+(f.publieLe?' (le '+fr(f.publieLe)+')':'')));le.append(af,lb);c.append(le);
+ const act=el('div','ed'),envoyer=async d=>{const co={};if(af.value.trim()!==(f.aFaire||''))co.aFaire=af.value.trim();if(lc.checked!==(f.lettre===true))co.lettre=lc.checked;if(sc.value!==f.categorie)co.categorie=sc.value;if(sp.value!==f.priorite)co.priorite=sp.value;if(dv.value!==(f.dateVigueur||''))co.dateVigueur=dv.value;
   const ms=Object.keys(cases).filter(m=>cases[m].checked);if(ms.join()!==(f.modules||[]).filter(m=>cases[m]).join())co.modules=ms;
   try{dire('…');await api('decider',{id:f.id,decision:d,corrections:co});ouvert='';await charger()}catch(e){dire(e.message)}};
  const v=el('button','go','Valider'),r=el('button','no','Refuser');v.onclick=()=>envoyer('valide');r.onclick=()=>envoyer('refuse');act.append(v,r);

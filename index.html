@@ -2008,6 +2008,7 @@ body.tr-on{overflow:hidden}
 
   <h3 class="en-h">Entreprise</h3>
   <div class="card">
+   <div class="r"><div><label for="eMetier">Métier</label><select id="eMetier" onchange="saveProf()"><option value="">—</option><option value="électriciens">Électricien</option><option value="plombiers-chauffagistes">Plombier-chauffagiste</option><option value="maçons">Maçon</option><option value="couvreurs">Couvreur</option><option value="menuisiers">Menuisier</option><option value="peintres">Peintre</option><option value="diagnostiqueurs">Diagnostiqueur</option><option value="plusieurs">Plusieurs métiers</option><option value="autre">Autre métier du bâtiment</option></select></div></div>
    <div class="r"><div><label for="eForme">Forme juridique</label><select id="eForme" onchange="saveProf()"><option value="">—</option><option value="EI">Entrepreneur individuel (EI)</option><option value="micro">Micro-entrepreneur (EI)</option><option value="EURL">EURL</option><option value="SARL">SARL</option><option value="SAS">SAS</option><option value="SASU">SASU</option></select></div><div id="eCapW"><label for="eCapital">Capital (€)</label><input id="eCapital" inputmode="numeric" oninput="saveProfSoon()" onchange="saveProf()"></div></div>
    <div class="r"><div style="flex-grow:.72"><label for="eSiren">SIREN</label><input id="eSiren" inputmode="numeric" maxlength="11" oninput="sirSync(this,'eSiret');saveProfSoon()" onchange="saveProf()" data-noi18n></div><div><label for="eSiret">SIRET</label><input id="eSiret" inputmode="numeric" oninput="sirSync(this,'eSiren');saveProfSoon()" onchange="saveProf()" data-noi18n></div></div>
    <label for="eRm">N° RM / RNE / RCS</label><input id="eRm" oninput="saveProfSoon()" onchange="saveProf()" placeholder="RM 123 456 789 – Marseille" data-noi18n>
@@ -6464,7 +6465,7 @@ async function ibanSet(v){
  else{const pw=await askPw(i18nT('Mot de passe'));if(pw==null)return;
   if(!(await VAULT.checkPw(pw))){toast(i18nT('Mot de passe incorrect.'));return}}
  db.prof=Object.assign({},db.prof||{},{iban:v});db.profAt=Date.now();save();ibanShow();toast(i18nT('Enregistré.'))}
-function saveProf(){clearTimeout(profT);profT=0;setTimeout(()=>{try{window.CasoAuth&&CasoAuth.profil()}catch(e){}},0);db.prof=Object.assign({},db.prof||{},{nom:$('eNom').value,adr:$('eAdr').value,siret:$('eSiret').value,siren:$('eSiren').value.replace(/\D/g,'')||$('eSiret').value.replace(/\D/g,'').slice(0,9),tel:$('eTel').value,assur:$('eAssur').value,valid:$('eValid').value,forme:$('eForme').value,rm:$('eRm').value,tvai:$('eTvai').value,email:$('eMail').value,zone:$('eZone').value,iban:$('eIban').dataset.open==='1'?$('eIban').value:((db.prof||{}).iban||''),bic:$('eBic').value,delai:$('eDelai').value,capital:$('eCapital').value,franchise:$('eFranch').checked,rcpro:$('eRcpro').value,mediateur:$('eMed').value,tauxH:$('eTauxH').value,depl:$('eDepl').value,acompteType:$('eAccT').value,acomptePct:$('eAccP').value});if(typeof entExtra==='function')entExtra();db.profAt=Date.now();save()}
+function saveProf(){clearTimeout(profT);profT=0;setTimeout(()=>{try{window.CasoAuth&&CasoAuth.profil()}catch(e){}},0);db.prof=Object.assign({},db.prof||{},{nom:$('eNom').value,adr:$('eAdr').value,siret:$('eSiret').value,siren:$('eSiren').value.replace(/\D/g,'')||$('eSiret').value.replace(/\D/g,'').slice(0,9),tel:$('eTel').value,assur:$('eAssur').value,valid:$('eValid').value,forme:$('eForme').value,metier:$('eMetier').value,rm:$('eRm').value,tvai:$('eTvai').value,email:$('eMail').value,zone:$('eZone').value,iban:$('eIban').dataset.open==='1'?$('eIban').value:((db.prof||{}).iban||''),bic:$('eBic').value,delai:$('eDelai').value,capital:$('eCapital').value,franchise:$('eFranch').checked,rcpro:$('eRcpro').value,mediateur:$('eMed').value,tauxH:$('eTauxH').value,depl:$('eDepl').value,acompteType:$('eAccT').value,acomptePct:$('eAccP').value});if(typeof entExtra==='function')entExtra();db.profAt=Date.now();save()}
 
 /* ---------- Historique ---------- */
 const ST={brouillon:'Brouillon',envoye:'En cours de signature',accepte:'Validé',paye:'Payé',refuse:'Refusé',expire:'Expiré'};
@@ -7532,7 +7533,7 @@ function fillProf(){
  const p=db.prof||{};
  $('eNom').value=p.nom||'';$('eAdr').value=p.adr||'';$('eSiret').value=p.siret||'';$('eSiren').value=p.siren||String(p.siret||'').replace(/\D/g,'').slice(0,9);
  $('eTel').value=p.tel||'';$('eAssur').value=p.assur||'';$('eValid').value=p.valid||30;
- $('eForme').value=p.forme||'';$('eRm').value=p.rm||'';$('eTvai').value=p.tvai||'';$('eMail').value=p.email||'';$('eZone').value=p.zone||'';ibanShow();$('eBic').value=p.bic||'';$('eDelai').value=p.delai==null||p.delai===''?'30':p.delai;
+ $('eForme').value=p.forme||'';$('eMetier').value=p.metier||'';$('eRm').value=p.rm||'';$('eTvai').value=p.tvai||'';$('eMail').value=p.email||'';$('eZone').value=p.zone||'';ibanShow();$('eBic').value=p.bic||'';$('eDelai').value=p.delai==null||p.delai===''?'30':p.delai;
  $('eCapital').value=p.capital||'';$('eFranch').checked=!!p.franchise;$('eRcpro').value=p.rcpro||'';$('eMed').value=p.mediateur||'';$('eTauxH').value=p.tauxH||'';$('eDepl').value=p.depl||'';$('eAccT').value=p.acompteType||'Acompte';$('eAccP').value=p.acomptePct==null||p.acomptePct===''?'30':p.acomptePct;if(typeof entExtra==='function')entExtra()}
 function refreshViews(){
  renderQuick();renderPrices();fillProf();fillSup();
@@ -8069,6 +8070,7 @@ function entExtra(){const p=db.prof||{},v=$('eLogoV');if(v)v.innerHTML=p.logo?`<
 <script type="text/x-caso" data-src="pointage/geo-web.js"></script>
 <script type="text/x-caso" data-src="pointage/caso-native.js"></script>
 <script type="text/x-caso" data-src="chat/memoire.js"></script>
+<script type="text/x-caso" data-src="chat/veille.js"></script>
 <script>/* démarrage : le coffre s'ouvre (ou il n'y en a pas), puis les scripts de l'appli s'exécutent dans l'ordre */
 VAULT.start(()=>{document.querySelectorAll('script[type="text/x-caso"]').forEach(t=>{const e=document.createElement('script');
  if(t.dataset.src){e.src=t.dataset.src;e.async=false}else e.textContent=t.textContent;t.replaceWith(e)})});

@@ -60,7 +60,16 @@ function createServer(opts={}){
  /* veille réglementaire : un passage par jour sur les sources officielles ; rien n'est envoyé aux artisans sans validation */
  const veille=opts.veille||veilleLib.creer({dir:DIR});
  const vEssais=new Map();// mauvaises clés par adresse : 10 essais par quart d'heure
- if(!opts.noTimers&&HOSTED){const vt=setInterval(()=>{if(veille.aFaire(new Date()))veille.passer().catch(()=>{})},9e5);if(vt.unref)vt.unref()}
+ /* newsletter : une notification quand un texte validé sort (tout de suite s'il est critique, sinon à partir de 6 h, heure universelle, le jour d'envoi) */
+ const VEILLE_TXT='Du nouveau pour ton métier';
+ async function veilleAnnoncer(critiques){
+  const L=veille.aAnnoncer().filter(x=>!critiques||x.priorite==='P0');if(!L.length)return 0;
+  veille.annonce(L.map(x=>x.id));let dead=false;
+  await Promise.all(data.subs.map(async sb=>{try{const r=await pushSend(sb.sub,{title:'casô',body:L.length===1?VEILLE_TXT+' : '+String(L[0].titre).slice(0,90):VEILLE_TXT+' ('+L.length+')',url:'/',tag:'veille'});
+   if(r&&(r.status===404||r.status===410)){sb.dead=1;dead=true}}catch(e){}}));
+  if(dead){data.subs=data.subs.filter(x=>!x.dead);persist()}
+  return L.length}
+ if(!opts.noTimers&&HOSTED){const vt=setInterval(()=>{if(veille.aFaire(new Date()))veille.passer().catch(()=>{});if(new Date().getUTCHours()>=6)veilleAnnoncer(false).catch(()=>{})},9e5);if(vt.unref)vt.unref()}
  const pushSend=opts.pushSend||((sub,payload)=>webpush.send(sub,payload,data.vapid,{subject:process.env.VAPID_SUBJECT}));
  /* --- apprentissage partagé du chat : phrases apprises par les usagers, sans rien de personnel (fichier à part) --- */
  const APF=path.join(DIR,'appris.json'),APL=['fr','en','es','pt','it','ro','pl','tr','ru','ar'];
@@ -501,6 +510,8 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
    /* veille réglementaire : tableau de bord et validation réservés au propriétaire de casô, avec sa clé (même origine seulement) */
    if(req.method==='GET'&&url==='/veille'){let html;try{html=fs.readFileSync(path.join(__dirname,'veille.html'),'utf8')}catch(e){return send(res,404,{error:'introuvable'})}
     res.writeHead(200,Object.assign({'content-type':'text/html; charset=utf-8','cache-control':'no-store','x-robots-tag':'noindex','content-security-policy':CSP_PUB},SEC));return res.end(html)}
+   /* la newsletter validée, lue par l'appli (sans compte, rien n'est envoyé par le téléphone) */
+   if(req.method==='GET'&&url==='/api/veille/lettre')return send(res,200,veille.lettre());
    if(url.startsWith('/api/veille/')){const cle=process.env.CASO_CLE_IA||'',e=vEssais.get(ip),t=Date.now();
     if(e&&e.n>=10&&t-e.t<9e5)return send(res,429,{error:'Trop d\'essais, réessaie plus tard.'});
     if(!cle||String(req.headers['x-caso-cle']||'')!==cle){if(!e||t-e.t>=9e5)vEssais.set(ip,{n:1,t});else e.n++;if(vEssais.size>5000)vEssais.clear();return send(res,404,{error:'Introuvable.'})}
@@ -511,7 +522,8 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
      if(Object.prototype.hasOwnProperty.call(veilleLib.CAT,c))fi.categorie=c;if(b==='1'||b==='0')fi.bloque=b==='1';
      if(['attente','valide','refuse'].includes(v))fi.validation=v;if(veilleLib.PRIORITES.includes(p))fi.priorite=p;if(veilleLib.DOMAINES.includes(d))fi.domaine=d;
      return send(res,200,veille.liste(fi).slice(0,500))}
-    if(POST&&url==='/api/veille/decider'){const b=await readBody(req),[c,o]=veille.decider(String(b.id||''),String(b.decision||''),b.corrections);return send(res,c,o)}
+    if(POST&&url==='/api/veille/decider'){const b=await readBody(req),[c,o]=veille.decider(String(b.id||''),String(b.decision||''),b.corrections);
+     if(c===200)veilleAnnoncer(true).catch(()=>{});return send(res,c,o)}
     if(POST&&url==='/api/veille/passer')return send(res,200,await veille.passer());
     return send(res,404,{error:'Introuvable.'})}
 
