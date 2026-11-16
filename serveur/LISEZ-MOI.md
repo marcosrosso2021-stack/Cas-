@@ -256,6 +256,17 @@ Tests : `node outils/test-devis-canvas-appli.js` (avec `python3 -m http.server 8
 - **Ménage** : Mes services montre une ligne par service (on la touche pour changer le prix, la croix supprime). Au pointage, quand il n'y a encore ni chantier ni personne, on les crée sur place, ou en touchant un client. Le planning du jour sans créneaux va de 6 h à 21 h, et non plus de 0 h à 24 h. « Mon équipe » ne montre plus l'adresse technique d'office. La sauvegarde a un vrai bouton « Restaurer une sauvegarde ». Retirés : le bouton « Retour » en double dans le menu du compte, l'ancienne clé d'IA payante, la bande orange vide du plan et quelques textes d'explication.
 - Tests : `test-module-artisan.js`, `test-fiche-client.js`, `test-achats-fournisseurs.js`. La partie PDF du dernier test demande pdf.js dans `outils/pdfjs`, ou la variable `PDFJS`.
 
+## Veille réglementaire : le socle (16 novembre 2026)
+
+Le serveur hébergé (Clever Cloud ; pas le serveur du poste) lit une fois par jour (à partir de 5 h, heure universelle) trois sources officielles : BOFiP, Entreprendre.service-public et le Journal officiel (Légifrance). Il garde chaque texte avec son historique, vérifie sa référence et ses dates, et le range dans une catégorie : changement confirmé, échéance à venir, clarification, proposition, information non confirmée. Ce qu'il ne peut pas démontrer est bloqué avec sa raison. **Rien n'est envoyé aux artisans** : chaque texte attend une validation.
+
+- **Sans clé** : BOFiP et Entreprendre sont des flux publics.
+- **Légifrance** : compte gratuit sur piste.gouv.fr, API Légifrance ajoutée à une application, puis sur Clever Cloud › Variables : `PISTE_CLIENT_ID` et `PISTE_CLIENT_SECRET`. Sans elles, la veille tourne avec les deux flux.
+- **Lecture** (propriétaire seulement, en-tête `x-caso-cle` égal à la variable `CASO_CLE_IA`, sinon « introuvable ») : `GET /api/veille/etat` (nombre de textes, dernier passage, erreurs, sources actives) et `GET /api/veille/textes?categorie=…&bloque=1`.
+- **Fichiers**, dans le dossier de données : `veille.json`, sa copie `veille.json.bak`, et `veille-preuves/` (le texte d'origine de chaque version).
+- **Contrôles** : `for f in tests/veille-*.test.js; do node "$f"; done`. Ils tournent aussi chaque lundi avec le contrôle de l'IA.
+- **À savoir** : la lecture du Journal officiel a été écrite d'après la documentation de l'API, sans réponse réelle (`tests/veille/jorf.json` est une forme reconstruite). Au premier passage avec les clés, regarder `erreurs` et `sources` dans `/api/veille/etat`.
+
 ## Prix des matériaux en ligne (16 novembre 2026)
 
 Page **Fournisseurs**, première barre (icône globe) : on tape un matériau, casô montre le produit, le prix public TTC et le magasin, du moins cher au plus cher. Le **+** l'ajoute à Mes prix en HT (TVA 20 %), le magasin devient fournisseur.

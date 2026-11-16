@@ -12,7 +12,7 @@
    Le même fichier peut être embarqué dans une application (voir createServer / start). */
 'use strict';
 const http=require('http'),fs=require('fs'),path=require('path'),crypto=require('crypto'),os=require('os');
-const webpush=require('./webpush.js'),prixLib=require('./prix.js'),authLib=require('./auth.js');
+const webpush=require('./webpush.js'),prixLib=require('./prix.js'),authLib=require('./auth.js'),veilleLib=require('./veille/index.js');
 
 const COLL=['prices','quotes','hist','chantiers','people','pts','prof','clients','suppliers','projects','plans','events','invoices'];
 const ROLE_PUSH={patron:COLL,chef:COLL,ouvrier:['pts']};
@@ -57,6 +57,9 @@ function createServer(opts={}){
  if(!data.vapid){data.vapid=webpush.vapidKeys();try{const t=FILE+'.tmp';fs.writeFileSync(t,JSON.stringify(data));fs.renameSync(t,FILE)}catch(e){}}
  const auth=authLib.creer(Object.assign({dir:DIR,hosted:HOSTED,maintenant:opts.maintenant},opts.auth||{}));// comptes des usagers : connexion Google / Microsoft (module AUTH)
  const prix=opts.prix||prixLib.creer();// prix des matériaux en ligne (clé SEARCHAPI_KEY ou SERPAPI_KEY)
+ /* veille réglementaire : un passage par jour sur les sources officielles ; rien n'est envoyé aux artisans sans validation */
+ const veille=opts.veille||veilleLib.creer({dir:DIR});
+ if(!opts.noTimers&&HOSTED){const vt=setInterval(()=>{if(veille.aFaire(new Date()))veille.passer().catch(()=>{})},9e5);if(vt.unref)vt.unref()}
  const pushSend=opts.pushSend||((sub,payload)=>webpush.send(sub,payload,data.vapid,{subject:process.env.VAPID_SUBJECT}));
  /* --- apprentissage partagé du chat : phrases apprises par les usagers, sans rien de personnel (fichier à part) --- */
  const APF=path.join(DIR,'appris.json'),APL=['fr','en','es','pt','it','ro','pl','tr','ru','ar'];
@@ -490,6 +493,14 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
      b.e.slice(0,20).forEach(x=>{if(!x||!APL.includes(x.l)||!inMot(x.t))return;const L=incompris[x.l]||(incompris[x.l]=Object.create(null)),o=L[x.t];
       if(o){if(!o.u.includes(u)&&o.u.length<50){o.u.push(u);n++}o.at=Date.now()}else{const ks=Object.keys(L);if(ks.length>=2000){let v=null;for(const kk of ks)if(L[kk].u.length<2&&(!v||L[kk].at<L[v].at))v=kk;if(!v)return;delete L[v]}L[x.t]={u:[u],s:x.s==='3d'?'3d':'chat',at:Date.now()};n++}});
      if(n)inSave();return send(res,200,{ok:n})}}
+
+   /* veille réglementaire : lecture réservée au propriétaire de casô, avec sa clé */
+   if(req.method==='GET'&&(url==='/api/veille/etat'||url==='/api/veille/textes')){const cle=process.env.CASO_CLE_IA||'';
+    if(!cle||String(req.headers['x-caso-cle']||'')!==cle)return send(res,404,{error:'Introuvable.'});
+    if(url==='/api/veille/etat')return send(res,200,veille.etat());
+    const sp=new URLSearchParams(req.url.split('?')[1]||''),fi={},c=sp.get('categorie')||'',b=sp.get('bloque');
+    if(Object.prototype.hasOwnProperty.call(veilleLib.CAT,c))fi.categorie=c;if(b==='1'||b==='0')fi.bloque=b==='1';
+    return send(res,200,veille.liste(fi).slice(0,200))}
 
    m=null;
    const user=authUser(req);
