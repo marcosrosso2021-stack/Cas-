@@ -917,6 +917,8 @@ button.rnd.st-back{margin:8px 0 4px;padding:0}
 .prx-p{font-weight:700;font-size:17px;white-space:nowrap;font-variant-numeric:tabular-nums;padding-inline-end:8px}
 .prx-it .ib{flex:none;display:flex;align-items:center;justify-content:center;width:36px;height:34px;padding:0;border:0;background:none;color:var(--mut);cursor:pointer;transition:transform .15s}.prx-it .ib:active{transform:scale(.85)}
 .prx-it .ib.on{color:var(--acc)}.prx-it .ib.on svg{fill:currentColor}.prx-it .ib:disabled{color:var(--ink);cursor:default}
+.prx-mag{flex-wrap:nowrap;overflow-x:auto;margin:0 -16px 12px;padding:0 16px 2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}.prx-mag::-webkit-scrollbar{display:none}
+.prx-mag .chip{flex:none;padding:8px 14px;font:inherit;font-size:14px;white-space:nowrap;cursor:pointer}.prx-mag .chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}.prx-mag .chip.on .mut{color:inherit;opacity:.7}
 .prx-aut{margin:0 0 14px}.prx-aut .chip{text-decoration:none;padding:8px 14px;font-size:14px}
 .prx-rec{margin:0 0 12px}.prx-rec:empty{display:none}.prx-rec .chip{padding:8px 14px;font:inherit;font-size:14px;cursor:pointer}
 .prx-sk{display:flex;flex-direction:column;gap:8px;padding:14px;border-bottom:1px solid var(--line)}.prx-sk:last-child{border-bottom:0}.prx-sk i{display:block;height:12px;border-radius:6px;background:var(--line);animation:prxSk 1.1s ease-in-out infinite}.prx-sk i:last-child{width:40%;opacity:.7}
@@ -3467,7 +3469,7 @@ function listHtml(list,q,sub){
 function cliRender(){$('cliList').innerHTML=listHtml(db.clients,$('cliQ').value,'cli')}
 /* Fournisseurs : une seule barre, deux onglets. « Mes fournisseurs » filtre la liste ; « Prix en ligne » interroge le serveur casô
    (sa clé reste sur le serveur) : prix publics TTC, ajoutés à Mes prix en HT (TVA 20 %), le magasin devient le fournisseur */
-let FOU_M='mes',PRX=[],PRX_N=0,PRX_B='';const PRX_C=new Map();
+let FOU_M='mes',PRX=[],PRX_N=0,PRX_B='',PRX_F='';const PRX_C=new Map();
 function prxPays(){const r=String(navigator.language||'').split('-')[1];return /^(FR|BE|CH|LU|ES|PT|IT|DE|NL|GB|US|CA|RO|PL|TR|MA)$/.test(r||'')?r:'FR'}
 function prxPrix(x){if(x.devise==='EUR')return eur(x.prix);try{return new Intl.NumberFormat(document.documentElement.lang||'fr',{style:'currency',currency:x.devise}).format(x.prix)}catch(e){return x.prix+' '+x.devise}}
 /* où est le serveur casô : celui qui a déjà répondu, l'adresse fixée, le site ouvert (appli servie par le serveur), le poste de l'entreprise, puis l'adresse par défaut */
@@ -3494,15 +3496,18 @@ function prxRow(x,ref,o){const u=/^https:\/\//i.test(x.url||'')?x.url:'',fav=o.f
   `<span class="prx-r"><b class="prx-p" data-noi18n>${esc(prxPrix(x))}</b><span class="prx-b"><button class="ib${on?' on':''}" type="button" aria-pressed="${on}" aria-label="${esc(i18nT('Mes favoris'))}" onclick="favToggle(${r},this)"><svg class="i i-sm"><use href="#i-star"/></svg></button>`+
   (x.devise==='EUR'?`<button class="ib" type="button" aria-label="${esc(i18nT('Ajouter à mes prix'))}" ${ex?'disabled':''} onclick="prxAdd(${r},this)"><svg class="i i-sm"><use href="#i-${ex?'check':'plus'}"/></svg></button>`:'')+'</span></span></div>'}
 /* une seule liste, du moins cher au plus cher */
-function prxListe(L,o){return '<div class="lst">'+L.map((x,i)=>({x,i})).sort((a,b)=>a.x.prix-b.x.prix).map((e,n)=>prxRow(e.x,e.i,{fav:o.fav,n})).join('')+'</div>'}
+function prxListe(L,o){return '<div class="lst">'+L.map((x,i)=>({x,i})).filter(e=>!o.mag||e.x.magasin===o.mag).sort((a,b)=>a.x.prix-b.x.prix).map((e,n)=>prxRow(e.x,e.i,{fav:o.fav,n})).join('')+'</div>'}
 /* photos : l'appli refuse les images d'autres sites ; une petite image vient dans la réponse, les autres passent par le serveur casô */
 const PRX_IMG=new Map();
 async function prxImg(u){if(u.startsWith('data:image/'))return u;if(PRX_IMG.has(u))return PRX_IMG.get(u);
  const p=(async()=>{for(const b of prxBases()){try{const r=await fetch(b+'/api/prix/img?u='+encodeURIComponent(u),{credentials:'omit'});
    if(r.ok&&/^image\//.test(r.headers.get('content-type')||'')){PRX_B=PRX_B||b;return URL.createObjectURL(await r.blob())}}catch(e){}}return ''})();
  PRX_IMG.set(u,p);return p}
-function prxPhotos(box){box.querySelectorAll('[data-ph]').forEach(async el=>{const u=el.dataset.ph;el.removeAttribute('data-ph');const src=await prxImg(u);if(!src||!el.isConnected)return;
+let PRX_IO=null;
+function prxPhoto(el){const u=el.dataset.ph;if(!u)return;el.removeAttribute('data-ph');prxImg(u).then(src=>{if(!src||!el.isConnected)return;
  const im=new Image();im.alt='';im.decoding='async';im.onload=()=>{el.textContent='';el.appendChild(im)};im.src=src})}
+function prxPhotos(box){const L=box.querySelectorAll('[data-ph]');if(!('IntersectionObserver' in window))return L.forEach(prxPhoto);
+ PRX_IO=PRX_IO||new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){PRX_IO.unobserve(e.target);prxPhoto(e.target)}}),{rootMargin:'400px'});L.forEach(el=>PRX_IO.observe(el))}
 /* enseignes du pays absentes des résultats : un appui ouvre la recherche du produit sur leur site */
 const PRX_ENS={FR:[['Leroy Merlin','leroymerlin.fr'],['Castorama','castorama.fr'],['Brico Dépôt','bricodepot.fr'],['Point.P','pointp.fr'],['Cedeo','cedeo.fr'],['Rexel','rexel.fr'],['Bricoman','bricoman.fr'],['Bricomarché','bricomarche.com'],['Mr.Bricolage','mr-bricolage.fr'],['Gedimat','gedimat.fr'],['Sonepar','sonepar.fr'],['Würth','wurth.fr'],['ManoMano','manomano.fr']],
  BE:[['Brico','brico.be'],['Gamma','gamma.be'],['Hubo','hubo.be']],CH:[['Jumbo','jumbo.ch'],['Hornbach','hornbach.ch'],['Bauhaus','bauhaus.ch']],
@@ -3511,7 +3516,12 @@ const PRX_ENS={FR:[['Leroy Merlin','leroymerlin.fr'],['Castorama','castorama.fr'
 function prxAutres(q){const nk=t=>vnNorm(t).replace(/[^a-z0-9]/g,''),vus=PRX.map(x=>nk(x.magasin)),
   L=(PRX_ENS[prxPays()]||[]).filter(e=>{const k=nk(e[0]);return !vus.some(v=>v.includes(k)||k.includes(v))});
  return L.length?`<h2 class="grp"><span>Autres magasins</span></h2><div class="chips prx-aut">`+L.map(e=>`<a class="chip" data-noi18n href="https://www.google.com/search?q=${encodeURIComponent(q+' site:'+e[1])}" target="_blank" rel="noopener noreferrer">${esc(e[0])}</a>`).join('')+'</div>':''}
-function prxShow(q,vide){const box=$('prxRes');box.innerHTML=(vide?`<div class="lst"><div class="lst-empty mut">${esc(i18nT('Aucun résultat.'))}</div></div>`:prxListe(PRX,{}))+prxAutres(q);prxPhotos(box)}
+function prxMags(){const M=new Map();PRX.forEach(x=>M.set(x.magasin,(M.get(x.magasin)||0)+1));if(M.size<2)return '';
+ if(PRX_F&&!M.has(PRX_F))PRX_F='';
+ return '<div class="chips prx-mag">'+`<button type="button" class="chip${PRX_F?'':' on'}" aria-pressed="${!PRX_F}" onclick="prxFiltre('')"><span>Tous</span> <span class="mut" data-noi18n>${PRX.length}</span></button>`+
+  [...M].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).map(([m,n])=>`<button type="button" class="chip${PRX_F===m?' on':''}" aria-pressed="${PRX_F===m}" data-noi18n data-m="${esc(m)}" onclick="prxFiltre(this.dataset.m)">${esc(m)} <span class="mut">${n}</span></button>`).join('')+'</div>'}
+function prxFiltre(m){PRX_F=m||'';const q=$('fouQ').value.trim().replace(/\s+/g,' ');prxShow(q);const on=document.querySelector('#prxRes .prx-mag .chip.on');if(on&&on.scrollIntoView)try{on.scrollIntoView({inline:'center',block:'nearest'})}catch(e){}}
+function prxShow(q,vide){const box=$('prxRes');box.innerHTML=(vide?`<div class="lst"><div class="lst-empty mut">${esc(i18nT('Aucun résultat.'))}</div></div>`:prxMags()+prxListe(PRX,{mag:PRX_F}))+prxAutres(q);prxPhotos(box)}
 function favShow(){const L=favList(),box=$('prxFav');if(!box)return;
  box.innerHTML=!L.length||$('fouQ').value.trim()?'':`<h2 class="grp"><span>Mes favoris</span><span class="cnt" data-noi18n>${L.length}</span></h2>`+prxListe(L,{fav:true});prxPhotos(box)}
 function favToggle(ref,btn){const L=favList(),x=typeof ref==='number'?PRX[ref]:L.find(f=>f.id===ref);if(!x)return;
@@ -3521,7 +3531,7 @@ function favToggle(ref,btn){const L=favList(),x=typeof ref==='number'?PRX[ref]:L
 function prxHome(){prxRecShow();favShow()}
 async function prxGo(){
  const box=$('prxRes'),q=$('fouQ').value.trim().replace(/\s+/g,' '),n=++PRX_N,msg=t=>{if(n===PRX_N)box.innerHTML=`<div class="lst"><div class="lst-empty mut">${esc(i18nT(t))}</div></div>`};
- PRX=[];$('prxRec').innerHTML='';$('prxFav').innerHTML='';if(q.length<2){box.innerHTML='';prxHome();return}
+ PRX=[];PRX_F='';$('prxRec').innerHTML='';$('prxFav').innerHTML='';if(q.length<2){box.innerHTML='';prxHome();return}
  const k=prxPays()+'|'+q.toLowerCase(),c=PRX_C.get(k);
  if(c&&Date.now()-c.t<36e5){PRX=c.v;return prxShow(q)}
  if(navigator.onLine===false)return msg('Pas de connexion.');
