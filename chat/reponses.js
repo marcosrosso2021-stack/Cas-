@@ -87,9 +87,9 @@ function controle(t){if(!enCours()){bulle(t,p(T("Aucun devis en cours.")));retur
   bulle(t,A.length?'<p dir="auto"><b>'+e(T("À vérifier :"))+'</b></p>'+A.map(function(a){return '<p dir="auto">· '+e(a)+'</p>';}).join("")+'<p dir="auto" class="mut">'+e(pied)+'</p>':p(T("Rien à signaler : {0}.",[pied])));return true;}
 
 /* ================= la semaine ================= */
-var SEM=/^(?:(?:montre(?: moi)? |affiche |c est quoi |quels sont |donne moi )?(?:ma |la |mon |mes |le |les )?(?:semaine|planning de la semaine|programme de la semaine|rendez vous de (?:la|cette) semaine|rdv de (?:la|cette) semaine)|(?:j ai quoi|qu est ce que j ai|quoi de prevu) cette semaine|cette semaine j ai quoi)$/;
-function semaine(t){var d0=agToday(),fin=plus(agWeekStart(d0),6),L=evs(d0,fin),J={};L.forEach(function(x){(J[x.d]=J[x.d]||[]).push(rdv(x));});
-  bulle(t,L.length?Object.keys(J).sort().map(function(d){return li(jourNom(d)+" :",J[d].join(" ; "));}).join(""):p(T("Rien de prévu d’ici dimanche.")));return true;}
+var SEM=/^(?:(?:montre(?: moi)? |affiche |c est quoi |quels sont |donne moi )?(?:ma |la |mon |mes |le |les )?(?:semaine|planning de la semaine|programme de la semaine|rendez vous de (?:la|cette) semaine|rdv de (?:la|cette) semaine))$/;
+function semaine(t){var d0=agToday(),fin=plus(agWeekStart(d0),6),L=evs(agWeekStart(d0),fin),J={};L.forEach(function(x){(J[x.d]=J[x.d]||[]).push(rdv(x));});
+  bulle(t,L.length?Object.keys(J).sort().map(function(d){return li(jourNom(d)+" :",J[d].join(" ; "));}).join(""):p(T("Rien de prévu cette semaine.")));return true;}
 
 /* ================= paiements et facturation ================= */
 var PAYE=/^(.+?) (?:m a |a |ont |m ont )(?:deja |bien )?(?:paye|regle|verse|vire|donne) (\d+(?:[.,]\d+)?)(?: ?(?:€|euros?|e|balles))?(?: (?:en|par) (cheque|especes?|liquide|virement|carte|cb))?$/;
