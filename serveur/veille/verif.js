@@ -36,7 +36,7 @@ function nature(b){
 
 function verifier(b,opts={}){
  const aujourdhui=opts.aujourdhui||new Date().toISOString().slice(0,10),texte=String(b.texte||'').replace(/\s+/g,' '),titre=String(b.titre||''),manque=[];
- const nat=nature(b),statut=/^(LOI|ORDONNANCE|DECRET|ARRETE)$/.test(nat)?'adopte':nat==='PROJET'?'projet':nat==='DOCTRINE'?'doctrine':'info';
+ const nat=nature(b),statut=/^(LOI|ORDONNANCE|DECRET|ARRETE)$/.test(nat)?'adopte':nat==='PROJET'?'projet':nat==='DOCTRINE'?'doctrine':nat==='METIER'?'metier':'info';
  const reference=String(b.numero||'')||((titre.match(/n°\s*(\d{4}-\d+)/)||[])[1]||'')||String(b.nor||'')||(((b.idSource||'')+' '+titre).match(/ACTU-\d{4}-\d{5}/)||[''])[0]
   ||(/^JORFTEXT\d{12}$/.test(b.idSource||'')?b.idSource:'');
  if(statut==='adopte'&&!reference)manque.push('reference');
