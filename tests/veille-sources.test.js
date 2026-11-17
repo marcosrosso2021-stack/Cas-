@@ -5,7 +5,7 @@ const {creer,lireRss,lireJorf,pertinent,hoteAdmis}=require('../serveur/veille/so
 let ok=0;const t=async(nom,f)=>{await f();ok++;console.log('✓',nom)};
 const ext=n=>fs.readFileSync(path.join(__dirname,'veille',n),'utf8');
 /* chaque adresse reçoit son extrait réel */
-const EXT=u=>{u=String(u);return ext(/bofip/.test(u)?'bofip.rss':/actu-actu-pro/.test(u)?'entreprendre.rss':/particuliers/.test(u)?'particuliers.rss':/vie-publique/.test(u)?'viepublique.rss':/ecologie/.test(u)?'ecologie.rss':'cnil.rss')};
+const EXT=u=>{u=String(u);return ext(/bofip/.test(u)?'bofip.rss':/actu-actu-pro/.test(u)?'entreprendre.rss':/particuliers/.test(u)?'particuliers.rss':/vie-publique/.test(u)?'viepublique.rss':/ecologie/.test(u)?'ecologie.rss':/capeb/.test(u)?'capeb.rss':/batiactu/.test(u)?'batiactu.rss':'cnil.rss')};
 const rep=(corps,st)=>({ok:(st||200)<300,status:st||200,text:async()=>corps,json:async()=>JSON.parse(corps)});
 
 (async()=>{
@@ -34,6 +34,15 @@ await t('nouvelles sources officielles : lues, liens propres, filtre strict sur 
  assert.ok(lireRss(ext('particuliers.rss'),'particuliers').every(x=>/^A\d+$/.test(x.idSource)));
  for(const t of ['MaPrimeRénov : ce qui change en 2027','Diagnostic de performance énergétique : nouveau calcul','Données personnelles : la CNIL sanctionne','Projet de loi de finances pour 2027'])assert.ok(pertinentStrict(t),t);
  for(const t of ['Fermeture du tunnel de Saint-Cloud','Prix du carburant : entreprises de travaux forestiers','Ordre du jour de la séance plénière'])assert.ok(!pertinentStrict(t),t)});
+await t('presse du métier : nouveauté nommée, jamais une obligation, publicités écartées',()=>{
+ const {pertinentMetier,METIER}=require('../serveur/veille/sources.js'),{verifier}=require('../serveur/veille/verif.js'),{classer}=require('../serveur/veille/controle.js');
+ assert.deepStrictEqual(METIER.map(x=>x[0]),['capeb','batiactu']);
+ const c=lireRss(ext('capeb.rss'),'capeb'),b=lireRss(ext('batiactu.rss'),'batiactu');
+ assert.ok(c.length>0&&c.every(x=>/^https:\/\/www\.capeb\.fr\//.test(x.url)&&x.nature==='METIER'));
+ assert.ok(b.every(x=>/^https:\/\/www\.batiactu\.com\//.test(x.url)),'liens publicitaires écartés');assert.ok(!b.some(x=>/assureur/i.test(x.titre)));
+ for(const x of c.concat(b)){const v=verifier(x,{aujourdhui:'2026-11-17'});assert.strictEqual(v.officiel,false);const k=classer(v,{etat:'nouveau'});assert.deepStrictEqual([k.categorie,k.bloque],['nouveaute',false])}
+ assert.ok(pertinentMetier('Maçons-Carreleurs : nouvelles règles de l\'art pour les terrasses'));assert.ok(pertinentMetier('Bosch : de nouveaux outils pour les électriciens'));
+ for(const t of ['Décès de Maurice Manceau, ancien directeur général','Au Maroc, Colas Rail décroche un nouveau contrat'])assert.ok(!pertinentMetier(t),t)});
 await t('un même article Service-Public dans deux flux : gardé une fois',async()=>{
  const it='<item><title>TVA des travaux de rénovation : ce qui change</title><link>https://www.service-public.gouv.fr/particuliers/actualites/A20500</link><description>x</description><guid>A20500_2026-11-16</guid><pubDate>Mon, 16 Nov 2026 08:00:00 GMT</pubDate></item>';
  const r=await creer({env:{},log:()=>{},fetch:async u=>rep(/actu-actu-pro|particuliers/.test(String(u))?'<rss><channel>'+it+'</channel></rss>':'<rss><channel></channel></rss>')}).collecter();
@@ -42,11 +51,11 @@ await t('une source en panne : l\'autre continue, l\'erreur est rendue',async()=
  const f=async u=>/bofip/.test(u)?rep('<html>Maintenance</html>'):rep(EXT(u));
  const r=await creer({env:{},fetch:f,log:()=>{}}).collecter();
  assert.deepStrictEqual(r.erreurs.map(e=>e.source),['bofip']);assert.ok(r.bruts.length>0&&r.bruts.every(x=>x.source!=='bofip'));assert.ok(r.bruts.filter(x=>x.source==='entreprendre').every(x=>pertinent(x.titre,x.resume)));
- const r2=await creer({env:{},fetch:async()=>rep('',503),log:()=>{}}).collecter();assert.strictEqual(r2.erreurs.length,6);assert.strictEqual(r2.bruts.length,0);
- const r3=await creer({env:{},fetch:async()=>{throw new Error('réseau coupé')},log:()=>{}}).collecter();assert.strictEqual(r3.erreurs.length,6)});
+ const r2=await creer({env:{},fetch:async()=>rep('',503),log:()=>{}}).collecter();assert.strictEqual(r2.erreurs.length,8);assert.strictEqual(r2.bruts.length,0);
+ const r3=await creer({env:{},fetch:async()=>{throw new Error('réseau coupé')},log:()=>{}}).collecter();assert.strictEqual(r3.erreurs.length,8)});
 await t('sans clés PISTE : Légifrance inactive, aucun appel vers PISTE',async()=>{const appels=[];
  const s=creer({env:{},fetch:async u=>{appels.push(String(u));return rep(ext('bofip.rss'))},log:()=>{}});
- assert.deepStrictEqual(s.actives(),['bofip','entreprendre','particuliers','viepublique','ecologie','cnil']);await s.collecter();assert.ok(!appels.some(u=>/piste/.test(u)))});
+ assert.deepStrictEqual(s.actives(),['bofip','entreprendre','particuliers','viepublique','ecologie','cnil','capeb','batiactu']);await s.collecter();assert.ok(!appels.some(u=>/piste/.test(u)))});
 await t('Journal officiel : textes du bâtiment seulement, hors mesures nominatives',()=>{
  const v=lireJorf(JSON.parse(ext('jorf.json')),'2026-11-11');
  assert.deepStrictEqual(v.map(x=>x.idSource),['JORFTEXT000052000101','JORFTEXT000052000102','JORFTEXT000052000103']);
@@ -62,7 +71,7 @@ await t('Légifrance : jeton une seule fois, texte complet lu, clé jamais rendu
    return rep(JSON.stringify({articles:[{content:'<p>Le présent décret entre en vigueur le 1er janvier 2027. Il modifie les mentions des devis.</p>'}]}))}
   return rep(EXT(u))};
  const src=creer({env:{PISTE_CLIENT_ID:'id',PISTE_CLIENT_SECRET:'S3CR3Tzq'},fetch:g,log:(...m)=>logs.push(m.join(' '))});
- assert.deepStrictEqual(src.actives(),['bofip','entreprendre','particuliers','viepublique','ecologie','cnil','legifrance']);
+ assert.deepStrictEqual(src.actives(),['bofip','entreprendre','particuliers','viepublique','ecologie','cnil','capeb','batiactu','legifrance']);
  const s=await src.collecter();assert.deepStrictEqual(s.erreurs,[]);const L=s.bruts.filter(x=>x.source==='legifrance');
  assert.deepStrictEqual(L.map(x=>x.idSource),['JORFTEXT000052000101','JORFTEXT000052000103']);assert.strictEqual(L[0].datePub,'2026-11-11');
  assert.strictEqual(L[0].complet,true);assert.ok(/entre en vigueur le 1er janvier 2027/.test(L[0].texte));assert.strictEqual(L[1].complet,false);

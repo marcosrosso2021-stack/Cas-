@@ -90,7 +90,7 @@ await t('texte critique : sort tout de suite ; les autres le lundi suivant',asyn
  const p0=v.decider(I('2002'),'valide',{lettre:true,aFaire:'Vérifie le taux de TVA de tes devis en cours.'})[1];assert.deepStrictEqual([p0.priorite,p0.publieLe],['P0','2026-11-18']);
  const p2=v.decider(I('2001'),'valide',{lettre:true})[1];assert.deepStrictEqual([p2.priorite,p2.publieLe,p2.aFaire],['P2','2026-11-23','Rien : casô mettra tes devis à jour.']);
  const L=v.lettre();assert.deepStrictEqual(L.map(x=>x.id),[I('2002')]);
- assert.deepStrictEqual(Object.keys(L[0]).sort(),['aFaire','categorie','datePub','dateVigueur','id','priorite','pros','publieLe','resume','titre','url']);
+ assert.deepStrictEqual(Object.keys(L[0]).sort(),['aFaire','categorie','datePub','dateVigueur','id','priorite','pros','publieLe','resume','source','titre','url']);
  assert.deepStrictEqual(v.aAnnoncer().map(x=>x.id),[I('2002')]);v.annonce([I('2002')]);assert.deepStrictEqual(v.aAnnoncer(),[]);
  heure='2026-11-19T07:00:00Z';const q0=v.decider(I('2001'),'valide',{priorite:'P0'})[1];assert.deepStrictEqual([q0.priorite,q0.publieLe],['P0','2026-11-19'],'passé en P0 après coup : part tout de suite');
  assert.deepStrictEqual(v.lettre().map(x=>x.id),[I('2001'),I('2002')]);v.decider(I('2001'),'valide',{priorite:'P2'});

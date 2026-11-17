@@ -39,6 +39,8 @@ await t('tri préparé : envoyer, garder, écarter, avec une phrase prudente',()
  assert.deepStrictEqual(analyser(F({titre:'Proposition de loi sur la sous-traitance',categorie:'proposition'}),J).tri,'garder');
  assert.strictEqual(analyser(F({titre:'Arrêté relatif à la sécurité des chantiers'}),J).tri,'garder');
  assert.strictEqual(analyser(F({titre:'Nomination au conseil d\'administration'}),J).tri,'ecarter');
+ const n1=analyser(F({titre:'Maçons-Carreleurs : nouvelles règles de l\'art pour les terrasses',categorie:'nouveaute',dateVigueur:''}),J);assert.deepStrictEqual([n1.tri,n1.priorite],['envoyer','P3']);
+ assert.strictEqual(analyser(F({titre:'L\'activité des artisans recule encore',categorie:'nouveaute',dateVigueur:''}),J).tri,'garder');
  assert.strictEqual(analyser(F({titre:'Décret relatif aux devis',categorie:'non_confirme',bloque:true}),J).tri,'');
  const {A_FAIRE}=require('../serveur/veille/analyse.js');for(const k of Object.keys(A_FAIRE))assert.ok(!/obligatoire|doit|interdit|sanction/i.test(A_FAIRE[k]),k)});
 

@@ -18,6 +18,10 @@ const ENTREPRENDRE='https://www.service-public.gouv.fr/abonnements/rss/actu-actu
    - cnil : protection des données (clients, géolocalisation, photos) */
 const AUTRES=[['particuliers','https://www.service-public.gouv.fr/abonnements/rss/actu-actualites-particuliers.rss'],['viepublique','https://www.vie-publique.fr/lois-feeds.xml'],
  ['ecologie','https://www.ecologie.gouv.fr/rss-actualites.xml'],['cnil','https://www.cnil.fr/fr/rss.xml']];
+/* les sources du métier (nouveaux outils, matériels, techniques, règles de l'art) : presse professionnelle et organisation des artisans.
+   Elles ne prouvent jamais une obligation : leurs articles sont rangés à part (« nouveauté du métier ») et renvoient vers l'article. */
+const METIER=[['capeb','https://www.capeb.fr/rss'],['batiactu','https://www.batiactu.com/accueil.rss']];
+const HOTES_METIER=new Set(['www.capeb.fr','capeb.fr','www.batiactu.com','batiactu.com']);
 const PISTE_JETON='https://oauth.piste.gouv.fr/api/oauth/token',PISTE_API='https://api.piste.gouv.fr/dila/legifrance/lf-engine-app';
 /* sans accents, en minuscules ; un mot compte s'il commence un mot du titre ou du résumé */
 const MOTS=['batiment','construction','travaux','renovation','artisan','tva','taxe sur la valeur ajoutee','facture','facturation electronique','devis',
@@ -37,15 +41,22 @@ function propre(s,n){
  return entites(s).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim().slice(0,n||4000)}
 const plat=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[’`]/g,'\'');
 
+function hoteMetier(url){try{const u=new URL(String(url||''));return u.protocol==='https:'&&HOTES_METIER.has(u.hostname)}catch(e){return false}}
 function hoteAdmis(url){try{const u=new URL(String(url||''));return u.protocol==='https:'&&HOTES.has(u.hostname)}catch(e){return false}}
 /* les sources larges (ministère, CNIL, lois, particuliers) parlent de tout : seul le titre compte, sans les mots trop généraux */
 const LARGES=new Set(['particuliers','viepublique','ecologie','cnil']),GENERAUX=new Set(['travaux','construction','chantier','cotisations','plomb','facture','artisan']);
 function pertinentStrict(titre){const t=' '+plat(titre)+' ';
  return MOTS.filter(m=>!GENERAUX.has(m)).some(m=>{let i=-1;while((i=t.indexOf(m,i+1))>=0)if(!/[a-z0-9]/.test(t[i-1]))return true;return false})}
+/* métier : outils, matériels, techniques, sécurité, règles de l'art ; pas la vie des grandes entreprises */
+const MOTS_METIER=['outil','outillage','materiel','materiau','innovation','nouveaute','nouveau produit','logiciel','application','regles de l\'art','technique',
+ 'securite','oppbtp','silice','amiante','chantier','isolation','pompe a chaleur','menuiserie','carrel','maconn','plomberie','electricite','peinture','couverture','charpente','bois','beton','humidite','solaire'];
+const HORS_METIER=['deces','nomination','nomme','contrat','chiffre d\'affaires','resultats','rachat','acquisition','cession','bourse','au maroc','presidentielle','candidat'];
+function pertinentMetier(titre){const t=' '+plat(titre)+' ';if(HORS_METIER.some(m=>t.includes(m)))return false;
+ return pertinentStrict(titre)||MOTS_METIER.some(m=>{let i=-1;while((i=t.indexOf(m,i+1))>=0)if(!/[a-z0-9]/.test(t[i-1]))return true;return false})}
 function pertinent(titre,resume){const t=' '+plat(titre)+' '+plat(resume)+' ';
  return MOTS.some(m=>{let i=-1;while((i=t.indexOf(m,i+1))>=0)if(!/[a-z0-9]/.test(t[i-1]))return true;return false})}
 
-const NATURE={bofip:'DOCTRINE',entreprendre:'ACTU',particuliers:'ACTU',ecologie:'ACTU',cnil:'ACTU',viepublique:''};
+const NATURE={capeb:'METIER',batiactu:'METIER',bofip:'DOCTRINE',entreprendre:'ACTU',particuliers:'ACTU',ecologie:'ACTU',cnil:'ACTU',viepublique:''};
 function dateFlux(bloc,desc){
  const iso=(bloc.match(/<(?:dc:date|updated|published)[^>]*>\s*(\d{4}-\d\d-\d\d)/i)||[])[1];if(iso)return iso;
  const p=(bloc.match(/<pubDate[^>]*>([\s\S]*?)<\/pubDate>/i)||[])[1];
@@ -60,11 +71,12 @@ function lireRss(xml,source){
  for(const b of blocs){
   const titre=propre(champ(b,'title'),400),resume=propre(champ(b,'description')||champ(b,'summary')||champ(b,'content'),4000);
   const lien=propre(champ(b,'link'),600)||((b.match(/<link[^>]*href="([^"]+)"/i)||[])[1]||''),guid=propre(champ(b,'guid')||champ(b,'id'),300);
-  const url=hoteAdmis(lien)?(LARGES.has(source)?lien.split(/[?#]/)[0]:lien):'',datePub=dateFlux(b,resume);
+  const url=hoteAdmis(lien)||(NATURE[source]==='METIER'&&hoteMetier(lien))?(LARGES.has(source)||NATURE[source]==='METIER'?lien.split(/[?#]/)[0]:lien):'',datePub=dateFlux(b,resume);
   let idSource=guid||url,numero='';
   if(source==='bofip'){const m=(lien+' '+resume+' '+guid).match(/ACTU-\d{4}-\d{5}/);if(m)idSource=numero=m[0]}
   if(source==='entreprendre'||source==='particuliers'){const m=(guid+' '+lien).match(/\bA\d{4,}\b/);if(m)idSource=m[0]}   // l'identifiant de l'article, pas celui du jour
-  if(!titre||!idSource||!datePub||vus.has(idSource))continue;vus.add(idSource);
+  if(!titre||!idSource||!datePub||vus.has(idSource))continue;
+  if(NATURE[source]==='METIER'&&!url)continue;   // presse : un article sans lien vers le site lui-même est une publicitévus.add(idSource);
   const o={source,idSource,titre,url,datePub,resume,texte:resume,nature:NATURE[source]||'',numero,nor:'',dateVigueur:''};
   if(source==='viepublique')o.complet=false;   // une fiche de suivi, pas le texte : aucune date d'entrée en vigueur n'en est déduite
   out.push(o)}
@@ -94,7 +106,7 @@ const jourMs=v=>{const d=typeof v==='number'?new Date(v):new Date(String(v||''))
 function creer(opts={}){
  const env=opts.env||process.env,F=opts.fetch||globalThis.fetch,log=opts.log||console.error;
  const ID=env.PISTE_CLIENT_ID||'',SEC=env.PISTE_CLIENT_SECRET||'';
- const actives=()=>['bofip','entreprendre'].concat(AUTRES.map(x=>x[0]),ID&&SEC?['legifrance']:[]);
+ const actives=()=>['bofip','entreprendre'].concat(AUTRES.map(x=>x[0]),METIER.map(x=>x[0]),ID&&SEC?['legifrance']:[]);
  async function appel(url,init){const ac=new AbortController(),to=setTimeout(()=>ac.abort(),20000);
   try{const r=await F(url,Object.assign({signal:ac.signal},init||{}));if(!r.ok)throw new Error('réponse '+r.status);return r}finally{clearTimeout(to)}}
  async function flux(url,source){const r=await appel(url,{headers:{accept:'application/rss+xml, application/xml, text/xml'}});return lireRss(await r.text(),source)}
@@ -121,15 +133,15 @@ function creer(opts={}){
   return out}
 
  async function collecter(){
-  const bruts=[],erreurs=[],L=[['bofip',()=>flux(BOFIP,'bofip')],['entreprendre',()=>flux(ENTREPRENDRE,'entreprendre')]].concat(AUTRES.map(([s,u])=>[s,()=>flux(u,s)]));
+  const bruts=[],erreurs=[],L=[['bofip',()=>flux(BOFIP,'bofip')],['entreprendre',()=>flux(ENTREPRENDRE,'entreprendre')]].concat(AUTRES.map(([s,u])=>[s,()=>flux(u,s)]),METIER.map(([s,u])=>[s,()=>flux(u,s)]));
   if(ID&&SEC)L.push(['legifrance',legifrance]);
   const vus=new Set();   // un même article Service-Public peut être dans les flux pros et particuliers : gardé une fois
   for(const [source,lire] of L){
-   try{const v=await lire();bruts.push(...(source==='legifrance'?v:v.filter(b=>LARGES.has(source)?pertinentStrict(b.titre):pertinent(b.titre,b.resume))).filter(b=>{
+   try{const v=await lire();bruts.push(...(source==='legifrance'?v:v.filter(b=>NATURE[source]==='METIER'?pertinentMetier(b.titre):LARGES.has(source)?pertinentStrict(b.titre):pertinent(b.titre,b.resume))).filter(b=>{
     const k=(b.source==='particuliers'?'entreprendre':b.source)+':'+b.idSource;if(vus.has(k))return false;vus.add(k);return true}))}
    catch(e){const erreur=String(e&&e.name==='AbortError'?'délai dépassé':e&&e.message||'erreur').slice(0,120);erreurs.push({source,erreur});log('[casô] veille : source en erreur',source,erreur)}}
   return {bruts,erreurs}}
  return {collecter,actives};
 }
 
-module.exports={creer,AUTRES,LARGES,pertinentStrict,lireRss,lireJorf,texteJorf,pertinent,hoteAdmis,propre,HOTES,MOTS};
+module.exports={creer,AUTRES,METIER,LARGES,pertinentStrict,pertinentMetier,hoteMetier,lireRss,lireJorf,texteJorf,pertinent,hoteAdmis,propre,HOTES,MOTS};
