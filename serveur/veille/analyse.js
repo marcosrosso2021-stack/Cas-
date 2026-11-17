@@ -88,6 +88,15 @@ const A_FAIRE={'mentions-devis':'Vérifie tes modèles de devis avant la date d\
  'reception':'Vérifie tes documents de fin de chantier.','paiement':'Vérifie tes délais de paiement et tes relances.'};
 /* une nouveauté du métier est envoyée quand elle sert sur le chantier : outils, matériaux, techniques, sécurité ; pas l'actualité syndicale ou économique */
 const PRATIQUE=DOMAINES.outils.concat(['regles de l\'art','securite','silice','amiante','humidite','chantier','pose','isolation','pompe a chaleur','carrel','maconn','plomberie','electricite','peinture','couverture','charpente','menuiserie']);
+/* le titre en clair pour l'artisan : le thème reconnu et, s'il y en a, l'objet précis. Rien n'est affirmé sur le fond : c'est une étiquette, pas un résumé. */
+const THEMES={'mentions-devis':'Mentions des devis','tva':'TVA','facture-electronique':'Facture électronique','facture':'Factures','signature':'Signature électronique','donnees':'Données personnelles','geolocalisation':'Géolocalisation',
+ 'ia':'Intelligence artificielle','photos':'Photos de chantier','aides':'Aides à la rénovation','assurance':'Assurance','dechets':'Déchets de chantier','reception':'Réception des travaux','paiement':'Paiements'};
+const OBJETS=[['certificats d\'economies d\'energie','primes énergie (CEE)'],['maprimerenov','MaPrimeRénov\''],['pompes a chaleur','pompes à chaleur'],['pompe a chaleur','pompes à chaleur'],['isolation','isolation'],['chaudiere','chaudières'],['fenetres','fenêtres'],
+ ['chauffe-eau','chauffe-eau'],['ventilation','ventilation'],['photovolta','panneaux solaires'],['renovation d\'ampleur','rénovation d\'ampleur'],['amiante','amiante'],['taux reduit','taux réduit'],['autoliquidation','autoliquidation'],['franchise en base','franchise en base'],['sous-traitan','sous-traitance']];
+function clair(titre){
+ const t=' '+plat(titre)+' ',s=SUJETS.find(x=>THEMES[x.cle]&&dans(t,x.mots));if(!s)return '';
+ const o=[];for(const [m,n] of OBJETS)if(dans(t,[m])&&!o.includes(n))o.push(n);
+ return THEMES[s.cle]+(o.length?' : '+o.slice(0,2).join(', '):'')}
 function preparer(f,suj,modules,domaines){
  if(f.categorie==='nouveaute')return dans(' '+plat(f.titre)+' ',PRATIQUE)?{tri:'envoyer',aFaireProp:'À découvrir : l\'article donne le détail.'}:{tri:'garder',aFaireProp:''};
  if(f.categorie==='proposition')return {tri:'garder',aFaireProp:'Rien pour l\'instant : le texte n\'est pas encore voté.'};
@@ -105,4 +114,4 @@ function apprendre(appris,f,modulesAvant,modulesApres){
   for(const m of plus)M[w][m]=Math.min(20,(M[w][m]||0)+1);for(const m of moins)M[w][m]=Math.max(-20,(M[w][m]||0)-1)}
  return plus.length+moins.length}
 
-module.exports={preparer,A_FAIRE,analyser,apprendre,priorite,mots,DOMAINES,MODULES,PRIORITES,PROS};
+module.exports={clair,preparer,A_FAIRE,analyser,apprendre,priorite,mots,DOMAINES,MODULES,PRIORITES,PROS};
