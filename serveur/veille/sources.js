@@ -8,7 +8,7 @@
 
 const HOTES=new Set(['legifrance.gouv.fr','www.legifrance.gouv.fr','bofip.impots.gouv.fr','www.service-public.gouv.fr',
  'entreprendre.service-public.gouv.fr','entreprendre.service-public.fr','www.service-public.fr','service-public.fr',
- 'www.vie-publique.fr','vie-publique.fr','www.ecologie.gouv.fr','ecologie.gouv.fr','www.cnil.fr','cnil.fr','www.economie.gouv.fr','economie.gouv.fr','travail-emploi.gouv.fr','www.travail-emploi.gouv.fr','rt-re-batiment.developpement-durable.gouv.fr','www.anah.gouv.fr','anah.gouv.fr']);
+ 'www.vie-publique.fr','vie-publique.fr','www.ecologie.gouv.fr','ecologie.gouv.fr','www.cnil.fr','cnil.fr','www.economie.gouv.fr','economie.gouv.fr','travail-emploi.gouv.fr','www.travail-emploi.gouv.fr','rt-re-batiment.developpement-durable.gouv.fr','www.anah.gouv.fr','anah.gouv.fr','www.impots.gouv.fr']);
 const BOFIP='https://bofip.impots.gouv.fr/bofip/ext/rss.xml?actualites=1&series=TVA:TVA-CHAMP:TVA-BASE:TVA-LIQ:TVA-DED:TVA-DECLA:TVA-PROCD:TVA-SECT:TVA-IMM:BIC:IS&maxR=50&maxJ=14';
 const ENTREPRENDRE='https://www.service-public.gouv.fr/abonnements/rss/actu-actu-pro.rss';
 /* les autres sources officielles, toutes en flux publics sans clé :
@@ -25,12 +25,12 @@ const AUTRES=[['particuliers','https://www.service-public.gouv.fr/abonnements/rs
 /* les sources du métier (nouveaux outils, matériels, techniques, règles de l'art) : presse professionnelle et organisation des artisans.
    Elles ne prouvent jamais une obligation : leurs articles sont rangés à part (« nouveauté du métier ») et renvoient vers l'article. */
 const METIER=[['capeb','https://www.capeb.fr/rss'],['batiactu','https://www.batiactu.com/accueil.rss'],
- ['batimentartisanal','https://www.lebatimentartisanal.com/feed'],['batijournal','https://batijournal.com/index.php/feed/']];
-const HOTES_METIER=new Set(['www.capeb.fr','capeb.fr','www.batiactu.com','batiactu.com','www.lebatimentartisanal.com','lebatimentartisanal.com','batijournal.com','www.batijournal.com','www.inrs.fr','www.preventionbtp.fr','www.qualibat.com','www.ffbatiment.fr','www.batiweb.com']);
+ ['batimentartisanal','https://www.lebatimentartisanal.com/feed'],['batijournal','https://batijournal.com/index.php/feed/'],['zepros','https://artisans-entrepreneurs.zepros.fr/rss.xml']];
+const HOTES_METIER=new Set(['www.capeb.fr','capeb.fr','www.batiactu.com','batiactu.com','www.lebatimentartisanal.com','lebatimentartisanal.com','batijournal.com','www.batijournal.com','artisans-entrepreneurs.zepros.fr','www.inrs.fr','www.preventionbtp.fr','www.qualibat.com','www.ffbatiment.fr','www.batiweb.com']);
 /* les sites sans flux : on lit leur page d'actualités et on garde les liens d'articles (titre et lien, rien d'autre).
    Plus fragile qu'un flux : si la page change et qu'aucun article n'est reconnu, la source est comptée en erreur, visible dans /veille.
-   anah : agence publique (officiel) ; inrs, oppbtp, qualibat, ffb, batiweb : sources du métier, jamais une obligation. */
-const PAGES=[['anah','https://www.anah.gouv.fr/actualites',/^\/actualites\/[^\/]+$/],['inrs','https://www.inrs.fr/actualites.html',/^\/actualites\/[^\/]+\.html$/],
+   anah, impots : sites publics (officiel) ; inrs, oppbtp, qualibat, ffb, batiweb : sources du métier, jamais une obligation. */
+const PAGES=[['anah','https://www.anah.gouv.fr/actualites',/^\/actualites\/[^\/]+$/],['impots','https://www.impots.gouv.fr/toutes-les-actualites',/^\/actualite\/[^\/]+$/],['inrs','https://www.inrs.fr/actualites.html',/^\/actualites\/[^\/]+\.html$/],
  ['oppbtp','https://www.preventionbtp.fr/actualites',/^\/actualites\/[a-z-]+\/[^\/]+$/],['qualibat','https://www.qualibat.com/actualites/',/^\/actualites\/\d+-[^\/]+$/],
  ['ffb','https://www.ffbatiment.fr/actualites-batiment',/^\/actualites-batiment\/actualite(?:-ba)?\/[^\/]+$/],['batiweb','https://www.batiweb.com/actualites',/^\/actualites\/[a-z-]+\/[^\/]+$/]];
 const PISTE_JETON='https://oauth.piste.gouv.fr/api/oauth/token',PISTE_API='https://api.piste.gouv.fr/dila/legifrance/lf-engine-app';
@@ -55,7 +55,7 @@ const plat=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase(
 function hoteMetier(url){try{const u=new URL(String(url||''));return u.protocol==='https:'&&HOTES_METIER.has(u.hostname)}catch(e){return false}}
 function hoteAdmis(url){try{const u=new URL(String(url||''));return u.protocol==='https:'&&HOTES.has(u.hostname)}catch(e){return false}}
 /* les sources larges (ministère, CNIL, lois, particuliers) parlent de tout : seul le titre compte, sans les mots trop généraux */
-const LARGES=new Set(['particuliers','viepublique','ecologie','cnil','economie','travail','re2020','anah']),GENERAUX=new Set(['travaux','construction','chantier','cotisations','plomb','facture','artisan']);
+const LARGES=new Set(['particuliers','viepublique','ecologie','cnil','economie','travail','re2020','anah','impots']),GENERAUX=new Set(['travaux','construction','chantier','cotisations','plomb','facture','artisan']);
 function pertinentStrict(titre){const t=' '+plat(titre)+' ';
  return MOTS.filter(m=>!GENERAUX.has(m)).some(m=>{let i=-1;while((i=t.indexOf(m,i+1))>=0)if(!/[a-z0-9]/.test(t[i-1]))return true;return false})}
 /* métier : outils, matériels, techniques, sécurité, règles de l'art ; pas la vie des grandes entreprises */
@@ -67,7 +67,7 @@ function pertinentMetier(titre){const t=' '+plat(titre)+' ';if(HORS_METIER.some(
 function pertinent(titre,resume){const t=' '+plat(titre)+' '+plat(resume)+' ';
  return MOTS.some(m=>{let i=-1;while((i=t.indexOf(m,i+1))>=0)if(!/[a-z0-9]/.test(t[i-1]))return true;return false})}
 
-const NATURE={anah:'ACTU',inrs:'METIER',oppbtp:'METIER',qualibat:'METIER',ffb:'METIER',batiweb:'METIER',capeb:'METIER',batiactu:'METIER',batimentartisanal:'METIER',batijournal:'METIER',economie:'ACTU',travail:'ACTU',re2020:'ACTU',bofip:'DOCTRINE',entreprendre:'ACTU',particuliers:'ACTU',ecologie:'ACTU',cnil:'ACTU',viepublique:''};
+const NATURE={anah:'ACTU',impots:'ACTU',zepros:'METIER',inrs:'METIER',oppbtp:'METIER',qualibat:'METIER',ffb:'METIER',batiweb:'METIER',capeb:'METIER',batiactu:'METIER',batimentartisanal:'METIER',batijournal:'METIER',economie:'ACTU',travail:'ACTU',re2020:'ACTU',bofip:'DOCTRINE',entreprendre:'ACTU',particuliers:'ACTU',ecologie:'ACTU',cnil:'ACTU',viepublique:''};
 function dateFlux(bloc,desc){
  const iso=(bloc.match(/<(?:dc:date|updated|published)[^>]*>\s*(\d{4}-\d\d-\d\d)/i)||[])[1];if(iso)return iso;
  const p=(bloc.match(/<pubDate[^>]*>([\s\S]*?)<\/pubDate>/i)||[])[1];
