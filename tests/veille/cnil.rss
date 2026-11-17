@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:foaf="http://xmlns.com/foaf/0.1/" xmlns:og="http://ogp.me/ns#" xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" xmlns:schema="http://schema.org/" xmlns:sioc="http://rdfs.org/sioc/ns#" xmlns:sioct="http://rdfs.org/sioc/types#" xmlns:skos="http://www.w3.org/2004/02/skos/core#" xmlns:xsd="http://www.w3.org/2001/XMLSchema#" version="2.0" xml:base="https://www.cnil.fr/fr">
+  <channel>
+    <title>RSS - Actualités CNIL</title>
+    <link>https://www.cnil.fr/fr</link>
+    <description><![CDATA[Protéger les données personnelles, accompagner l&#039;innovation, préserver les libertés individuelles]]></description>
+    <language>fr</language>
+        <atom:link rel="self" href="https://www.cnil.fr/fr/rss.xml"/>
+<lastBuildDate>Mon, 16 Nov 2026 18:06:26 +0100</lastBuildDate>
+<pubDate>Thu, 12 Nov 26 13:00:00 +0100</pubDate>
+<item>
+  <title>Ordre du jour de la séance plénière du 12 novembre 2026</title>
+  <link>https://www.cnil.fr/fr/ordre-du-jour-de-la-seance-pleniere-du-12-novembre-2026</link>
+  <description>La Commission nationale de l'informatique et des libertés s’est réunie le jeudi 12 novembre 2026 à 9&amp;amp;nbsp;h&amp;amp;nbsp;30 avec l’ordre du jour suivant&amp;amp;nbsp;:
+</description>
+  <guid isPermaLink="false">169158fr</guid>
+          <pubDate>Thu, 12 Nov 2026 13:00:00 +0100</pubDate>
+          <source url="https://www.cnil.fr/fr/rss.xml">RSS - Actualités CNIL</source>
+          <dc:creator>CNIL</dc:creator>
+          </item><item>
+  <title>Actualité du CEPD : adéquation de la Corée du Sud, versions finales des BCR-ST, et action coordonnée sur le recrutement via IA</title>
+  <link>https://www.cnil.fr/fr/actualite-du-cepd-adequation-de-la-coree-du-sud-versions-finales-des-bcr-st-et-action-coordonnee-sur</link>
+  <description>Le 10 novembre 2026, le Comité européen de la protection des données (CEPD) a adopté une déclaration sur l’adéquation de la Corée du Sud en matière de protection des données, ses recommandations finales sur les règles d’entreprises contraignantes et le thème de la sixième action coordonnée (CEF).
+</description>
+  <guid isPermaLink="false">169149fr</guid>
+          <pubDate>Thu, 12 Nov 2026 13:00:00 +0100</pubDate>
+          <source url="https://www.cnil.fr/fr/rss.xml">RSS - Actualités CNIL</source>
+          <dc:creator>CNIL</dc:creator>
+          </item><item>
+  <title>La CNIL sera présente au Salon des maires et des collectivités locales 2026</title>
+  <link>https://www.cnil.fr/fr/salon-maires-collectivites-2026</link>
+  <description>Du 24 au 26 novembre 2026, la CNIL sera présente au Salon des maires et des collectivités locales pour échanger avec les élus et agents territoriaux et répondre à leurs questions.
+</description>
+  <guid isPermaLink="false">169131fr</guid>
+          <pubDate>Tue, 10 Nov 2026 13:00:00 +0100</pubDate>
+          <source url="https://www.cnil.fr/fr/rss.xml">RSS - Actualités CNIL</source>
+          <dc:creator>CNIL</dc:creator>
+          </item><item>
+  <title>Cybersécurité des collectivités territoriales : la CNIL prononce dix sanctions</title>
+  <link>https://www.cnil.fr/fr/sanctions-cybersecurite-collectivites-territoriales</link>
+  <description>En novembre 2026, la CNIL a prononcé dix sanctions simplifiées à l’encontre de collectivités territoriales et d’un établissement public, pour des manquements relatifs à la cybersécurité.
+</description>
+  <guid isPermaLink="false">169128fr</guid>
+          <pubDate>Mon, 09 Nov 2026 13:00:00 +0100</pubDate>
+          <source url="https://www.cnil.fr/fr/rss.xml">RSS - Actualités CNIL</source>
+          <dc:creator>CNIL</dc:creator>
+          </item><item>
+  <title>Recherches internes : quelles sont les obligations pour les professionnels de santé ?</title>
+  <link>https://www.cnil.fr/fr/recherches-internes-sante-quelles-obligations</link>
+  <description>Votre établissement emploie des professionnels de santé qui mènent des recherches internes&amp;amp;nbsp;? La CNIL rappelle les règles.
+</description>
+  <guid isPermaLink="false">169125fr</guid>
+          <pubDate>Fri, 06 Nov 2026 13:00:00 +0100</pubDate>
+          <source url="https://www.cnil.fr/fr/rss.xml">RSS - Actualités CNIL</source>
+          <dc:creator>CNIL</dc:creator>
+          </item><item>
+  <title>Ordre du jour de la séance plénière du 5 novembre 2026</title>
+  <link>https://www.cnil.fr/fr/ordre-du-jour-de-la-seance-pleniere-du-5-novembre-2026</link>
+  <description>La Commission nationale de l'informatique et des libertés s’est réunie le jeudi 5 novembre 2026 à 9&amp;amp;nbsp;h&amp;amp;nbsp;30 avec l’ordre du jour suivant&amp;amp;nbsp;:
+</description>
+  <guid isPermaLink="false">169122fr</guid>
+          <pubDate>Thu, 05 Nov 2026 13:00:00 +0100</pubDate>
+          <source url="https://www.cnil.fr/fr/rss.xml">RSS - Actualités CNIL</source>
+          <dc:creator>CNIL</dc:creator>
+          </item><item>
+  <title>Rejeu de session : ces outils qui enregistrent votre activité en ligne</title>
+  <link>https://www.cnil.fr/fr/rejeu-de-session-vos-droits</link>
+  <description>Lorsque vous naviguez sur Internet ou que vous utilisez une application sur votre téléphone, vos actions peuvent être enregistrées par ce que l’on appelle des outils de rejeu de session. À quoi servent-ils et quels sont vos droits&amp;amp;nbsp;?
+</description>
+  <guid isPermaLink="false">169104fr</guid>
+          <pubDate>Thu, 05 Nov 2026 13:00:00 +0100</pubDate>
+          <source url="https://www.cnil.fr/fr/rss.xml">RSS - Actualités CNIL</source>
+          <dc:creator>CNIL</dc:creator>
+          </item><item>
+  <title>Outils de rejeu de session : la CNIL publie sa recommandation pour guider les acteurs</title>
+  <link>https://www.cnil.fr/fr/rejeu-de-session-recommandation</link>
+  <description>La CNIL publie une recommandation relative aux outils de rejeu de session permettant le suivi et l'analyse du comportement en ligne des utilisateurs. L’objectif est d’aider les acteurs qui conçoivent ces outils et ceux qui les utilisent dans leur mise en conformité.
+</description>
+  <guid isPermaLink="false">169107fr</guid>
+          <pubDate>Thu, 05 Nov 2026 13:00:00 +0100</pubDate>
+          <source url="https://www.cnil.fr/fr/rss.xml">RSS - Actualités CNIL</source>
+          <dc:creator>CNIL</dc:creator>
+          </item></channel></rss>

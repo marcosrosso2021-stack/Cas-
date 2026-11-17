@@ -6,6 +6,7 @@ const baseLib=require('./base.js'),sourcesLib=require('./sources.js'),{verifier}
 const {analyser,apprendre,MODULES,PRIORITES,DOMAINES}=require('./analyse.js');
 
 /* le lundi qui suit une date (jamais le jour même) */
+const IMPORTANT=g=>g.priorite==='P0'||g.priorite==='P1';
 function lundi(d){const x=new Date(d+'T00:00:00Z');do{x.setUTCDate(x.getUTCDate()+1)}while(x.getUTCDay()!==1);return x.toISOString().slice(0,10)}
 
 function creer(opts={}){
@@ -29,6 +30,7 @@ function creer(opts={}){
    else base.vu(r.id,auj)}
   /* la priorité suit le délai : elle est recalculée chaque jour pour les textes gardés, sauf si le propriétaire l'a fixée */
   for(const g of base.liste()){if(g.validation==='refuse'||!g.categorie)continue;const n=analyse(g,auj);
+   if(g.tri===undefined)base.completer(g.id,{tri:n.tri,aFaireProp:n.aFaireProp});
    if(n.priorite!==g.priorite&&!(g.corrige||[]).includes('priorite')){base.journal('priorite',{id:g.id,de:g.priorite,a:n.priorite});base.completer(g.id,{priorite:n.priorite})}}
   const b=bilan(res),out={nouveaux,modifies,bloques,erreurs:erreurs.length};
   base.journal('passage',Object.assign({nouveautes:b.nouveautes},out));base.passage(maintenant().toISOString());
@@ -36,7 +38,7 @@ function creer(opts={}){
   return out}
  /* l'analyse d'une fiche, sans toucher à ce que le propriétaire a corrigé */
  function analyse(f,auj){const n=analyser(f,{aujourdhui:auj,appris:base.appris()}),p={},c=f.corrige||[];
-  for(const k of ['domaines','pros','modules','actions','priorite'])if(!c.includes(k))p[k]=n[k];return p}
+  for(const k of ['domaines','pros','modules','actions','priorite'])if(!c.includes(k))p[k]=n[k];p.tri=n.tri;p.aFaireProp=n.aFaireProp;return p}
  /* la décision du propriétaire : valider, refuser, avec ou sans corrections. Sans elle, rien ne part. */
  function decider(id,decision,corr){
   const f=base.lire(id);if(!f)return [404,{error:'Texte inconnu.'}];
@@ -61,10 +63,11 @@ function creer(opts={}){
   const auj=maintenant().toISOString().slice(0,10);
   base.noter(id,Object.assign(p,{validation:decision,corrige,dateValidation:decision==='attente'?'':auj}),'proprietaire');
   if(p.priorite===undefined)base.completer(id,analyse(base.lire(id),auj));
-  /* date d'envoi : tout de suite pour un texte critique, sinon le lundi suivant ; retirée si l'accord est retiré */
+  /* date d'envoi : tout de suite pour un texte important (P0, P1), sinon le lundi suivant ; retirée si l'accord est retiré */
   {const g=base.lire(id),envoi=g.validation==='valide'&&g.lettre===true;
    if(!envoi)base.completer(id,{publieLe:'',pousse:false});
-   else if(!g.publieLe)base.completer(id,{publieLe:g.priorite==='P0'?auj:lundi(auj),pousse:false})}
+   else if(!g.publieLe)base.completer(id,{publieLe:IMPORTANT(g)?auj:lundi(auj),pousse:false});
+   else if(IMPORTANT(g)&&g.publieLe>auj)base.completer(id,{publieLe:auj,pousse:false})}   // devenu important après coup : il part tout de suite
   base.journal('decision',{id,decision,champs:Object.keys(corr).slice(0,10)});
   try{base.enregistrer()}catch(e){log('[casô] veille : base non enregistrée',e&&e.code)}
   return [200,voir(base.lire(id))]}
@@ -76,6 +79,13 @@ function creer(opts={}){
  /* ce qui est sorti et n'a pas encore été annoncé par notification */
  function aAnnoncer(){const auj=maintenant().toISOString().slice(0,10);return publies(auj).filter(f=>!f.pousse).map(f=>({id:f.id,titre:f.titre,priorite:f.priorite,pros:f.pros||[]}))}
  function annonce(ids){for(const id of ids)base.completer(id,{pousse:true});try{base.enregistrer()}catch(e){log('[casô] veille : base non enregistrée',e&&e.code)}}
+ /* appliquer le tri préparé à tout ce qui attend (hors textes bloqués), en un geste du propriétaire */
+ function trier(){const out={envoyes:0,gardes:0,ecartes:0,laisses:0},auj=maintenant().toISOString().slice(0,10);
+  for(const f of base.liste({validation:'attente',bloque:false})){
+   const n=analyse(f,auj),t=n.tri;   // recalculé : les textes collectés avant ce tri n'en avaient pas
+   const r=t==='envoyer'?decider(f.id,'valide',{lettre:true,aFaire:f.aFaire||n.aFaireProp}):t==='garder'?decider(f.id,'valide',{}):t==='ecarter'?decider(f.id,'refuse',{}):[0];
+   if(r[0]!==200){out.laisses++;continue}out[t==='envoyer'?'envoyes':t==='garder'?'gardes':'ecartes']++}
+  return out}
  /* une fiche telle que le tableau de bord la montre : avec son délai du jour */
  function voir(f){const auj=maintenant().toISOString().slice(0,10);
   return Object.assign({},f,{delaiJours:f.dateVigueur?Math.round((Date.parse(f.dateVigueur+'T00:00:00Z')-Date.parse(auj+'T00:00:00Z'))/864e5):null})}
@@ -86,7 +96,7 @@ function creer(opts={}){
  /* « erreursDernier » : les sources en erreur au dernier passage seulement */
  const etat=()=>{const p=base.dernieres(200).find(x=>x.type==='passage');return Object.assign(base.etat(),{sources:src.actives(),erreursDernier:p&&p.detail?p.detail.erreurs||0:0})};
  const liste=fi=>base.liste(fi).filter(f=>!fi||((!fi.priorite||f.priorite===fi.priorite)&&(!fi.domaine||(f.domaines||[]).includes(fi.domaine)))).map(voir);
- return {passer,aFaire,etat,liste,lire:id=>base.lire(id),decider,journal:n=>base.dernieres(n||50),lettre,aAnnoncer,annonce};
+ return {passer,trier,aFaire,etat,liste,lire:id=>base.lire(id),decider,journal:n=>base.dernieres(n||50),lettre,aAnnoncer,annonce};
 }
 
 module.exports={creer,lundi,CAT,MODULES,PRIORITES,DOMAINES:Object.keys(DOMAINES)};

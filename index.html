@@ -2490,7 +2490,7 @@ function tab(n,b){
  $('s-'+n).classList.add('on');
  document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));
  if(b)b.classList.add('on');
- if(n==='news'&&window.casoVeille)casoVeille.page();if(n==='histo')renderHisto();if(n==='cli')cliRender();if(n==='clif')plCliBlock();if(n==='agenda')agPage(agMode);if(n==='fact')faRender();if(n==='plan')plRender();if(n==='sigp')spRender();if(n==='fou')fouRender(); if(n==='four')renderFour(); if(n==='prix'){renderPrices();prPage(prCur)} if(n==='pt')renderPt();if(n==='enc')encRender();
+ if(n==='news'&&window.casoVeille){casoVeille.page();casoVeille.charger(true)}if(n==='histo')renderHisto();if(n==='cli')cliRender();if(n==='clif')plCliBlock();if(n==='agenda')agPage(agMode);if(n==='fact')faRender();if(n==='plan')plRender();if(n==='sigp')spRender();if(n==='fou')fouRender(); if(n==='four')renderFour(); if(n==='prix'){renderPrices();prPage(prCur)} if(n==='pt')renderPt();if(n==='enc')encRender();
  if(n==='cpt'){fillProf();renderSync();bkRefresh();renderNotif();const t=$('trOpen');if(t)t.hidden=I18N.lang==='fr'}
  if(n==='tr')trRender();
  window.scrollTo(0,0);

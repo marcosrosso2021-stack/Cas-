@@ -71,7 +71,27 @@ function analyser(f,ctx={}){
  for(const w of mots(f.titre))if(a(M,w))for(const m of Object.keys(M[w]))if(MODULES.includes(m)&&Math.abs(M[w][m])>=2)score[m]=(score[m]||0)+M[w][m];
  for(const m of Object.keys(score)){const i=modules.indexOf(m);if(score[m]>=2&&i<0)modules.push(m);if(score[m]<=-2&&i>=0)modules.splice(i,1)}
  const delaiJours=f.dateVigueur?jours(aujourdhui,f.dateVigueur):null;
- return {domaines,pros,modules,actions,priorite:priorite(f.categorie,f.dateVigueur,modules.length,aujourdhui),delaiJours}}
+ const pr=priorite(f.categorie,f.dateVigueur,modules.length,aujourdhui);
+ return Object.assign({domaines,pros,modules,actions,priorite:pr,delaiJours},preparer(f,suj,modules,domaines))}
+
+/* le tri préparé pour le propriétaire : il n'a plus qu'à confirmer
+   - envoyer : un texte adopté ou une précision officielle qui touche le travail des artisans
+   - garder  : utile à connaître (projet de loi, sujet sans effet sur casô), validé sans être envoyé
+   - ecarter : sans rapport avec le bâtiment
+   La phrase « À faire » proposée est prudente et renvoie au texte : elle ne dit jamais ce que la loi impose. */
+const A_FAIRE={'mentions-devis':'Vérifie tes modèles de devis avant la date d\'application.','tva':'Vérifie le taux de TVA de tes devis et factures en cours.',
+ 'facture-electronique':'Regarde ce qui change pour tes factures et la date qui te concerne.','facture':'Vérifie les mentions de tes factures.',
+ 'signature':'Vérifie la façon dont tes clients signent tes devis.','donnees':'Vérifie ce que tu gardes sur tes clients, et combien de temps.',
+ 'geolocalisation':'Si tu suis tes salariés par GPS, vérifie qu\'ils en sont informés.','aides':'Vérifie les nouvelles conditions avant de proposer cette aide à tes clients.',
+ 'assurance':'Vérifie ton attestation d\'assurance et sa mention sur tes devis.','dechets':'Vérifie la mention de gestion des déchets sur tes devis.',
+ 'reception':'Vérifie tes documents de fin de chantier.','paiement':'Vérifie tes délais de paiement et tes relances.'};
+function preparer(f,suj,modules,domaines){
+ if(f.categorie==='proposition')return {tri:'garder',aFaireProp:'Rien pour l\'instant : le texte n\'est pas encore voté.'};
+ if(f.categorie==='non_confirme'||f.bloque)return {tri:'',aFaireProp:''};
+ const s=(suj||[]).find(x=>A_FAIRE[x.cle]);
+ if(s&&(f.categorie==='confirme'||f.categorie==='echeance'||f.categorie==='clarification'))return {tri:'envoyer',aFaireProp:A_FAIRE[s.cle]};
+ if(modules.length||domaines.length)return {tri:'garder',aFaireProp:'Lis le texte officiel pour voir si ton activité est concernée.'};
+ return {tri:'ecarter',aFaireProp:''}}
 
 /* une correction du propriétaire : chaque mot du titre retient les modules ajoutés (+1) et retirés (-1) */
 function apprendre(appris,f,modulesAvant,modulesApres){
@@ -81,4 +101,4 @@ function apprendre(appris,f,modulesAvant,modulesApres){
   for(const m of plus)M[w][m]=Math.min(20,(M[w][m]||0)+1);for(const m of moins)M[w][m]=Math.max(-20,(M[w][m]||0)-1)}
  return plus.length+moins.length}
 
-module.exports={analyser,apprendre,priorite,mots,DOMAINES,MODULES,PRIORITES,PROS};
+module.exports={preparer,A_FAIRE,analyser,apprendre,priorite,mots,DOMAINES,MODULES,PRIORITES,PROS};
