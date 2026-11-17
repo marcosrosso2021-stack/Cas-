@@ -89,7 +89,7 @@ function pastille(){
 }
 /* la page Newsletter : ce qui concerne l'artisan ; le plus important à lire en grand, le reste en lignes, le déjà lu en bas */
 /* presse du métier : la source est toujours nommée, ce n'est pas un texte officiel */
-var SOURCES={capeb:'CAPEB',batiactu:'Batiactu',batimentartisanal:'Le Bâtiment Artisanal',batijournal:'Batijournal'};
+var SOURCES={capeb:'CAPEB',batiactu:'Batiactu',batimentartisanal:'Le Bâtiment Artisanal',batijournal:'Batijournal',inrs:'INRS',oppbtp:'OPPBTP',qualibat:'Qualibat',ffb:'FFB',batiweb:'Batiweb',zepros:'Zepros'};
 var NOMS={'électriciens':'Électricien','plombiers-chauffagistes':'Plombier-chauffagiste','maçons':'Maçon','couvreurs':'Couvreur','menuisiers':'Menuisier','peintres':'Peintre','diagnostiqueurs':'Diagnostiqueur'};
 var CSS='#newsList{--nv:cubic-bezier(.2,.8,.2,1)}'
 +'.nv-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-6px 0 16px}'

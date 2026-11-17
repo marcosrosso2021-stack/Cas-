@@ -33,7 +33,7 @@ function creer(opts={}){
    if(g.tri===undefined)base.completer(g.id,{tri:n.tri,aFaireProp:n.aFaireProp});if(g.clairProp!==n.clairProp)base.completer(g.id,{clairProp:n.clairProp});
    if(n.priorite!==g.priorite&&!(g.corrige||[]).includes('priorite')){base.journal('priorite',{id:g.id,de:g.priorite,a:n.priorite});base.completer(g.id,{priorite:n.priorite})}}
   const b=bilan(res),out={nouveaux,modifies,bloques,erreurs:erreurs.length};
-  base.journal('passage',Object.assign({nouveautes:b.nouveautes},out));base.passage(maintenant().toISOString());
+  base.journal('passage',Object.assign({nouveautes:b.nouveautes},out));base.passage(maintenant().toISOString(),src.actives().join());
   try{base.enregistrer()}catch(e){log('[casô] veille : base non enregistrée',e&&e.code)}
   return out}
  /* l'analyse d'une fiche, sans toucher à ce que le propriétaire a corrigé */
@@ -93,7 +93,8 @@ function creer(opts={}){
  /* un seul passage à la fois : le second appel attend le premier */
  function passer(){if(!enCours)enCours=faire().finally(()=>{enCours=null});return enCours}
  /* un passage par jour, à partir de 5 h (heure universelle) */
- function aFaire(d){return d.getUTCHours()>=5&&String(base.etat().dernierPassage).slice(0,10)!==d.toISOString().slice(0,10)}
+ /* une collecte par jour ; et une de plus, sans attendre le lendemain, quand la liste des sources vient de changer */
+ function aFaire(d){const e=base.etat();return (d.getUTCHours()>=5&&String(e.dernierPassage).slice(0,10)!==d.toISOString().slice(0,10))||(!!e.dernierPassage&&base.sourcesPassage()!==src.actives().join())}
  /* « erreursDernier » : les sources en erreur au dernier passage seulement */
  const etat=()=>{const p=base.dernieres(200).find(x=>x.type==='passage');return Object.assign(base.etat(),{sources:src.actives(),erreursDernier:p&&p.detail?p.detail.erreurs||0:0})};
  const liste=fi=>base.liste(fi).filter(f=>!fi||((!fi.priorite||f.priorite===fi.priorite)&&(!fi.domaine||(f.domaines||[]).includes(fi.domaine)))).map(voir);
