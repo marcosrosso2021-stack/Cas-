@@ -8,20 +8,25 @@
 
 const HOTES=new Set(['legifrance.gouv.fr','www.legifrance.gouv.fr','bofip.impots.gouv.fr','www.service-public.gouv.fr',
  'entreprendre.service-public.gouv.fr','entreprendre.service-public.fr','www.service-public.fr','service-public.fr',
- 'www.vie-publique.fr','vie-publique.fr','www.ecologie.gouv.fr','ecologie.gouv.fr','www.cnil.fr','cnil.fr']);
+ 'www.vie-publique.fr','vie-publique.fr','www.ecologie.gouv.fr','ecologie.gouv.fr','www.cnil.fr','cnil.fr','www.economie.gouv.fr','economie.gouv.fr','travail-emploi.gouv.fr','www.travail-emploi.gouv.fr','rt-re-batiment.developpement-durable.gouv.fr']);
 const BOFIP='https://bofip.impots.gouv.fr/bofip/ext/rss.xml?actualites=1&series=TVA:TVA-CHAMP:TVA-BASE:TVA-LIQ:TVA-DED:TVA-DECLA:TVA-PROCD:TVA-SECT:TVA-IMM:BIC:IS&maxR=50&maxJ=14';
 const ENTREPRENDRE='https://www.service-public.gouv.fr/abonnements/rss/actu-actu-pro.rss';
 /* les autres sources officielles, toutes en flux publics sans clé :
    - particuliers : actualités Service-Public pour les particuliers (aides à la rénovation, DPE, droits des clients)
    - viepublique : panorama des lois de la DILA (projets et lois votées : ce qui va changer)
    - ecologie : ministère de la Transition écologique (rénovation, RE2020, déchets, énergie)
-   - cnil : protection des données (clients, géolocalisation, photos) */
+   - cnil : protection des données (clients, géolocalisation, photos)
+   - economie : ministère de l'Économie (facturation, TVA, aides aux entreprises, arnaques)
+   - travail : ministère du Travail (salariés, apprentis, sécurité au travail)
+   - re2020 : portail officiel des réglementations énergétiques des bâtiments (RE2020, RT) */
 const AUTRES=[['particuliers','https://www.service-public.gouv.fr/abonnements/rss/actu-actualites-particuliers.rss'],['viepublique','https://www.vie-publique.fr/lois-feeds.xml'],
- ['ecologie','https://www.ecologie.gouv.fr/rss-actualites.xml'],['cnil','https://www.cnil.fr/fr/rss.xml']];
+ ['ecologie','https://www.ecologie.gouv.fr/rss-actualites.xml'],['cnil','https://www.cnil.fr/fr/rss.xml'],
+ ['economie','https://www.economie.gouv.fr/rss/toutesactualites'],['travail','https://travail-emploi.gouv.fr/rss.xml'],['re2020','https://rt-re-batiment.developpement-durable.gouv.fr/spip.php?page=backend']];
 /* les sources du métier (nouveaux outils, matériels, techniques, règles de l'art) : presse professionnelle et organisation des artisans.
    Elles ne prouvent jamais une obligation : leurs articles sont rangés à part (« nouveauté du métier ») et renvoient vers l'article. */
-const METIER=[['capeb','https://www.capeb.fr/rss'],['batiactu','https://www.batiactu.com/accueil.rss']];
-const HOTES_METIER=new Set(['www.capeb.fr','capeb.fr','www.batiactu.com','batiactu.com']);
+const METIER=[['capeb','https://www.capeb.fr/rss'],['batiactu','https://www.batiactu.com/accueil.rss'],
+ ['batimentartisanal','https://www.lebatimentartisanal.com/feed'],['batijournal','https://batijournal.com/index.php/feed/']];
+const HOTES_METIER=new Set(['www.capeb.fr','capeb.fr','www.batiactu.com','batiactu.com','www.lebatimentartisanal.com','lebatimentartisanal.com','batijournal.com','www.batijournal.com']);
 const PISTE_JETON='https://oauth.piste.gouv.fr/api/oauth/token',PISTE_API='https://api.piste.gouv.fr/dila/legifrance/lf-engine-app';
 /* sans accents, en minuscules ; un mot compte s'il commence un mot du titre ou du résumé */
 const MOTS=['batiment','construction','travaux','renovation','artisan','tva','taxe sur la valeur ajoutee','facture','facturation electronique','devis',
@@ -44,7 +49,7 @@ const plat=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase(
 function hoteMetier(url){try{const u=new URL(String(url||''));return u.protocol==='https:'&&HOTES_METIER.has(u.hostname)}catch(e){return false}}
 function hoteAdmis(url){try{const u=new URL(String(url||''));return u.protocol==='https:'&&HOTES.has(u.hostname)}catch(e){return false}}
 /* les sources larges (ministère, CNIL, lois, particuliers) parlent de tout : seul le titre compte, sans les mots trop généraux */
-const LARGES=new Set(['particuliers','viepublique','ecologie','cnil']),GENERAUX=new Set(['travaux','construction','chantier','cotisations','plomb','facture','artisan']);
+const LARGES=new Set(['particuliers','viepublique','ecologie','cnil','economie','travail','re2020']),GENERAUX=new Set(['travaux','construction','chantier','cotisations','plomb','facture','artisan']);
 function pertinentStrict(titre){const t=' '+plat(titre)+' ';
  return MOTS.filter(m=>!GENERAUX.has(m)).some(m=>{let i=-1;while((i=t.indexOf(m,i+1))>=0)if(!/[a-z0-9]/.test(t[i-1]))return true;return false})}
 /* métier : outils, matériels, techniques, sécurité, règles de l'art ; pas la vie des grandes entreprises */
@@ -56,7 +61,7 @@ function pertinentMetier(titre){const t=' '+plat(titre)+' ';if(HORS_METIER.some(
 function pertinent(titre,resume){const t=' '+plat(titre)+' '+plat(resume)+' ';
  return MOTS.some(m=>{let i=-1;while((i=t.indexOf(m,i+1))>=0)if(!/[a-z0-9]/.test(t[i-1]))return true;return false})}
 
-const NATURE={capeb:'METIER',batiactu:'METIER',bofip:'DOCTRINE',entreprendre:'ACTU',particuliers:'ACTU',ecologie:'ACTU',cnil:'ACTU',viepublique:''};
+const NATURE={capeb:'METIER',batiactu:'METIER',batimentartisanal:'METIER',batijournal:'METIER',economie:'ACTU',travail:'ACTU',re2020:'ACTU',bofip:'DOCTRINE',entreprendre:'ACTU',particuliers:'ACTU',ecologie:'ACTU',cnil:'ACTU',viepublique:''};
 function dateFlux(bloc,desc){
  const iso=(bloc.match(/<(?:dc:date|updated|published)[^>]*>\s*(\d{4}-\d\d-\d\d)/i)||[])[1];if(iso)return iso;
  const p=(bloc.match(/<pubDate[^>]*>([\s\S]*?)<\/pubDate>/i)||[])[1];
