@@ -46,7 +46,7 @@ function createServer(opts={}){
  /* Hébergé derrière un proxy qui termine le TLS (Clever Cloud pose APP_HOME) : on fait confiance aux en-têtes x-forwarded-*,
     on force HTTPS, on envoie HSTS, et les liens publics (signature, facture) sont en https.
     En local (poste du bureau, Wi-Fi), rien de tout cela : le serveur reste en http sur le réseau interne. */
- const HOSTED=!!(opts.hosted||process.env.TRUST_PROXY||process.env.TRUST_CF||process.env.APP_HOME);
+ const HOSTED=!!(opts.hosted||opts.trustCf||process.env.TRUST_PROXY||process.env.TRUST_CF||process.env.APP_HOME);
  const HTTPS_ONLY=HOSTED&&!opts.allowHttp&&process.env.ALLOW_HTTP!=='1';
 
  let data={rev:0,counter:0,users:{},tokens:{},invites:{},recs:{},tombs:[],signs:{},sigreg:{},subs:[],vapid:null};
@@ -130,12 +130,15 @@ function createServer(opts={}){
 
  /* --- comptes --- */
  const tokH=t=>'h'+crypto.createHash('sha256').update(String(t)).digest('hex');
- const hash=(pw,salt)=>crypto.scryptSync(String(pw),salt,32).toString('hex');
- function makeUser(name,pw,role){
-  const salt=crypto.randomBytes(16).toString('hex');
-  data.users[name.toLowerCase()]={name,role,salt,hash:hash(pw,salt)}}
- function checkPw(u,pw){
-  const a=Buffer.from(hash(pw,u.salt),'hex'),b=Buffer.from(u.hash,'hex');
+ /* scrypt asynchrone : le calcul ne bloque pas les autres requêtes */
+ const hash=(pw,salt)=>new Promise((ok,ko)=>crypto.scrypt(String(pw),salt,32,(e,k)=>e?ko(e):ok(k.toString('hex'))));
+ /* libre() est revérifié après le calcul : deux créations en même temps ne peuvent pas passer toutes les deux */
+ async function makeUser(name,pw,role,libre){
+  const salt=crypto.randomBytes(16).toString('hex'),h=await hash(pw,salt);
+  if(libre&&!libre())return false;
+  data.users[name.toLowerCase()]={name,role,salt,hash:h};return true}
+ async function checkPw(u,pw){
+  const a=Buffer.from(await hash(pw,u.salt),'hex'),b=Buffer.from(u.hash,'hex');
   return a.length===b.length&&crypto.timingSafeEqual(a,b)}
  const validName=n=>/^[\p{L}\p{N} ._-]{2,30}$/u.test(n);
  function newToken(u){
@@ -146,12 +149,28 @@ function createServer(opts={}){
 
  /* --- limite d'essais (connexion, invitation) --- */
  const tries=new Map();
- function tooMany(ip){
+ /* Chaque essai est compté dès son arrivée, avant de lire la requête : des requêtes envoyées en même temps
+    ne passent plus toutes. Un essai réussi (réponse < 400) est rendu par send() ; un essai raté reste compté. */
+ function tooMany(ip,res){
   if(tries.size>5000){const old=Date.now()-60000;for(const [k,v] of tries)if(v.at<old)tries.delete(k)}
   const t=tries.get(ip)||{n:0,at:Date.now()};
   if(Date.now()-t.at>60000){t.n=0;t.at=Date.now()}
-  tries.set(ip,t);return t.n>=10}
- const fail=ip=>{const t=tries.get(ip)||{n:0,at:Date.now()};t.n++;tries.set(ip,t)};
+  tries.set(ip,t);if(t.n>=10)return true;
+  t.n++;if(res)res._try=ip;return false}
+ const fail=()=>{};   // l'essai est déjà compté par tooMany()
+ const tryBack=res=>{const ip=res&&res._try;if(!ip)return;res._try=null;const t=tries.get(ip);if(t&&t.n>0)t.n--};
+ /* par compte, quelle que soit l'adresse : 20 mauvais mots de passe par quart d'heure */
+ const acct=new Map();
+ const acctTrop=k=>{const e=acct.get(k);return !!(e&&e.n>=20&&Date.now()-e.t<9e5)};
+ const acctFail=k=>{const t=Date.now(),e=acct.get(k);if(!e||t-e.t>=9e5)acct.set(k,{n:1,t});else e.n++;
+  if(acct.size>5000){for(const [x,v] of acct)if(t-v.t>=9e5)acct.delete(x);if(acct.size>5000)acct.clear()}};
+ /* clé du propriétaire (CASO_CLE_IA) : comparée à temps constant ; 10 mauvaises clés par quart d'heure et par adresse.
+    Renvoie 0 si la clé est bonne, sinon le code à répondre (404 ou 429). */
+ function cleProprio(req,ip){const cle=process.env.CASO_CLE_IA||'',e=vEssais.get(ip),t=Date.now();
+  if(e&&e.n>=10&&t-e.t<9e5)return 429;
+  if(!cle||!sameSecret(req.headers['x-caso-cle']||'',cle)){if(!e||t-e.t>=9e5)vEssais.set(ip,{n:1,t});else e.n++;
+   if(vEssais.size>5000){for(const [x,v] of vEssais)if(t-v.t>=9e5)vEssais.delete(x);if(vEssais.size>5000)vEssais.clear()}return 404}
+  return 0}
  const isLocal=req=>!HOSTED&&!req.headers['x-forwarded-for']&&!req.headers['cf-connecting-ip']&&['127.0.0.1','::1','::ffff:127.0.0.1'].includes(req.socket.remoteAddress);
  const sameSecret=(a,b)=>{const x=crypto.createHash('sha256').update(String(a)).digest(),y=crypto.createHash('sha256').update(String(b)).digest();return crypto.timingSafeEqual(x,y)};
 
@@ -233,8 +252,19 @@ function createServer(opts={}){
 
 /* --- signature des devis --- */
  const privIp=a=>/^(10\.|127\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|::1$|f[cd]|fe80|::ffff:(10\.|127\.|192\.168\.))/i.test(a);
- const clientIp=req=>{if(process.env.TRUST_CF&&req.headers['cf-connecting-ip'])return String(req.headers['cf-connecting-ip']).slice(0,64);if(HOSTED&&!process.env.TRUST_CF){const L=String(req.headers['x-forwarded-for']||'').split(',').map(x=>x.trim()).filter(Boolean);
-   for(let i=L.length-1;i>=0;i--)if(!privIp(L[i]))return L[i];if(L.length)return L[0]}return req.socket.remoteAddress||'?'};
+ /* Plages d'adresses publiées par Cloudflare (cloudflare.com/ips). Avec TRUST_CF, l'en-tête cf-connecting-ip n'est cru
+    que si le dernier relais est l'une d'elles : sans Cloudflare devant, n'importe qui pourrait écrire cet en-tête. */
+ const CF4=['173.245.48.0/20','103.21.244.0/22','103.22.200.0/22','103.31.4.0/22','141.101.64.0/18','108.162.192.0/18','190.93.240.0/20','188.114.96.0/20','197.234.240.0/22','198.41.128.0/17','162.158.0.0/15','104.16.0.0/13','104.24.0.0/14','172.64.0.0/13','131.0.72.0/22']
+  .map(c=>{const [a,m]=c.split('/'),n=a.split('.').reduce((x,o)=>x*256+ +o,0);return[n,2**(32-m)]});
+ const CF6=[[0x2400,0xcb00,32],[0x2606,0x4700,32],[0x2803,0xf800,32],[0x2405,0xb500,32],[0x2405,0x8100,32],[0x2a06,0x98c0,29],[0x2c0f,0xf248,32]];
+ const estCF=a=>{a=String(a||'').replace(/^::ffff:/i,'');
+  if(/^\d{1,3}(\.\d{1,3}){3}$/.test(a)){const n=a.split('.').reduce((x,o)=>x*256+ +o,0);return CF4.some(([b,t])=>n>=b&&n<b+t)}
+  const h=a.split(':');if(h.length<3||!h[0]||!h[1])return false;const x=parseInt(h[0],16),y=parseInt(h[1],16);
+  return CF6.some(([p,q,m])=>x===p&&(m===32?y===q:(y>>>3)===(q>>>3)))};
+ const TRUST_CF=!!(opts.trustCf||process.env.TRUST_CF);
+ const clientIp=req=>{const L=HOSTED?String(req.headers['x-forwarded-for']||'').split(',').map(x=>x.trim()).filter(Boolean):[],sock=req.socket.remoteAddress||'?';
+   if(TRUST_CF&&req.headers['cf-connecting-ip']&&estCF(L.length?L[L.length-1]:sock))return String(req.headers['cf-connecting-ip']).slice(0,64);
+   for(let i=L.length-1;i>=0;i--)if(!privIp(L[i]))return L[i];if(L.length)return L[0];return sock};
  function baseUrl(req){
   const pub=opts.publicUrl||process.env.PUBLIC_URL;if(pub)return pub.replace(/\/+$/,'');
   const proto=HOSTED?'https':'http';   // hébergé : liens de signature et de facture toujours en https
@@ -367,6 +397,7 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
  const CSP_PUB="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
  function send(res,code,obj,extra){
   const isHtml=typeof obj==='string';
+  if(code<400)tryBack(res);
   res.writeHead(code,Object.assign({'content-type':isHtml?'text/html; charset=utf-8':'application/json; charset=utf-8','cache-control':'no-store'},SEC,isHtml?{'content-security-policy':CSP_APP}:cors,extra||{}));
   res.end(isHtml?obj:JSON.stringify(obj))}
  function readBody(req){return new Promise((ok,ko)=>{
@@ -412,7 +443,7 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
     if(mf){const sh=data.invShares[mf[1]];if(!sh)return send(res,404,{error:'Ce lien n\'existe pas.'});
      if(req.method==='GET'&&!mf[2]){if(!sh.viewedAt){sh.viewedAt=Date.now();persist()}return send(res,200,{doc:sh.doc,cert:sh.cert?{name:sh.cert.name,at:sh.cert.at}:null,viewedAt:sh.viewedAt})}
      if(POST&&mf[2]){
-      if(tooMany(ip))return send(res,429,{error:'Trop d\'essais, patientez une minute.'});
+      if(tooMany(ip,res))return send(res,429,{error:'Trop d\'essais, patientez une minute.'});
       if(sh.cert)return send(res,409,{error:'Déjà certifié.'});
       const b=await readBody(req),name=cut(b.name,80).trim();
       if(name.length<2){fail(ip);return send(res,400,{error:'Écrivez votre nom.'})}
@@ -442,7 +473,7 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
     if(!sg)return send(res,404,{error:'Ce lien n\'existe pas.'});
     if(req.method==='GET'){if(!sg.viewedAt&&sg.status==='sent'){sg.viewedAt=Date.now();persist()}return send(res,200,publicSign(sg))}
     if(POST&&m[2]){
-     if(tooMany(ip))return send(res,429,{error:'Trop d\'essais, patientez une minute.'});
+     if(tooMany(ip,res))return send(res,429,{error:'Trop d\'essais, patientez une minute.'});
      if(sg.status==='signed')return send(res,409,{error:'Ce devis est déjà signé.'});
      if(sg.status!=='sent')return send(res,410,{error:'Ce devis a été remplacé ou annulé. Contactez l\'entreprise.'});
      if(sg.expires&&Date.now()>sg.expires)return send(res,410,{error:'Ce devis a expiré. Contactez l\'entreprise.'});
@@ -475,26 +506,28 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
    /* premier lancement : le patron crée son compte, depuis l'ordinateur du serveur uniquement */
    if(POST&&url==='/api/setup'){
     if(Object.keys(data.users).length)return send(res,409,{error:'Le serveur est déjà configuré.'});
-    if(tooMany(ip))return send(res,429,{error:'Trop d\'essais, patiente une minute.'});
+    if(tooMany(ip,res))return send(res,429,{error:'Trop d\'essais, patiente une minute.'});
     const b=await readBody(req),name=String(b.user||'patron').trim();
     const code=process.env.SETUP_CODE||opts.setupCode;
     if(!isLocal(req)&&!(code&&sameSecret(b.code||'',code))){fail(ip);return send(res,403,{error:'La première configuration se fait depuis l\'ordinateur qui héberge le serveur (ou avec le code de configuration).'})}
     if(!validName(name))return send(res,400,{error:'Prénom invalide (2 à 30 caractères).'});
     if(String(b.password||'').length<8)return send(res,400,{error:'Mot de passe : 8 caractères minimum.'});
-    makeUser(name,b.password,'patron');
+    if(!(await makeUser(name,b.password,'patron',()=>!Object.keys(data.users).length)))return send(res,409,{error:'Le serveur est déjà configuré.'});
     return send(res,200,newToken(data.users[name.toLowerCase()]))}
 
    if(POST&&url==='/api/login'){
-    if(tooMany(ip))return send(res,429,{error:'Trop d\'essais, patiente une minute.'});
+    if(tooMany(ip,res))return send(res,429,{error:'Trop d\'essais, patiente une minute.'});
     const b=await readBody(req);
-    const uk=String(b.user||'').toLowerCase(),u=own(data.users,uk)?data.users[uk]:null;
-    if(!u){hash(String(b.password||''),'00000000000000000000000000000000');fail(ip);return send(res,401,{error:'Identifiant ou mot de passe incorrect.'})}
-    if(!checkPw(u,b.password||'')){fail(ip);return send(res,401,{error:'Identifiant ou mot de passe incorrect.'})}
+    const uk=String(b.user||'').toLowerCase().slice(0,40),u=own(data.users,uk)?data.users[uk]:null;
+    if(acctTrop(uk))return send(res,429,{error:'Trop d\'essais, patiente quelques minutes.'});
+    if(!u){await hash(String(b.password||''),'00000000000000000000000000000000');acctFail(uk);return send(res,401,{error:'Identifiant ou mot de passe incorrect.'})}
+    if(!(await checkPw(u,b.password||''))){acctFail(uk);return send(res,401,{error:'Identifiant ou mot de passe incorrect.'})}
+    acct.delete(uk);
     return send(res,200,newToken(u))}
 
    /* l'employé qui scanne le QR code */
    if(POST&&url==='/api/join'){
-    if(tooMany(ip))return send(res,429,{error:'Trop d\'essais, patiente une minute.'});
+    if(tooMany(ip,res))return send(res,429,{error:'Trop d\'essais, patiente une minute.'});
     const b=await readBody(req),code=String(b.code||'');
     const inv=own(data.invites,code)?data.invites[code]:null;
     if(!inv||inv.exp<Date.now()){fail(ip);return send(res,404,{error:'Invitation invalide ou expirée. Demande un nouveau QR code.'})}
@@ -527,7 +560,7 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
 
    /* phrases incomprises (masquées) : l'appareil les envoie ; le propriétaire de casô les lit avec sa clé */
    if(url==='/api/incompris'){
-    if(req.method==='GET'){const cle=process.env.CASO_CLE_IA||'';if(!cle||String(req.headers['x-caso-cle']||'')!==cle)return send(res,404,{error:'Introuvable.'});
+    if(req.method==='GET'){const k=cleProprio(req,ip);if(k)return send(res,k,{error:k===429?'Trop d\'essais, réessaie plus tard.':'Introuvable.'});
      const out={};for(const l of APL){const L=incompris[l]||{};out[l]=Object.keys(L).filter(k=>L[k].u.length>=3).map(k=>({t:k,n:L[k].u.length,s:L[k].s})).sort((a,b)=>b.n-a.n).slice(0,200)}return send(res,200,{e:out})}
     if(POST){if(apTrop(ip))return send(res,429,{error:'Trop d\'envois.'});const b=await readBody(req),id=String(b.id||'');
      if(!/^[a-f0-9]{32}$/.test(id)||!Array.isArray(b.e))return send(res,400,{error:'Requête invalide.'});
@@ -541,9 +574,8 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
     res.writeHead(200,Object.assign({'content-type':'text/html; charset=utf-8','cache-control':'no-store','x-robots-tag':'noindex','content-security-policy':CSP_PUB},SEC));return res.end(html)}
    /* la newsletter validée, lue par l'appli (sans compte, rien n'est envoyé par le téléphone) */
    if(req.method==='GET'&&url==='/api/veille/lettre')return send(res,200,veille.lettre());
-   if(url.startsWith('/api/veille/')){const cle=process.env.CASO_CLE_IA||'',e=vEssais.get(ip),t=Date.now();
-    if(e&&e.n>=10&&t-e.t<9e5)return send(res,429,{error:'Trop d\'essais, réessaie plus tard.'});
-    if(!cle||String(req.headers['x-caso-cle']||'')!==cle){if(!e||t-e.t>=9e5)vEssais.set(ip,{n:1,t});else e.n++;if(vEssais.size>5000)vEssais.clear();return send(res,404,{error:'Introuvable.'})}
+   if(url.startsWith('/api/veille/')){const k=cleProprio(req,ip);
+    if(k)return send(res,k,{error:k===429?'Trop d\'essais, réessaie plus tard.':'Introuvable.'});
     if(req.method==='GET'&&url==='/api/veille/etat')return send(res,200,Object.assign(veille.etat(),{modules:veilleLib.MODULES,domaines:veilleLib.DOMAINES}));
     /* le tableau de bord de casô, pour le propriétaire : des nombres seulement (aucun nom, aucune adresse, aucun devis) */
     if(req.method==='GET'&&url==='/api/veille/saas'){const t=Date.now(),S=Object.keys(data.signs).map(k=>data.signs[k]),ve=veille.etat(),VL=veille.liste({validation:'attente'});
@@ -584,8 +616,8 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
     const b=await readBody(req);if(b.confirm!=='SUPPRIMER')return send(res,400,{error:'Confirmation manquante.'});
     const me=user.name.toLowerCase();
     if(user.role==='patron'){
-     if(tooMany(ip))return send(res,429,{error:'Trop d\'essais, patiente une minute.'});
-     if(!checkPw(user,String(b.password||''))){fail(ip);return send(res,403,{error:'Mot de passe du serveur incorrect.'})}
+     if(tooMany(ip,res))return send(res,429,{error:'Trop d\'essais, patiente une minute.'});
+     if(!(await checkPw(user,String(b.password||'')))){return send(res,403,{error:'Mot de passe du serveur incorrect.'})}
      const keep={vapid:data.vapid,invSeq:data.invSeq};
      data={rev:(data.rev||0)+1,counter:0,users:Object.create(null),tokens:Object.create(null),invites:Object.create(null),recs:Object.create(null),tombs:[],signs:Object.create(null),sigreg:Object.create(null),subs:[],
       invShares:Object.create(null),ics:Object.create(null),invSeq:Object.assign(Object.create(null),keep.invSeq||{}),invIds:{},remSent:Object.create(null),vapid:keep.vapid};
@@ -695,7 +727,7 @@ data.invSeq[key]=n;if(iid)data.invIds[key+'|'+iid]=n;persist();return send(res,2
      let u=data.users[name.toLowerCase()];
      if(!u){
       if(!ROLES.includes(b.role))return send(res,400,{error:'Rôle inconnu.'});
-      makeUser(name,crypto.randomBytes(16).toString('hex'),b.role);   // mot de passe inconnu de tous : on entre par le QR code
+      await makeUser(name,crypto.randomBytes(16).toString('hex'),b.role,()=>!data.users[name.toLowerCase()]);   // mot de passe inconnu de tous : on entre par le QR code
       u=data.users[name.toLowerCase()]}
      Object.keys(data.invites).forEach(k=>{if(data.invites[k].exp<Date.now()||data.invites[k].user===name.toLowerCase())delete data.invites[k]});
      const code=crypto.randomBytes(8).toString('hex');
@@ -717,8 +749,8 @@ data.invSeq[key]=n;if(iid)data.invIds[key+'|'+iid]=n;persist();return send(res,2
      if(String(b.password||'').length<8)return send(res,400,{error:'Mot de passe : 8 caractères minimum.'});
      if(!ROLES.includes(b.role))return send(res,400,{error:'Rôle inconnu.'});
      if(data.users[name.toLowerCase()])return send(res,409,{error:'Cet identifiant existe déjà.'});
-     makeUser(name,b.password,b.role);persist();
-     return send(res,200,{ok:true})}}
+     if(!(await makeUser(name,b.password,b.role,()=>!data.users[name.toLowerCase()])))return send(res,409,{error:'Cet identifiant existe déjà.'});
+     persist();return send(res,200,{ok:true})}}
    return send(res,404,{error:'introuvable'});
   }catch(e){if(!e||!e.pub)console.error('[casô]',req.method,url,e&&e.stack||e);if(!res.headersSent)send(res,400,{error:e&&e.pub?e.message:'Requête invalide.'});else try{res.destroy()}catch(_){}}});
 
@@ -733,7 +765,7 @@ function start(opts={}){
   s.server.once('error',ko);
   s.server.listen(port,'0.0.0.0',()=>ok(Object.assign(s,{port:s.server.address().port,addresses:lanAddresses()})))})}
 
-module.exports={createServer,start,lanAddresses}; // srvfix-v1 srvsec-v2
+module.exports={createServer,start,lanAddresses}; // srvfix-v1 srvsec-v3
 
 if(require.main===module){
  start().then(s=>{
