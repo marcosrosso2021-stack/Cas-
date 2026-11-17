@@ -315,7 +315,7 @@ Deux relectures de sécurité indépendantes (serveur, appli) ; chaque faille tr
 - **Connexion** : 5 essais, puis attente croissante (30 s à 15 min) ; mots de passe protégés par 600 000 tours de PBKDF2 ; mots de passe du serveur : 8 caractères minimum ; jetons de session gardés sous forme d'empreinte.
 - **Supprimer l'espace de l'entreprise** : le mot de passe du serveur est redemandé ; la suite des numéros de facture est gardée.
 - **En-têtes de sécurité** (CSP, nosniff, no-referrer, interdiction d'affichage dans un cadre, HSTS derrière Cloudflare), erreurs internes jamais montrées, adresses du réseau local cachées.
-- **Réglages de mise en ligne** : `TRUST_CF=1` (vraie adresse du client derrière Cloudflare), `PUBLIC_URL=https://app-e6c6e91c-8623-4524-95ef-2cefb8b67f7b.cleverapps.io` (liens de signature), `SETUP_CODE` (création du compte patron à distance).
+- **Réglages de mise en ligne** : `TRUST_CF=1` seulement si le domaine passe par Cloudflare (l'adresse donnée par Cloudflare n'est crue que si la requête vient bien de ses serveurs ; sans Cloudflare, ce réglage est inutile et sans effet), `PUBLIC_URL=https://app-e6c6e91c-8623-4524-95ef-2cefb8b67f7b.cleverapps.io` (liens de signature), `SETUP_CODE` (création du compte patron à distance).
 - **Limites connues** : sur le téléphone, les données ne sont pas chiffrées (le blocage après 5 essais protège l'écran, pas les données) — à traiter avec l'appli native (trousseau iOS / Android, Face ID). Les gestionnaires `onclick` dans la page obligent à garder `'unsafe-inline'` dans la CSP.
 
 ## Hors ligne, encaissements, suppression du compte (3 novembre 2026)
