@@ -5,7 +5,7 @@ const {creer,lireRss,lireJorf,pertinent,hoteAdmis}=require('../serveur/veille/so
 let ok=0;const t=async(nom,f)=>{await f();ok++;console.log('✓',nom)};
 const ext=n=>fs.readFileSync(path.join(__dirname,'veille',n),'utf8');
 /* chaque adresse reçoit son extrait réel */
-const EXT=u=>{u=String(u);return ext(/bofip/.test(u)?'bofip.rss':/actu-actu-pro/.test(u)?'entreprendre.rss':/particuliers/.test(u)?'particuliers.rss':/vie-publique/.test(u)?'viepublique.rss':/ecologie/.test(u)?'ecologie.rss':/capeb/.test(u)?'capeb.rss':/batiactu/.test(u)?'batiactu.rss':/economie\.gouv/.test(u)?'economie.rss':/travail-emploi/.test(u)?'travail.rss':/rt-re-batiment/.test(u)?'re2020.rss':/batimentartisanal/.test(u)?'batimentartisanal.rss':/batijournal/.test(u)?'batijournal.rss':'cnil.rss')};
+const EXT=u=>{u=String(u);return ext(/bofip/.test(u)?'bofip.rss':/actu-actu-pro/.test(u)?'entreprendre.rss':/particuliers/.test(u)?'particuliers.rss':/vie-publique/.test(u)?'viepublique.rss':/ecologie/.test(u)?'ecologie.rss':/capeb/.test(u)?'capeb.rss':/batiactu/.test(u)?'batiactu.rss':/economie\.gouv/.test(u)?'economie.rss':/travail-emploi/.test(u)?'travail.rss':/rt-re-batiment/.test(u)?'re2020.rss':/batimentartisanal/.test(u)?'batimentartisanal.rss':/batijournal/.test(u)?'batijournal.rss':/anah\.gouv/.test(u)?'anah.html':/inrs\.fr/.test(u)?'inrs.html':/preventionbtp/.test(u)?'oppbtp.html':/qualibat/.test(u)?'qualibat.html':/ffbatiment/.test(u)?'ffb.html':/batiweb/.test(u)?'batiweb.html':'cnil.rss')};
 const rep=(corps,st)=>({ok:(st||200)<300,status:st||200,text:async()=>corps,json:async()=>JSON.parse(corps)});
 
 (async()=>{
@@ -44,6 +44,17 @@ await t('presse du métier : nouveauté nommée, jamais une obligation, publicit
  for(const x of c.concat(b)){const v=verifier(x,{aujourdhui:'2026-11-17'});assert.strictEqual(v.officiel,false);const k=classer(v,{etat:'nouveau'});assert.deepStrictEqual([k.categorie,k.bloque],['nouveaute',false])}
  assert.ok(pertinentMetier('Maçons-Carreleurs : nouvelles règles de l\'art pour les terrasses'));assert.ok(pertinentMetier('Bosch : de nouveaux outils pour les électriciens'));
  for(const t of ['Décès de Maurice Manceau, ancien directeur général','Au Maroc, Colas Rail décroche un nouveau contrat'])assert.ok(!pertinentMetier(t),t)});
+await t('sites sans flux : la page d\'actualités donne titres et liens du site ; page changée ou piégée : erreur, rien d\'inventé',()=>{
+ const {PAGES,lirePage}=require('../serveur/veille/sources.js');assert.deepStrictEqual(PAGES.map(x=>x[0]),['anah','inrs','oppbtp','qualibat','ffb','batiweb']);
+ for(const [s,u,c] of PAGES){const v=lirePage(ext(s+'.html'),s,u,c,'2026-11-17'),h=new URL(u).origin+'/';assert.ok(v.length>=5,s);
+  assert.ok(v.every(x=>x.url.startsWith(h)&&!/[?#]/.test(x.url)&&x.titre.length>=20&&!/</.test(x.titre)&&/^\d{4}-\d\d-\d\d$/.test(x.datePub)&&x.complet===false&&x.nature===(s==='anah'?'ACTU':'METIER')),s);
+  assert.strictEqual(new Set(v.map(x=>x.idSource)).size,v.length,s)}
+ const i=lirePage(ext('inrs.html'),'inrs',PAGES[1][1],PAGES[1][2],'2026-11-17');assert.ok(i.some(x=>x.datePub==='2026-11-16')&&!i.some(x=>/^\d\d\//.test(x.titre)),'date lue sur la page, retirée du titre');
+ assert.ok(!lirePage(ext('batiweb.html'),'batiweb',PAGES[5][1],PAGES[5][2],'2026-11-17').some(x=>/ - Batiweb$/.test(x.titre)));
+ const P='<html><body><a href="https://mechant.example/actualites/un-article-qui-vient-d-ailleurs">Un article qui vient d\'un autre site</a><a href="javascript:alert(1)">Un lien piégé qui ne mène nulle part</a><a href="/actualites/titre-avec-script"><script>alert(1)</script>Un titre <b>avec</b> des balises dedans</a><a href="/contact">Nous contacter pour toute question</a></body></html>';
+ const v=lirePage(P,'anah',PAGES[0][1],PAGES[0][2],'2026-11-17');assert.strictEqual(v.length,1);assert.strictEqual(v[0].titre,'Un titre avec des balises dedans');assert.strictEqual(v[0].url,'https://www.anah.gouv.fr/actualites/titre-avec-script');
+ assert.throws(()=>lirePage('<html><body><a href="/autre/chose">Une page refaite, sans articles reconnus</a></body></html>','anah',PAGES[0][1],PAGES[0][2],'2026-11-17'),/aucun article/);
+ assert.throws(()=>lirePage('{"erreur":1}','anah',PAGES[0][1],PAGES[0][2],'2026-11-17'),/pas une page/)});
 await t('un même article Service-Public dans deux flux : gardé une fois',async()=>{
  const it='<item><title>TVA des travaux de rénovation : ce qui change</title><link>https://www.service-public.gouv.fr/particuliers/actualites/A20500</link><description>x</description><guid>A20500_2026-11-16</guid><pubDate>Mon, 16 Nov 2026 08:00:00 GMT</pubDate></item>';
  const r=await creer({env:{},log:()=>{},fetch:async u=>rep(/actu-actu-pro|particuliers/.test(String(u))?'<rss><channel>'+it+'</channel></rss>':'<rss><channel></channel></rss>')}).collecter();
@@ -52,11 +63,11 @@ await t('une source en panne : l\'autre continue, l\'erreur est rendue',async()=
  const f=async u=>/bofip/.test(u)?rep('<html>Maintenance</html>'):rep(EXT(u));
  const r=await creer({env:{},fetch:f,log:()=>{}}).collecter();
  assert.deepStrictEqual(r.erreurs.map(e=>e.source),['bofip']);assert.ok(r.bruts.length>0&&r.bruts.every(x=>x.source!=='bofip'));assert.ok(r.bruts.filter(x=>x.source==='entreprendre').every(x=>pertinent(x.titre,x.resume)));
- const r2=await creer({env:{},fetch:async()=>rep('',503),log:()=>{}}).collecter();assert.strictEqual(r2.erreurs.length,13);assert.strictEqual(r2.bruts.length,0);
- const r3=await creer({env:{},fetch:async()=>{throw new Error('réseau coupé')},log:()=>{}}).collecter();assert.strictEqual(r3.erreurs.length,13)});
+ const r2=await creer({env:{},fetch:async()=>rep('',503),log:()=>{}}).collecter();assert.strictEqual(r2.erreurs.length,19);assert.strictEqual(r2.bruts.length,0);
+ const r3=await creer({env:{},fetch:async()=>{throw new Error('réseau coupé')},log:()=>{}}).collecter();assert.strictEqual(r3.erreurs.length,19)});
 await t('sans clés PISTE : Légifrance inactive, aucun appel vers PISTE',async()=>{const appels=[];
  const s=creer({env:{},fetch:async u=>{appels.push(String(u));return rep(ext('bofip.rss'))},log:()=>{}});
- assert.deepStrictEqual(s.actives(),['bofip','entreprendre','particuliers','viepublique','ecologie','cnil','economie','travail','re2020','capeb','batiactu','batimentartisanal','batijournal']);await s.collecter();assert.ok(!appels.some(u=>/piste/.test(u)))});
+ assert.deepStrictEqual(s.actives(),['bofip','entreprendre','particuliers','viepublique','ecologie','cnil','economie','travail','re2020','capeb','batiactu','batimentartisanal','batijournal','anah','inrs','oppbtp','qualibat','ffb','batiweb']);await s.collecter();assert.ok(!appels.some(u=>/piste/.test(u)))});
 await t('Journal officiel : textes du bâtiment seulement, hors mesures nominatives',()=>{
  const v=lireJorf(JSON.parse(ext('jorf.json')),'2026-11-11');
  assert.deepStrictEqual(v.map(x=>x.idSource),['JORFTEXT000052000101','JORFTEXT000052000102','JORFTEXT000052000103']);
@@ -72,7 +83,7 @@ await t('Légifrance : jeton une seule fois, texte complet lu, clé jamais rendu
    return rep(JSON.stringify({articles:[{content:'<p>Le présent décret entre en vigueur le 1er janvier 2027. Il modifie les mentions des devis.</p>'}]}))}
   return rep(EXT(u))};
  const src=creer({env:{PISTE_CLIENT_ID:'id',PISTE_CLIENT_SECRET:'S3CR3Tzq'},fetch:g,log:(...m)=>logs.push(m.join(' '))});
- assert.deepStrictEqual(src.actives(),['bofip','entreprendre','particuliers','viepublique','ecologie','cnil','economie','travail','re2020','capeb','batiactu','batimentartisanal','batijournal','legifrance']);
+ assert.deepStrictEqual(src.actives(),['bofip','entreprendre','particuliers','viepublique','ecologie','cnil','economie','travail','re2020','capeb','batiactu','batimentartisanal','batijournal','anah','inrs','oppbtp','qualibat','ffb','batiweb','legifrance']);
  const s=await src.collecter();assert.deepStrictEqual(s.erreurs,[]);const L=s.bruts.filter(x=>x.source==='legifrance');
  assert.deepStrictEqual(L.map(x=>x.idSource),['JORFTEXT000052000101','JORFTEXT000052000103']);assert.strictEqual(L[0].datePub,'2026-11-11');
  assert.strictEqual(L[0].complet,true);assert.ok(/entre en vigueur le 1er janvier 2027/.test(L[0].texte));assert.strictEqual(L[1].complet,false);
