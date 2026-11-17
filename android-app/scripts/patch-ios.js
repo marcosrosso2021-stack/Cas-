@@ -15,6 +15,7 @@ const plistPath = path.join(ios, 'Info.plist');
 let plist = fs.readFileSync(plistPath, 'utf8');
 const keys = {
   NSLocationWhenInUseUsageDescription: 'casô utilise ta position pour savoir quand tu arrives sur un chantier et quand tu en pars.',
+  NSFaceIDUsageDescription: 'casô utilise Face ID pour ouvrir tes données sur cet iPhone.',
   NSLocationAlwaysAndWhenInUseUsageDescription: 'casô note tout seul ton arrivée et ton départ du chantier, même appli fermée. Aucune position n\'est conservée.'
 };
 Object.keys(keys).forEach(k => {
