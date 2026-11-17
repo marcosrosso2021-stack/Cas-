@@ -35,6 +35,17 @@ Sinon il reste, avec l'état au-dessus. Les entrées et sorties sont écrites da
 - Personne de ce téléphone : utilisateur de l'entreprise, sinon prénom du compte, sinon l'unique personne de la liste.
 - Les textes sont traduits dans les 9 langues de casô (`pointage/caso-native.js`), sans écraser les traductions existantes.
 
+## Face ID et empreinte (coffre)
+
+Dans l'appli installée, la passkey du navigateur n'existe pas. Le coffre utilise donc une clé gardée par le téléphone, par le plugin `CasoBio` :
+
+- **Android** (`native/CasoBioPlugin.java`) : un secret de 32 octets chiffré par une clé AES-256-GCM du Keystore, utilisable seulement après une empreinte ou un visage reconnu (classe forte). La clé est détruite si les empreintes du téléphone changent.
+- **iPhone** (`plugins/caso-geofence/ios/.../CasoBioPlugin.swift`) : le secret est dans le trousseau (Keychain), sur cet appareil seulement, lisible après Face ID ou Touch ID. Il ne part ni dans iCloud ni dans une sauvegarde.
+
+Le coffre s'en sert comme d'une porte de plus (`VAULT.bioNew`, `VAULT.bioGet` dans `index.html`) : le mot de passe et le code de secours ouvrent toujours. Aucune donnée biométrique ne quitte le téléphone.
+
+Essais : `tests/coffre-natif.test.js` joue le coffre avec un faux trousseau. Le vrai plugin se vérifie sur un téléphone (voir « Limites connues »).
+
 ## Tests
 
 ```
@@ -46,6 +57,9 @@ npm run test:e2e    # 10 tests : vrai casô dans un navigateur avec un faux Andr
 `npm test` tourne aussi dans la construction de l'APK.
 
 ## Limites connues
+
+- Face ID et empreinte : le plugin `CasoBio` est compilé par les constructions automatiques, mais il n'a pas encore été essayé sur un vrai téléphone.
+- Sur Android, seules les biométries « fortes » comptent : un déverrouillage par le visage de classe faible n'est pas proposé, l'empreinte oui.
 
 - Non testé sur un vrai téléphone : alertes de zone, autorisation « Toujours », économie de batterie.
 - Les heures sont exactes mais n'arrivent dans casô qu'à son réveil (au moins une ouverture par jour, ou la minute qui suit un passage si l'appli est ouverte).
