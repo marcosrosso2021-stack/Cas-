@@ -340,3 +340,7 @@ Source du moteur et outils de traduction : le module « caso-ia » (moteur, cata
 - **À faire côté serveur** : redéployer `serveur/server.js` pour que les deux collections soient acceptées ; d'ici là elles restent dans le téléphone.
 - « le client veut… » ne pose la question « Quel client ? » que pour un rendez-vous, un devis, une facture ou un passage.
 
+**Projet : plusieurs travaux dans un message ; carte du devis sans phrase au-dessus (17 nov. 2026)** :
+- `intel.js` (suite d'un projet) : « dépose carrelage, pose faïence, receveur » donne trois travaux (avant : « Noté : dépose dépose »). Le message est coupé aux virgules ; à « et » seulement quand chaque côté nomme un travail (« un receveur et une paroi » : deux ; « au sol et aux murs » : un seul matériau, deux endroits).
+- `pont.js` (`html`) : quand la carte du devis est affichée, la phrase à l'infinitif du moteur (« Commencer un nouveau devis pour Dupont », « Dupliquer le devis de Martin pour Petit ») n'est plus écrite au-dessus : la carte dit déjà le client et le numéro. Sans carte, la phrase reste (« Acompte de 30 % », « Ouvrir le devis de Martin »).
+

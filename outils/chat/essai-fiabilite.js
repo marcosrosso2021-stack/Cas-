@@ -251,6 +251,10 @@ const ESSAIS=[
  ["fr",["Chez Martin, on a déposé le carrelage, il y avait de l'humidité derrière, on a arrêté pour voir d'où ça vient.","oui","fiche du chantier Martin","qu'est-ce qu'il reste chez Martin","envoie le rapport à Martin","envoie le rapport à Dupont"],[/./,/./,/Rapports d’intervention.*Déposé le carrelage/,/Suite à prévoir.*Voir d'où ça vient/,/Rapport d’intervention du .*Travaux réalisés : Déposé le carrelage.*Envoyer le SMS/,/Aucun rapport d’intervention pour Dupont/]],
  ["fr",["retiens que le code du portail de Martin est 4521","quand je dis le blanc ça veut dire peinture","oui"],[/./,/./,"js:Array.isArray(db.memo)&&db.memo.length===2&&db.memo.every(x=>x.id&&x.updatedAt)&&collectChanges(db,0).changes.memo.length===2"]],
  ["fr",["nouveau devis pour Dupont","ajoute 20 m² de faïence","le client veut plutôt du parquet"],[/./,/./,"js:q.lines.filter(l=>l.label).length===1"]],
+ /* plusieurs travaux dans un message du projet ; pas de phrase à l'infinitif au-dessus de la carte du devis */
+ ["fr",["La salle de bain fait huit mètres, je veux tout refaire.","dépose carrelage, pose faïence, receveur","fais-moi le devis"],[/Salle de bain : 8 m²/,/Noté : dépose carrelage, faïence, receveur/,"js:q.lines.filter(l=>l.label).length===3&&q.lines.some(l=>/d[ée]pose carrelage/i.test(l.label)&&l.qty==8)&&q.lines.some(l=>/receveur/i.test(l.label))"]],
+ ["fr",["je dois refaire une salle de bain","6 m²","un receveur et une paroi","on met du carrelage au sol et aux murs"],[/./,/./,/Noté : receveur, paroi/,/Noté : carrelage, carrelage mural/]],
+ ["fr",["nouveau devis pour Dupont"],["js:!/Commencer un nouveau devis/.test(CHAT.m[CHAT.m.length-1].html||'')&&q.client==='Dupont'"]],
  ["fr",["on a une fuite chez Martin"],["js:!db.quotes.some(o=>(o.lines||[]).some(l=>/fuite/i.test(l.label||'')))&&!(q.lines||[]).some(l=>/fuite/i.test(l.label||''))"]],
  /* jamais la rénovation d'un autre client */
  ["fr",["mets la rénovation sur le devis de Dupont","oui","mets la rénovation sur le devis de Petit"],[/n’est liée à aucun client.*devis de Dupont/,/Rebouchage de fissures 3 ml/,/Aucune rénovation enregistrée pour Petit/]],
