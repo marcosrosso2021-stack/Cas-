@@ -22,6 +22,19 @@ const ID='0123456789abcdef0123456789abcdef';
  a=await req(S.server,{path:'/api/appris?d=3d',headers:{'x-forwarded-proto':'https'}});
  ok('3D : deux usagers → publié',a.body.sh.syn['clic clac']&&a.body.sh.syn['clic clac'].sofa===2&&a.body.sh.col['vert sapin']['#1f4d3a']===2,JSON.stringify(a.body));
  ok('3D : nom propre et chiffres refusés',!a.body.sh.syn.Dupont&&!a.body.sh.syn['rue 12']);
+ /* œil 3D : tailles par classe, publiées à partir de 3 usagers, médiane */
+ const LIT='F09.chambre.lits';
+ a=await post(S.server,'/api/appris',{d:'3dt',id:ID,t:{[LIT]:[1.9,0.9,0.65],'Chambre de Dupont':[1,1,1],'F09.chambre.armoires':[50,1,1]}},'6.6.6.1');
+ ok('3D tailles : seule une classe valide et des tailles plausibles comptent',a.status===200&&a.body.ok===1,JSON.stringify(a.body));
+ await post(S.server,'/api/appris',{d:'3dt',id:ID,t:{[LIT]:[2.0,1.4,0.6]}},'6.6.6.2');
+ a=await req(S.server,{path:'/api/appris?d=3dt',headers:{'x-forwarded-proto':'https'}});
+ ok('3D tailles : deux usagers → rien de publié',a.status===200&&!a.body.t[LIT],JSON.stringify(a.body));
+ await post(S.server,'/api/appris',{d:'3dt',id:ID,t:{[LIT]:[9,9,9]}},'6.6.6.3');
+ a=await req(S.server,{path:'/api/appris?d=3dt',headers:{'x-forwarded-proto':'https'}});
+ ok('3D tailles : trois usagers → médiane publiée, un usager extrême sans effet',JSON.stringify(a.body.t[LIT])==='[2,1.4,0.65,3]',JSON.stringify(a.body));
+ await post(S.server,'/api/appris',{d:'3dt',id:ID,t:{[LIT]:[9,9,9]}},'6.6.6.3');
+ a=await req(S.server,{path:'/api/appris?d=3dt',headers:{'x-forwarded-proto':'https'}});
+ ok('3D tailles : un même usager qui renvoie ne compte qu\'une fois',a.body.t[LIT][3]===3);
  /* incompris : masqués, lisibles avec la clé, à partir de 3 usagers */
  a=await post(S.server,'/api/incompris',{id:ID,e:[{l:'fr',t:'mets le truc machin',s:'chat'},{l:'fr',t:'appelle Dupont au 0612'},{l:'xx',t:'abc def'}]},'3.3.3.3');
  ok('incompris : texte avec majuscules ou chiffres refusé',a.status===200&&a.body.ok===1,JSON.stringify(a.body));

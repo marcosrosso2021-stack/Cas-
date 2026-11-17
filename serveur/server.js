@@ -117,8 +117,15 @@ function createServer(opts={}){
  /* --- chat du module 3D : mots appris (synonyme de meuble, nom de couleur), même règles : rien de personnel, publié à partir de 2 usagers --- */
  const A3MOT=w=>typeof w==='string'&&w.length>=2&&w.length<=30&&/^[\p{Ll}\p{Lo}\p{Mn}' -]+$/u.test(w)&&w.trim().split(/\s+/).length<=3;
  const A3K=k=>typeof k==='string'&&/^[a-z][a-z0-9_]{1,19}$/.test(k),A3C=c=>typeof c==='string'&&/^#[0-9a-f]{6}$/.test(c);
+ /* --- œil 3D : tailles habituelles des éléments, tirées des maquettes validées par chaque usager. Une classe de la bibliothèque et trois tailles, rien d'autre.
+     Publié à partir de 3 usagers, médiane des usagers (un usager seul ne peut pas fausser la taille). --- */
+ const A3T=k=>typeof k==='string'&&k.length<=48&&/^F\d\d\.[a-z0-9_]+\.[a-z0-9_]+$/.test(k),A3V=v=>Array.isArray(v)&&v.length===3&&v.every(x=>typeof x==='number'&&isFinite(x)&&x>=0.02&&x<=12);
+ function ap3t(){const d=appris._3dt;if(d&&typeof d==='object')return d;return appris._3dt=Object.create(null)}
+ function ap3tDonne(){const d=ap3t(),o={},med=a=>{a=a.slice().sort((x,y)=>x-y);const m=a.length>>1;return a.length%2?a[m]:(a[m-1]+a[m])/2};
+  for(const k in d){const L=Object.values(d[k]);if(L.length<3)continue;o[k]=[0,1,2].map(i=>+med(L.map(v=>v[i])).toFixed(2)).concat(L.length)}return o}
  function ap3d(){const d=appris._3d;if(d&&d.syn&&d.col)return d;return appris._3d={syn:Object.create(null),col:Object.create(null)}}
  function ap3dDonne(){const d=ap3d(),o={syn:{},col:{}};for(const k of ['syn','col'])for(const w in d[k])for(const v in d[k][w]){const n=d[k][w][v].length;if(n>=2)(o[k][w]=o[k][w]||{})[v]=n}return o}
+ try{const a=JSON.parse(fs.readFileSync(APF,'utf8')),x=a&&a._3dt;if(x&&typeof x==='object'){const d=ap3t();for(const k of Object.keys(x).slice(0,600)){if(!A3T(k)||!x[k]||typeof x[k]!=='object')continue;const m=d[k]=Object.create(null);for(const u of Object.keys(x[k]).slice(0,200))if(/^[a-f0-9]{16}$/.test(u)&&A3V(x[k][u]))m[u]=x[k][u]}}}catch(e){}
  try{const a=JSON.parse(fs.readFileSync(APF,'utf8')),x=a&&a._3d;if(x&&typeof x==='object'){const d=ap3d();for(const [k,ok] of [['syn',A3K],['col',A3C]])for(const w of Object.keys(x[k]||{}).slice(0,2000)){if(!A3MOT(w))continue;for(const v of Object.keys(x[k][w]||{}).slice(0,5)){const u=x[k][w][v];if(ok(v)&&Array.isArray(u)&&u.every(z=>typeof z==='string'))((d[k][w]=d[k][w]||Object.create(null)))[v]=u.slice(0,50)}}}}catch(e){}
  /* --- phrases que l'IA n'a pas comprises (chat et module 3D), masquées sur l'appareil : chiffres → #, mots en majuscule → @ ;
     lisibles seulement avec la clé CASO_CLE_IA, et seulement celles envoyées par au moins 3 usagers --- */
@@ -580,8 +587,13 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
 
    /* apprentissage partagé du chat (sans compte) : chaque appareil envoie ses phrases apprises, reçoit celles des autres */
    if(url==='/api/appris'){
-    if(req.method==='GET'){const q=req.url.split('?')[1]||'';if(/(?:^|&)d=3d(?:&|$)/.test(q))return send(res,200,{sh:ap3dDonne()});const l=q.match(/(?:^|&)l=([a-z]{2})(?:&|$)/);const lg=l&&APL.includes(l[1])?l[1]:'fr';return send(res,200,{e:apDonne(lg)})}
+    if(req.method==='GET'){const q=req.url.split('?')[1]||'';if(/(?:^|&)d=3dt(?:&|$)/.test(q))return send(res,200,{t:ap3tDonne()});if(/(?:^|&)d=3d(?:&|$)/.test(q))return send(res,200,{sh:ap3dDonne()});const l=q.match(/(?:^|&)l=([a-z]{2})(?:&|$)/);const lg=l&&APL.includes(l[1])?l[1]:'fr';return send(res,200,{e:apDonne(lg)})}
     if(POST){if(apTrop(ip))return send(res,429,{error:'Trop d\'envois.'});const b=await readBody(req),id=String(b.id||'');
+     if(b.d==='3dt'){if(!/^[a-f0-9]{32}$/.test(id)||!b.t||typeof b.t!=='object'||Array.isArray(b.t))return send(res,400,{error:'Requête invalide.'});
+      const u=crypto.createHash('sha256').update('caso-appris|'+ip).digest('hex').slice(0,16),d=ap3t();let n=0;
+      for(const k of Object.keys(b.t).slice(0,60)){const v=b.t[k];if(!A3T(k)||!A3V(v))continue;if(!d[k]){if(Object.keys(d).length>=600)continue;d[k]=Object.create(null)}const m=d[k];
+       if(!m[u]&&Object.keys(m).length>=200)continue;m[u]=v.map(x=>+x.toFixed(2));n++}
+      if(n)apSave();return send(res,200,{ok:n})}
      if(b.d==='3d'){if(!/^[a-f0-9]{32}$/.test(id))return send(res,400,{error:'Requête invalide.'});
       const u=crypto.createHash('sha256').update('caso-appris|'+ip).digest('hex').slice(0,16),d=ap3d();let n=0;
       for(const [k,ok] of [['syn',A3K],['col',A3C]]){const src=b[k]&&typeof b[k]==='object'?b[k]:{};for(const w of Object.keys(src).slice(0,30)){const v=src[w];if(!A3MOT(w)||!ok(v))continue;
