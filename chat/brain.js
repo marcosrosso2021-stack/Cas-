@@ -1955,7 +1955,7 @@ function create(E,X,saved,opts){
     cmds.forEach(function(cmd){var f=X_[cmd.m+"."+cmd.a];if(!f){out.says.push(tr("Je ne sais pas encore faire ça."));return;}
       var r;try{r=f(cmd.args||{});}catch(e){r={say:tr("Je n’ai pas réussi cette action.")};if(root.console)console.error(e);}
       if(r.ui==="annuler"){var us=[],u;for(var ui=0;ui<(r.n||1);ui++){u=undo();if(!u)break;us.push(/^\p{Lu}\p{Ll}/u.test(u)?u.charAt(0).toLowerCase()+u.slice(1):u);}out.says.push(us.length?tr("Annulé : {0}.",[us.join(" ; ")]):tr("Rien à annuler."));if(us.length&&us.length<(r.n||1))out.says.push(tr("Il n’y avait que {0} action{1} à annuler.",[us.length,(us.length>1?"s":"")]));out.explain="";}
-      else if(r.ui==="refaire"){var rd=redo();out.says.push(rd?tr("Rétabli : {0}{1}.",[r(/^[A-Z]{2}/.test(d)?d.charAt(0):d.charAt(0).toLowerCase()),rd.slice(1)]):tr("Rien à rétablir."));out.explain="";}
+      else if(r.ui==="refaire"){var rd=redo();out.says.push(rd?tr("Rétabli : {0}{1}.",[(/^[A-Z]{2}/.test(rd)?rd.charAt(0):rd.charAt(0).toLowerCase()),rd.slice(1)]):tr("Rien à rétablir."));out.explain="";}
       else if(r.ui==="lire")out.lire=true;
       else if(r.ui)out.ui=r.ui;
       if(r.say)out.says.push(r.say);if(r.open)out.open=r.open;["quoi","nfc","relance","msg","tel","devis"].forEach(function(k){if(r[k]!=null)out[k]=r[k];});});
