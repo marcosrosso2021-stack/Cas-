@@ -224,6 +224,18 @@ const ESSAIS=[
  ["fr",["mets plutôt le rdv de Martin à 15h"],[/déplacé/]],
  ["fr",["Faut refaire le bas du mur."],[/À faire : Refaire le bas du mur/]],
  ["fr",["Martin m'a appelé, il veut que je repasse lundi."],[/Tu veux : ajouter un rendez-vous lundi/]],
+ /* la mémoire de l'artisan : ce qu'il demande de retenir, ses mots (db.memo) */
+ ["fr",["retiens que le code du portail de Martin est 4521","c'est quoi le code du portail de Martin","qu'est-ce que tu as retenu","oublie le code du portail de Martin","ouvre la mémoire"],[/C’est retenu/,/le code du portail de Martin est 4521/,/Retenu :.*4521/,"js:!db.memo.faits.length",/Rien de retenu/]],
+ ["fr",["Chez moi, quand je dis dépose complète, ça veut dire enlever le carrelage et la colle jusqu'au support.","oui","c'est quoi une dépose complète"],[/Retenir dans ton vocabulaire : « dépose complète »/,"js:db.memo.mots.length===1",/« dépose complète » = enlever le carrelage/]],
+ ["fr",["placo veut dire faïence","non"],[/Retenir dans ton vocabulaire/,"js:!(db.memo&&db.memo.mots.length)"]],
+ ["fr",["quand je dis le blanc ça veut dire peinture","oui","nouveau devis pour Dupont","ajoute 20 m² de blanc","oublie le blanc","mes mots"],[/./,/./,/./,"js:q.lines.filter(l=>l.label).length===1&&/peinture/i.test(q.lines[0].label)&&q.lines[0].qty==20",/Oublié/,/Rien de retenu/]],
+ ["fr",["quand je dis zap ça veut dire supprime le client Martin","zap"],[/ne lance pas une commande/,"js:db.clients.some(c=>c.nom==='Martin')&&!(db.memo&&db.memo.mots.length)"]],
+ ["fr",["c'est quoi le numéro de Martin"],[/0611111111/]],
+ ["fr",["c'est quoi un ragréage"],[/Ragréage/]],
+ ["fr",["Le client veut déplacer le rendez-vous à vendredi.","Martin"],[/Quel client/,/déplacé/]],
+ ["fr",["La salle de bain fait huit mètres, je veux tout refaire."],[/Salle de bain : 8 m²/]],
+ ["fr",["nouveau devis pour Dupont","il faut refaire la gouttière","qu'est-ce qu'il reste à faire"],[/./,/./,/Dupont : Refaire la gouttière/]],
+ ["fr",["Fais le point sur les travaux qui restent."],[/Rien de noté à faire/]],
  /* jamais la rénovation d'un autre client */
  ["fr",["mets la rénovation sur le devis de Dupont","oui","mets la rénovation sur le devis de Petit"],[/n’est liée à aucun client.*devis de Dupont/,/Rebouchage de fissures 3 ml/,/Aucune rénovation enregistrée pour Petit/]],
  ["fr",["mets la rénovation sur le devis de Dupont","oui","fiche chantier Dupont","fiche chantier Martin"],[/aucun client/,/Rebouchage/,/Chantier Dupont.*Rénovation 3D.*2 postes/,/^(?![\s\S]*Rénovation 3D)[\s\S]*Chantier Martin/]],
