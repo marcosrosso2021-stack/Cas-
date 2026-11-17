@@ -61,7 +61,7 @@ L'adresse de l'entreprise, c'est `http://` + cette adresse + `:8787`. Exemple : 
 
 ## Sauvegarde
 
-Copie régulièrement le dossier `donnees` (fichier `data.json`) sur une clé USB. Ne le mets jamais sur GitHub.
+Copie régulièrement le dossier `donnees` en entier sur une clé USB (les données de l'entreprise sont dans `donnees/espaces/e1/data.json`). Ne le mets jamais sur GitHub.
 
 ## Sécurité
 
@@ -348,4 +348,14 @@ Vitesse (mesurée sur un processeur ralenti comme un téléphone) : ouverture en
 - `GET /api/appris?d=3d`, `POST /api/appris` avec `d:"3d"` : mots appris par le chat du module 3D (synonymes de meubles, noms de couleurs), publiés à partir de 2 usagers.
 - `POST /api/incompris` : phrases incomprises, masquées sur l'appareil. `GET /api/incompris` avec l'en-tête `x-caso-cle` : seulement si la variable
   `CASO_CLE_IA` est définie sur le serveur (Clever Cloud › Environment variables), et seulement les phrases envoyées par au moins 3 usagers. Fichier : `incompris.json`.
+
+## Rangement par espace (17 nov. 2026)
+
+Un espace, c'est une entreprise : son patron, son équipe, ses données. Chaque espace a son dossier : `donnees/espaces/<espace>/data.json`.
+
+- Pour l'instant il n'y a qu'un espace, `e1`. C'est la première étape du plan « un espace par abonné » ; la création d'un espace par compte Google ou Outlook vient ensuite.
+- Ce qui est commun à tous reste dans `donnees` : comptes Google / Outlook, newsletter, apprentissage partagé, phrases incomprises, verrou de déploiement.
+- **Passage depuis l'ancien rangement** : au premier démarrage, `donnees/data.json` est copié dans `donnees/espaces/e1/`. L'ancien fichier n'est ni modifié ni supprimé.
+- **Retour en arrière** : le code d'avant relit `donnees/data.json`, resté tel qu'au jour du passage. Si ce fichier redevient plus récent que celui de l'espace (retour au code d'avant, puis de nouveau celui-ci), il est repris, et la version de l'espace est mise de côté (`data.json.avant-…`).
+- Essais : `node tests/serveur-espaces.test.js` (15 contrôles : dossier neuf, deux espaces qui ne se voient pas, reprise de l'ancien fichier, redémarrage, retour en arrière).
 

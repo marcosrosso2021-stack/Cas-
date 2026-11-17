@@ -4076,6 +4076,8 @@ function chatSend(text){
  if(typeof prixChat==='function'&&prixChat(t))return;
  if(typeof agChat==='function'&&agChat(t))return;
  if(!adrSeule&&window.casoPont&&casoPont.essaie(t,true))return;
+ /* une consigne, une définition, un récit (« retiens… », « mets plutôt… », « on a déposé… ») : rien n'est écrit dans le devis */
+ if(window.casoPont&&casoPont.pasTravail&&casoPont.pasTravail(t)){CHAT.m.push({who:'me',text:t});CHAT.m.push({who:'bot',html:`<p data-noi18n>${esc(casoPont.ready?casoPont.incompris():'Je n’ai pas compris.')}</p>`});chatSave();chatRender(true);return}
  const R=parseNote(t,db.prices,VN.lang);VN.last=R;
  /* « Lui Dire », « Carreler » : des mots de la phrase, pas un client ; « FONTAINE » tapé en majuscules : Fontaine */
  const nomOk=n=>!(window.casoPont&&casoPont.ready&&casoPont.pasUnNom(n)),casse=chatCasse;
@@ -8127,6 +8129,7 @@ function entExtra(){const p=db.prof||{},v=$('eLogoV');if(v)v.innerHTML=rcImg(p.l
 <script type="text/x-caso" data-src="chat/chantier.js"></script>
 <script type="text/x-caso" data-src="chat/lexique-btp.js"></script>
 <script type="text/x-caso" data-src="chat/langage.js"></script>
+<script type="text/x-caso" data-src="chat/reponses.js"></script>
 <script type="text/x-caso" data-src="pointage/pointage-auto.js"></script>
 <script type="text/x-caso" data-src="pointage/geo-web.js"></script>
 <script type="text/x-caso" data-src="pointage/caso-native.js"></script>
