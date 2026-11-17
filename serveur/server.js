@@ -13,6 +13,7 @@
 'use strict';
 const http=require('http'),fs=require('fs'),path=require('path'),crypto=require('crypto'),os=require('os');
 const webpush=require('./webpush.js'),prixLib=require('./prix.js'),authLib=require('./auth.js'),veilleLib=require('./veille/index.js');
+const sauvegarde=require('./sauvegarde.js');
 
 const COLL=['prices','quotes','hist','chantiers','people','pts','prof','clients','suppliers','projects','plans','events','invoices'];
 const ROLE_PUSH={patron:COLL,chef:COLL,ouvrier:['pts']};
@@ -39,6 +40,15 @@ function createServer(opts={}){
  const DIR=opts.dataDir||process.env.DATA_DIR||(process.env.APP_HOME?path.join(process.env.APP_HOME,'donnees'):path.join(__dirname,'donnees'));// Clever Cloud : dossier « donnees » monté par le FS Bucket
  fs.mkdirSync(DIR,{recursive:true});
  const FILE=path.join(DIR,'data.json');
+ /* Sauvegardes (serveur/sauvegarde.js). CASO_CLE_SAUVEGARDE : phrase secrète qui les chiffre.
+    RESTAURER=<nom du fichier> ou « derniere » : au démarrage, cette sauvegarde est remise en place une seule fois
+    (les fichiers d'avant sont rangés à côté), puis le serveur démarre dessus. */
+ const SV_CLE=opts.cleSauvegarde!==undefined?opts.cleSauvegarde:(process.env.CASO_CLE_SAUVEGARDE||'');
+ {const veut=opts.restaurer||process.env.RESTAURER;
+  if(veut){const x=sauvegarde.trouver(DIR,veut),marque=path.join(sauvegarde.dossier(DIR),'.restauree');let deja='';try{deja=fs.readFileSync(marque,'utf8')}catch(e){}
+   if(!x)throw new Error('RESTAURER : sauvegarde « '+veut+' » introuvable.');
+   if(deja!==String(veut)+' '+x.nom){const r=sauvegarde.restaurer(x.chemin,DIR,{cle:SV_CLE});fs.writeFileSync(marque,String(veut)+' '+x.nom);
+    console.log('[casô] sauvegarde '+x.nom+' restaurée ('+r.fichiers.join(', ')+'). Fichiers d\'avant : '+path.basename(r.avant)+'. Retire la variable RESTAURER.')}}}
  // dans le dépôt : l'appli (index.html, module devis.html, chat/, lib/) est un dossier au-dessus du serveur
  const ROOT=path.join(__dirname,'..'),NEWL=!opts.appFile&&fs.existsSync(path.join(ROOT,'index.html'));
  const APP=opts.appFile||(NEWL?path.join(ROOT,'index.html'):path.join(__dirname,'devis.html'));
@@ -138,6 +148,19 @@ function createServer(opts={}){
   else{if(!wNext){const w=wFile.catch(()=>{}).then(()=>{wNext=null;return ecrire()});wNext=w;wFile=w}p=wNext}
   p.catch(e=>{if(!e||!e.pub)console.error('[casô] écriture des données',e&&e.message||e)});return p}
  const flush=()=>wFile.catch(()=>{});
+ /* Une sauvegarde par jour, gardée 14 jours (plus la dernière de chaque mois, 6 mois). Seul le serveur qui a la main en fait. */
+ let svEnCours=null;
+ function sauvegarder(force){
+  if(cede)return Promise.resolve(null);
+  if(svEnCours)return svEnCours;
+  svEnCours=(async()=>{
+   const l=sauvegarde.lister(DIR),der=l[0]&&l[0].le?Date.parse(l[0].le):0;
+   if(!force&&Date.now()-der<20*3600e3)return null;
+   await flush();const r=await sauvegarde.creer(DIR,{cle:SV_CLE});
+   if(r)sauvegarde.elaguer(DIR,{jours:Number(process.env.SAUVEGARDES_JOURS)||14});return r})()
+   .catch(e=>{console.error('[casô] sauvegarde',e&&e.message||e);return null}).finally(()=>{svEnCours=null});
+  return svEnCours}
+ if(!opts.noTimers){const t1=setTimeout(()=>sauvegarder(),30e3),t2=setInterval(()=>sauvegarder(),3600e3);if(t1.unref)t1.unref();if(t2.unref)t2.unref()}
  /* Un seul serveur écrit à la fois. Pendant un déploiement, deux serveurs tournent quelques secondes : le nouveau prend la main
     (fichier data.lock, voir prendreLaMain) ; l'ancien le voit, finit ses écritures, le signale (data.lock.ack), puis n'écrit plus
     rien et répond « réessaie » : le téléphone renvoie alors sa demande au nouveau serveur. */
@@ -598,6 +621,20 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
     res.writeHead(200,Object.assign({'content-type':'text/html; charset=utf-8','cache-control':'no-store','x-robots-tag':'noindex','content-security-policy':CSP_PUB},SEC));return res.end(html)}
    /* la newsletter validée, lue par l'appli (sans compte, rien n'est envoyé par le téléphone) */
    if(req.method==='GET'&&url==='/api/veille/lettre')return send(res,200,veille.lettre());
+   /* sauvegardes, pour le propriétaire (clé CASO_CLE_IA) : liste, création, téléchargement d'une sauvegarde chiffrée
+      pour la garder ailleurs que sur ce serveur. Une sauvegarde en clair ne sort jamais par ici. */
+   if(url==='/api/proprio/sauvegardes'||url.startsWith('/api/proprio/sauvegarde/')){const k=cleProprio(req,ip);
+    if(k)return send(res,k,{error:k===429?'Trop d\'essais, réessaie plus tard.':'Introuvable.'});
+    const vue=x=>({nom:x.nom,le:x.le,octets:x.octets,chiffre:x.chiffre});
+    if(req.method==='GET'&&url==='/api/proprio/sauvegardes')return send(res,200,{chiffrement:!!SV_CLE,sauvegardes:sauvegarde.lister(DIR).map(vue)});
+    if(POST&&url==='/api/proprio/sauvegardes'){const r=await sauvegarder(true);
+     return r?send(res,200,vue(r)):send(res,409,{error:'Sauvegarde impossible pour l\'instant.'})}
+    if(req.method==='GET'){const x=sauvegarde.trouver(DIR,decodeURIComponent(url.slice('/api/proprio/sauvegarde/'.length)));
+     if(!x)return send(res,404,{error:'Introuvable.'});
+     if(!x.chiffre)return send(res,409,{error:'Cette sauvegarde n\'est pas chiffrée : ajoute la variable CASO_CLE_SAUVEGARDE, puis crée une nouvelle sauvegarde.'});
+     res.writeHead(200,Object.assign({'content-type':'application/octet-stream','content-length':x.octets,'content-disposition':'attachment; filename="'+x.nom+'"','cache-control':'no-store'},SEC));
+     return fs.createReadStream(x.chemin).pipe(res)}
+    return send(res,404,{error:'Introuvable.'})}
    if(url.startsWith('/api/veille/')){const k=cleProprio(req,ip);
     if(k)return send(res,k,{error:k===429?'Trop d\'essais, réessaie plus tard.':'Introuvable.'});
     if(req.method==='GET'&&url==='/api/veille/etat')return send(res,200,Object.assign(veille.etat(),{modules:veilleLib.MODULES,domaines:veilleLib.DOMAINES}));
@@ -783,7 +820,7 @@ data.invSeq[key]=n;if(iid)data.invIds[key+'|'+iid]=n;await persist();return send
    return send(res,404,{error:'introuvable'});
   }catch(e){if(!e||!e.pub)console.error('[casô]',req.method,url,e&&e.stack||e);if(!res.headersSent)send(res,400,{error:e&&e.pub?e.message:'Requête invalide.'});else try{res.destroy()}catch(_){}}});
 
- return{server,data:()=>data,remindTick,icsFor,auth,flush,cede:()=>cede};
+ return{server,data:()=>data,remindTick,icsFor,auth,flush,persist,cede:()=>cede,sauvegarder};
 }
 
 const lockRead=dir=>{try{return JSON.parse(fs.readFileSync(path.join(dir,'data.lock'),'utf8'))}catch(e){return null}};
@@ -814,7 +851,7 @@ async function start(opts={}){
   s.server.once('error',ko);
   s.server.listen(port,'0.0.0.0',()=>ok(Object.assign(s,{port:s.server.address().port,addresses:lanAddresses()})))})}
 
-module.exports={createServer,start,lanAddresses,prendreLaMain}; // srvfix-v1 srvsec-v4
+module.exports={createServer,start,lanAddresses,prendreLaMain}; // srvfix-v1 srvsec-v5
 
 if(require.main===module){
  start().then(s=>{
