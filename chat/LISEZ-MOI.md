@@ -322,3 +322,12 @@ Source du moteur et outils de traduction : le module « caso-ia » (moteur, cata
 - Vu en route, pas corrigé : dans un projet, « dépose carrelage, pose faïence, receveur » répond « Noté : dépose dépose ».
 - essais : 11 conversations de plus dans `essai-fiabilite.js`.
 
+**Consignes de rédaction, rapport d'intervention, « la même chose » (17 nov. 2026)** — `chat/reponses.js` :
+- **Consigne de rédaction** (`db.memo.regles`) : « dans mes devis, écris toujours dépose et évacuation des anciens matériaux au lieu de juste dépose » → une question, retenue après un Oui, puis appliquée d'office : une ligne nommée exactement « Dépose » prend le nouveau nom (« Dépose carrelage » n'est pas touchée). Annulable avec la ligne ; « oublie la consigne dépose » l'efface ; « ouvre la mémoire » la montre.
+- **Nom des lignes** : « ajoute une dépose de 12 m² » pose « Dépose » (avant : « Ajoute une dépose »). Fait au moment d'enregistrer la réponse (`chatSave`), pour toutes les façons de poser une ligne.
+- **Rapport d'intervention** (`db.rapports`) : un récit au passé qui nomme un client (« chez Martin, on a déposé le carrelage, il y avait de l'humidité derrière, on a arrêté pour voir d'où ça vient ») → un brouillon en quatre rubriques (travaux réalisés, observations, situation, suite à prévoir), avec les mots de l'artisan ; rien n'est déduit ni reformulé. Rangé chez le client après un Oui. « rapport d'intervention de Martin », « rapports d'intervention » les redonnent. Ces phrases ne sont ni nettoyées ni découpées (`entiere`).
+- **« fais la même chose pour Petit »** : le devis en cours est copié pour Petit (la copie de devis existante). « mets la même chose que sur le chantier précédent » : le dernier devis d'un autre client, pour le client en cours.
+- **« ajoute un receveur », « ajoute 3 prises »** pendant un devis : une ligne (avant : pas compris, ou la maquette 3D). « ajoute un canapé » reste une demande de maquette.
+- « on a une fuite chez Martin » n'écrit plus de ligne dans un devis.
+- Pas encore : le rapport dans la fiche chantier et son envoi au client ; les corrections retenues ; la mémoire partagée dans l'entreprise.
+
