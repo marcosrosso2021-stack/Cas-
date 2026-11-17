@@ -291,6 +291,8 @@ Le serveur interroge Google Shopping par un service payant. Sa clé reste sur le
 | `PRIX_IP` | recherches payantes au plus par jour et par appareil (défaut 30) |
 | `PRIX_CACHE_H` | une même recherche n'est payée qu'une fois pendant ce temps, en heures (défaut 12) |
 
+**Autres magasins** : une enseigne absente de la liste a sa pastille ; un appui lance une recherche limitée à cette enseigne (`/api/prix?q=…&mag=<domaine>&nom=<nom>`) : d'abord Google Shopping avec son nom, sinon les pages de son site dont Google affiche le prix. Chaque étape compte comme une recherche payante (1 ou 2 par appui).
+
 Sans clé, la barre répond « Recherche de prix pas encore activée sur le serveur. ». Contrôles : `node tests/prix.test.js`.
 
 ## Apprentissage partagé du chat (10 novembre 2026)

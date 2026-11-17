@@ -62,6 +62,27 @@ await t('tous les magasins restent : plus de 30 offres, et un magasin cher n\'es
  assert.strictEqual(v.length,120);assert.ok(v.some(x=>x.magasin==='Point.P'));assert.ok(v.some(x=>x.magasin==='Leroy Merlin'));
  assert.ok(v.every((x,i)=>!i||v[i-1].prix<=x.prix));
  const w=convertir({shopping_results:Array.from({length:45},(_,i)=>({title:'P'+i,extracted_price:i+1,source:'M'+(i%9)}))},'EUR');assert.strictEqual(w.length,45)});
+await t('un magasin précis : ses offres Google Shopping, sinon les pages de son site avec un prix',async()=>{
+ const appels=[];const f=rep=>async u=>{appels.push(String(u));const e=new URL(u).searchParams.get('engine');return{ok:true,status:200,json:async()=>rep[e]}};
+ // 1. l'enseigne est dans Google Shopping : une seule recherche, seules ses offres
+ let p=creer({env:{SERPAPI_KEY:'k'},fetch:f({google_shopping:{shopping_results:[{title:'Marteau A',extracted_price:12,source:'Bricoman'},{title:'Marteau B',extracted_price:9,source:'Amazon.fr'}]}})});
+ let [c,v]=await p.chercher('marteau','FR','1','bricoman.fr','Bricoman');
+ assert.strictEqual(c,200);assert.deepStrictEqual(v.map(x=>x.magasin),['Bricoman']);assert.strictEqual(appels.length,1);assert.ok(/q=marteau\+Bricoman/.test(appels[0]));
+ // 2. absente : deuxième recherche sur son site ; on ne garde que les pages du site, avec un prix en euros
+ appels.length=0;
+ p=creer({env:{SERPAPI_KEY:'k',PRIX_IP:'10'},fetch:f({google_shopping:{shopping_results:[{title:'Marteau B',extracted_price:9,source:'Amazon.fr'}]},google:{organic_results:[
+  {title:'Marteau de coffreur 600 g',link:'https://www.pointp.fr/p/marteau-1',thumbnail:'https://encrypted-tbn0.gstatic.com/images?q=tbn:a',rich_snippet:{bottom:{detected_extensions:{price:24.9,currency:'€'},extensions:['24,90 €']}}},
+  {title:'Massette',link:'https://www.pointp.fr/p/massette',rich_snippet:{top:{detected_extensions:{price:'18,50',currency:'€'}}}},
+  {title:'Sans prix',link:'https://www.pointp.fr/p/x',rich_snippet:{bottom:{detected_extensions:{rating:4}}}},
+  {title:'Autre site',link:'https://pointp.fr.pirate.example/p',rich_snippet:{bottom:{detected_extensions:{price:1,currency:'€'}}}},
+  {title:'En dollars',link:'https://www.pointp.fr/p/y',rich_snippet:{bottom:{detected_extensions:{price:5,currency:'$'}}}}]}})});
+ [c,v]=await p.chercher('marteau','FR','1','pointp.fr','Point.P');
+ assert.strictEqual(c,200);assert.deepStrictEqual(v.map(x=>[x.produit,x.prix,x.magasin,x.src]),[['Massette',18.5,'Point.P','site'],['Marteau de coffreur 600 g',24.9,'Point.P','site']]);
+ assert.strictEqual(appels.length,2);assert.ok(/engine=google&/.test(appels[1])&&/site%3Apointp\.fr/.test(appels[1]));
+ assert.strictEqual(p.etat().jour,2);
+ await p.chercher('marteau','FR','2','pointp.fr','Point.P');assert.strictEqual(appels.length,2);// cache
+ assert.strictEqual((await p.chercher('marteau','FR','1','pas un domaine','X'))[0],400);
+ assert.strictEqual((await p.chercher('marteau','FR','1','pointp.fr',''))[0],400)});
 await t('serveur : GET /api/prix sans compte',async()=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'caso-prix-'));
  const {createServer}=require('../serveur/server.js');
