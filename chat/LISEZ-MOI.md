@@ -289,3 +289,15 @@ Source du moteur et outils de traduction : le module « caso-ia » (moteur, cata
 - `veille.js` : « du nouveau » n'est une question sur la Newsletter qu'en début ou en fin de phrase (« on met du nouveau au sol » est un travail).
 - essais : 23 contrôles de plus dans `essai-fiabilite.js` (245).
 
+**Des réponses qui tiennent compte de la situation (17 nov. 2026)** — `chat/reponses.js`, chargé après `langage.js`. Rien n'est ajouté à l'écran. Chaque réponse ne dit que ce qui est enregistré : aucun chiffre deviné, aucun conseil inventé.
+- **le point** : « où j'en suis », « fais le point », « bilan de la journée » → aujourd'hui, demain, devis en cours, devis envoyés sans réponse, brouillons, à encaisser. Une rubrique vide n'est pas affichée.
+- **le point sur un client** : « le point sur Martin », « où en est Martin » → ses devis, ce qu'il doit, son prochain rendez-vous. « où en est le devis de Martin » reste la réponse d'avant.
+- **le contrôle du devis en cours** : « c'est bon ? », « vérifie le devis », « il manque quelque chose ? » → pas de client, quantité à préciser, pas de prix, prix à plus de 30 % de mon prix habituel, ligne en double, remise de 30 % ou plus, travaux notés pas chiffrés. Sinon « Rien à signaler » et le total.
+- **la semaine** : « ma semaine », « mes rendez-vous de la semaine » → la liste de la semaine, jour par jour (avant : l'écran s'ouvrait sans réponse). « j'ai quoi cette semaine » garde sa réponse d'avant.
+- **paiement** : « Martin a payé 50 » → le paiement après un Oui ; plus que le reste dû, ou pas de facture : le chat le dit et n'enregistre rien. « combien j'ai facturé ce mois / cette année » → facturé, et reste à encaisser (avant : les encaissements).
+- **« annule »** défait la dernière action du chat (avant : « Précise le rendez-vous ») ; « supprime la dernière ligne » ; « ajoute du carrelage » pendant un devis pose une ligne à chiffrer (avant : la maquette 3D).
+- **la suite d'une question** (`P.renvoi`) : « combien me doit Martin » puis « et Petit ? » repose la question pour Petit. Jamais après une action (« rdv Martin demain » puis « et Petit » ne crée rien).
+- Les phrases sont lues en français (les autres langues passent par la traduction du moteur, sans garantie) ; les réponses sont traduites dans les 10 langues.
+- Moteur : « Tu veux : SMS à Martin ? » (avant : « sMS »).
+- essais : 21 contrôles de plus dans `essai-fiabilite.js`.
+
