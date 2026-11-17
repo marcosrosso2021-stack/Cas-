@@ -331,3 +331,12 @@ Source du moteur et outils de traduction : le module « caso-ia » (moteur, cata
 - « on a une fuite chez Martin » n'écrit plus de ligne dans un devis.
 - Pas encore : le rapport dans la fiche chantier et son envoi au client ; les corrections retenues ; la mémoire partagée dans l'entreprise.
 
+**Corrections, rapport dans la fiche chantier, mémoire de l'entreprise (17 nov. 2026)** :
+- **Correction** (`corrige` dans `reponses.js`) : « ajoute 20 m² de faïence », « non », « je voulais du parquet » → 20 m² de parquet (la quantité de la ligne annulée, dans les 3 minutes). « non, du carrelage » juste après la ligne fait les deux d'un coup. Sans ligne annulée avant, « je voulais du parquet » ne fait rien. C'est une correction de la demande, pas un apprentissage : pour apprendre un mot, « X veut dire Y ».
+- **Rapport d'intervention dans la fiche chantier** (`chantier.js` : `rapportsDe`, `lR`) : « fiche du chantier Martin » et « qu'est-ce que j'ai fait chez Martin » montrent les rapports ; « qu'est-ce qu'il reste chez Martin » montre leur « Suite à prévoir ».
+- **Envoi au client** : « envoie le rapport à Martin » affiche le texte et un lien (e-mail si le client en a un, sinon SMS) ; c'est le téléphone qui envoie, après un toucher. Sans numéro ni e-mail, le chat le dit.
+- **Mémoire de l'entreprise** : `db.memo` est maintenant une liste de fiches (`k` : fait, mot, regle) et `db.rapports` aussi ; les deux sont ajoutées aux collections synchronisées (`COLL`, `SYNC_COLL` dans `index.html`, `COLL` dans `serveur/server.js`). Avec une entreprise reliée, le patron et les chefs partagent mots, consignes, choses retenues et rapports ; les ouvriers ne les reçoivent pas (mêmes droits que les clients et les prix). Sans entreprise reliée, tout reste dans le téléphone. Ce qui arrive du serveur est remis à plat (`recClean` : texte seulement, longueurs bornées).
+- Il n'y a qu'un niveau de mémoire : celle de l'entreprise quand elle est reliée. Pas de mémoire séparée par personne dans une même entreprise.
+- **À faire côté serveur** : redéployer `serveur/server.js` pour que les deux collections soient acceptées ; d'ici là elles restent dans le téléphone.
+- « le client veut… » ne pose la question « Quel client ? » que pour un rendez-vous, un devis, une facture ou un passage.
+

@@ -2457,7 +2457,7 @@ if(!db.clients)db.clients=[];if(!db.suppliers)db.suppliers=[];
 if(!db.projects)db.projects=[];if(!db.plans)db.plans=[];if(!db.events)db.events=[];if(!db.cvTpl)db.cvTpl=[];if(!db.invoices)db.invoices=[];
 /* Suivi des changements, pour synchroniser plus tard : chaque enregistrement reçoit un id
    et une date de dernière modification ; chaque suppression laisse une trace dans db.tomb. */
-const COLL=['prices','quotes','hist','chantiers','people','pts','clients','suppliers','projects','plans','events','invoices'];
+const COLL=['prices','quotes','hist','chantiers','people','pts','clients','suppliers','projects','plans','events','invoices','memo','rapports'];
 let snap={};
 function fp(o){const u=o.updatedAt;if(u===undefined)return JSON.stringify(o);o.updatedAt=undefined;const s=JSON.stringify(o);o.updatedAt=u;return s}
 function initSnap(){
@@ -2470,7 +2470,7 @@ function stamp(){
  if(!db.tomb)db.tomb=[];
  if(db.tomb.length&&now-db.tomb[0].at>90*864e5)db.tomb=db.tomb.filter(t=>now-t.at<90*864e5);if(db.tomb.length>2000)db.tomb=db.tomb.slice(-2000);
  COLL.forEach(c=>{
-  const list=db[c]||[],cur={};
+  const list=Array.isArray(db[c])?db[c]:[],cur={};
   list.forEach(r=>{
    if(!r.id)r.id=uid();
    const f=fp(r);cur[r.id]=f;
@@ -7483,7 +7483,7 @@ function qrSvg(text,mod){
  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+s+' '+s+'" width="100%" style="max-width:320px;background:#fff" shape-rendering="crispEdges"><rect width="'+s+'" height="'+s+'" fill="#fff"/><path d="'+d+'" fill="#000"/></svg>'}
 
 /* ---------- Synchronisation avec le serveur local ---------- */
-const SYNC_COLL=['prices','quotes','hist','chantiers','people','pts','clients','suppliers','projects','plans','events','invoices'];
+const SYNC_COLL=['prices','quotes','hist','chantiers','people','pts','clients','suppliers','projects','plans','events','invoices','memo','rapports'];
 function getSync(){try{return JSON.parse(localStorage.getItem('devis_sync'))||{}}catch(e){return {}}}
 function setSync(o){try{localStorage.setItem('devis_sync',JSON.stringify(o))}catch(e){}}
 
@@ -7530,6 +7530,11 @@ function recClean(c,r){if(!r||typeof r!=='object'||!okId(r.id))return null;
   if(r.ex!=null)r.ex=Array.isArray(r.ex)?r.ex.filter(x=>RC_D(x)&&x):[]}
  else if(c==='pts'){if(!okId(r.c)||!okId(r.p))return null;r.ts=rcN(r.ts)||0;if(typeof r.t!=='string'||!/^\w{1,10}$/.test(r.t))return null}
  else if(c==='plans'){if(r.th&&!rcImg(r.th))delete r.th}
+ /* mémoire du chat et rapports d'intervention : du texte seulement, de longueur bornée ; un mot appris n'est jamais une commande (vérifié à l'usage, dans chat/reponses.js) */
+ else if(c==='memo'){if(!['fait','mot','regle'].includes(r.k))return null;const S=(k,n)=>{if(r[k]!=null)r[k]=String(r[k]).slice(0,n)};S('t',400);S('a',200);S('mot',120);S('b',300);S('de',120);
+  if(r.k==='fait'&&!r.t||r.k!=='fait'&&(!r.a||!r.b))return null;return {id:r.id,k:r.k,t:r.t,a:r.a,mot:r.mot,b:r.b,de:r.de,updatedAt:r.updatedAt}}
+ else if(c==='rapports'){if(!RC_D(r.date)||!r.date)return null;if(r.cid!=null&&!okId(r.cid))delete r.cid;const L=v=>(Array.isArray(v)?v:[]).slice(0,30).map(x=>String(x).slice(0,400));const o=r.r&&typeof r.r==='object'?r.r:{};
+  return {id:r.id,cid:r.cid,client:String(r.client||'').slice(0,120),date:r.date,texte:String(r.texte||'').slice(0,4000),r:{fait:L(o.fait),obs:L(o.obs),sit:L(o.sit),suite:L(o.suite)},updatedAt:r.updatedAt}}
  return r}
 function applyRemote(d,resp){
  let n=0;qRemote=null;

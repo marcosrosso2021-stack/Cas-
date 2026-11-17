@@ -14,7 +14,7 @@
 const http=require('http'),fs=require('fs'),path=require('path'),crypto=require('crypto'),os=require('os');
 const webpush=require('./webpush.js'),prixLib=require('./prix.js'),authLib=require('./auth.js'),veilleLib=require('./veille/index.js');
 
-const COLL=['prices','quotes','hist','chantiers','people','pts','prof','clients','suppliers','projects','plans','events','invoices'];
+const COLL=['prices','quotes','hist','chantiers','people','pts','prof','clients','suppliers','projects','plans','events','invoices','memo','rapports'];
 const ROLE_PUSH={patron:COLL,chef:COLL,ouvrier:['pts']};
 const ROLE_PULL={patron:COLL,chef:COLL,ouvrier:['chantiers','people','pts','events']};
 const ROLES=Object.keys(ROLE_PUSH);
