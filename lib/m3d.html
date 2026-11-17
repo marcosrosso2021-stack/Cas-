@@ -3384,7 +3384,7 @@ function rnvRender(){const el=$('#rnv');if(!el)return;const w=RNV.walls[RNV.cur]
   el.querySelectorAll('[data-tn]').forEach(b=>b.onclick=()=>{const w2=RNV.walls[RNV.cur];if(w2){w2.turn=+b.dataset.tn;rnvRender()}});
   el.querySelectorAll('[data-pt]').forEach(b=>b.onclick=()=>{RNV.tool=RNV.tool===b.dataset.pt?null:b.dataset.pt;rnvRender()});
   if($('#rv-ser'))$('#rv-ser').onclick=serOpen;
-  if($('#rv-vid'))$('#rv-vid').addEventListener('change',e=>{const fs=[...e.target.files];e.target.value='';const v=fs.find(f=>/^video\//.test(f.type||''));if(v)vidStart(v);else if(fs.length)rnvAdd(fs)});
+  if($('#rv-vid'))$('#rv-vid').addEventListener('change',e=>{const fs=[...e.target.files];e.target.value='';const v=fs.find(f=>/^video\//.test(f.type||''));if(v){vidPrime(v);vidStart(v)}else if(fs.length)rnvAdd(fs)});
   if(!w)return;rnvSvg();const sv=$('#rv-sv');let drag=null;const pt=e=>{const p=sv.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(sv.getScreenCTM().inverse())};
   sv.addEventListener('pointerdown',e=>{const p=pt(e);if(rnvPtTap(w,p))return;let bi=-1,bd=1e9;w.q.forEach((c,i)=>{const d=Math.hypot(c[0]-p.x,c[1]-p.y);if(d<bd){bd=d;bi=i}});if(bd<Math.max(w.cv.width,w.cv.height)*0.18){drag=bi;sv.setPointerCapture(e.pointerId)}});
   sv.addEventListener('pointermove',e=>{if(drag===null)return;const p=pt(e);if(!w.qm&&!w.qa)w.qa=w.q.map(c=>c.slice());w.qm=1;w.ql=0;w.q[drag]=[clamp(p.x,-w.cv.width,2*w.cv.width),clamp(p.y,-2*w.cv.height,2*w.cv.height)];rnvSvg()});
@@ -3462,8 +3462,11 @@ async function vidSfm(cvs,f0){const imgs=cvs.map(cv=>{const G=SERL.sfmGray(cv,12
 function vidPending(){return new Promise(ok=>{try{const r=indexedDB.open('caso_vjob',1);r.onupgradeneeded=()=>r.result.createObjectStore('s');r.onerror=()=>ok(null);
   r.onsuccess=()=>{try{const q=r.result.transaction('s').objectStore('s').get('job');q.onsuccess=()=>{const j=q.result;r.result.close();ok(j&&j.file&&Date.now()-j.at<864e5&&(j.tries||0)<3?j.file:null)};q.onerror=()=>ok(null)}catch(e){ok(null)}}}catch(e){ok(null)}})}
 let VIDR=0;async function vidResume(){if(VIDR)return;VIDR=1;const f=await vidPending();if(!f||VIDP&&!$('#busy').hidden)return;try{rnvOpen()}catch(e){}toast(t('vid_resume'));vidStart(f)}
+/* iPhone : la vidéo est créée et lancée pendant le geste (choix du fichier), sinon sa lecture peut être refusée (mode économie d'énergie) */
+function vidPrime(f){try{const v=document.createElement('video'),url=URL.createObjectURL(f);v.muted=true;v.playsInline=true;v.setAttribute('playsinline','');v.setAttribute('muted','');v.setAttribute('webkit-playsinline','');v.preload='auto';
+  v.style.cssText='position:fixed;left:0;top:0;width:2px;height:2px;opacity:0.01;pointer-events:none;z-index:-1';document.body.appendChild(v);v.src=url;v.load();const p=v.play();if(p&&p.then)p.then(()=>{try{v.pause()}catch(e){}}).catch(()=>{});window.__vidPrime={file:f,v,url}}catch(e){window.__vidPrime=null}}
 let VIDP=null;function vidStart(f){if(!VIDP)VIDP=new Promise((ok,ko)=>{const e=document.createElement('script');e.src='lib/vid3d.js';e.onload=ok;e.onerror=()=>{VIDP=null;ko(new Error('vid3d'))};document.head.appendChild(e)});
-  VIDP.then(()=>window.vidRun(f,{RNV,busy,busyStep,tick,t,toast,fmt,rnvDetect,rnvRender,rnvMake,v2Sess,vidFurnish,oe3:oe3Get(),vidSfm,owlRun,visRaw,owlOk:async()=>{/* OWLv2 seulement avec une vraie carte graphique (WebGPU) : sur le processeur, il ajoute 9 min et plus d'erreurs qu'il n'en corrige (essai du 15 novembre) */try{if(!v2OwlOk()||!navigator.gpu)return false;return !!(await navigator.gpu.requestAdapter())}catch(e){return false}}})).catch(()=>toast(t('vid_fail')))}
+  VIDP.then(()=>window.vidRun(f,{RNV,busy,busyStep,tick,t,toast,fmt,rnvDetect,rnvRender,rnvMake,v2Sess,vidFurnish,oe3:oe3Get(),vidSfm,v2Free,owlRun,visRaw,owlOk:async()=>{/* OWLv2 seulement avec une vraie carte graphique (WebGPU) : sur le processeur, il ajoute 9 min et plus d'erreurs qu'il n'en corrige (essai du 15 novembre) */try{if(!v2OwlOk()||!navigator.gpu)return false;return !!(await navigator.gpu.requestAdapter())}catch(e){return false}}})).catch(()=>toast(t('vid_fail')+' (S1)'))}
 /* couleur du sol (sous la jonction mur / sol) et du plafond, lues sur les photos */
 function rnvSample(ws,where){const A=[[],[],[]];for(const w of ws){const cv=w.cv,c=cv.getContext('2d'),fl=where==='floor',a=fl?w.q[3]:w.q[0],e=fl?w.q[2]:w.q[1],dy=(fl?1:-1)*cv.height;
     for(let i=1;i<=12;i++)for(const f of[0.02,0.04,0.07,0.1,0.13]){const tt=i/13,x=a[0]+(e[0]-a[0])*tt,y=a[1]+(e[1]-a[1])*tt+dy*f;if(x<0||y<0||x>=cv.width||y>=cv.height)continue;const p=c.getImageData(x|0,y|0,1,1).data;for(let k=0;k<3;k++)A[k].push(p[k])}}
@@ -4947,6 +4950,8 @@ async function v2Get(m){const M=V2M[m];try{const r=await fetch('lib/vision/'+M.f
   const r=await fetch(M.u);if(!r.ok)throw new Error(m+' '+r.status);const b=await r.arrayBuffer();try{if(c)await c.put(M.u,new Response(b))}catch(e){}return new Uint8Array(b)}
 async function v2Base(){const loc=await fetch('lib/vision/ort.wasm.min.js',{method:'HEAD'}).then(r=>r.ok).catch(()=>false);return new URL(loc?'lib/vision/':VURL.ort,document.baseURI).href}
 /* séance d'un modèle : dans un travail en arrière-plan (l'écran reste fluide) ; sinon, pour DETR seulement, sur place */
+/* libère un modèle (téléphone : un seul en mémoire à la fois pendant l'analyse d'une vidéo) ; il se recharge tout seul au besoin */
+async function v2Free(m){const p=V2.ses[m];if(!p)return;V2.ses[m]=null;try{const s=await p;if(s&&s.free)s.free()}catch(e){}}
 function v2Sess(m){if(V2.ses[m])return V2.ses[m];if(V2['err_'+m]&&V2['fail_'+m]>=2)return Promise.resolve(null);
   V2.ses[m]=(async()=>{const base=await v2Base(),bytes=await v2Bytes(m);
     // OWLv2 : la carte graphique (WebGPU) quand l'appareil en a une, sinon le processeur comme les autres
@@ -4963,11 +4968,11 @@ function v2Sess(m){if(V2.ses[m])return V2.ses[m];if(V2['err_'+m]&&V2['fail_'+m]>
       wk=new Worker(URL.createObjectURL(new Blob([F.src],{type:'text/javascript'})),F.o);let q=Promise.resolve();
       await new Promise((ok,ko)=>{wk.onmessage=e=>e.data.ready?ok():0;wk.onerror=e=>{e.preventDefault&&e.preventDefault();ko(new Error('ort'))};setTimeout(()=>ko(new Error('ort délai')),30000)});
       const call=msg=>new Promise((ok,ko)=>{wk.onmessage=e=>e.data.err?ko(new Error(e.data.err)):ok(e.data);wk.onerror=e=>ko(e);wk.postMessage(msg)});
-      {const r=await call({init:1,base:wb,bytes,gpu});V2['ep_'+m]=r.ep}V2['err_'+m]='';return{run:(feeds,want)=>(q=q.then(()=>call({feeds,want}).then(d=>d.r)))}}
+      {const r=await call({init:1,base:wb,bytes,gpu});V2['ep_'+m]=r.ep}V2['err_'+m]='';return{run:(feeds,want)=>(q=q.then(()=>call({feeds,want}).then(d=>d.r))),free:()=>{try{wk.terminate()}catch(e){}}}}
       catch(e){try{wk&&wk.terminate()}catch(_){}}}
     if(!window.ort)await new Promise((ok,ko)=>{const s=document.createElement('script');s.src=base+'ort.wasm.min.js';s.crossOrigin='anonymous';s.onload=ok;s.onerror=()=>ko(new Error('ort'));document.head.appendChild(s)});
     const ort=window.ort;ort.env.wasm.wasmPaths=base;ort.env.wasm.numThreads=1;const s=await ort.InferenceSession.create(bytes,{executionProviders:['wasm']});V2['ep_'+m]='wasm (page)';V2['err_'+m]='';
-    return{run:async(feeds,want)=>{const f={};for(const k in feeds){const x=feeds[k];f[k]=new ort.Tensor(x.t,x.d,x.s)}const o=await s.run(f),r={};for(const k of want)r[k]={d:o[k].data,s:o[k].dims};return r}}})()
+    return{run:async(feeds,want)=>{const f={};for(const k in feeds){const x=feeds[k];f[k]=new ort.Tensor(x.t,x.d,x.s)}const o=await s.run(f),r={};for(const k of want)r[k]={d:o[k].data,s:o[k].dims};return r},free:()=>{try{s.release()}catch(e){}}}})()
     // un échec est retenu : au deuxième, le modèle n'est plus rechargé (150 Mo pour OWLv2) jusqu'au prochain lancement
     .catch(e=>{V2.ses[m]=null;V2['err_'+m]=String(e&&e.message||e);V2['fail_'+m]=(V2['fail_'+m]||0)+1;return null});return V2.ses[m]}
 /* DETR : catégories COCO panoptique (numéros du modèle) utiles à casô */
