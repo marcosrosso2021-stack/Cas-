@@ -11,7 +11,7 @@ function req(S,p,body,tok){return new Promise((res,ko)=>{const b=body?JSON.strin
  const r=http.request({host:'127.0.0.1',port:S.server.address().port,method:b?'POST':'GET',path:p,headers:Object.assign(b?{'content-type':'application/json'}:{},tok?{authorization:'Bearer '+tok}:{})},x=>{let d='';x.on('data',c=>d+=c);x.on('end',()=>{let j=null;try{j=JSON.parse(d)}catch(e){}res({status:x.statusCode,j})})});
  r.on('error',ko);if(b)r.write(b);r.end()})}
 const cli=(id,nom)=>({since:0,changes:{clients:[{id,nom,updatedAt:Date.now()}]}});
-const disque=d=>JSON.parse(fs.readFileSync(path.join(d,'data.json'),'utf8'));
+const disque=d=>JSON.parse(fs.readFileSync(path.join(d,'espaces','e1','data.json'),'utf8'));
 
 (async()=>{
  /* ---- point 6 : écriture ---- */
