@@ -15,6 +15,7 @@ const DOMAINES={
  construction:['construction','re2020','batiment neuf','chantier','securite des chantiers','materiaux','dtu','reception des travaux','sous-traitance','sous-traitant'],
  renovation:['renovation','maprimerenov','economies d\'energie','performance energetique','dpe','diagnostic','amiante','plomb','rge','isolation','pompe a chaleur','chauffage'],
  urbanisme:['urbanisme','permis de construire','declaration prealable','plan local d\'urbanisme','accessibilite','dechets'],
+ outils:['outil','outillage','materiel','materiau','logiciel','application','innovation','nouveau produit','nouveaute','technique'],
  numerique:['signature electronique','intelligence artificielle','cybersecurite','logiciel','numerique','plateforme','dematerialis','en ligne'],
  donnees:['donnees personnelles','rgpd','cnil','geolocalisation','conservation des donnees','hebergement des donnees','photographies']};
 /* professionnels concernés : ce que le texte nomme ; sinon « artisans du bâtiment » */
@@ -85,7 +86,10 @@ const A_FAIRE={'mentions-devis':'Vérifie tes modèles de devis avant la date d\
  'geolocalisation':'Si tu suis tes salariés par GPS, vérifie qu\'ils en sont informés.','aides':'Vérifie les nouvelles conditions avant de proposer cette aide à tes clients.',
  'assurance':'Vérifie ton attestation d\'assurance et sa mention sur tes devis.','dechets':'Vérifie la mention de gestion des déchets sur tes devis.',
  'reception':'Vérifie tes documents de fin de chantier.','paiement':'Vérifie tes délais de paiement et tes relances.'};
+/* une nouveauté du métier est envoyée quand elle sert sur le chantier : outils, matériaux, techniques, sécurité ; pas l'actualité syndicale ou économique */
+const PRATIQUE=DOMAINES.outils.concat(['regles de l\'art','securite','silice','amiante','humidite','chantier','pose','isolation','pompe a chaleur','carrel','maconn','plomberie','electricite','peinture','couverture','charpente','menuiserie']);
 function preparer(f,suj,modules,domaines){
+ if(f.categorie==='nouveaute')return dans(' '+plat(f.titre)+' ',PRATIQUE)?{tri:'envoyer',aFaireProp:'À découvrir : l\'article donne le détail.'}:{tri:'garder',aFaireProp:''};
  if(f.categorie==='proposition')return {tri:'garder',aFaireProp:'Rien pour l\'instant : le texte n\'est pas encore voté.'};
  if(f.categorie==='non_confirme'||f.bloque)return {tri:'',aFaireProp:''};
  const s=(suj||[]).find(x=>A_FAIRE[x.cle]);
