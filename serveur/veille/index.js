@@ -64,7 +64,8 @@ function creer(opts={}){
   /* date d'envoi : tout de suite pour un texte critique, sinon le lundi suivant ; retirée si l'accord est retiré */
   {const g=base.lire(id),envoi=g.validation==='valide'&&g.lettre===true;
    if(!envoi)base.completer(id,{publieLe:'',pousse:false});
-   else if(!g.publieLe)base.completer(id,{publieLe:g.priorite==='P0'?auj:lundi(auj),pousse:false})}
+   else if(!g.publieLe)base.completer(id,{publieLe:g.priorite==='P0'?auj:lundi(auj),pousse:false});
+   else if(g.priorite==='P0'&&g.publieLe>auj)base.completer(id,{publieLe:auj,pousse:false})}   // passé en P0 après coup : il part tout de suite
   base.journal('decision',{id,decision,champs:Object.keys(corr).slice(0,10)});
   try{base.enregistrer()}catch(e){log('[casô] veille : base non enregistrée',e&&e.code)}
   return [200,voir(base.lire(id))]}

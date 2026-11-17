@@ -92,6 +92,8 @@ await t('texte critique : sort tout de suite ; les autres le lundi suivant',asyn
  const L=v.lettre();assert.deepStrictEqual(L.map(x=>x.id),[I('2002')]);
  assert.deepStrictEqual(Object.keys(L[0]).sort(),['aFaire','categorie','datePub','dateVigueur','id','priorite','pros','publieLe','resume','titre','url']);
  assert.deepStrictEqual(v.aAnnoncer().map(x=>x.id),[I('2002')]);v.annonce([I('2002')]);assert.deepStrictEqual(v.aAnnoncer(),[]);
+ heure='2026-11-19T07:00:00Z';const q0=v.decider(I('2001'),'valide',{priorite:'P0'})[1];assert.deepStrictEqual([q0.priorite,q0.publieLe],['P0','2026-11-19'],'passé en P0 après coup : part tout de suite');
+ assert.deepStrictEqual(v.lettre().map(x=>x.id),[I('2001'),I('2002')]);v.decider(I('2001'),'valide',{priorite:'P2'});
  heure='2026-11-23T07:00:00Z';assert.deepStrictEqual(v.lettre().map(x=>x.id),[I('2001'),I('2002')]);assert.deepStrictEqual(v.aAnnoncer().map(x=>x.id),[I('2001')])});
 await t('accord retiré, refus, ou texte modifié à la source : la carte ne sort plus',async()=>{
  v.decider(I('2002'),'valide',{lettre:false});assert.deepStrictEqual(v.lettre().map(x=>x.id),[I('2001')]);
