@@ -98,6 +98,15 @@ function evaluate(name,spec){
    V.oeilEnrich(spec2,tr,oe);if(process.env.OEIL_DEBUG)console.log('fr',h0,JSON.stringify(spec2.objects.map(o=>[o.cls,o.h])));const fr2=spec2.objects.find(o=>o.type==='fridge');
    ok('apprentissage : hauteur corrigée appliquée (médiane des corrections)',!!fr2&&Math.abs(fr2.h-h0*0.9)<0.02,fr2&&(h0+' → '+fr2.h));
    ok('apprentissage : classe toujours supprimée écartée et signalée',!spec2.objects.some(o=>o.type==='chair')&&spec2.notes.some(n=>/écarté/.test(n)));
+   // apprentissage par les maquettes validées : repère de taille par sorte d'élément
+   {const cl='F09.chambre.lits',mk=(id,ok,w)=>({id,ok,o:[[cl,w,w*1.5,0.65,0],[cl,w,w*1.5,0.65,0]]});
+    const s3=JSON.parse(JSON.stringify(spec)),b3=s3.objects.find(o=>o.type==='bed');
+    V.oeilEnrich(s3,tr,{ex:[],n:{},mdl:[mk('a',1,0.3),mk('b',1,0.3),mk('c',1,0.3)]});
+    ok('apprentissage : élément trois fois plus grand que dans les maquettes validées écarté',!!b3&&!s3.objects.some(o=>o.type==='bed')&&s3.notes.some(n=>/maquettes déjà validées/.test(n)));
+    const s4=JSON.parse(JSON.stringify(spec));V.oeilEnrich(s4,tr,{ex:[],n:{},mdl:[mk('a',0,0.3),mk('b',0,0.3),mk('c',0,0.3)]});
+    ok('apprentissage : une maquette non validée ne sert pas de repère',s4.objects.some(o=>o.type==='bed'));
+    const s5=JSON.parse(JSON.stringify(spec));V.oeilEnrich(s5,tr,{ex:[],n:{},mdl:[mk('a',1,0.9),mk('b',1,0.9)]});
+    ok('apprentissage : moins de trois maquettes validées, aucun effet',s5.objects.some(o=>o.type==='bed'))}
    Q.spec=spec;
    // prises : une détection (comme D-FINE) sur une image, placée sur le mur est puis sur le poteau
    {const pi=V.PLC.findIndex(x=>/prise/i.test(x.nom));ok('bibliothèque : la prise est une plaque repérée par D-FINE',pi>=0);
