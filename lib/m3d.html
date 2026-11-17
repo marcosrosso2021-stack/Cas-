@@ -3445,6 +3445,16 @@ async function vidExport(k){if(!S.walls.length){toast(t('x_none'));return}const 
 /* œil 3D, apprentissage par correction humaine : un élément capté supprimé, déplacé, redimensionné ou recoloré à la main
    est enregistré avec sa classe et la vignette de l'image source (dans l'appareil seulement) ; la prochaine vidéo en tient compte.
    Aucun poids de modèle n'est modifié. */
+/* l'œil 3D apprend de chaque maquette faite (vidéo, photos, plan) : une empreinte chiffrée de la pièce, de ses éléments et de ses ouvertures,
+   sans image, sans nom ni adresse, gardée dans l'appareil. La dernière version de la maquette remplace la précédente : les corrections y sont.
+   ok : maquette ajoutée au chantier, donc tenue pour bonne ; seules celles-là servent de repère de taille à l'analyse suivante. */
+function oe3Model(ok){try{if(!S.W||!S.walls.length)return;const id=S.pid||(S.rnv&&S.rnv.id)||'';if(!id)return;const X=xData(),r2=v=>+(+v||0).toFixed(2);
+  const xs=[],ys=[];for(const w of X.walls){if(w.o==='h'){xs.push(w.a,w.b);ys.push(w.p)}else{ys.push(w.a,w.b);xs.push(w.p)}}
+  const e={id,at:Date.now(),src:X.source,st:X.statut,k:(S.rnv&&S.rnv.kind)||'',d:[r2(Math.max(...xs)-Math.min(...xs)),r2(Math.max(...ys)-Math.min(...ys)),r2(X.H)],nw:X.walls.length,
+    o:X.items.slice(0,60).map(i=>[String(i.cls).slice(0,40),r2(i.w),r2(i.d),r2(i.h),r2(i.z)]),p:X.ops.slice(0,30).map(o=>[o.type,r2(o.c1-o.c0),r2(o.h)])};
+  const L=oe3Get(),old=(L.mdl||[]).find(m=>m.id===id);if(ok||(old&&old.ok))e.ok=1;
+  if(old&&!ok&&JSON.stringify([old.d,old.o,old.p,old.st])===JSON.stringify([e.d,e.o,e.p,e.st]))return;
+  L.mdl=(L.mdl||[]).filter(m=>m.id!==id);L.mdl.push(e);L.mdl=L.mdl.slice(-100);oe3Put(L)}catch(_){}}
 function oe3Get(){try{const v=JSON.parse(localStorage.getItem('m3d_oeil3d')||'null');if(v&&v.v===1)return v}catch(e){}return{v:1,ex:[],n:{}}}
 function oe3Put(L){L.ex=L.ex.slice(-400);try{localStorage.setItem('m3d_oeil3d',JSON.stringify(L))}catch(e){L.ex=L.ex.map(x=>({...x,src:''}));try{localStorage.setItem('m3d_oeil3d',JSON.stringify(L))}catch(_){}}}
 function vidLearn(){const V=S.rnv&&S.rnv.vid;if(!V||!V.orig||!V.orig.length||!S.scale)return;const sc=S.scale,L=oe3Get(),now=Date.now();let ch=0;
@@ -7532,7 +7542,7 @@ function gardenResettle(){const c=S.lvl?S.lvl.cur:0;if(S.lvl)S.lvl.cur=0;
 
 $$('[data-cam]').forEach(b=>b.addEventListener('click',()=>{if(!T3)return;railClose();const k=b.dataset.cam;if(k==='el'){setElec(!T3.elec);return}if(T3.elec){T3.elec=false;elLegend()}if(k==='str'){setStruct(!T3.struct);return}if(T3.struct){T3.struct=false;strLegend()}setView(k==='low'?'in':k,k==='low'&&S.room3!=='all'?S.rooms.find(r=>r.lab===S.room3):null)}));
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(S.screen==='3d'){build3D();draw3()}});
-$('#b-save3d').addEventListener('click',()=>{if(S.view3==='cli'){reqSheet();return}projMarkCh();casoEmit('addToChantier',{maquette:JSON.parse(snap3()),projet:projData(),estimation:S.rnv?(()=>{const E=rnvEstim(),X=xData(),prov=S.rnv.vid?'oeil3d-video':'renovation-photos';return{lignes:E.rows.filter(r=>r.on).map(r=>({poste:t('wk_'+r.k),quantite:+r.q.toFixed(2),unite:r.u,prix_min:r.p[0],prix_max:r.p[1],provenance:prov,statut:X.statut,definitif:X.statut==='validee'||X.statut==='mesuree'})),total_min:Math.round(E.lo),total_max:Math.round(E.hi),statut_mesures:X.statut}})():null,oeil3d:S.rnv&&S.rnv.vid?{graphe:S.rnv.vid.graphe||null,elements:S.eqs.filter(e=>e.vid).map(e=>({id:e.id,classe:e.vcls,nom:e.lab,mesures:e.vmes,relations:e.vrel}))}:null});toast(t('save3d_t'))});
+$('#b-save3d').addEventListener('click',()=>{if(S.view3==='cli'){reqSheet();return}projMarkCh();try{oe3Model(true)}catch(e){}casoEmit('addToChantier',{maquette:JSON.parse(snap3()),projet:projData(),estimation:S.rnv?(()=>{const E=rnvEstim(),X=xData(),prov=S.rnv.vid?'oeil3d-video':'renovation-photos';return{lignes:E.rows.filter(r=>r.on).map(r=>({poste:t('wk_'+r.k),quantite:+r.q.toFixed(2),unite:r.u,prix_min:r.p[0],prix_max:r.p[1],provenance:prov,statut:X.statut,definitif:X.statut==='validee'||X.statut==='mesuree'})),total_min:Math.round(E.lo),total_max:Math.round(E.hi),statut_mesures:X.statut}})():null,oeil3d:S.rnv&&S.rnv.vid?{graphe:S.rnv.vid.graphe||null,elements:S.eqs.filter(e=>e.vid).map(e=>({id:e.id,classe:e.vcls,nom:e.lab,mesures:e.vmes,relations:e.vrel}))}:null});toast(t('save3d_t'))});
 /* ===== branchement casô =====
    1) même page : définir window.casoBridge = { addToChantier(d), sendRequest(d), saveProject(d), learnSave(d) } avant ce script
    2) en iframe : la page envoie window.parent.postMessage({source:'caso-3d',type,data}) et écoute {source:'caso-app',type:'load'|'lang',data}
@@ -7698,14 +7708,14 @@ function projList(){try{return JSON.parse(localStorage.getItem(PJK)||'[]')}catch
 function projStore(l){try{localStorage.setItem(PJK,JSON.stringify(l));return true}catch(e){return false}}
 const projData=()=>({plans:(syncPlan(),S.plans.map(p=>({...p,rectURL:null}))),planIdx:S.planIdx,extCol:S.extCol||null,ext:S.ext||null,roof:S.roof||null,autoF:S.autoF,W:S.W,H:S.H,params:S.params,walls:S.walls,ops:S.ops,lvl:S.lvl,eqs:S.eqs,scale:S.scale,calib:S.calib,cotes:S.cotes,roomNames:S.roomNames,finish:S.finish,wallDef:S.wallDef||null,floorDef:S.floorDef||null,base3:S.base3,str:S.str||null,rnv:S.rnv||null,chat:S.chat.slice(-80)});
 let saveT=null;
-function saveProj(){try{vidLearn()}catch(e){}if(!CLIENT||!S.pid||!S.W)return;clearTimeout(saveT);saveT=setTimeout(saveNow,350)}
+function saveProj(){try{vidLearn()}catch(e){}try{oe3Model()}catch(e){}if(!CLIENT||!S.pid||!S.W)return;clearTimeout(saveT);saveT=setTimeout(saveNow,350)}
 function saveNow(){clearTimeout(saveT);saveT=null;if(!CLIENT||!S.pid||!S.W)return;try{const l=projList(),i=l.findIndex(p=>p.id===S.pid),p={id:S.pid,name:S.pname||t('m_ex'),at:Date.now(),d:projData(),ch:i>=0&&l[i].ch||undefined};
   if(i>=0)l.splice(i,1);l.unshift(p);try{casoEmit('saveProject',p)}catch(e){}if(!projStore(l)){p.d.chat=[];p.d.plans=null;if(!projStore(l)){p.d=rnvLite(p.d);if(!projStore(l))toast(t('t_full'))}}renderDrawer()}catch(e){}}
 function bumpUid(){let m=uid;for(const a of[S.walls,S.ops,...(S.lvl&&S.lvl.E?S.lvl.E:[S.eqs])])for(const x of a||[]){const n=+String(x.id||'').split('_').pop();if(n>=m)m=n+1}uid=m}
 function setTitle(){if(CLIENT&&S.screen==='3d')$('#h-title').textContent=S.pname||t('t_cli')}
 /* artisan : le croquis en cours est gardé sur l'appareil, pour reprendre après une fermeture de la page */
 let artT=null;const ARTK='m3d_art';
-function saveArt(){try{vidLearn()}catch(e){}if(CLIENT||!S.W||!S.walls.length)return;clearTimeout(artT);artT=setTimeout(saveArtNow,500)}
+function saveArt(){try{vidLearn()}catch(e){}try{oe3Model()}catch(e){}if(CLIENT||!S.W||!S.walls.length)return;clearTimeout(artT);artT=setTimeout(saveArtNow,500)}
 function saveArtNow(){clearTimeout(artT);artT=null;if(CLIENT||!S.W||!S.walls.length)return;{const d={...projData(),rectURL:S.rectURL||'',at:Date.now()};
   try{localStorage.setItem(ARTK,JSON.stringify(d))}catch(e){try{d.rectURL='';localStorage.setItem(ARTK,JSON.stringify(d))}catch(_){try{localStorage.setItem(ARTK,JSON.stringify(rnvLite(d)))}catch(__){}}}}}
 function flushSave(){try{if(CLIENT){if(saveT)saveNow()}else if(artT)saveArtNow()}catch(e){}}
