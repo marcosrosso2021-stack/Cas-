@@ -68,6 +68,19 @@ await t('dans l\'appli (faux navigateur) : page Newsletter et pastille, rien dan
  assert.ok(/nv-une[\s\S]*Critique[\s\S]*À lire aussi[\s\S]*Plus proche[\s\S]*Lointain/.test(he),'le plus important en grand, puis l\'échéance la plus proche');assert.ok(/3 à lire/.test(he)&&/J-\d+/.test(he));
  e.ecoute.click({target:{closest:()=>({getAttribute:()=>'x:2'})}});const h2=e.E.newsList.innerHTML;assert.ok(/nv-une[\s\S]*Critique[\s\S]*nv-a/.test(h2)&&/2 à lire/.test(h2),'lu pendant la visite : garde sa place');assert.ok(!/Pour qui|Quand|Oui, toi/.test(h2),'partie dépliée courte');
  const d=monter('artisan',[]);await new Promise(r=>setTimeout(r,20));d.w.casoVeille.page();assert.ok(/Rien de nouveau pour ton métier/.test(d.E.newsList.innerHTML));d.w.chatSend('des nouveautés ?');assert.ok(/Rien de nouveau/.test(d.pousse[1].html))});
+await t('titre officiel long : nature et date à part, sujet lisible ; titre complet une fois ouvert',async()=>{
+ const T='Arrêté du 12 novembre 2026 relatif aux exigences de performance énergétique et environnementale des constructions de bâtiments en France métropolitaine et portant diverses dispositions';
+ assert.deepStrictEqual(V.titreCourt(T),{nat:'Arrêté du 12 novembre 2026',t:'Exigences de performance énergétique et environnementale des constructions de bâtiments en France métropolitaine et portant diverses dispositions'});
+ assert.deepStrictEqual(V.titreCourt('Décret n° 2026-1012 du 1er novembre 2026 portant modification du code de la construction'),{nat:'Décret du 1er novembre 2026',t:'Modification du code de la construction'});
+ assert.deepStrictEqual(V.titreCourt('TVA des travaux : ce qui change'),{nat:'',t:'TVA des travaux : ce qui change'});
+ const vm=require('vm'),src=fs.readFileSync(path.join(__dirname,'..','chat','veille.js'),'utf8'),mem={},ecoute={},E={newsList:{innerHTML:''},newsDot:{hidden:true},chatIn:{value:''}};
+ const w={CASO_APPRIS:'https://serveur.test',navigator:{onLine:true},db:{prof:{metier:'peintres'}},accountGet:()=>({mode:'artisan'}),i18nT:x=>x,location:{search:''},setTimeout:f=>f(),
+  localStorage:{getItem:k=>k in mem?mem[k]:null,setItem:(k,v)=>{mem[k]=v}},document:{hidden:false,getElementById:i=>E[i]||null,querySelector:()=>null,addEventListener:(n,f)=>{ecoute[n]=f}},
+  fetch:async()=>({ok:true,json:async()=>[{id:'j:1',titre:T,priorite:'P1',dateVigueur:'2026-11-13',pros:[],aFaire:'Regarde si tes chantiers sont concernés.',url:'https://www.legifrance.gouv.fr/x',publieLe:'2026-11-17'}]}),chatPush(){},chatSend(){},go(){}};
+ w.window=w;vm.runInNewContext(src,w);await new Promise(r=>setTimeout(r,20));w.casoVeille.page();let h=E.newsList.innerHTML;
+ assert.ok(/nv-nat[^>]*>Arrêté du 12 novembre 2026</.test(h)&&/<h2[^>]*>Exigences de performance/.test(h),'sujet en titre, nature et date au-dessus');
+ ecoute.click({target:{closest:()=>({getAttribute:()=>'j:1'})}});h=E.newsList.innerHTML;
+ assert.ok(h.includes('>'+T+'</h2>')&&/13 novembre 2026/.test(h)&&/Texte officiel/.test(h),'ouvert : titre complet, date et lien')});
 await t('question ou commande : seules les tournures de question vont à la newsletter',()=>{
  for(const q of ['quoi de neuf','Quoi de neuf pour la TVA ?','des nouveautés ?','qu\'est-ce qui change pour les devis','il y a une nouvelle loi ?','la réglementation a changé ? du nouveau ?','ma newsletter'])assert.ok(V.demande(q),q);
  for(const q of ['devis pour Martin carrelage 20 m²','ajoute un client neuf rue des Lilas','change le prix du placo','nouveau client Dupont','facture pour Mme Petit','TVA 10 % sur le devis'])assert.ok(!V.demande(q),q);

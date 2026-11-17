@@ -68,7 +68,7 @@ function page0(t){return PAGE.test(plat(t).trim())}
 var CREUX=/^(quoi|neuf|nouveau|nouveaute|nouveautes|newsletter|actualite|actualites|change|changement|changements|pour|avec|dans|cette|cette|quel|quelle|quelles|quels|est|qui|que|les|des|sur|mon|mes|ton|tes|moi|loi|lois|regle|regles|reglementation|nouvelle|nouvelles|obligation|obligations|metier|semaine|mois|annee|il|ya|y|a|la|le|de|du|en|ce|ca)$/;
 function sujets(t){var out=[];plat(t).split(/[^a-z0-9]+/).forEach(function(m){if(m.length>=3&&!CREUX.test(m)&&out.indexOf(m)<0)out.push(m)});return out.slice(0,6)}
 
-var api={concerne:concerne,quand:quand,palier:palier,aMontrer:aMontrer,carte:carte,dateFr:dateFr,demande:demande,sujets:sujets,page:page0};
+var api={concerne:concerne,quand:quand,palier:palier,aMontrer:aMontrer,carte:carte,dateFr:dateFr,demande:demande,sujets:sujets,page:page0,titreCourt:titreCourt};
 if(typeof module!=='undefined'&&module.exports){module.exports=api;return}
 
 /* ---- dans l'appli ---- */
@@ -99,7 +99,7 @@ var CSS='#newsList{--nv:cubic-bezier(.2,.8,.2,1)}'
 +'.nv-une::after{content:"";position:absolute;inset-inline-end:-70px;top:-70px;width:190px;height:190px;border-radius:50%;background:var(--acc,#ffc21a);opacity:.16;pointer-events:none}'
 +'.nv-sur{display:flex;align-items:center;gap:8px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;opacity:.72;margin:0 0 12px}'
 +'.nv-sur i{width:8px;height:8px;border-radius:50%;background:var(--acc,#ffc21a);animation:nvp 1.8s ease-in-out infinite}'
-+'.nv-une h2{margin:0 0 16px;font-size:23px;line-height:1.22;font-weight:800;letter-spacing:-.015em}'
++'.nv-une h2{margin:0 0 14px;font-size:20px;line-height:1.25;font-weight:800;letter-spacing:-.01em;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden;overflow-wrap:anywhere}.nv-une h2.ouv{display:block;font-size:17px;-webkit-line-clamp:unset}.nv-nat{margin:0 0 6px;font-size:12.5px;font-weight:600;opacity:.7}'
 +'.nv-j{display:flex;align-items:baseline;gap:8px;margin:0 0 8px}.nv-j b{font-size:34px;line-height:1;font-weight:800;color:var(--acc,#ffc21a);letter-spacing:-.02em}.nv-j span{font-size:14px;opacity:.75}'
 +'.nv-bar{height:5px;border-radius:5px;background:color-mix(in srgb,currentColor 18%,transparent);overflow:hidden;margin:0 0 18px}.nv-bar i{display:block;height:100%;border-radius:5px;background:var(--acc,#ffc21a);transform-origin:left;animation:nvb .9s var(--nv) both}'
 +'[dir=rtl] .nv-bar i{transform-origin:right}'
@@ -114,7 +114,7 @@ var CSS='#newsList{--nv:cubic-bezier(.2,.8,.2,1)}'
 +'.nv-h{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center}'
 +'.nv-b{min-width:54px;text-align:center;border-radius:13px;padding:8px 6px;background:var(--soft,#f0f0ed);font-size:13px;font-weight:800;line-height:1.1}.nv-b small{display:block;font-size:10px;font-weight:500;color:var(--mut,#6b6b70);margin-top:2px}'
 +'.nv-b.proche{background:var(--acc,#ffc21a);color:#18181a}.nv-b.proche small{color:#18181a;opacity:.7}'
-+'.nv-n{font-weight:700;line-height:1.3;font-size:15.5px}.nv-n u{text-decoration:none;display:inline-block;width:8px;height:8px;border-radius:50%;background:#e5484d;margin-inline-end:7px;vertical-align:1px}'
++'.nv-n{font-weight:700;line-height:1.3;font-size:15.5px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;overflow-wrap:anywhere}.nv-n.ouv{display:block}.nv-n u{text-decoration:none;display:inline-block;width:8px;height:8px;border-radius:50%;background:#e5484d;margin-inline-end:7px;vertical-align:1px}'
 +'.nv-c{width:18px;height:18px;color:var(--mut,#6b6b70);transition:transform .25s var(--nv)}.nv-l[aria-expanded=true] .nv-c{transform:rotate(90deg)}'
 +'.nv-l .nv-f{margin-top:10px;padding-inline-start:66px}.nv-l.lu{opacity:.78}'
 +'.nv-vide{text-align:center;padding:44px 16px;color:var(--mut,#6b6b70)}.nv-vide span{width:60px;height:60px;border-radius:20px;background:var(--acc,#ffc21a);color:#18181a;display:grid;place-items:center;margin:0 auto 14px}.nv-vide span svg{width:28px;height:28px}.nv-vide b{display:block;color:var(--ink,#18181a);font-size:19px;margin-bottom:4px}'
@@ -123,6 +123,14 @@ var CSS='#newsList{--nv:cubic-bezier(.2,.8,.2,1)}'
 +'@media (prefers-reduced-motion:reduce){.nv-anim>*,.nv-in,.nv-bar i,.nv-sur i{animation:none}}';
 var ic=function(n){return '<svg class="i" aria-hidden="true"><use href="#i-'+n+'"/></svg>'};
 /* le délai, en court : « J-15 », « Demain », « En vigueur », « Projet » */
+/* titre officiel trop long : « Arrêté du 12 novembre 2026 relatif aux … » → nature et date à part, le sujet en clair */
+function titreCourt(t){
+ t=String(t||'').replace(/\s+/g,' ').trim();
+ var m=t.match(/^(Arrêté|Décret|Loi|Ordonnance|Décision|Délibération|Circulaire|Avis|Instruction)(?: n° ?[\w.\-\/]+)? du (\d{1,2}(?:er)? \S+ \d{4}),? (.+)$/i);
+ if(!m)return {nat:'',t:t};
+ var r=m[3].replace(/^(?:relatif|relative|relatifs|relatives) (?:à l'|à la |à |au |aux )/i,'').replace(/^portant /i,'');
+ return {nat:m[1].charAt(0).toUpperCase()+m[1].slice(1).toLowerCase()+' du '+m[2],t:r.charAt(0).toUpperCase()+r.slice(1)};
+}
 function court(it,auj){
  if(it.categorie==='proposition')return {t:'Projet',s:'',p:0};
  if(!it.dateVigueur)return {t:it.datePub?it.datePub.slice(8,10)+'/'+it.datePub.slice(5,7):'•',s:'',p:0};
@@ -134,7 +142,7 @@ function faits(it,p,auj,une){
  var c=concerne(p,it),q=quand(it,auj),h='<div class="nv-f nv-in">';
  if(it.aFaire)h+='<p class="nv-a" data-noi18n lang="fr">'+esc(it.aFaire)+'</p>';else if(q)h+='<p class="nv-a" data-noi18n lang="fr">'+esc(q)+'.</p>';
  if(c.texte!=='Oui, toi')h+='<p class="nv-q" data-noi18n lang="fr">'+esc(c.texte)+'</p>';
- var m=(!une&&it.aFaire&&it.dateVigueur&&it.categorie!=='proposition'?'<span data-noi18n lang="fr">'+esc(dateFr(it.dateVigueur))+'</span>':'')
+ var dj=it.dateVigueur?delai(it.dateVigueur,auj):null;var m=((!une&&it.aFaire&&it.dateVigueur||une&&it.dateVigueur&&!(dj>0))&&it.categorie!=='proposition'?'<span data-noi18n lang="fr">'+esc(dateFr(it.dateVigueur))+'</span>':'')
   +(/^https:\/\//.test(it.url||'')?'<a href="'+esc(it.url)+'" target="_blank" rel="noopener noreferrer">'+esc(it.categorie==='nouveaute'?tr('Lire l\'article')+' · '+(SOURCES[it.source]||it.source||''):tr('Texte officiel'))+'</a>':'');
  return h+(m?'<p class="nv-m">'+m+'</p>':'')+'</div>';
 }
@@ -154,12 +162,12 @@ function page(){
  if(!artisan()||!L.length){z.innerHTML='<div class="nv-vide nv-in"><span>'+ic('check')+'</span><b>'+esc(tr('Tu es à jour'))+'</b>'+esc(tr('Rien de nouveau pour ton métier.'))+'</div>';return}
  var une=N[0];
  if(une){var d=une.dateVigueur?delai(une.dateVigueur,auj):null,tot=une.dateVigueur&&une.datePub?Math.max(1,delai(une.dateVigueur,une.datePub)):0,fait=tot&&d!=null?Math.min(100,Math.max(4,Math.round((tot-Math.max(0,d))/tot*100))):0;
-  h+='<article class="nv-une"><p class="nv-sur"><i></i>'+esc(tr(une.categorie==='nouveaute'?'Nouveauté du métier':une.priorite==='P0'||une.priorite==='P1'?'Important':'Du nouveau pour ton métier'))+'</p><h2 data-noi18n lang="fr">'+esc(une.titre)+'</h2>'
+  h+='<article class="nv-une"><p class="nv-sur"><i></i>'+esc(tr(une.categorie==='nouveaute'?'Nouveauté du métier':une.priorite==='P0'||une.priorite==='P1'?'Important':'Du nouveau pour ton métier'))+'</p>'+(function(){var k=titreCourt(une.titre);return (k.nat?'<p class="nv-nat" data-noi18n lang="fr">'+esc(k.nat)+'</p>':'')+'<h2 data-noi18n lang="fr"'+(ouverts[une.id]?' class="ouv"':'')+'>'+esc(ouverts[une.id]?une.titre:k.t)+'</h2>'})()
    +(d!=null&&d>0&&une.categorie!=='proposition'?'<p class="nv-j"><b>J-'+d+'</b><span data-noi18n lang="fr">'+esc(dateFr(une.dateVigueur))+'</span></p><div class="nv-bar"><i style="width:'+fait+'%"></i></div>':'')
    +(ouverts[une.id]?faits(une,p,auj,true):'<button type="button" class="nv-go" data-veille="'+esc(une.id)+'">'+esc(tr('Ça me concerne ?'))+ic('arrow')+'</button>')+'</article>'}
  var ligne=function(it,lu){var o=!!ouverts[it.id],c=court(it,auj);
   return '<button type="button" class="nv-l'+(lu?' lu':'')+'" data-veille="'+esc(it.id)+'" aria-expanded="'+o+'"><span class="nv-h"><span class="nv-b'+(c.p?' proche':'')+'">'+esc(tr(c.t))+(c.s?'<small>'+esc(c.s)+'</small>':'')+'</span>'
-   +'<span class="nv-n" data-noi18n lang="fr">'+(lu||lus[it.id]?'':'<u></u>')+esc(it.titre)+'</span><svg class="i nv-c i-flip" aria-hidden="true"><use href="#i-chev"/></svg></span>'+(o?faits(it,p,auj):'')+'</button>'};
+   +'<span class="nv-n'+(o?' ouv':'')+'" data-noi18n lang="fr">'+(lu||lus[it.id]?'':'<u></u>')+esc(o?it.titre:titreCourt(it.titre).t)+'</span><svg class="i nv-c i-flip" aria-hidden="true"><use href="#i-chev"/></svg></span>'+(o?faits(it,p,auj):'')+'</button>'};
  var reste=N.slice(1);if(reste.length)h+='<p class="nv-t">'+esc(tr('À lire aussi'))+'</p>'+reste.map(function(it){return ligne(it,false)}).join('');
  if(V.length)h+='<p class="nv-t">'+esc(tr('Déjà lu'))+'</p>'+V.map(function(it){return ligne(it,true)}).join('');
  z.innerHTML='<div'+anime+'>'+h+'</div>';
