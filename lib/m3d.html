@@ -2363,7 +2363,7 @@ async function loadFile(f){if(!f)return;const isPdf=f.type==='application/pdf'||
   im.onerror=()=>toast(t('t_badfile'));im.src=url}
 function loadPdfJs(){if(window.pdfjsLib)return Promise.resolve();return new Promise((ok,ko)=>{const s=document.createElement('script');s.src='lib/pdf.min.js';
   s.onload=()=>{try{window.pdfjsLib.GlobalWorkerOptions.workerSrc='lib/pdf.worker.min.js'}catch(e){}ok()};s.onerror=ko;document.head.appendChild(s)})}
-async function loadPdf(f){busy(true,'b_read');try{await loadPdfJs();const buf=await f.arrayBuffer();const doc=await window.pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;
+async function loadPdf(f){busy(true,'b_read');try{await loadPdfJs();const buf=await f.arrayBuffer();const doc=await window.pdfjsLib.getDocument({data:new Uint8Array(buf),isEvalSupported:false}).promise;
     S.pdf={doc,n:doc.numPages,page:1};await renderPdfPage(1);busy(false);go('crop')}catch(e){busy(false);toast(t('t_pdf'))}}
 async function renderPdfPage(n){const page=await S.pdf.doc.getPage(n),v1=page.getViewport({scale:1}),k=1800/Math.max(v1.width,v1.height),vp=page.getViewport({scale:k});
   const c=document.createElement('canvas');c.width=Math.round(vp.width);c.height=Math.round(vp.height);const ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);

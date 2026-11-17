@@ -7653,7 +7653,10 @@ async function syncLogin(){
  }catch(e){setSyncMsg(e instanceof TypeError?'Entreprise introuvable. Vérifie l\'adresse, que le poste est allumé et que tu es sur le même Wi-Fi.':String(e.message||e))}}
 /* membre d'équipe sans compte : mot de passe de ce téléphone, pour le coffre */
 function vaultSetup(){try{if(window.VAULT&&!VAULT.on&&!accountGet()&&getSync().token)setTimeout(()=>VAULT.setup(),300)}catch(e){}}
-function syncLogout(){const c=getSync();setSync({url:c.url});renderSync();setSyncMsg('')}
+/* le jeton est aussi annulé sur le serveur : un jeton copié ne sert plus à rien après la déconnexion */
+function syncLogout(){const c=getSync();
+ if(c.url&&c.token)try{fetch(c.url+'/api/logout',{method:'POST',headers:authHdr(c),body:'{}',keepalive:true}).catch(()=>{})}catch(e){}
+ setSync({url:c.url});renderSync();setSyncMsg('')}
 /* --- équipe : invitation par QR code --- */
 let teamCache=[],inviteLink='';
 function authHdr(c){return{'content-type':'application/json',authorization:'Bearer '+c.token}}

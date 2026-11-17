@@ -151,10 +151,13 @@ function createServer(opts={}){
  const isLocal=req=>!HOSTED&&!req.headers['x-forwarded-for']&&!req.headers['cf-connecting-ip']&&['127.0.0.1','::1','::ffff:127.0.0.1'].includes(req.socket.remoteAddress);
  const sameSecret=(a,b)=>{const x=crypto.createHash('sha256').update(String(a)).digest(),y=crypto.createHash('sha256').update(String(b)).digest();return crypto.timingSafeEqual(x,y)};
 
- function authUser(req){
+ /* clé du jeton présenté dans data.tokens (ou null) */
+ function tokKey(req){
   const m=(req.headers.authorization||'').match(/^Bearer ([a-f0-9]{64})$/);
   if(!m)return null;
-  const h=tokH(m[1]),t=own(data.tokens,h)?data.tokens[h]:own(data.tokens,m[1])?data.tokens[m[1]]:null;
+  const h=tokH(m[1]);return own(data.tokens,h)?h:own(data.tokens,m[1])?m[1]:null}
+ function authUser(req){
+  const k=tokKey(req),t=k?data.tokens[k]:null;
   if(!t||t.exp<Date.now())return null;
   return data.users[t.user]||null}
 
@@ -548,6 +551,13 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
    const user=authUser(req);
    if(!url.startsWith('/api/'))return send(res,404,{error:'introuvable'});
    if(!user)return send(res,401,{error:'Non connecté.'});
+
+   /* se déconnecter : le jeton de cet appareil cesse de marcher tout de suite (all:true : tous les appareils de ce compte) */
+   if(POST&&url==='/api/logout'){
+    const b=await readBody(req),k=tokKey(req),me=user.name.toLowerCase();let n=0;
+    if(b.all===true)Object.keys(data.tokens).forEach(t=>{if(data.tokens[t].user===me){delete data.tokens[t];n++}});
+    else if(k){delete data.tokens[k];n=1}
+    persist();return send(res,200,{ok:true,n})}
 
    if(POST&&url==='/api/sync')return send(res,200,doSync(user,await readBody(req)));
 
