@@ -74,7 +74,7 @@ function creer(opts={}){
  /* la newsletter telle que l'appli la lit : seulement ce que le propriétaire a validé et choisi d'envoyer, à partir de sa date d'envoi */
  const publies=auj=>base.liste({validation:'valide'}).filter(f=>f.lettre===true&&!f.bloque&&f.publieLe&&f.publieLe<=auj&&f.categorie!==CAT.non_confirme);
  function lettre(){const auj=maintenant().toISOString().slice(0,10);
-  return publies(auj).sort((x,y)=>x.publieLe<y.publieLe?1:x.publieLe>y.publieLe?-1:0).slice(0,50).map(f=>({id:f.id,titre:f.titre,resume:String(f.nouvelle||'').slice(0,600),url:f.url,datePub:f.datePub,
+  return publies(auj).sort((x,y)=>x.publieLe<y.publieLe?1:x.publieLe>y.publieLe?-1:0).slice(0,50).map(f=>({id:f.id,source:f.source,titre:f.titre,resume:String(f.nouvelle||'').slice(0,600),url:f.url,datePub:f.datePub,
    dateVigueur:f.dateVigueur,categorie:f.categorie,priorite:f.priorite,pros:f.pros||[],aFaire:f.aFaire||'',publieLe:f.publieLe}))}
  /* ce qui est sorti et n'a pas encore été annoncé par notification */
  function aAnnoncer(){const auj=maintenant().toISOString().slice(0,10);return publies(auj).filter(f=>!f.pousse).map(f=>({id:f.id,titre:f.titre,priorite:f.priorite,pros:f.pros||[]}))}

@@ -88,6 +88,8 @@ function pastille(){
   if(p)p.hidden=!n}
 }
 /* la page Newsletter : ce qui concerne l'artisan ; le plus important à lire en grand, le reste en lignes, le déjà lu en bas */
+/* presse du métier : la source est toujours nommée, ce n'est pas un texte officiel */
+var SOURCES={capeb:'CAPEB',batiactu:'Batiactu'};
 var NOMS={'électriciens':'Électricien','plombiers-chauffagistes':'Plombier-chauffagiste','maçons':'Maçon','couvreurs':'Couvreur','menuisiers':'Menuisier','peintres':'Peintre','diagnostiqueurs':'Diagnostiqueur'};
 var CSS='#newsList{--nv:cubic-bezier(.2,.8,.2,1)}'
 +'.nv-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-6px 0 16px}'
@@ -133,7 +135,7 @@ function faits(it,p,auj,une){
  if(it.aFaire)h+='<p class="nv-a" data-noi18n lang="fr">'+esc(it.aFaire)+'</p>';else if(q)h+='<p class="nv-a" data-noi18n lang="fr">'+esc(q)+'.</p>';
  if(c.texte!=='Oui, toi')h+='<p class="nv-q" data-noi18n lang="fr">'+esc(c.texte)+'</p>';
  var m=(!une&&it.aFaire&&it.dateVigueur&&it.categorie!=='proposition'?'<span data-noi18n lang="fr">'+esc(dateFr(it.dateVigueur))+'</span>':'')
-  +(/^https:\/\//.test(it.url||'')?'<a href="'+esc(it.url)+'" target="_blank" rel="noopener noreferrer">'+esc(tr('Texte officiel'))+'</a>':'');
+  +(/^https:\/\//.test(it.url||'')?'<a href="'+esc(it.url)+'" target="_blank" rel="noopener noreferrer">'+esc(it.categorie==='nouveaute'?tr('Lire l\'article')+' · '+(SOURCES[it.source]||it.source||''):tr('Texte officiel'))+'</a>':'');
  return h+(m?'<p class="nv-m">'+m+'</p>':'')+'</div>';
 }
 var dejaAnime=false,lus={};
@@ -152,7 +154,7 @@ function page(){
  if(!artisan()||!L.length){z.innerHTML='<div class="nv-vide nv-in"><span>'+ic('check')+'</span><b>'+esc(tr('Tu es à jour'))+'</b>'+esc(tr('Rien de nouveau pour ton métier.'))+'</div>';return}
  var une=N[0];
  if(une){var d=une.dateVigueur?delai(une.dateVigueur,auj):null,tot=une.dateVigueur&&une.datePub?Math.max(1,delai(une.dateVigueur,une.datePub)):0,fait=tot&&d!=null?Math.min(100,Math.max(4,Math.round((tot-Math.max(0,d))/tot*100))):0;
-  h+='<article class="nv-une"><p class="nv-sur"><i></i>'+esc(tr(une.priorite==='P0'||une.priorite==='P1'?'Important':'Du nouveau pour ton métier'))+'</p><h2 data-noi18n lang="fr">'+esc(une.titre)+'</h2>'
+  h+='<article class="nv-une"><p class="nv-sur"><i></i>'+esc(tr(une.categorie==='nouveaute'?'Nouveauté du métier':une.priorite==='P0'||une.priorite==='P1'?'Important':'Du nouveau pour ton métier'))+'</p><h2 data-noi18n lang="fr">'+esc(une.titre)+'</h2>'
    +(d!=null&&d>0&&une.categorie!=='proposition'?'<p class="nv-j"><b>J-'+d+'</b><span data-noi18n lang="fr">'+esc(dateFr(une.dateVigueur))+'</span></p><div class="nv-bar"><i style="width:'+fait+'%"></i></div>':'')
    +(ouverts[une.id]?faits(une,p,auj,true):'<button type="button" class="nv-go" data-veille="'+esc(une.id)+'">'+esc(tr('Ça me concerne ?'))+ic('arrow')+'</button>')+'</article>'}
  var ligne=function(it,lu){var o=!!ouverts[it.id],c=court(it,auj);

@@ -5,7 +5,7 @@ const {creer}=require('../serveur/veille/index.js');
 let ok=0;const t=async(nom,f)=>{await f();ok++;console.log('✓',nom)};
 const ext=n=>fs.readFileSync(path.join(__dirname,'veille',n),'utf8');
 const rep=(corps,st)=>({ok:(st||200)<300,status:st||200,text:async()=>corps,json:async()=>JSON.parse(corps)});
-const flux=async u=>{u=String(u);return rep(ext(/bofip/.test(u)?'bofip.rss':/actu-actu-pro/.test(u)?'entreprendre.rss':/particuliers/.test(u)?'particuliers.rss':/vie-publique/.test(u)?'viepublique.rss':/ecologie/.test(u)?'ecologie.rss':'cnil.rss'))};
+const flux=async u=>{u=String(u);return rep(ext(/bofip/.test(u)?'bofip.rss':/actu-actu-pro/.test(u)?'entreprendre.rss':/particuliers/.test(u)?'particuliers.rss':/vie-publique/.test(u)?'viepublique.rss':/ecologie/.test(u)?'ecologie.rss':/capeb/.test(u)?'capeb.rss':/batiactu/.test(u)?'batiactu.rss':'cnil.rss'))};
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'caso-veille-'));
 let heure='2026-11-16T06:00:00Z';
 const v=creer({dir,env:{},fetch:flux,log:()=>{},maintenant:()=>new Date(heure)});
@@ -15,14 +15,14 @@ const vue=()=>JSON.stringify(v.liste().map(f=>[f.id,f.categorie,f.historique.len
 await t('premier passage : chaque texte est vérifié, classé, en attente',async()=>{
  const r=await v.passer();assert.ok(r.nouveaux>0);assert.deepStrictEqual([r.modifies,r.erreurs],[0,0]);
  assert.ok(v.liste().every(f=>f.categorie&&f.categorie!=='aucun'&&f.validation==='attente'&&f.dateVerif==='2026-11-16'&&f.historique.length===0));
- assert.ok(v.liste().every(f=>['clarification','proposition','non_confirme'].includes(f.categorie)));   // des flux d'actualité ne confirment aucune obligation
- assert.ok(fs.existsSync(path.join(dir,'veille.json')));assert.deepStrictEqual(v.etat().sources,['bofip','entreprendre','particuliers','viepublique','ecologie','cnil'])});
+ assert.ok(v.liste().every(f=>['clarification','proposition','non_confirme','nouveaute'].includes(f.categorie)));   // des flux d'actualité ne confirment aucune obligation
+ assert.ok(fs.existsSync(path.join(dir,'veille.json')));assert.deepStrictEqual(v.etat().sources,['bofip','entreprendre','particuliers','viepublique','ecologie','cnil','capeb','batiactu'])});
 await t('le lendemain, rien de neuf : ni doublon, ni historique, ni changement',async()=>{
  const avant=vue();heure='2026-11-17T06:00:00Z';const r=await v.passer();
  assert.deepStrictEqual([r.nouveaux,r.modifies,r.bloques],[0,0,0]);assert.strictEqual(vue(),avant);assert.ok(v.liste().every(f=>f.dateVerif==='2026-11-17'))});
 await t('deux passages demandés ensemble : un seul tourne',async()=>{let n=0;
  const w=creer({dir:fs.mkdtempSync(path.join(os.tmpdir(),'caso-veille-')),env:{},log:()=>{},fetch:async u=>{n++;return flux(u)}});
- const [a,b]=await Promise.all([w.passer(),w.passer()]);assert.strictEqual(a,b);assert.strictEqual(n,6)});
+ const [a,b]=await Promise.all([w.passer(),w.passer()]);assert.strictEqual(a,b);assert.strictEqual(n,8)});
 await t('une source en panne : comptée, les autres textes sont gardés',async()=>{
  const w=creer({dir:fs.mkdtempSync(path.join(os.tmpdir(),'caso-veille-')),env:{},log:()=>{},fetch:async u=>/bofip/.test(String(u))?rep('',503):flux(u)});
  const r=await w.passer();assert.strictEqual(r.erreurs,1);assert.ok(r.nouveaux>0);assert.strictEqual(w.etat().erreurs,1)});
@@ -34,7 +34,7 @@ await t('serveur : lecture réservée au propriétaire',async()=>{
  await new Promise(r=>srv.listen(0,'127.0.0.1',r));const port=srv.address().port;
  const get=(u,h)=>new Promise((ok,ko)=>http.get({host:'127.0.0.1',port,path:u,headers:h||{}},r=>{let d='';r.on('data',c=>d+=c);r.on('end',()=>ok([r.statusCode,JSON.parse(d)]))}).on('error',ko));
  assert.strictEqual((await get('/api/veille/etat'))[0],404);assert.strictEqual((await get('/api/veille/textes',{'x-caso-cle':'faux'}))[0],404);
- const [c,b]=await get('/api/veille/etat',{'x-caso-cle':'cle-test'});assert.strictEqual(c,200);assert.ok(b.textes>0);assert.deepStrictEqual(b.sources,['bofip','entreprendre','particuliers','viepublique','ecologie','cnil']);assert.ok(b.dernierPassage);
+ const [c,b]=await get('/api/veille/etat',{'x-caso-cle':'cle-test'});assert.strictEqual(c,200);assert.ok(b.textes>0);assert.deepStrictEqual(b.sources,['bofip','entreprendre','particuliers','viepublique','ecologie','cnil','capeb','batiactu']);assert.ok(b.dernierPassage);
  const [c2,L]=await get('/api/veille/textes',{'x-caso-cle':'cle-test'});assert.strictEqual(c2,200);assert.strictEqual(L.length,b.textes);
  assert.ok((await get('/api/veille/textes?bloque=1',{'x-caso-cle':'cle-test'}))[1].every(f=>f.bloque));
  assert.ok((await get('/api/veille/textes?categorie=clarification',{'x-caso-cle':'cle-test'}))[1].every(f=>f.categorie==='clarification'));
