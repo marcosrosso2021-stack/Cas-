@@ -28,6 +28,12 @@ await t('une source en panne : comptée, les autres textes sont gardés',async()
  const r=await w.passer();assert.strictEqual(r.erreurs,1);assert.ok(r.nouveaux>0);assert.strictEqual(w.etat().erreurs,1)});
 await t('un passage par jour, à partir de 5 h',()=>{
  assert.strictEqual(v.aFaire(new Date('2026-11-17T09:00:00Z')),false);assert.strictEqual(v.aFaire(new Date('2026-11-18T04:00:00Z')),false);assert.strictEqual(v.aFaire(new Date('2026-11-18T05:10:00Z')),true)});
+await t('sources changées depuis la dernière collecte : une collecte de plus le jour même ; FAQ du portail RE2020 écartées',async()=>{
+ const d4=fs.mkdtempSync(path.join(os.tmpdir(),'caso-veille-')),S=require('../serveur/veille/sources.js');let act=['bofip'];
+ const x=creer({dir:d4,env:{},log:()=>{},maintenant:()=>new Date('2026-11-17T09:00:00Z'),sources:{actives:()=>act,collecter:async()=>({erreurs:[],bruts:[]})}});
+ const m=new Date('2026-11-17T09:30:00Z');assert.strictEqual(x.aFaire(new Date('2026-11-17T04:00:00Z')),false,'jamais collecté : on attend 5 h');
+ await x.passer();assert.strictEqual(x.aFaire(m),false);act=['bofip','economie'];assert.strictEqual(x.aFaire(m),true);await x.passer();assert.strictEqual(x.aFaire(m),false);
+ const r=await S.creer({env:{},fetch:flux,log:()=>{}}).collecter(),re=r.bruts.filter(b=>b.source==='re2020');assert.ok(re.length>0&&!re.some(b=>/^FAQ/i.test(b.titre)))});
 await t('serveur : lecture réservée au propriétaire',async()=>{
  const {createServer}=require('../serveur/server.js');process.env.CASO_CLE_IA='cle-test';
  const s=createServer({dataDir:dir,veille:v,noTimers:true,appFile:path.join(__dirname,'..','index.html')}),srv=s.server||s;

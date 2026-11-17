@@ -51,13 +51,13 @@ function ouvrir(dir,opts={}){
   .sort((x,y)=>x.datePub<y.datePub?1:x.datePub>y.datePub?-1:0)}
  function journal(type,detail){d.journal.push({le:le(),type:court(type,40),detail});if(d.journal.length>2000)d.journal.splice(0,d.journal.length-2000);if(type==='erreur')d.erreurs++}
  const etat=()=>({textes:Object.keys(d.textes).length,dernierPassage:d.dernierPassage,erreurs:d.erreurs});
- function passage(iso){d.dernierPassage=iso}
+ function passage(iso,sources){d.dernierPassage=iso;if(sources)d.sourcesPassage=sources}
  function enregistrer(){fs.mkdirSync(dir,{recursive:true});const t=F+'.tmp';fs.writeFileSync(t,JSON.stringify(d));fs.renameSync(t,F);
   try{fs.copyFileSync(F,BAK)}catch(e){log('[casô] veille : copie non écrite')}}
  /* ce que les corrections du propriétaire ont appris (gardé avec la base) */
  const appris=()=>{if(!d.appris||typeof d.appris!=='object')d.appris={};return d.appris};
  const dernieres=n=>d.journal.slice(-n).reverse();
- return {recevoir,lire,liste,noter,completer,vu,journal,etat,passage,enregistrer,appris,dernieres};
+ return {recevoir,lire,liste,noter,completer,vu,journal,etat,passage,sourcesPassage:()=>d.sourcesPassage,enregistrer,appris,dernieres};
 }
 
 module.exports={ouvrir,sha,court};

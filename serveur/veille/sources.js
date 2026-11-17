@@ -142,7 +142,7 @@ function creer(opts={}){
   if(ID&&SEC)L.push(['legifrance',legifrance]);
   const vus=new Set();   // un même article Service-Public peut être dans les flux pros et particuliers : gardé une fois
   for(const [source,lire] of L){
-   try{const v=await lire();bruts.push(...(source==='legifrance'?v:v.filter(b=>NATURE[source]==='METIER'?pertinentMetier(b.titre):LARGES.has(source)?pertinentStrict(b.titre):pertinent(b.titre,b.resume))).filter(b=>{
+   try{const v=await lire();bruts.push(...(source==='legifrance'?v:v.filter(b=>!(source==='re2020'&&/^\s*FAQ\b/i.test(b.titre))&&(NATURE[source]==='METIER'?pertinentMetier(b.titre):LARGES.has(source)?pertinentStrict(b.titre):pertinent(b.titre,b.resume)))).filter(b=>{
     const k=(b.source==='particuliers'?'entreprendre':b.source)+':'+b.idSource;if(vus.has(k))return false;vus.add(k);return true}))}
    catch(e){const erreur=String(e&&e.name==='AbortError'?'délai dépassé':e&&e.message||'erreur').slice(0,120);erreurs.push({source,erreur});log('[casô] veille : source en erreur',source,erreur)}}
   return {bruts,erreurs}}
