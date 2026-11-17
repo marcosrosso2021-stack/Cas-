@@ -13,7 +13,7 @@
 'use strict';
 const http=require('http'),fs=require('fs'),path=require('path'),crypto=require('crypto'),os=require('os');
 const webpush=require('./webpush.js'),prixLib=require('./prix.js'),authLib=require('./auth.js'),veilleLib=require('./veille/index.js');
-const sauvegarde=require('./sauvegarde.js');
+const sauvegarde=require('./sauvegarde.js'),s3Lib=require('./s3.js');
 
 const COLL=['prices','quotes','hist','chantiers','people','pts','prof','clients','suppliers','projects','plans','events','invoices'];
 const ROLE_PUSH={patron:COLL,chef:COLL,ouvrier:['pts']};
@@ -148,6 +148,23 @@ function createServer(opts={}){
   else{if(!wNext){const w=wFile.catch(()=>{}).then(()=>{wNext=null;return ecrire()});wNext=w;wFile=w}p=wNext}
   p.catch(e=>{if(!e||!e.pub)console.error('[casô] écriture des données',e&&e.message||e)});return p}
  const flush=()=>wFile.catch(()=>{});
+ /* Copie hors du serveur : quand l'add-on Cellar de Clever Cloud est lié (CELLAR_ADDON_*) et qu'un bucket est nommé
+    (SAUVEGARDE_BUCKET), chaque sauvegarde chiffrée y est envoyée. Une sauvegarde en clair n'y part jamais. */
+ const S3C=opts.s3!==undefined?opts.s3:(process.env.CELLAR_ADDON_HOST&&process.env.CELLAR_ADDON_KEY_ID&&process.env.CELLAR_ADDON_KEY_SECRET&&process.env.SAUVEGARDE_BUCKET?
+  {host:process.env.CELLAR_ADDON_HOST,keyId:process.env.CELLAR_ADDON_KEY_ID,secret:process.env.CELLAR_ADDON_KEY_SECRET,bucket:process.env.SAUVEGARDE_BUCKET,region:process.env.SAUVEGARDE_REGION}:null);
+ const depot=S3C&&SV_CLE?s3Lib.client(S3C):null,SV_PRE='sauvegardes/',SV_ENV=path.join(sauvegarde.dossier(DIR),'.envoyees');
+ const distant={actif:!!depot,dernier:null,le:null,erreur:null};
+ const envoyees=()=>{try{const l=JSON.parse(fs.readFileSync(SV_ENV,'utf8'));return Array.isArray(l)?l:[]}catch(e){return[]}};
+ /* envoie la dernière sauvegarde chiffrée si elle n'est pas encore partie (rejoué chaque heure après un échec) */
+ async function pousser(retires){
+  if(!depot||cede)return false;
+  try{
+   const x=sauvegarde.lister(DIR).find(y=>y.chiffre);let l=envoyees();
+   if(x&&!l.includes(x.nom)){await depot.envoyer(SV_PRE+x.nom,await fs.promises.readFile(x.chemin));
+    l=l.concat(x.nom).slice(-60);fs.writeFileSync(SV_ENV,JSON.stringify(l));distant.dernier=x.nom;distant.le=new Date().toISOString()}
+   for(const nom of retires||[])if(l.includes(nom)){await depot.supprimer(SV_PRE+nom);l=l.filter(n=>n!==nom);fs.writeFileSync(SV_ENV,JSON.stringify(l))}
+   distant.erreur=null;return true}
+  catch(e){distant.erreur=String(e&&e.message||e).slice(0,200);console.error('[casô] copie de la sauvegarde hors du serveur',distant.erreur);return false}}
  /* Une sauvegarde par jour, gardée 14 jours (plus la dernière de chaque mois, 6 mois). Seul le serveur qui a la main en fait. */
  let svEnCours=null;
  function sauvegarder(force){
@@ -155,9 +172,9 @@ function createServer(opts={}){
   if(svEnCours)return svEnCours;
   svEnCours=(async()=>{
    const l=sauvegarde.lister(DIR),der=l[0]&&l[0].le?Date.parse(l[0].le):0;
-   if(!force&&Date.now()-der<20*3600e3)return null;
+   if(!force&&Date.now()-der<20*3600e3){await pousser();return null}
    await flush();const r=await sauvegarde.creer(DIR,{cle:SV_CLE});
-   if(r)sauvegarde.elaguer(DIR,{jours:Number(process.env.SAUVEGARDES_JOURS)||14});return r})()
+   if(r)await pousser(sauvegarde.elaguer(DIR,{jours:Number(process.env.SAUVEGARDES_JOURS)||14}));return r})()
    .catch(e=>{console.error('[casô] sauvegarde',e&&e.message||e);return null}).finally(()=>{svEnCours=null});
   return svEnCours}
  if(!opts.noTimers){const t1=setTimeout(()=>sauvegarder(),30e3),t2=setInterval(()=>sauvegarder(),3600e3);if(t1.unref)t1.unref();if(t2.unref)t2.unref()}
@@ -626,7 +643,7 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
    if(url==='/api/proprio/sauvegardes'||url.startsWith('/api/proprio/sauvegarde/')){const k=cleProprio(req,ip);
     if(k)return send(res,k,{error:k===429?'Trop d\'essais, réessaie plus tard.':'Introuvable.'});
     const vue=x=>({nom:x.nom,le:x.le,octets:x.octets,chiffre:x.chiffre});
-    if(req.method==='GET'&&url==='/api/proprio/sauvegardes')return send(res,200,{chiffrement:!!SV_CLE,sauvegardes:sauvegarde.lister(DIR).map(vue)});
+    if(req.method==='GET'&&url==='/api/proprio/sauvegardes')return send(res,200,{chiffrement:!!SV_CLE,distant,sauvegardes:sauvegarde.lister(DIR).map(vue)});
     if(POST&&url==='/api/proprio/sauvegardes'){const r=await sauvegarder(true);
      return r?send(res,200,vue(r)):send(res,409,{error:'Sauvegarde impossible pour l\'instant.'})}
     if(req.method==='GET'){const x=sauvegarde.trouver(DIR,decodeURIComponent(url.slice('/api/proprio/sauvegarde/'.length)));
@@ -820,7 +837,7 @@ data.invSeq[key]=n;if(iid)data.invIds[key+'|'+iid]=n;await persist();return send
    return send(res,404,{error:'introuvable'});
   }catch(e){if(!e||!e.pub)console.error('[casô]',req.method,url,e&&e.stack||e);if(!res.headersSent)send(res,400,{error:e&&e.pub?e.message:'Requête invalide.'});else try{res.destroy()}catch(_){}}});
 
- return{server,data:()=>data,remindTick,icsFor,auth,flush,persist,cede:()=>cede,sauvegarder};
+ return{server,data:()=>data,remindTick,icsFor,auth,flush,persist,cede:()=>cede,sauvegarder,distant:()=>distant};
 }
 
 const lockRead=dir=>{try{return JSON.parse(fs.readFileSync(path.join(dir,'data.lock'),'utf8'))}catch(e){return null}};
@@ -838,6 +855,21 @@ async function prendreLaMain(dir,id,o={}){
   await new Promise(r=>setTimeout(r,o.pas||250))}
  return{attendu:true,ok:false}}
 
+/* Restauration demandée (RESTAURER) alors que la sauvegarde n'est plus sur ce serveur (stockage perdu ou neuf) :
+   elle est d'abord rapportée depuis le dépôt Cellar, puis createServer la remet en place comme d'habitude. */
+async function rapatrier(opts={}){
+ const veut=opts.restaurer||process.env.RESTAURER;if(!veut)return null;
+ const dir=opts.dataDir||process.env.DATA_DIR||(process.env.APP_HOME?path.join(process.env.APP_HOME,'donnees'):path.join(__dirname,'donnees'));
+ if(sauvegarde.trouver(dir,veut))return null;
+ const c=opts.s3!==undefined?opts.s3:(process.env.CELLAR_ADDON_HOST&&process.env.CELLAR_ADDON_KEY_ID&&process.env.CELLAR_ADDON_KEY_SECRET&&process.env.SAUVEGARDE_BUCKET?
+  {host:process.env.CELLAR_ADDON_HOST,keyId:process.env.CELLAR_ADDON_KEY_ID,secret:process.env.CELLAR_ADDON_KEY_SECRET,bucket:process.env.SAUVEGARDE_BUCKET,region:process.env.SAUVEGARDE_REGION}:null);
+ if(!c)return null;
+ const depot=s3Lib.client(c),noms=(await depot.lister('sauvegardes/')).map(k=>k.slice('sauvegardes/'.length)).filter(n=>sauvegarde.NOM.test(n)).sort();
+ const nom=veut==='derniere'?noms[noms.length-1]:noms.find(n=>n===veut);if(!nom)return null;
+ const D=sauvegarde.dossier(dir);fs.mkdirSync(D,{recursive:true});
+ const tmp=path.join(D,nom+'.tmp');fs.writeFileSync(tmp,await depot.lire('sauvegardes/'+nom));fs.renameSync(tmp,path.join(D,nom));
+ console.log('[casô] sauvegarde '+nom+' rapportée depuis le dépôt.');return nom}
+
 /* Démarrage prêt à l'emploi : utilisable depuis un lanceur ou depuis une application */
 async function start(opts={}){
  const port=opts.port!==undefined?opts.port:(Number(process.env.PORT)||(process.env.APP_HOME?8080:8787));
@@ -845,13 +877,14 @@ async function start(opts={}){
   const id=crypto.randomBytes(8).toString('hex'),dir=process.env.DATA_DIR||path.join(process.env.APP_HOME,'donnees');
   const r=await prendreLaMain(dir,id);if(r.attendu&&!r.ok)console.error('[casô] l\'ancien serveur n\'a pas confirmé la fin de ses écritures : démarrage quand même.');
   opts=Object.assign({},opts,{verrou:id})}
+ await rapatrier(opts);
  const s=createServer(opts);
  if(require.main===module)process.once('SIGTERM',()=>{try{s.server.close()}catch(e){}s.flush().finally(()=>process.exit(0))});   // arrêt demandé : on finit d'écrire
  return new Promise((ok,ko)=>{
   s.server.once('error',ko);
   s.server.listen(port,'0.0.0.0',()=>ok(Object.assign(s,{port:s.server.address().port,addresses:lanAddresses()})))})}
 
-module.exports={createServer,start,lanAddresses,prendreLaMain}; // srvfix-v1 srvsec-v5
+module.exports={createServer,start,lanAddresses,prendreLaMain,rapatrier}; // srvfix-v1 srvsec-v5
 
 if(require.main===module){
  start().then(s=>{
