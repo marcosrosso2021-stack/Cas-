@@ -87,6 +87,10 @@ Réglages conseillés sur Clever Cloud (onglet **Variables d'environnement**) :
 | `VAPID_SUBJECT` | `mailto:toi@ton-domaine` | Notifications |
 | `HSTS_PRELOAD` | `1` *(plus tard)* | Seulement une fois sûr que tout passe en https, et si tu inscris le domaine sur hstspreload.org |
 
+**Une seule instance.** Le serveur garde les données en mémoire et les écrit dans un seul fichier : sur Clever Cloud, laisse la mise à l'échelle sur **1 instance**. Pendant un déploiement, deux serveurs tournent quelques secondes : le nouveau prend la main, l'ancien finit ses écritures puis répond « réessaie », et les téléphones renvoient tout seuls leur demande. Rien à régler.
+
+**Taille des données.** Le fichier `data.json` est plafonné à 200 Mo (variable `DATA_MAX_MO` pour changer). Au-delà, le serveur refuse ce qui l'agrandit ; lire, supprimer et signer restent possibles.
+
 Pas besoin de `TRUST_PROXY` ni de `PORT` sur Clever Cloud : ils sont gérés automatiquement. En local (poste du bureau), rien ne change : le serveur reste en `http` sur le réseau interne, sans HSTS ni redirection.
 
 **Domaine (DNS), à faire une fois chez ton registraire :**

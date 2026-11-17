@@ -49,8 +49,11 @@ function createServer(opts={}){
  const HOSTED=!!(opts.hosted||opts.trustCf||process.env.TRUST_PROXY||process.env.TRUST_CF||process.env.APP_HOME);
  const HTTPS_ONLY=HOSTED&&!opts.allowHttp&&process.env.ALLOW_HTTP!=='1';
 
- let data={rev:0,counter:0,users:{},tokens:{},invites:{},recs:{},tombs:[],signs:{},sigreg:{},subs:[],vapid:null};
+ let data={rev:0,counter:0,users:{},tokens:{},invites:{},recs:{},tombs:[],signs:{},sigreg:{},subs:[],vapid:null},dataSize=0;
+ /* plafond du fichier de données (200 Mo, réglable avec DATA_MAX_MO) : au-delà, le serveur refuse ce qui l'agrandit */
+ const DATA_MAX=(Number(opts.dataMaxMo||process.env.DATA_MAX_MO)||200)*1e6;
  {let raw=null;try{raw=fs.readFileSync(FILE,'utf8')}catch(e){if(e.code!=='ENOENT')throw e}
+  if(raw!==null)dataSize=Buffer.byteLength(raw);
   if(raw!==null){let d;try{d=JSON.parse(raw)}catch(e){const bad=FILE+'.illisible-'+Date.now();try{fs.renameSync(FILE,bad)}catch(_){}
     throw new Error('Le fichier de données est illisible. Il a été mis de côté ('+path.basename(bad)+') et rien n\'a été écrasé. Restaure une sauvegarde avant de relancer.')}
    data=Object.assign(data,d)}}
@@ -123,10 +126,29 @@ function createServer(opts={}){
   data.tombs=data.tombs.filter(t=>now-t.at<180*864e5)}
  tidy();
  if(!opts.noTimers){const it=setInterval(()=>{tidy();persist()},864e5);if(it.unref)it.unref()}
+ /* Écriture du fichier de données. Elle ne bloque plus les autres requêtes : une seule écriture à la fois, les demandes
+    arrivées entre-temps sont regroupées dans la suivante. persist() rend une promesse tenue quand ce changement est
+    sur le disque : les réponses qui confirment un enregistrement l'attendent (await persist()). */
+ let wFile=Promise.resolve(),wNext=null,cede=false;
+ async function ecrire(){const j=JSON.stringify(data),tmp=FILE+'.tmp';dataSize=Buffer.byteLength(j);
+  await fs.promises.writeFile(tmp,j);await fs.promises.rename(tmp,FILE)}
  function persist(){
-  const tmp=FILE+'.tmp';
-  fs.writeFileSync(tmp,JSON.stringify(data));
-  fs.renameSync(tmp,FILE)}
+  let p;
+  if(cede)p=Promise.reject(pub('Mise à jour du serveur en cours, réessaie dans un instant.'));
+  else{if(!wNext){const w=wFile.catch(()=>{}).then(()=>{wNext=null;return ecrire()});wNext=w;wFile=w}p=wNext}
+  p.catch(e=>{if(!e||!e.pub)console.error('[casô] écriture des données',e&&e.message||e)});return p}
+ const flush=()=>wFile.catch(()=>{});
+ /* Un seul serveur écrit à la fois. Pendant un déploiement, deux serveurs tournent quelques secondes : le nouveau prend la main
+    (fichier data.lock, voir prendreLaMain) ; l'ancien le voit, finit ses écritures, le signale (data.lock.ack), puis n'écrit plus
+    rien et répond « réessaie » : le téléphone renvoie alors sa demande au nouveau serveur. */
+ const INST=opts.verrou||null;
+ if(INST){const pas=opts.verrouPas||1000;let n=0;
+  const vivant=()=>{try{fs.writeFileSync(path.join(DIR,'data.vivant'),JSON.stringify({id:INST,at:Date.now()}))}catch(e){}};vivant();
+  const vt=setInterval(()=>{const l=lockRead(DIR);
+   if(l&&l.id&&l.id!==INST){cede=true;clearInterval(vt);
+    flush().then(()=>{try{fs.writeFileSync(path.join(DIR,'data.lock.ack'),JSON.stringify({de:INST,pour:l.id,at:Date.now()}))}catch(e){}
+     console.log('[casô] un nouveau serveur a pris la main : celui-ci n\'écrit plus.')});return}
+   if(++n%5===0)vivant()},pas);if(vt.unref)vt.unref()}
 
  /* --- comptes --- */
  const tokH=t=>'h'+crypto.createHash('sha256').update(String(t)).digest('hex');
@@ -194,6 +216,7 @@ function createServer(opts={}){
  // une facture émise (numérotée) ne change plus : seuls les paiements s'ajoutent, et une correction passe par un avoir
  const INV_KEEP=['num','kind','date','done','due','client','chantier','lines','remise','ret','franchise','autoliq','pct','ded','ref','qid','qnum','seller','issuedAt','seal','red','red55','calc'];
  const MAX_PUSH=2000;
+ let syncEcrit=null;   // écriture lancée par le dernier doSync()
  function doSync(user,body){
   const canPush=ROLE_PUSH[user.role]||[],canPull=ROLE_PULL[user.role]||[];
   const since=Number(body.since)||0;
@@ -247,7 +270,7 @@ function createServer(opts={}){
     else if(c==='people')l=l.filter(r=>myPeople.has(r.id))}
    if(l.length)out[c]=l}
   const tout=data.tombs.filter(t=>t.rev>since&&canPull.includes(t.c));
-  if(dirty)persist();
+  syncEcrit=dirty?persist():null;
   return{rev:data.rev,counter:data.counter,changes:out,tomb:tout}}
 
 /* --- signature des devis --- */
@@ -414,6 +437,7 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
    if(HTTPS_ONLY&&String(req.headers['x-forwarded-proto']||'').split(',')[0].trim()==='http'){
     res.writeHead(301,{location:'https://'+(req.headers.host||'')+req.url,'cache-control':'no-store'});return res.end()}
    if(req.method==='OPTIONS'){res.writeHead(204,cors);return res.end()}
+   if(cede&&(req.url||'').startsWith('/api/'))return send(res,503,{error:'Mise à jour du serveur en cours, réessaie dans un instant.'},{'retry-after':'2'});
    if(NEWL&&req.method==='GET'&&url==='/devis.html'){/* module Devis, ouvert dans un cadre de l'appli */
     let html;try{html=fs.readFileSync(path.join(ROOT,'devis.html'),'utf8')}catch(e){return send(res,404,{error:'introuvable'})}
     return send(res,200,html,{'content-security-policy':CSP_APP.replace("frame-ancestors 'none'","frame-ancestors 'self'"),'x-frame-options':'SAMEORIGIN'})}
@@ -441,7 +465,7 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
     res.writeHead(200,Object.assign({'content-type':'text/html; charset=utf-8','cache-control':'no-store','x-robots-tag':'noindex','content-security-policy':CSP_PUB},SEC));return res.end(html)}
    {const mf=url.match(/^\/api\/f\/([a-f0-9]{32})(\/certify)?$/);
     if(mf){const sh=data.invShares[mf[1]];if(!sh)return send(res,404,{error:'Ce lien n\'existe pas.'});
-     if(req.method==='GET'&&!mf[2]){if(!sh.viewedAt){sh.viewedAt=Date.now();persist()}return send(res,200,{doc:sh.doc,cert:sh.cert?{name:sh.cert.name,at:sh.cert.at}:null,viewedAt:sh.viewedAt})}
+     if(req.method==='GET'&&!mf[2]){if(!sh.viewedAt){sh.viewedAt=Date.now();await persist()}return send(res,200,{doc:sh.doc,cert:sh.cert?{name:sh.cert.name,at:sh.cert.at}:null,viewedAt:sh.viewedAt})}
      if(POST&&mf[2]){
       if(tooMany(ip,res))return send(res,429,{error:'Trop d\'essais, patientez une minute.'});
       if(sh.cert)return send(res,409,{error:'Déjà certifié.'});
@@ -449,7 +473,7 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
       if(name.length<2){fail(ip);return send(res,400,{error:'Écrivez votre nom.'})}
       if(b.agree!==true)return send(res,400,{error:'Cochez la case pour certifier.'});
       if(sh.cert)return send(res,409,{error:'Déjà certifié.'});
-      sh.cert={docKey:invKey(sh.doc),name,at:Date.now(),ip:clientIp(req),ua:cut(req.headers['user-agent'],300)};persist();
+      sh.cert={docKey:invKey(sh.doc),name,at:Date.now(),ip:clientIp(req),ua:cut(req.headers['user-agent'],300)};await persist();
       return send(res,200,{cert:{name,at:sh.cert.at}})}
      return send(res,405,{error:'méthode'})}}
 
@@ -471,7 +495,7 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
    if(m){
     const sg=data.signs[m[1]];
     if(!sg)return send(res,404,{error:'Ce lien n\'existe pas.'});
-    if(req.method==='GET'){if(!sg.viewedAt&&sg.status==='sent'){sg.viewedAt=Date.now();persist()}return send(res,200,publicSign(sg))}
+    if(req.method==='GET'){if(!sg.viewedAt&&sg.status==='sent'){sg.viewedAt=Date.now();await persist()}return send(res,200,publicSign(sg))}
     if(POST&&m[2]){
      if(tooMany(ip,res))return send(res,429,{error:'Trop d\'essais, patientez une minute.'});
      if(sg.status==='signed')return send(res,409,{error:'Ce devis est déjà signé.'});
@@ -490,7 +514,7 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
      const qid=sg.doc.quote.id;
      if(qid){const cur=data.recs.quotes[qid]||Object.assign({},sg.doc.quote,{id:qid}),dq=sg.doc.quote;
       data.recs.quotes[qid]=Object.assign({},cur,{lines:dq.lines,remise:dq.remise,acompte:dq.acompte,franchise:dq.franchise,client:dq.client,tel:dq.tel,adr:dq.adr,num:dq.num,date:dq.date},dq.cv?{cv:dq.cv}:{},{status:'accepte',sign:Object.assign({},cur.sign||{},{token:sg.token,url:sg.url,st:'signed',signedAt:at,clientName:name,proof:sg.proof}),updatedAt:at,rev:++data.rev})}
-     persist();
+     await persist();
      notifySigned(sg).catch(()=>{});
      return send(res,200,publicSign(sg))}
     return send(res,405,{error:'méthode'})}
@@ -513,7 +537,7 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
     if(!validName(name))return send(res,400,{error:'Prénom invalide (2 à 30 caractères).'});
     if(String(b.password||'').length<8)return send(res,400,{error:'Mot de passe : 8 caractères minimum.'});
     if(!(await makeUser(name,b.password,'patron',()=>!Object.keys(data.users).length)))return send(res,409,{error:'Le serveur est déjà configuré.'});
-    return send(res,200,newToken(data.users[name.toLowerCase()]))}
+    {const tk=newToken(data.users[name.toLowerCase()]);await flush();return send(res,200,tk)}}
 
    if(POST&&url==='/api/login'){
     if(tooMany(ip,res))return send(res,429,{error:'Trop d\'essais, patiente une minute.'});
@@ -523,7 +547,7 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
     if(!u){await hash(String(b.password||''),'00000000000000000000000000000000');acctFail(uk);return send(res,401,{error:'Identifiant ou mot de passe incorrect.'})}
     if(!(await checkPw(u,b.password||''))){acctFail(uk);return send(res,401,{error:'Identifiant ou mot de passe incorrect.'})}
     acct.delete(uk);
-    return send(res,200,newToken(u))}
+    {const tk=newToken(u);await flush();return send(res,200,tk)}}
 
    /* l'employé qui scanne le QR code */
    if(POST&&url==='/api/join'){
@@ -534,7 +558,7 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
     delete data.invites[code];
     const u=data.users[inv.user];
     if(!u)return send(res,404,{error:'Ce compte n\'existe plus.'});
-    return send(res,200,newToken(u))}
+    {const tk=newToken(u);await flush();return send(res,200,tk)}}
 
    /* prix des matériaux en ligne (sans compte) : la clé du service reste ici, limites par jour et par adresse */
    if(req.method==='GET'&&url==='/api/prix'){const sp=new URLSearchParams(req.url.split('?')[1]||'');
@@ -607,9 +631,14 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
     const b=await readBody(req),k=tokKey(req),me=user.name.toLowerCase();let n=0;
     if(b.all===true)Object.keys(data.tokens).forEach(t=>{if(data.tokens[t].user===me){delete data.tokens[t];n++}});
     else if(k){delete data.tokens[k];n=1}
-    persist();return send(res,200,{ok:true,n})}
+    await persist();return send(res,200,{ok:true,n})}
 
-   if(POST&&url==='/api/sync')return send(res,200,doSync(user,await readBody(req)));
+   /* plein : on refuse ce qui agrandit le fichier ; lire, supprimer et se déconnecter restent possibles */
+   const plein=dataSize>DATA_MAX,PLEIN={error:'L\'espace de l\'entreprise sur le serveur est plein.'};
+   if(POST&&url==='/api/sync'){const b=await readBody(req);
+    if(plein&&b.changes&&typeof b.changes==='object'&&Object.keys(b.changes).some(c=>Array.isArray(b.changes[c])&&b.changes[c].length))return send(res,507,PLEIN);
+    const o=doSync(user,b),w=syncEcrit;if(w)await w;return send(res,200,o)}
+   if(plein&&POST&&!/^\/api\/(logout|account\/delete|users\/remove|push\/sub|sign\/cancel)$/.test(url))return send(res,507,PLEIN);
 
    /* suppression du compte : un employé supprime son compte ; le patron supprime tout l'espace de l'entreprise */
    if(POST&&url==='/api/account/delete'){
@@ -622,14 +651,14 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
      data={rev:(data.rev||0)+1,counter:0,users:Object.create(null),tokens:Object.create(null),invites:Object.create(null),recs:Object.create(null),tombs:[],signs:Object.create(null),sigreg:Object.create(null),subs:[],
       invShares:Object.create(null),ics:Object.create(null),invSeq:Object.assign(Object.create(null),keep.invSeq||{}),invIds:{},remSent:Object.create(null),vapid:keep.vapid};
      COLL.forEach(c=>{data.recs[c]=Object.create(null)});
-     persist();return send(res,200,{ok:true,scope:'entreprise'})}
+     await persist();return send(res,200,{ok:true,scope:'entreprise'})}
     delete data.users[me];
     Object.keys(data.tokens).forEach(t=>{if(data.tokens[t].user===me)delete data.tokens[t]});
     Object.keys(data.invites).forEach(c=>{if(data.invites[c].user===me)delete data.invites[c]});
     data.subs=data.subs.filter(x=>x.user!==me);
     Object.keys(data.sigreg).forEach(k=>{if(data.sigreg[k].user===me)delete data.sigreg[k]});
     Object.keys(data.ics).forEach(k=>{if(k!=='tz'&&data.ics[k]&&data.ics[k].user===me)delete data.ics[k]});
-    persist();return send(res,200,{ok:true,scope:'compte'})}
+    await persist();return send(res,200,{ok:true,scope:'compte'})}
 
    /* notifications */
    if(req.method==='GET'&&url==='/api/push/key')return send(res,200,{key:data.vapid.pub});
@@ -641,7 +670,7 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
     data.subs=data.subs.filter(s=>s.sub.endpoint!==sub.endpoint);
     {const mine=data.subs.filter(s=>s.user===user.name.toLowerCase());if(mine.length>=5){const old=mine.sort((a,b)=>a.at-b.at)[0];data.subs=data.subs.filter(s=>s!==old)}}
     data.subs.push({user:user.name.toLowerCase(),lang:cut(b.lang,5)||'fr',metier:V_METIERS.includes(b.metier)?b.metier:'',sub:{endpoint:cut(sub.endpoint,1000),keys:{p256dh:cut(sub.keys.p256dh,200),auth:cut(sub.keys.auth,100)}},at:Date.now()});
-    persist();return send(res,200,{ok:true})}
+    await persist();return send(res,200,{ok:true})}
 
    /* envoyer une facture par lien (mise à jour à chaque paiement) */
    if(POST&&url==='/api/inv/share'){
@@ -653,7 +682,7 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
     let tok=Object.keys(data.invShares).find(k=>data.invShares[k].id===doc.id);
     if(!tok){tok=crypto.randomBytes(16).toString('hex');data.invShares[tok]={id:doc.id,at:Date.now()}}
     {const sh0=data.invShares[tok];if(sh0.cert&&sh0.cert.docKey&&sh0.cert.docKey!==invKey(doc)){sh0.certOld=sh0.cert;delete sh0.cert}}
-    data.invShares[tok].doc=doc;data.invShares[tok].upd=Date.now();persist();
+    data.invShares[tok].doc=doc;data.invShares[tok].upd=Date.now();await persist();
     const sh=data.invShares[tok];
     return send(res,200,{url:baseUrl(req)+'/f/'+tok,token:tok,viewedAt:sh.viewedAt||null,cert:sh.cert?{name:sh.cert.name,at:sh.cert.at}:null})}
 
@@ -664,7 +693,7 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
     const iid=typeof b.inv==='string'?cut(b.inv,64):'';if(iid&&own(data.invIds,key+'|'+iid))return send(res,200,{n:data.invIds[key+'|'+iid]});
     const cur=own(data.invSeq,key)?data.invSeq[key]:0,loc=Math.max(0,Math.floor(Number(b.local)||0));
     const n=Math.max(cur,Math.min(loc,cur?cur+20:500))+1;  // rattrape les numéros émis hors ligne, sans saut volontaire  // jamais derrière un numéro déjà émis par ce téléphone (pas de doublon)
-data.invSeq[key]=n;if(iid)data.invIds[key+'|'+iid]=n;persist();return send(res,200,{n})}
+data.invSeq[key]=n;if(iid)data.invIds[key+'|'+iid]=n;await persist();return send(res,200,{n})}
 
    /* abonnement d'agenda : un lien secret par personne */
    if(POST&&(url==='/api/ics'||url==='/api/ics/reset')){
@@ -673,7 +702,7 @@ data.invSeq[key]=n;if(iid)data.invIds[key+'|'+iid]=n;persist();return send(res,2
     let tok=Object.keys(data.ics).find(k=>k!=='tz'&&data.ics[k].user===me);
     if(url==='/api/ics/reset'&&tok){delete data.ics[tok];tok=null}
     if(!tok){tok=crypto.randomBytes(24).toString('hex');data.ics[tok]={user:me,at:Date.now()}}
-    persist();const base=baseUrl(req),u=base+'/ics/'+tok+'.ics';
+    await persist();const base=baseUrl(req),u=base+'/ics/'+tok+'.ics';
     return send(res,200,{url:u,webcal:u.replace(/^https?:/,'webcal:')})}
 
    /* devis à signer */
@@ -690,7 +719,7 @@ data.invSeq[key]=n;if(iid)data.invIds[key+'|'+iid]=n;persist();return send(res,2
     Object.values(data.sigreg).forEach(x=>{if(x.user===user.name&&x.status==='active'&&x.id!==id){x.status='remplacee';x.replacedAt=now}});
     data.sigreg[id]={id,hash,at,user:user.name,status:'active',faceid:cut(b.faceid,200),pk:b.pk?cut(b.pk,600):null,img:b.img,
      signataire:{nom:cut(b.nom||user.name,80).trim(),qualite:user.role==='patron'?'Dirigeant':'Chef d\u2019équipe'},entreprise:ent,savedAt:now};
-    persist();return send(res,200,{ok:true,url:baseUrl(req)+'/v/'+id})}
+    await persist();return send(res,200,{ok:true,url:baseUrl(req)+'/v/'+id})}
 
    if(url.startsWith('/api/sign/')){
     if(user.role==='ouvrier')return send(res,403,{error:'Réservé au patron et au chef.'});
@@ -707,13 +736,13 @@ data.invSeq[key]=n;if(iid)data.invIds[key+'|'+iid]=n;persist();return send(res,2
      const qid=doc.quote.id;
      if(qid&&data.recs.quotes[qid]&&data.recs.quotes[qid].status!=='accepte'){
       data.recs.quotes[qid]=Object.assign({},data.recs.quotes[qid],{status:'envoye',sign:{token,url:sg.url,st:'sent',sentAt:at},updatedAt:at,rev:++data.rev})}
-     persist();return send(res,200,{token,url:sg.url,docHash:sg.docHash})}
+     await persist();return send(res,200,{token,url:sg.url,docHash:sg.docHash})}
     if(req.method==='GET'&&url==='/api/sign/list'){
      return send(res,200,Object.values(data.signs).map(x=>({token:x.token,quoteId:x.doc.quote.id,num:x.doc.quote.num,status:x.status,url:x.url,sentAt:x.sentAt,viewedAt:x.viewedAt||null,signedAt:x.client?x.client.at:null,clientName:x.client?x.client.name:null})))}
     if(POST&&url==='/api/sign/cancel'){
      const b=await readBody(req),x=data.signs[String(b.token||'')];
      if(!x)return send(res,404,{error:'introuvable'});
-     if(x.status==='sent'){x.status='cancelled';persist()}
+     if(x.status==='sent'){x.status='cancelled';await persist()}
      return send(res,200,{ok:true,status:x.status})}
     return send(res,404,{error:'introuvable'})}
 
@@ -732,7 +761,7 @@ data.invSeq[key]=n;if(iid)data.invIds[key+'|'+iid]=n;persist();return send(res,2
      Object.keys(data.invites).forEach(k=>{if(data.invites[k].exp<Date.now()||data.invites[k].user===name.toLowerCase())delete data.invites[k]});
      const code=crypto.randomBytes(8).toString('hex');
      data.invites[code]={user:name.toLowerCase(),exp:Date.now()+INVITE_DAYS*864e5};
-     persist();
+     await persist();
      return send(res,200,{code,name:u.name,role:u.role,days:INVITE_DAYS})}
     if(POST&&url==='/api/users/remove'){
      const b=await readBody(req),key=String(b.user||'').toLowerCase();
@@ -742,7 +771,7 @@ data.invSeq[key]=n;if(iid)data.invIds[key+'|'+iid]=n;persist();return send(res,2
      Object.keys(data.tokens).forEach(t=>{if(data.tokens[t].user===key)delete data.tokens[t]});
      Object.keys(data.invites).forEach(c=>{if(data.invites[c].user===key)delete data.invites[c]});
      data.subs=data.subs.filter(x=>x.user!==key);Object.keys(data.ics).forEach(k=>{if(k!=='tz'&&data.ics[k]&&data.ics[k].user===key)delete data.ics[k]});
-     persist();return send(res,200,{ok:true})}
+     await persist();return send(res,200,{ok:true})}
     if(POST&&url==='/api/users'){      // création avec mot de passe (usage avancé)
      const b=await readBody(req),name=String(b.user||'').trim();
      if(!validName(name))return send(res,400,{error:'Identifiant invalide (2 à 30 caractères).'});
@@ -750,22 +779,42 @@ data.invSeq[key]=n;if(iid)data.invIds[key+'|'+iid]=n;persist();return send(res,2
      if(!ROLES.includes(b.role))return send(res,400,{error:'Rôle inconnu.'});
      if(data.users[name.toLowerCase()])return send(res,409,{error:'Cet identifiant existe déjà.'});
      if(!(await makeUser(name,b.password,b.role,()=>!data.users[name.toLowerCase()])))return send(res,409,{error:'Cet identifiant existe déjà.'});
-     persist();return send(res,200,{ok:true})}}
+     await persist();return send(res,200,{ok:true})}}
    return send(res,404,{error:'introuvable'});
   }catch(e){if(!e||!e.pub)console.error('[casô]',req.method,url,e&&e.stack||e);if(!res.headersSent)send(res,400,{error:e&&e.pub?e.message:'Requête invalide.'});else try{res.destroy()}catch(_){}}});
 
- return{server,data:()=>data,remindTick,icsFor,auth};
+ return{server,data:()=>data,remindTick,icsFor,auth,flush,cede:()=>cede};
 }
 
+const lockRead=dir=>{try{return JSON.parse(fs.readFileSync(path.join(dir,'data.lock'),'utf8'))}catch(e){return null}};
+/* Le serveur qui démarre prend la main sur le dossier de données. Si un autre serveur y écrit encore (déploiement en cours),
+   il attend que celui-ci ait fini ses écritures et l'ait signalé, 20 secondes au plus, avant de lire le fichier. */
+async function prendreLaMain(dir,id,o={}){
+ fs.mkdirSync(dir,{recursive:true});
+ const prev=lockRead(dir);let hb=null;try{hb=JSON.parse(fs.readFileSync(path.join(dir,'data.vivant'),'utf8'))}catch(e){}
+ fs.writeFileSync(path.join(dir,'data.lock'),JSON.stringify({id,at:Date.now(),prev:prev&&prev.id||null}));
+ if(!prev||!prev.id||prev.id===id)return{attendu:false};
+ if(!(hb&&hb.id===prev.id&&Date.now()-hb.at<(o.frais||15000)))return{attendu:false};   // l'ancien serveur ne tourne plus
+ const t0=Date.now();
+ while(Date.now()-t0<(o.attente||20000)){let a=null;try{a=JSON.parse(fs.readFileSync(path.join(dir,'data.lock.ack'),'utf8'))}catch(e){}
+  if(a&&a.de===prev.id&&a.pour===id)return{attendu:true,ok:true};
+  await new Promise(r=>setTimeout(r,o.pas||250))}
+ return{attendu:true,ok:false}}
+
 /* Démarrage prêt à l'emploi : utilisable depuis un lanceur ou depuis une application */
-function start(opts={}){
+async function start(opts={}){
  const port=opts.port!==undefined?opts.port:(Number(process.env.PORT)||(process.env.APP_HOME?8080:8787));
+ if(process.env.APP_HOME&&!opts.verrou&&!opts.dataDir){   // hébergé (Clever Cloud) : un seul serveur écrit à la fois
+  const id=crypto.randomBytes(8).toString('hex'),dir=process.env.DATA_DIR||path.join(process.env.APP_HOME,'donnees');
+  const r=await prendreLaMain(dir,id);if(r.attendu&&!r.ok)console.error('[casô] l\'ancien serveur n\'a pas confirmé la fin de ses écritures : démarrage quand même.');
+  opts=Object.assign({},opts,{verrou:id})}
  const s=createServer(opts);
+ if(require.main===module)process.once('SIGTERM',()=>{try{s.server.close()}catch(e){}s.flush().finally(()=>process.exit(0))});   // arrêt demandé : on finit d'écrire
  return new Promise((ok,ko)=>{
   s.server.once('error',ko);
   s.server.listen(port,'0.0.0.0',()=>ok(Object.assign(s,{port:s.server.address().port,addresses:lanAddresses()})))})}
 
-module.exports={createServer,start,lanAddresses}; // srvfix-v1 srvsec-v3
+module.exports={createServer,start,lanAddresses,prendreLaMain}; // srvfix-v1 srvsec-v4
 
 if(require.main===module){
  start().then(s=>{

@@ -7554,6 +7554,8 @@ async function syncNow(){
    headers:{'content-type':'application/json',authorization:'Bearer '+cfg.token},
    body:JSON.stringify({since:cfg.rev||0,changes,tomb,counter:db.counter||0})});
   if(r.status===401){cfg.token='';setSync(cfg);renderSync();throw new Error('Session expirée : reconnecte-toi.')}
+  if(r.status===503){clearTimeout(syncTimer);syncTimer=setTimeout(syncNow,3000);throw new Error('Synchronisation…')}   // serveur en cours de mise à jour : nouvel essai tout seul
+  if(r.status===507)throw new Error('L\'espace de l\'entreprise sur le serveur est plein.');
   if(!r.ok)throw new Error('Le serveur a répondu par une erreur ('+r.status+').');
   const resp=await r.json().catch(()=>({}));
   const n=applyRemote(db,resp);
