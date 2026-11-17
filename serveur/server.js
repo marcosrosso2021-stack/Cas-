@@ -18,6 +18,10 @@ const COLL=['prices','quotes','hist','chantiers','people','pts','prof','clients'
 const ROLE_PUSH={patron:COLL,chef:COLL,ouvrier:['pts']};
 const ROLE_PULL={patron:COLL,chef:COLL,ouvrier:['chantiers','people','pts','events']};
 const ROLES=Object.keys(ROLE_PUSH);
+// profil d'entreprise : ces champs ne se changent que depuis le compte du patron (un IBAN modifié détourne les virements)
+const PROF_PATRON=['iban','bic','siret','siren'];
+const LOGO_OK=/^data:image\/(png|jpe?g|webp);base64,[A-Za-z0-9+\/=]+$/;
+const IBAN_TXT={fr:'L\'IBAN de l\'entreprise a été modifié.',pt:'O IBAN da empresa foi alterado.',es:'El IBAN de la empresa ha sido modificado.',it:'L\'IBAN dell\'azienda è stato modificato.',ro:'IBAN-ul firmei a fost modificat.',tr:'Şirketin IBAN\'ı değiştirildi.',pl:'IBAN firmy został zmieniony.',en:'The company IBAN was changed.',ru:'IBAN компании изменён.',ar:'تم تغيير رقم IBAN الخاص بالشركة.'};
 // rappels du planning : la veille à 18h (v) et 1 h avant (h)
 const REM_TXT={fr:['Demain {h} : {t}','Dans 1 h ({h}) : {t}','Rendez-vous'],pt:['Amanhã {h}: {t}','Daqui a 1 h ({h}): {t}','Marcação'],es:['Mañana {h}: {t}','En 1 h ({h}): {t}','Cita'],it:['Domani {h}: {t}','Tra 1 ora ({h}): {t}','Appuntamento'],ro:['Mâine {h}: {t}','Peste 1 oră ({h}): {t}','Programare'],tr:['Yarın {h}: {t}','1 saat sonra ({h}): {t}','Randevu'],pl:['Jutro {h}: {t}','Za 1 godz. ({h}): {t}','Wizyta'],en:['Tomorrow {h}: {t}','In 1 hour ({h}): {t}','Appointment'],ar:['غدًا {h}: {t}','بعد ساعة ({h}): {t}','موعد'],ru:['Завтра {h}: {t}','Через 1 ч ({h}): {t}','Встреча']};
 const TOKEN_DAYS=30,INVITE_DAYS=7;
@@ -42,11 +46,14 @@ function createServer(opts={}){
  /* Hébergé derrière un proxy qui termine le TLS (Clever Cloud pose APP_HOME) : on fait confiance aux en-têtes x-forwarded-*,
     on force HTTPS, on envoie HSTS, et les liens publics (signature, facture) sont en https.
     En local (poste du bureau, Wi-Fi), rien de tout cela : le serveur reste en http sur le réseau interne. */
- const HOSTED=!!(opts.hosted||process.env.TRUST_PROXY||process.env.TRUST_CF||process.env.APP_HOME);
+ const HOSTED=!!(opts.hosted||opts.trustCf||process.env.TRUST_PROXY||process.env.TRUST_CF||process.env.APP_HOME);
  const HTTPS_ONLY=HOSTED&&!opts.allowHttp&&process.env.ALLOW_HTTP!=='1';
 
- let data={rev:0,counter:0,users:{},tokens:{},invites:{},recs:{},tombs:[],signs:{},sigreg:{},subs:[],vapid:null};
+ let data={rev:0,counter:0,users:{},tokens:{},invites:{},recs:{},tombs:[],signs:{},sigreg:{},subs:[],vapid:null},dataSize=0;
+ /* plafond du fichier de données (200 Mo, réglable avec DATA_MAX_MO) : au-delà, le serveur refuse ce qui l'agrandit */
+ const DATA_MAX=(Number(opts.dataMaxMo||process.env.DATA_MAX_MO)||200)*1e6;
  {let raw=null;try{raw=fs.readFileSync(FILE,'utf8')}catch(e){if(e.code!=='ENOENT')throw e}
+  if(raw!==null)dataSize=Buffer.byteLength(raw);
   if(raw!==null){let d;try{d=JSON.parse(raw)}catch(e){const bad=FILE+'.illisible-'+Date.now();try{fs.renameSync(FILE,bad)}catch(_){}
     throw new Error('Le fichier de données est illisible. Il a été mis de côté ('+path.basename(bad)+') et rien n\'a été écrasé. Restaure une sauvegarde avant de relancer.')}
    data=Object.assign(data,d)}}
@@ -119,19 +126,41 @@ function createServer(opts={}){
   data.tombs=data.tombs.filter(t=>now-t.at<180*864e5)}
  tidy();
  if(!opts.noTimers){const it=setInterval(()=>{tidy();persist()},864e5);if(it.unref)it.unref()}
+ /* Écriture du fichier de données. Elle ne bloque plus les autres requêtes : une seule écriture à la fois, les demandes
+    arrivées entre-temps sont regroupées dans la suivante. persist() rend une promesse tenue quand ce changement est
+    sur le disque : les réponses qui confirment un enregistrement l'attendent (await persist()). */
+ let wFile=Promise.resolve(),wNext=null,cede=false;
+ async function ecrire(){const j=JSON.stringify(data),tmp=FILE+'.tmp';dataSize=Buffer.byteLength(j);
+  await fs.promises.writeFile(tmp,j);await fs.promises.rename(tmp,FILE)}
  function persist(){
-  const tmp=FILE+'.tmp';
-  fs.writeFileSync(tmp,JSON.stringify(data));
-  fs.renameSync(tmp,FILE)}
+  let p;
+  if(cede)p=Promise.reject(pub('Mise à jour du serveur en cours, réessaie dans un instant.'));
+  else{if(!wNext){const w=wFile.catch(()=>{}).then(()=>{wNext=null;return ecrire()});wNext=w;wFile=w}p=wNext}
+  p.catch(e=>{if(!e||!e.pub)console.error('[casô] écriture des données',e&&e.message||e)});return p}
+ const flush=()=>wFile.catch(()=>{});
+ /* Un seul serveur écrit à la fois. Pendant un déploiement, deux serveurs tournent quelques secondes : le nouveau prend la main
+    (fichier data.lock, voir prendreLaMain) ; l'ancien le voit, finit ses écritures, le signale (data.lock.ack), puis n'écrit plus
+    rien et répond « réessaie » : le téléphone renvoie alors sa demande au nouveau serveur. */
+ const INST=opts.verrou||null;
+ if(INST){const pas=opts.verrouPas||1000;let n=0;
+  const vivant=()=>{try{fs.writeFileSync(path.join(DIR,'data.vivant'),JSON.stringify({id:INST,at:Date.now()}))}catch(e){}};vivant();
+  const vt=setInterval(()=>{const l=lockRead(DIR);
+   if(l&&l.id&&l.id!==INST){cede=true;clearInterval(vt);
+    flush().then(()=>{try{fs.writeFileSync(path.join(DIR,'data.lock.ack'),JSON.stringify({de:INST,pour:l.id,at:Date.now()}))}catch(e){}
+     console.log('[casô] un nouveau serveur a pris la main : celui-ci n\'écrit plus.')});return}
+   if(++n%5===0)vivant()},pas);if(vt.unref)vt.unref()}
 
  /* --- comptes --- */
  const tokH=t=>'h'+crypto.createHash('sha256').update(String(t)).digest('hex');
- const hash=(pw,salt)=>crypto.scryptSync(String(pw),salt,32).toString('hex');
- function makeUser(name,pw,role){
-  const salt=crypto.randomBytes(16).toString('hex');
-  data.users[name.toLowerCase()]={name,role,salt,hash:hash(pw,salt)}}
- function checkPw(u,pw){
-  const a=Buffer.from(hash(pw,u.salt),'hex'),b=Buffer.from(u.hash,'hex');
+ /* scrypt asynchrone : le calcul ne bloque pas les autres requêtes */
+ const hash=(pw,salt)=>new Promise((ok,ko)=>crypto.scrypt(String(pw),salt,32,(e,k)=>e?ko(e):ok(k.toString('hex'))));
+ /* libre() est revérifié après le calcul : deux créations en même temps ne peuvent pas passer toutes les deux */
+ async function makeUser(name,pw,role,libre){
+  const salt=crypto.randomBytes(16).toString('hex'),h=await hash(pw,salt);
+  if(libre&&!libre())return false;
+  data.users[name.toLowerCase()]={name,role,salt,hash:h};return true}
+ async function checkPw(u,pw){
+  const a=Buffer.from(await hash(pw,u.salt),'hex'),b=Buffer.from(u.hash,'hex');
   return a.length===b.length&&crypto.timingSafeEqual(a,b)}
  const validName=n=>/^[\p{L}\p{N} ._-]{2,30}$/u.test(n);
  function newToken(u){
@@ -142,19 +171,38 @@ function createServer(opts={}){
 
  /* --- limite d'essais (connexion, invitation) --- */
  const tries=new Map();
- function tooMany(ip){
+ /* Chaque essai est compté dès son arrivée, avant de lire la requête : des requêtes envoyées en même temps
+    ne passent plus toutes. Un essai réussi (réponse < 400) est rendu par send() ; un essai raté reste compté. */
+ function tooMany(ip,res){
   if(tries.size>5000){const old=Date.now()-60000;for(const [k,v] of tries)if(v.at<old)tries.delete(k)}
   const t=tries.get(ip)||{n:0,at:Date.now()};
   if(Date.now()-t.at>60000){t.n=0;t.at=Date.now()}
-  tries.set(ip,t);return t.n>=10}
- const fail=ip=>{const t=tries.get(ip)||{n:0,at:Date.now()};t.n++;tries.set(ip,t)};
+  tries.set(ip,t);if(t.n>=10)return true;
+  t.n++;if(res)res._try=ip;return false}
+ const fail=()=>{};   // l'essai est déjà compté par tooMany()
+ const tryBack=res=>{const ip=res&&res._try;if(!ip)return;res._try=null;const t=tries.get(ip);if(t&&t.n>0)t.n--};
+ /* par compte, quelle que soit l'adresse : 20 mauvais mots de passe par quart d'heure */
+ const acct=new Map();
+ const acctTrop=k=>{const e=acct.get(k);return !!(e&&e.n>=20&&Date.now()-e.t<9e5)};
+ const acctFail=k=>{const t=Date.now(),e=acct.get(k);if(!e||t-e.t>=9e5)acct.set(k,{n:1,t});else e.n++;
+  if(acct.size>5000){for(const [x,v] of acct)if(t-v.t>=9e5)acct.delete(x);if(acct.size>5000)acct.clear()}};
+ /* clé du propriétaire (CASO_CLE_IA) : comparée à temps constant ; 10 mauvaises clés par quart d'heure et par adresse.
+    Renvoie 0 si la clé est bonne, sinon le code à répondre (404 ou 429). */
+ function cleProprio(req,ip){const cle=process.env.CASO_CLE_IA||'',e=vEssais.get(ip),t=Date.now();
+  if(e&&e.n>=10&&t-e.t<9e5)return 429;
+  if(!cle||!sameSecret(req.headers['x-caso-cle']||'',cle)){if(!e||t-e.t>=9e5)vEssais.set(ip,{n:1,t});else e.n++;
+   if(vEssais.size>5000){for(const [x,v] of vEssais)if(t-v.t>=9e5)vEssais.delete(x);if(vEssais.size>5000)vEssais.clear()}return 404}
+  return 0}
  const isLocal=req=>!HOSTED&&!req.headers['x-forwarded-for']&&!req.headers['cf-connecting-ip']&&['127.0.0.1','::1','::ffff:127.0.0.1'].includes(req.socket.remoteAddress);
  const sameSecret=(a,b)=>{const x=crypto.createHash('sha256').update(String(a)).digest(),y=crypto.createHash('sha256').update(String(b)).digest();return crypto.timingSafeEqual(x,y)};
 
- function authUser(req){
+ /* clé du jeton présenté dans data.tokens (ou null) */
+ function tokKey(req){
   const m=(req.headers.authorization||'').match(/^Bearer ([a-f0-9]{64})$/);
   if(!m)return null;
-  const h=tokH(m[1]),t=own(data.tokens,h)?data.tokens[h]:own(data.tokens,m[1])?data.tokens[m[1]]:null;
+  const h=tokH(m[1]);return own(data.tokens,h)?h:own(data.tokens,m[1])?m[1]:null}
+ function authUser(req){
+  const k=tokKey(req),t=k?data.tokens[k]:null;
   if(!t||t.exp<Date.now())return null;
   return data.users[t.user]||null}
 
@@ -168,6 +216,7 @@ function createServer(opts={}){
  // une facture émise (numérotée) ne change plus : seuls les paiements s'ajoutent, et une correction passe par un avoir
  const INV_KEEP=['num','kind','date','done','due','client','chantier','lines','remise','ret','franchise','autoliq','pct','ded','ref','qid','qnum','seller','issuedAt','seal','red','red55','calc'];
  const MAX_PUSH=2000;
+ let syncEcrit=null;   // écriture lancée par le dernier doSync()
  function doSync(user,body){
   const canPush=ROLE_PUSH[user.role]||[],canPull=ROLE_PULL[user.role]||[];
   const since=Number(body.since)||0;
@@ -189,6 +238,12 @@ function createServer(opts={}){
      if(c==='invoices'&&Array.isArray(r.pays)){const m=mergePays(cur.pays,r.pays);if(m.length>(cur.pays||[]).length){cur.pays=m;cur.rev=++data.rev;dirty=true}}  // …mais on ne perd aucun paiement
      continue}
     const {rev,...rec}=r;
+    if(c==='prof'){
+     if(!rec.v||typeof rec.v!=='object'||Array.isArray(rec.v))continue;
+     if(own(rec.v,'logo')&&!(typeof rec.v.logo==='string'&&rec.v.logo.length<=2e6&&LOGO_OK.test(rec.v.logo)))delete rec.v.logo;   // le logo est une image, rien d'autre
+     const old=cur&&cur.v&&typeof cur.v==='object'?cur.v:{};
+     if(user.role!=='patron')PROF_PATRON.forEach(k=>{if(own(old,k))rec.v[k]=old[k];else delete rec.v[k]});
+     else if(cur&&String(old.iban||'').replace(/\s+/g,'')!==String(rec.v.iban||'').replace(/\s+/g,''))notifyIban().catch(()=>{})}
     if(c==='invoices'&&cur){rec.pays=mergePays(cur.pays,rec.pays);if(cur.num)INV_KEEP.forEach(k=>{if(own(cur,k))rec[k]=cur[k];else delete rec[k]})}
     // un devis signé par le client garde exactement ce qui a été signé
     if(c==='quotes'&&cur&&cur.sign&&cur.sign.st==='signed'){SIGNED_KEEP.forEach(k=>{if(own(cur,k))rec[k]=cur[k];else delete rec[k]});rec.status=rec.status==='paye'?'paye':'accepte'}
@@ -215,13 +270,24 @@ function createServer(opts={}){
     else if(c==='people')l=l.filter(r=>myPeople.has(r.id))}
    if(l.length)out[c]=l}
   const tout=data.tombs.filter(t=>t.rev>since&&canPull.includes(t.c));
-  if(dirty)persist();
+  syncEcrit=dirty?persist():null;
   return{rev:data.rev,counter:data.counter,changes:out,tomb:tout}}
 
 /* --- signature des devis --- */
  const privIp=a=>/^(10\.|127\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|::1$|f[cd]|fe80|::ffff:(10\.|127\.|192\.168\.))/i.test(a);
- const clientIp=req=>{if(process.env.TRUST_CF&&req.headers['cf-connecting-ip'])return String(req.headers['cf-connecting-ip']).slice(0,64);if(HOSTED&&!process.env.TRUST_CF){const L=String(req.headers['x-forwarded-for']||'').split(',').map(x=>x.trim()).filter(Boolean);
-   for(let i=L.length-1;i>=0;i--)if(!privIp(L[i]))return L[i];if(L.length)return L[0]}return req.socket.remoteAddress||'?'};
+ /* Plages d'adresses publiées par Cloudflare (cloudflare.com/ips). Avec TRUST_CF, l'en-tête cf-connecting-ip n'est cru
+    que si le dernier relais est l'une d'elles : sans Cloudflare devant, n'importe qui pourrait écrire cet en-tête. */
+ const CF4=['173.245.48.0/20','103.21.244.0/22','103.22.200.0/22','103.31.4.0/22','141.101.64.0/18','108.162.192.0/18','190.93.240.0/20','188.114.96.0/20','197.234.240.0/22','198.41.128.0/17','162.158.0.0/15','104.16.0.0/13','104.24.0.0/14','172.64.0.0/13','131.0.72.0/22']
+  .map(c=>{const [a,m]=c.split('/'),n=a.split('.').reduce((x,o)=>x*256+ +o,0);return[n,2**(32-m)]});
+ const CF6=[[0x2400,0xcb00,32],[0x2606,0x4700,32],[0x2803,0xf800,32],[0x2405,0xb500,32],[0x2405,0x8100,32],[0x2a06,0x98c0,29],[0x2c0f,0xf248,32]];
+ const estCF=a=>{a=String(a||'').replace(/^::ffff:/i,'');
+  if(/^\d{1,3}(\.\d{1,3}){3}$/.test(a)){const n=a.split('.').reduce((x,o)=>x*256+ +o,0);return CF4.some(([b,t])=>n>=b&&n<b+t)}
+  const h=a.split(':');if(h.length<3||!h[0]||!h[1])return false;const x=parseInt(h[0],16),y=parseInt(h[1],16);
+  return CF6.some(([p,q,m])=>x===p&&(m===32?y===q:(y>>>3)===(q>>>3)))};
+ const TRUST_CF=!!(opts.trustCf||process.env.TRUST_CF);
+ const clientIp=req=>{const L=HOSTED?String(req.headers['x-forwarded-for']||'').split(',').map(x=>x.trim()).filter(Boolean):[],sock=req.socket.remoteAddress||'?';
+   if(TRUST_CF&&req.headers['cf-connecting-ip']&&estCF(L.length?L[L.length-1]:sock))return String(req.headers['cf-connecting-ip']).slice(0,64);
+   for(let i=L.length-1;i>=0;i--)if(!privIp(L[i]))return L[i];if(L.length)return L[0];return sock};
  function baseUrl(req){
   const pub=opts.publicUrl||process.env.PUBLIC_URL;if(pub)return pub.replace(/\/+$/,'');
   const proto=HOSTED?'https':'http';   // hébergé : liens de signature et de facture toujours en https
@@ -262,6 +328,14 @@ function createServer(opts={}){
   return{status:sg.status,doc:sg.doc,docHash:sg.docHash,sentAt:sg.sentAt,expires:sg.expires,
    pro:{img:sg.pro.img,name:sg.pro.name,at:sg.pro.at},
    client:sg.client?{img:sg.client.img,name:sg.client.name,at:sg.client.at}:null,proof:sg.proof||null}}
+ /* l'IBAN de l'entreprise change : tous les appareils du patron sont prévenus */
+ async function notifyIban(){
+  const who=Object.values(data.users).filter(u=>u.role==='patron').map(u=>u.name.toLowerCase());
+  const subs=data.subs.filter(s=>who.includes(s.user));let dead=false;
+  await Promise.all(subs.map(async s=>{
+   const r=await pushSend(s.sub,{title:'casô',body:IBAN_TXT[s.lang]||IBAN_TXT.fr,url:'/',tag:'iban'});
+   if(r&&(r.status===404||r.status===410)){s.dead=1;dead=true}}));
+  if(dead){data.subs=data.subs.filter(s=>!s.dead);persist()}}
  async function notifySigned(sg){
   const q=sg.doc.quote,n=q.num||'',c=(sg.client&&sg.client.name)||q.client||'';
   const who=Object.values(data.users).filter(u=>u.role==='patron'||u.role==='chef').map(u=>u.name.toLowerCase());
@@ -342,10 +416,11 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
  const cors={'access-control-allow-origin':'*','access-control-allow-headers':'content-type, authorization','access-control-allow-methods':'GET, POST, OPTIONS'};
  const SEC={'x-content-type-options':'nosniff','referrer-policy':'no-referrer','x-frame-options':'DENY','permissions-policy':'geolocation=(), payment=(), usb=()','cross-origin-opener-policy':'same-origin'};
  if(HOSTED)SEC['strict-transport-security']='max-age=63072000; includeSubDomains'+(process.env.HSTS_PRELOAD==='1'?'; preload':'');
- const CSP_APP="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/ https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1/ https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/ https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/ https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: mediastream:; font-src 'self' data:; connect-src 'self' https:; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
+ const CSP_APP="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/ https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1/ https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/ https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/ https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/ https://cdnjs.cloudflare.com/ajax/libs/onnxruntime-web/1.20.1/; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: mediastream:; font-src 'self' data:; connect-src 'self' https:; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
  const CSP_PUB="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
  function send(res,code,obj,extra){
   const isHtml=typeof obj==='string';
+  if(code<400)tryBack(res);
   res.writeHead(code,Object.assign({'content-type':isHtml?'text/html; charset=utf-8':'application/json; charset=utf-8','cache-control':'no-store'},SEC,isHtml?{'content-security-policy':CSP_APP}:cors,extra||{}));
   res.end(isHtml?obj:JSON.stringify(obj))}
  function readBody(req){return new Promise((ok,ko)=>{
@@ -362,6 +437,7 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
    if(HTTPS_ONLY&&String(req.headers['x-forwarded-proto']||'').split(',')[0].trim()==='http'){
     res.writeHead(301,{location:'https://'+(req.headers.host||'')+req.url,'cache-control':'no-store'});return res.end()}
    if(req.method==='OPTIONS'){res.writeHead(204,cors);return res.end()}
+   if(cede&&(req.url||'').startsWith('/api/'))return send(res,503,{error:'Mise à jour du serveur en cours, réessaie dans un instant.'},{'retry-after':'2'});
    if(NEWL&&req.method==='GET'&&url==='/devis.html'){/* module Devis, ouvert dans un cadre de l'appli */
     let html;try{html=fs.readFileSync(path.join(ROOT,'devis.html'),'utf8')}catch(e){return send(res,404,{error:'introuvable'})}
     return send(res,200,html,{'content-security-policy':CSP_APP.replace("frame-ancestors 'none'","frame-ancestors 'self'"),'x-frame-options':'SAMEORIGIN'})}
@@ -389,15 +465,15 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
     res.writeHead(200,Object.assign({'content-type':'text/html; charset=utf-8','cache-control':'no-store','x-robots-tag':'noindex','content-security-policy':CSP_PUB},SEC));return res.end(html)}
    {const mf=url.match(/^\/api\/f\/([a-f0-9]{32})(\/certify)?$/);
     if(mf){const sh=data.invShares[mf[1]];if(!sh)return send(res,404,{error:'Ce lien n\'existe pas.'});
-     if(req.method==='GET'&&!mf[2]){if(!sh.viewedAt){sh.viewedAt=Date.now();persist()}return send(res,200,{doc:sh.doc,cert:sh.cert?{name:sh.cert.name,at:sh.cert.at}:null,viewedAt:sh.viewedAt})}
+     if(req.method==='GET'&&!mf[2]){if(!sh.viewedAt){sh.viewedAt=Date.now();await persist()}return send(res,200,{doc:sh.doc,cert:sh.cert?{name:sh.cert.name,at:sh.cert.at}:null,viewedAt:sh.viewedAt})}
      if(POST&&mf[2]){
-      if(tooMany(ip))return send(res,429,{error:'Trop d\'essais, patientez une minute.'});
+      if(tooMany(ip,res))return send(res,429,{error:'Trop d\'essais, patientez une minute.'});
       if(sh.cert)return send(res,409,{error:'Déjà certifié.'});
       const b=await readBody(req),name=cut(b.name,80).trim();
       if(name.length<2){fail(ip);return send(res,400,{error:'Écrivez votre nom.'})}
       if(b.agree!==true)return send(res,400,{error:'Cochez la case pour certifier.'});
       if(sh.cert)return send(res,409,{error:'Déjà certifié.'});
-      sh.cert={docKey:invKey(sh.doc),name,at:Date.now(),ip:clientIp(req),ua:cut(req.headers['user-agent'],300)};persist();
+      sh.cert={docKey:invKey(sh.doc),name,at:Date.now(),ip:clientIp(req),ua:cut(req.headers['user-agent'],300)};await persist();
       return send(res,200,{cert:{name,at:sh.cert.at}})}
      return send(res,405,{error:'méthode'})}}
 
@@ -419,9 +495,9 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
    if(m){
     const sg=data.signs[m[1]];
     if(!sg)return send(res,404,{error:'Ce lien n\'existe pas.'});
-    if(req.method==='GET'){if(!sg.viewedAt&&sg.status==='sent'){sg.viewedAt=Date.now();persist()}return send(res,200,publicSign(sg))}
+    if(req.method==='GET'){if(!sg.viewedAt&&sg.status==='sent'){sg.viewedAt=Date.now();await persist()}return send(res,200,publicSign(sg))}
     if(POST&&m[2]){
-     if(tooMany(ip))return send(res,429,{error:'Trop d\'essais, patientez une minute.'});
+     if(tooMany(ip,res))return send(res,429,{error:'Trop d\'essais, patientez une minute.'});
      if(sg.status==='signed')return send(res,409,{error:'Ce devis est déjà signé.'});
      if(sg.status!=='sent')return send(res,410,{error:'Ce devis a été remplacé ou annulé. Contactez l\'entreprise.'});
      if(sg.expires&&Date.now()>sg.expires)return send(res,410,{error:'Ce devis a expiré. Contactez l\'entreprise.'});
@@ -438,7 +514,7 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
      const qid=sg.doc.quote.id;
      if(qid){const cur=data.recs.quotes[qid]||Object.assign({},sg.doc.quote,{id:qid}),dq=sg.doc.quote;
       data.recs.quotes[qid]=Object.assign({},cur,{lines:dq.lines,remise:dq.remise,acompte:dq.acompte,franchise:dq.franchise,client:dq.client,tel:dq.tel,adr:dq.adr,num:dq.num,date:dq.date},dq.cv?{cv:dq.cv}:{},{status:'accepte',sign:Object.assign({},cur.sign||{},{token:sg.token,url:sg.url,st:'signed',signedAt:at,clientName:name,proof:sg.proof}),updatedAt:at,rev:++data.rev})}
-     persist();
+     await persist();
      notifySigned(sg).catch(()=>{});
      return send(res,200,publicSign(sg))}
     return send(res,405,{error:'méthode'})}
@@ -454,33 +530,35 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
    /* premier lancement : le patron crée son compte, depuis l'ordinateur du serveur uniquement */
    if(POST&&url==='/api/setup'){
     if(Object.keys(data.users).length)return send(res,409,{error:'Le serveur est déjà configuré.'});
-    if(tooMany(ip))return send(res,429,{error:'Trop d\'essais, patiente une minute.'});
+    if(tooMany(ip,res))return send(res,429,{error:'Trop d\'essais, patiente une minute.'});
     const b=await readBody(req),name=String(b.user||'patron').trim();
     const code=process.env.SETUP_CODE||opts.setupCode;
     if(!isLocal(req)&&!(code&&sameSecret(b.code||'',code))){fail(ip);return send(res,403,{error:'La première configuration se fait depuis l\'ordinateur qui héberge le serveur (ou avec le code de configuration).'})}
     if(!validName(name))return send(res,400,{error:'Prénom invalide (2 à 30 caractères).'});
     if(String(b.password||'').length<8)return send(res,400,{error:'Mot de passe : 8 caractères minimum.'});
-    makeUser(name,b.password,'patron');
-    return send(res,200,newToken(data.users[name.toLowerCase()]))}
+    if(!(await makeUser(name,b.password,'patron',()=>!Object.keys(data.users).length)))return send(res,409,{error:'Le serveur est déjà configuré.'});
+    {const tk=newToken(data.users[name.toLowerCase()]);await flush();return send(res,200,tk)}}
 
    if(POST&&url==='/api/login'){
-    if(tooMany(ip))return send(res,429,{error:'Trop d\'essais, patiente une minute.'});
+    if(tooMany(ip,res))return send(res,429,{error:'Trop d\'essais, patiente une minute.'});
     const b=await readBody(req);
-    const uk=String(b.user||'').toLowerCase(),u=own(data.users,uk)?data.users[uk]:null;
-    if(!u){hash(String(b.password||''),'00000000000000000000000000000000');fail(ip);return send(res,401,{error:'Identifiant ou mot de passe incorrect.'})}
-    if(!checkPw(u,b.password||'')){fail(ip);return send(res,401,{error:'Identifiant ou mot de passe incorrect.'})}
-    return send(res,200,newToken(u))}
+    const uk=String(b.user||'').toLowerCase().slice(0,40),u=own(data.users,uk)?data.users[uk]:null;
+    if(acctTrop(uk))return send(res,429,{error:'Trop d\'essais, patiente quelques minutes.'});
+    if(!u){await hash(String(b.password||''),'00000000000000000000000000000000');acctFail(uk);return send(res,401,{error:'Identifiant ou mot de passe incorrect.'})}
+    if(!(await checkPw(u,b.password||''))){acctFail(uk);return send(res,401,{error:'Identifiant ou mot de passe incorrect.'})}
+    acct.delete(uk);
+    {const tk=newToken(u);await flush();return send(res,200,tk)}}
 
    /* l'employé qui scanne le QR code */
    if(POST&&url==='/api/join'){
-    if(tooMany(ip))return send(res,429,{error:'Trop d\'essais, patiente une minute.'});
+    if(tooMany(ip,res))return send(res,429,{error:'Trop d\'essais, patiente une minute.'});
     const b=await readBody(req),code=String(b.code||'');
     const inv=own(data.invites,code)?data.invites[code]:null;
     if(!inv||inv.exp<Date.now()){fail(ip);return send(res,404,{error:'Invitation invalide ou expirée. Demande un nouveau QR code.'})}
     delete data.invites[code];
     const u=data.users[inv.user];
     if(!u)return send(res,404,{error:'Ce compte n\'existe plus.'});
-    return send(res,200,newToken(u))}
+    {const tk=newToken(u);await flush();return send(res,200,tk)}}
 
    /* prix des matériaux en ligne (sans compte) : la clé du service reste ici, limites par jour et par adresse */
    if(req.method==='GET'&&url==='/api/prix'){const sp=new URLSearchParams(req.url.split('?')[1]||'');
@@ -506,7 +584,7 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
 
    /* phrases incomprises (masquées) : l'appareil les envoie ; le propriétaire de casô les lit avec sa clé */
    if(url==='/api/incompris'){
-    if(req.method==='GET'){const cle=process.env.CASO_CLE_IA||'';if(!cle||String(req.headers['x-caso-cle']||'')!==cle)return send(res,404,{error:'Introuvable.'});
+    if(req.method==='GET'){const k=cleProprio(req,ip);if(k)return send(res,k,{error:k===429?'Trop d\'essais, réessaie plus tard.':'Introuvable.'});
      const out={};for(const l of APL){const L=incompris[l]||{};out[l]=Object.keys(L).filter(k=>L[k].u.length>=3).map(k=>({t:k,n:L[k].u.length,s:L[k].s})).sort((a,b)=>b.n-a.n).slice(0,200)}return send(res,200,{e:out})}
     if(POST){if(apTrop(ip))return send(res,429,{error:'Trop d\'envois.'});const b=await readBody(req),id=String(b.id||'');
      if(!/^[a-f0-9]{32}$/.test(id)||!Array.isArray(b.e))return send(res,400,{error:'Requête invalide.'});
@@ -520,9 +598,8 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
     res.writeHead(200,Object.assign({'content-type':'text/html; charset=utf-8','cache-control':'no-store','x-robots-tag':'noindex','content-security-policy':CSP_PUB},SEC));return res.end(html)}
    /* la newsletter validée, lue par l'appli (sans compte, rien n'est envoyé par le téléphone) */
    if(req.method==='GET'&&url==='/api/veille/lettre')return send(res,200,veille.lettre());
-   if(url.startsWith('/api/veille/')){const cle=process.env.CASO_CLE_IA||'',e=vEssais.get(ip),t=Date.now();
-    if(e&&e.n>=10&&t-e.t<9e5)return send(res,429,{error:'Trop d\'essais, réessaie plus tard.'});
-    if(!cle||String(req.headers['x-caso-cle']||'')!==cle){if(!e||t-e.t>=9e5)vEssais.set(ip,{n:1,t});else e.n++;if(vEssais.size>5000)vEssais.clear();return send(res,404,{error:'Introuvable.'})}
+   if(url.startsWith('/api/veille/')){const k=cleProprio(req,ip);
+    if(k)return send(res,k,{error:k===429?'Trop d\'essais, réessaie plus tard.':'Introuvable.'});
     if(req.method==='GET'&&url==='/api/veille/etat')return send(res,200,Object.assign(veille.etat(),{modules:veilleLib.MODULES,domaines:veilleLib.DOMAINES}));
     /* le tableau de bord de casô, pour le propriétaire : des nombres seulement (aucun nom, aucune adresse, aucun devis) */
     if(req.method==='GET'&&url==='/api/veille/saas'){const t=Date.now(),S=Object.keys(data.signs).map(k=>data.signs[k]),ve=veille.etat(),VL=veille.liste({validation:'attente'});
@@ -549,27 +626,39 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
    if(!url.startsWith('/api/'))return send(res,404,{error:'introuvable'});
    if(!user)return send(res,401,{error:'Non connecté.'});
 
-   if(POST&&url==='/api/sync')return send(res,200,doSync(user,await readBody(req)));
+   /* se déconnecter : le jeton de cet appareil cesse de marcher tout de suite (all:true : tous les appareils de ce compte) */
+   if(POST&&url==='/api/logout'){
+    const b=await readBody(req),k=tokKey(req),me=user.name.toLowerCase();let n=0;
+    if(b.all===true)Object.keys(data.tokens).forEach(t=>{if(data.tokens[t].user===me){delete data.tokens[t];n++}});
+    else if(k){delete data.tokens[k];n=1}
+    await persist();return send(res,200,{ok:true,n})}
+
+   /* plein : on refuse ce qui agrandit le fichier ; lire, supprimer et se déconnecter restent possibles */
+   const plein=dataSize>DATA_MAX,PLEIN={error:'L\'espace de l\'entreprise sur le serveur est plein.'};
+   if(POST&&url==='/api/sync'){const b=await readBody(req);
+    if(plein&&b.changes&&typeof b.changes==='object'&&Object.keys(b.changes).some(c=>Array.isArray(b.changes[c])&&b.changes[c].length))return send(res,507,PLEIN);
+    const o=doSync(user,b),w=syncEcrit;if(w)await w;return send(res,200,o)}
+   if(plein&&POST&&!/^\/api\/(logout|account\/delete|users\/remove|push\/sub|sign\/cancel)$/.test(url))return send(res,507,PLEIN);
 
    /* suppression du compte : un employé supprime son compte ; le patron supprime tout l'espace de l'entreprise */
    if(POST&&url==='/api/account/delete'){
     const b=await readBody(req);if(b.confirm!=='SUPPRIMER')return send(res,400,{error:'Confirmation manquante.'});
     const me=user.name.toLowerCase();
     if(user.role==='patron'){
-     if(tooMany(ip))return send(res,429,{error:'Trop d\'essais, patiente une minute.'});
-     if(!checkPw(user,String(b.password||''))){fail(ip);return send(res,403,{error:'Mot de passe du serveur incorrect.'})}
+     if(tooMany(ip,res))return send(res,429,{error:'Trop d\'essais, patiente une minute.'});
+     if(!(await checkPw(user,String(b.password||'')))){return send(res,403,{error:'Mot de passe du serveur incorrect.'})}
      const keep={vapid:data.vapid,invSeq:data.invSeq};
      data={rev:(data.rev||0)+1,counter:0,users:Object.create(null),tokens:Object.create(null),invites:Object.create(null),recs:Object.create(null),tombs:[],signs:Object.create(null),sigreg:Object.create(null),subs:[],
       invShares:Object.create(null),ics:Object.create(null),invSeq:Object.assign(Object.create(null),keep.invSeq||{}),invIds:{},remSent:Object.create(null),vapid:keep.vapid};
      COLL.forEach(c=>{data.recs[c]=Object.create(null)});
-     persist();return send(res,200,{ok:true,scope:'entreprise'})}
+     await persist();return send(res,200,{ok:true,scope:'entreprise'})}
     delete data.users[me];
     Object.keys(data.tokens).forEach(t=>{if(data.tokens[t].user===me)delete data.tokens[t]});
     Object.keys(data.invites).forEach(c=>{if(data.invites[c].user===me)delete data.invites[c]});
     data.subs=data.subs.filter(x=>x.user!==me);
     Object.keys(data.sigreg).forEach(k=>{if(data.sigreg[k].user===me)delete data.sigreg[k]});
     Object.keys(data.ics).forEach(k=>{if(k!=='tz'&&data.ics[k]&&data.ics[k].user===me)delete data.ics[k]});
-    persist();return send(res,200,{ok:true,scope:'compte'})}
+    await persist();return send(res,200,{ok:true,scope:'compte'})}
 
    /* notifications */
    if(req.method==='GET'&&url==='/api/push/key')return send(res,200,{key:data.vapid.pub});
@@ -581,7 +670,7 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
     data.subs=data.subs.filter(s=>s.sub.endpoint!==sub.endpoint);
     {const mine=data.subs.filter(s=>s.user===user.name.toLowerCase());if(mine.length>=5){const old=mine.sort((a,b)=>a.at-b.at)[0];data.subs=data.subs.filter(s=>s!==old)}}
     data.subs.push({user:user.name.toLowerCase(),lang:cut(b.lang,5)||'fr',metier:V_METIERS.includes(b.metier)?b.metier:'',sub:{endpoint:cut(sub.endpoint,1000),keys:{p256dh:cut(sub.keys.p256dh,200),auth:cut(sub.keys.auth,100)}},at:Date.now()});
-    persist();return send(res,200,{ok:true})}
+    await persist();return send(res,200,{ok:true})}
 
    /* envoyer une facture par lien (mise à jour à chaque paiement) */
    if(POST&&url==='/api/inv/share'){
@@ -593,7 +682,7 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
     let tok=Object.keys(data.invShares).find(k=>data.invShares[k].id===doc.id);
     if(!tok){tok=crypto.randomBytes(16).toString('hex');data.invShares[tok]={id:doc.id,at:Date.now()}}
     {const sh0=data.invShares[tok];if(sh0.cert&&sh0.cert.docKey&&sh0.cert.docKey!==invKey(doc)){sh0.certOld=sh0.cert;delete sh0.cert}}
-    data.invShares[tok].doc=doc;data.invShares[tok].upd=Date.now();persist();
+    data.invShares[tok].doc=doc;data.invShares[tok].upd=Date.now();await persist();
     const sh=data.invShares[tok];
     return send(res,200,{url:baseUrl(req)+'/f/'+tok,token:tok,viewedAt:sh.viewedAt||null,cert:sh.cert?{name:sh.cert.name,at:sh.cert.at}:null})}
 
@@ -604,7 +693,7 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
     const iid=typeof b.inv==='string'?cut(b.inv,64):'';if(iid&&own(data.invIds,key+'|'+iid))return send(res,200,{n:data.invIds[key+'|'+iid]});
     const cur=own(data.invSeq,key)?data.invSeq[key]:0,loc=Math.max(0,Math.floor(Number(b.local)||0));
     const n=Math.max(cur,Math.min(loc,cur?cur+20:500))+1;  // rattrape les numéros émis hors ligne, sans saut volontaire  // jamais derrière un numéro déjà émis par ce téléphone (pas de doublon)
-data.invSeq[key]=n;if(iid)data.invIds[key+'|'+iid]=n;persist();return send(res,200,{n})}
+data.invSeq[key]=n;if(iid)data.invIds[key+'|'+iid]=n;await persist();return send(res,200,{n})}
 
    /* abonnement d'agenda : un lien secret par personne */
    if(POST&&(url==='/api/ics'||url==='/api/ics/reset')){
@@ -613,7 +702,7 @@ data.invSeq[key]=n;if(iid)data.invIds[key+'|'+iid]=n;persist();return send(res,2
     let tok=Object.keys(data.ics).find(k=>k!=='tz'&&data.ics[k].user===me);
     if(url==='/api/ics/reset'&&tok){delete data.ics[tok];tok=null}
     if(!tok){tok=crypto.randomBytes(24).toString('hex');data.ics[tok]={user:me,at:Date.now()}}
-    persist();const base=baseUrl(req),u=base+'/ics/'+tok+'.ics';
+    await persist();const base=baseUrl(req),u=base+'/ics/'+tok+'.ics';
     return send(res,200,{url:u,webcal:u.replace(/^https?:/,'webcal:')})}
 
    /* devis à signer */
@@ -630,7 +719,7 @@ data.invSeq[key]=n;if(iid)data.invIds[key+'|'+iid]=n;persist();return send(res,2
     Object.values(data.sigreg).forEach(x=>{if(x.user===user.name&&x.status==='active'&&x.id!==id){x.status='remplacee';x.replacedAt=now}});
     data.sigreg[id]={id,hash,at,user:user.name,status:'active',faceid:cut(b.faceid,200),pk:b.pk?cut(b.pk,600):null,img:b.img,
      signataire:{nom:cut(b.nom||user.name,80).trim(),qualite:user.role==='patron'?'Dirigeant':'Chef d\u2019équipe'},entreprise:ent,savedAt:now};
-    persist();return send(res,200,{ok:true,url:baseUrl(req)+'/v/'+id})}
+    await persist();return send(res,200,{ok:true,url:baseUrl(req)+'/v/'+id})}
 
    if(url.startsWith('/api/sign/')){
     if(user.role==='ouvrier')return send(res,403,{error:'Réservé au patron et au chef.'});
@@ -647,13 +736,13 @@ data.invSeq[key]=n;if(iid)data.invIds[key+'|'+iid]=n;persist();return send(res,2
      const qid=doc.quote.id;
      if(qid&&data.recs.quotes[qid]&&data.recs.quotes[qid].status!=='accepte'){
       data.recs.quotes[qid]=Object.assign({},data.recs.quotes[qid],{status:'envoye',sign:{token,url:sg.url,st:'sent',sentAt:at},updatedAt:at,rev:++data.rev})}
-     persist();return send(res,200,{token,url:sg.url,docHash:sg.docHash})}
+     await persist();return send(res,200,{token,url:sg.url,docHash:sg.docHash})}
     if(req.method==='GET'&&url==='/api/sign/list'){
      return send(res,200,Object.values(data.signs).map(x=>({token:x.token,quoteId:x.doc.quote.id,num:x.doc.quote.num,status:x.status,url:x.url,sentAt:x.sentAt,viewedAt:x.viewedAt||null,signedAt:x.client?x.client.at:null,clientName:x.client?x.client.name:null})))}
     if(POST&&url==='/api/sign/cancel'){
      const b=await readBody(req),x=data.signs[String(b.token||'')];
      if(!x)return send(res,404,{error:'introuvable'});
-     if(x.status==='sent'){x.status='cancelled';persist()}
+     if(x.status==='sent'){x.status='cancelled';await persist()}
      return send(res,200,{ok:true,status:x.status})}
     return send(res,404,{error:'introuvable'})}
 
@@ -667,12 +756,12 @@ data.invSeq[key]=n;if(iid)data.invIds[key+'|'+iid]=n;persist();return send(res,2
      let u=data.users[name.toLowerCase()];
      if(!u){
       if(!ROLES.includes(b.role))return send(res,400,{error:'Rôle inconnu.'});
-      makeUser(name,crypto.randomBytes(16).toString('hex'),b.role);   // mot de passe inconnu de tous : on entre par le QR code
+      await makeUser(name,crypto.randomBytes(16).toString('hex'),b.role,()=>!data.users[name.toLowerCase()]);   // mot de passe inconnu de tous : on entre par le QR code
       u=data.users[name.toLowerCase()]}
      Object.keys(data.invites).forEach(k=>{if(data.invites[k].exp<Date.now()||data.invites[k].user===name.toLowerCase())delete data.invites[k]});
      const code=crypto.randomBytes(8).toString('hex');
      data.invites[code]={user:name.toLowerCase(),exp:Date.now()+INVITE_DAYS*864e5};
-     persist();
+     await persist();
      return send(res,200,{code,name:u.name,role:u.role,days:INVITE_DAYS})}
     if(POST&&url==='/api/users/remove'){
      const b=await readBody(req),key=String(b.user||'').toLowerCase();
@@ -682,30 +771,50 @@ data.invSeq[key]=n;if(iid)data.invIds[key+'|'+iid]=n;persist();return send(res,2
      Object.keys(data.tokens).forEach(t=>{if(data.tokens[t].user===key)delete data.tokens[t]});
      Object.keys(data.invites).forEach(c=>{if(data.invites[c].user===key)delete data.invites[c]});
      data.subs=data.subs.filter(x=>x.user!==key);Object.keys(data.ics).forEach(k=>{if(k!=='tz'&&data.ics[k]&&data.ics[k].user===key)delete data.ics[k]});
-     persist();return send(res,200,{ok:true})}
+     await persist();return send(res,200,{ok:true})}
     if(POST&&url==='/api/users'){      // création avec mot de passe (usage avancé)
      const b=await readBody(req),name=String(b.user||'').trim();
      if(!validName(name))return send(res,400,{error:'Identifiant invalide (2 à 30 caractères).'});
      if(String(b.password||'').length<8)return send(res,400,{error:'Mot de passe : 8 caractères minimum.'});
      if(!ROLES.includes(b.role))return send(res,400,{error:'Rôle inconnu.'});
      if(data.users[name.toLowerCase()])return send(res,409,{error:'Cet identifiant existe déjà.'});
-     makeUser(name,b.password,b.role);persist();
-     return send(res,200,{ok:true})}}
+     if(!(await makeUser(name,b.password,b.role,()=>!data.users[name.toLowerCase()])))return send(res,409,{error:'Cet identifiant existe déjà.'});
+     await persist();return send(res,200,{ok:true})}}
    return send(res,404,{error:'introuvable'});
   }catch(e){if(!e||!e.pub)console.error('[casô]',req.method,url,e&&e.stack||e);if(!res.headersSent)send(res,400,{error:e&&e.pub?e.message:'Requête invalide.'});else try{res.destroy()}catch(_){}}});
 
- return{server,data:()=>data,remindTick,icsFor,auth};
+ return{server,data:()=>data,remindTick,icsFor,auth,flush,cede:()=>cede};
 }
 
+const lockRead=dir=>{try{return JSON.parse(fs.readFileSync(path.join(dir,'data.lock'),'utf8'))}catch(e){return null}};
+/* Le serveur qui démarre prend la main sur le dossier de données. Si un autre serveur y écrit encore (déploiement en cours),
+   il attend que celui-ci ait fini ses écritures et l'ait signalé, 20 secondes au plus, avant de lire le fichier. */
+async function prendreLaMain(dir,id,o={}){
+ fs.mkdirSync(dir,{recursive:true});
+ const prev=lockRead(dir);let hb=null;try{hb=JSON.parse(fs.readFileSync(path.join(dir,'data.vivant'),'utf8'))}catch(e){}
+ fs.writeFileSync(path.join(dir,'data.lock'),JSON.stringify({id,at:Date.now(),prev:prev&&prev.id||null}));
+ if(!prev||!prev.id||prev.id===id)return{attendu:false};
+ if(!(hb&&hb.id===prev.id&&Date.now()-hb.at<(o.frais||15000)))return{attendu:false};   // l'ancien serveur ne tourne plus
+ const t0=Date.now();
+ while(Date.now()-t0<(o.attente||20000)){let a=null;try{a=JSON.parse(fs.readFileSync(path.join(dir,'data.lock.ack'),'utf8'))}catch(e){}
+  if(a&&a.de===prev.id&&a.pour===id)return{attendu:true,ok:true};
+  await new Promise(r=>setTimeout(r,o.pas||250))}
+ return{attendu:true,ok:false}}
+
 /* Démarrage prêt à l'emploi : utilisable depuis un lanceur ou depuis une application */
-function start(opts={}){
+async function start(opts={}){
  const port=opts.port!==undefined?opts.port:(Number(process.env.PORT)||(process.env.APP_HOME?8080:8787));
+ if(process.env.APP_HOME&&!opts.verrou&&!opts.dataDir){   // hébergé (Clever Cloud) : un seul serveur écrit à la fois
+  const id=crypto.randomBytes(8).toString('hex'),dir=process.env.DATA_DIR||path.join(process.env.APP_HOME,'donnees');
+  const r=await prendreLaMain(dir,id);if(r.attendu&&!r.ok)console.error('[casô] l\'ancien serveur n\'a pas confirmé la fin de ses écritures : démarrage quand même.');
+  opts=Object.assign({},opts,{verrou:id})}
  const s=createServer(opts);
+ if(require.main===module)process.once('SIGTERM',()=>{try{s.server.close()}catch(e){}s.flush().finally(()=>process.exit(0))});   // arrêt demandé : on finit d'écrire
  return new Promise((ok,ko)=>{
   s.server.once('error',ko);
   s.server.listen(port,'0.0.0.0',()=>ok(Object.assign(s,{port:s.server.address().port,addresses:lanAddresses()})))})}
 
-module.exports={createServer,start,lanAddresses}; // srvfix-v1 srvsec-v2
+module.exports={createServer,start,lanAddresses,prendreLaMain}; // srvfix-v1 srvsec-v4
 
 if(require.main===module){
  start().then(s=>{
