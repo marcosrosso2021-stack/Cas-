@@ -4,6 +4,8 @@ const assert=require('assert'),fs=require('fs'),path=require('path');
 const {creer,lireRss,lireJorf,pertinent,hoteAdmis}=require('../serveur/veille/sources.js');
 let ok=0;const t=async(nom,f)=>{await f();ok++;console.log('✓',nom)};
 const ext=n=>fs.readFileSync(path.join(__dirname,'veille',n),'utf8');
+/* chaque adresse reçoit son extrait réel */
+const EXT=u=>{u=String(u);return ext(/bofip/.test(u)?'bofip.rss':/actu-actu-pro/.test(u)?'entreprendre.rss':/particuliers/.test(u)?'particuliers.rss':/vie-publique/.test(u)?'viepublique.rss':/ecologie/.test(u)?'ecologie.rss':'cnil.rss')};
 const rep=(corps,st)=>({ok:(st||200)<300,status:st||200,text:async()=>corps,json:async()=>JSON.parse(corps)});
 
 (async()=>{
@@ -24,15 +26,27 @@ await t('hôtes admis et filtre du bâtiment',()=>{
  assert.strictEqual(hoteAdmis('http://www.legifrance.gouv.fr/x'),false);assert.strictEqual(hoteAdmis('https://legifrance.gouv.fr.exemple.com/x'),false);assert.strictEqual(hoteAdmis('n\'importe quoi'),false);
  assert.strictEqual(pertinent('Nomination d\'un préfet',''),false);assert.strictEqual(pertinent('Décret relatif à la rénovation énergétique',''),true);
  assert.strictEqual(pertinent('Taux de TVA applicable','') ,true);assert.strictEqual(pertinent('Activation du compte',''),false);assert.strictEqual(pertinent('','Les micro-entrepreneurs sont concernés'),true)});
+await t('nouvelles sources officielles : lues, liens propres, filtre strict sur le titre',()=>{
+ const {pertinentStrict,AUTRES}=require('../serveur/veille/sources.js');
+ assert.deepStrictEqual(AUTRES.map(x=>x[0]),['particuliers','viepublique','ecologie','cnil']);
+ for(const s of ['particuliers','viepublique','ecologie','cnil']){const v=lireRss(ext(s+'.rss'),s);assert.ok(v.length>0,s);assert.ok(v.every(x=>hoteAdmis(x.url)&&!/[?#]/.test(x.url)&&x.idSource&&/^\d{4}-\d\d-\d\d$/.test(x.datePub)),s)}
+ assert.ok(lireRss(ext('viepublique.rss'),'viepublique').every(x=>x.complet===false),'vie publique : aucune date déduite');
+ assert.ok(lireRss(ext('particuliers.rss'),'particuliers').every(x=>/^A\d+$/.test(x.idSource)));
+ for(const t of ['MaPrimeRénov : ce qui change en 2027','Diagnostic de performance énergétique : nouveau calcul','Données personnelles : la CNIL sanctionne','Projet de loi de finances pour 2027'])assert.ok(pertinentStrict(t),t);
+ for(const t of ['Fermeture du tunnel de Saint-Cloud','Prix du carburant : entreprises de travaux forestiers','Ordre du jour de la séance plénière'])assert.ok(!pertinentStrict(t),t)});
+await t('un même article Service-Public dans deux flux : gardé une fois',async()=>{
+ const it='<item><title>TVA des travaux de rénovation : ce qui change</title><link>https://www.service-public.gouv.fr/particuliers/actualites/A20500</link><description>x</description><guid>A20500_2026-11-16</guid><pubDate>Mon, 16 Nov 2026 08:00:00 GMT</pubDate></item>';
+ const r=await creer({env:{},log:()=>{},fetch:async u=>rep(/actu-actu-pro|particuliers/.test(String(u))?'<rss><channel>'+it+'</channel></rss>':'<rss><channel></channel></rss>')}).collecter();
+ assert.deepStrictEqual(r.bruts.map(x=>x.source+':'+x.idSource),['entreprendre:A20500'])});
 await t('une source en panne : l\'autre continue, l\'erreur est rendue',async()=>{
- const f=async u=>/bofip/.test(u)?rep('<html>Maintenance</html>'):rep(ext('entreprendre.rss'));
+ const f=async u=>/bofip/.test(u)?rep('<html>Maintenance</html>'):rep(EXT(u));
  const r=await creer({env:{},fetch:f,log:()=>{}}).collecter();
- assert.deepStrictEqual(r.erreurs.map(e=>e.source),['bofip']);assert.ok(r.bruts.length>0&&r.bruts.every(x=>x.source==='entreprendre'&&pertinent(x.titre,x.resume)));
- const r2=await creer({env:{},fetch:async()=>rep('',503),log:()=>{}}).collecter();assert.strictEqual(r2.erreurs.length,2);assert.strictEqual(r2.bruts.length,0);
- const r3=await creer({env:{},fetch:async()=>{throw new Error('réseau coupé')},log:()=>{}}).collecter();assert.strictEqual(r3.erreurs.length,2)});
+ assert.deepStrictEqual(r.erreurs.map(e=>e.source),['bofip']);assert.ok(r.bruts.length>0&&r.bruts.every(x=>x.source!=='bofip'));assert.ok(r.bruts.filter(x=>x.source==='entreprendre').every(x=>pertinent(x.titre,x.resume)));
+ const r2=await creer({env:{},fetch:async()=>rep('',503),log:()=>{}}).collecter();assert.strictEqual(r2.erreurs.length,6);assert.strictEqual(r2.bruts.length,0);
+ const r3=await creer({env:{},fetch:async()=>{throw new Error('réseau coupé')},log:()=>{}}).collecter();assert.strictEqual(r3.erreurs.length,6)});
 await t('sans clés PISTE : Légifrance inactive, aucun appel vers PISTE',async()=>{const appels=[];
  const s=creer({env:{},fetch:async u=>{appels.push(String(u));return rep(ext('bofip.rss'))},log:()=>{}});
- assert.deepStrictEqual(s.actives(),['bofip','entreprendre']);await s.collecter();assert.ok(!appels.some(u=>/piste/.test(u)))});
+ assert.deepStrictEqual(s.actives(),['bofip','entreprendre','particuliers','viepublique','ecologie','cnil']);await s.collecter();assert.ok(!appels.some(u=>/piste/.test(u)))});
 await t('Journal officiel : textes du bâtiment seulement, hors mesures nominatives',()=>{
  const v=lireJorf(JSON.parse(ext('jorf.json')),'2026-11-11');
  assert.deepStrictEqual(v.map(x=>x.idSource),['JORFTEXT000052000101','JORFTEXT000052000102','JORFTEXT000052000103']);
@@ -40,21 +54,21 @@ await t('Journal officiel : textes du bâtiment seulement, hors mesures nominati
 await t('Légifrance : jeton une seule fois, texte complet lu, clé jamais rendue ni journalisée',async()=>{const logs=[],appels=[];
  const g=async(u,i)=>{u=String(u);appels.push(u);
   if(/oauth/.test(u)){assert.ok(/client_secret=S3CR3Tzq/.test(i.body));return rep(JSON.stringify({access_token:'JTN9x7',expires_in:3600}))}
-  if(!/piste/.test(u))return rep(/bofip/.test(u)?ext('bofip.rss'):ext('entreprendre.rss'));
+  if(!/piste/.test(u))return rep(EXT(u));
   assert.strictEqual(i.headers.authorization,'Bearer JTN9x7');
   if(/lastNJo/.test(u))return rep(JSON.stringify({containers:[{id:'JORFCONT000052000001',datePubli:Date.UTC(2026,10,11,12)}]}));
   if(/jorfCont/.test(u))return rep(ext('jorf.json'));
   if(/consult\/jorf$/.test(u)){if(/000103/.test(i.body))return rep('',500);
    return rep(JSON.stringify({articles:[{content:'<p>Le présent décret entre en vigueur le 1er janvier 2027. Il modifie les mentions des devis.</p>'}]}))}
-  return rep(/bofip/.test(u)?ext('bofip.rss'):ext('entreprendre.rss'))};
+  return rep(EXT(u))};
  const src=creer({env:{PISTE_CLIENT_ID:'id',PISTE_CLIENT_SECRET:'S3CR3Tzq'},fetch:g,log:(...m)=>logs.push(m.join(' '))});
- assert.deepStrictEqual(src.actives(),['bofip','entreprendre','legifrance']);
+ assert.deepStrictEqual(src.actives(),['bofip','entreprendre','particuliers','viepublique','ecologie','cnil','legifrance']);
  const s=await src.collecter();assert.deepStrictEqual(s.erreurs,[]);const L=s.bruts.filter(x=>x.source==='legifrance');
  assert.deepStrictEqual(L.map(x=>x.idSource),['JORFTEXT000052000101','JORFTEXT000052000103']);assert.strictEqual(L[0].datePub,'2026-11-11');
  assert.strictEqual(L[0].complet,true);assert.ok(/entre en vigueur le 1er janvier 2027/.test(L[0].texte));assert.strictEqual(L[1].complet,false);
  assert.strictEqual(appels.filter(u=>/oauth/.test(u)).length,1);assert.ok(!JSON.stringify([s,logs]).includes('S3CR3Tzq'));const fu=JSON.stringify(s),ix=fu.indexOf('JTN9x7');assert.ok(ix<0,fu.slice(Math.max(0,ix-200),ix+50))});
 await t('Légifrance refusée : erreur rendue, les flux restent lus',async()=>{
- const g=async u=>/piste/.test(String(u))?rep('{"error":"invalid_client"}',401):rep(/bofip/.test(u)?ext('bofip.rss'):ext('entreprendre.rss'));
+ const g=async u=>/piste/.test(String(u))?rep('{"error":"invalid_client"}',401):rep(EXT(u));
  const s=await creer({env:{PISTE_CLIENT_ID:'id',PISTE_CLIENT_SECRET:'S3CR3Tzq'},fetch:g,log:()=>{}}).collecter();
  assert.deepStrictEqual(s.erreurs.map(e=>e.source),['legifrance']);assert.ok(s.bruts.length>0);assert.ok(!JSON.stringify(s).includes('S3CR3Tzq'))});
 console.log(ok+' contrôles réussis');

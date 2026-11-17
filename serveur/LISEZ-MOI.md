@@ -258,7 +258,10 @@ Tests : `node outils/test-devis-canvas-appli.js` (avec `python3 -m http.server 8
 
 ## Veille réglementaire : le socle (16 novembre 2026)
 
-Le serveur hébergé (Clever Cloud ; pas le serveur du poste) lit une fois par jour (à partir de 5 h, heure universelle) trois sources officielles : BOFiP, Entreprendre.service-public et le Journal officiel (Légifrance). Il garde chaque texte avec son historique, vérifie sa référence et ses dates, et le range dans une catégorie : changement confirmé, échéance à venir, clarification, proposition, information non confirmée. Ce qu'il ne peut pas démontrer est bloqué avec sa raison. **Rien n'est envoyé aux artisans** : chaque texte attend une validation.
+Le serveur hébergé (Clever Cloud ; pas le serveur du poste) lit une fois par jour (à partir de 5 h, heure universelle) des sources officielles, toutes en flux publics sauf Légifrance : BOFiP, Entreprendre.service-public, Service-Public particuliers, Vie publique (panorama des lois), ministère de la Transition écologique, CNIL, et le Journal officiel (Légifrance). Pour les sources larges (particuliers, Vie publique, Écologie, CNIL), seul le titre compte, sans les mots trop généraux. Un même article Service-Public présent dans deux flux n'est gardé qu'une fois. Il garde chaque texte avec son historique, vérifie sa référence et ses dates, et le range dans une catégorie : changement confirmé, échéance à venir, clarification, proposition, information non confirmée. Ce qu'il ne peut pas démontrer est bloqué avec sa raison. **Rien n'est envoyé aux artisans** sans validation.
+
+- **Tri préparé** : chaque texte reçoit une proposition (à envoyer, à garder, à écarter) et une phrase « À faire » prudente. Dans `/veille`, « Appliquer le tri » valide tout en un geste ; les textes bloqués restent à vérifier. Route `POST /api/veille/trier`.
+- **Envoi** : un texte important (P0, P1) part tout de suite ; les autres le lundi suivant.
 
 - **Sans clé** : BOFiP et Entreprendre sont des flux publics.
 - **Légifrance** : compte gratuit sur piste.gouv.fr, API Légifrance ajoutée à une application, puis sur Clever Cloud › Variables : `PISTE_CLIENT_ID` et `PISTE_CLIENT_SECRET`. Sans elles, la veille tourne avec les deux flux.

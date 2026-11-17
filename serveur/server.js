@@ -540,6 +540,7 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
      return send(res,200,veille.liste(fi).slice(0,500))}
     if(POST&&url==='/api/veille/decider'){const b=await readBody(req),[c,o]=veille.decider(String(b.id||''),String(b.decision||''),b.corrections);
      if(c===200)veilleAnnoncer(false).catch(()=>{});return send(res,c,o)}
+    if(POST&&url==='/api/veille/trier'){const r=veille.trier();veilleAnnoncer(false).catch(()=>{});return send(res,200,r)}
     if(POST&&url==='/api/veille/passer')return send(res,200,await veille.passer());
     return send(res,404,{error:'Introuvable.'})}
 

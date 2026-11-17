@@ -33,11 +33,20 @@ await t('apprentissage : deux corrections dans le même sens, pas une seule',()=
  assert.ok(!mots('Décret n° 2026-1234 du 10 novembre 2026 relatif aux échafaudages').some(m=>/decret|novembre|relatif|2026/.test(m)));
  assert.strictEqual(JSON.stringify(apprendre({},F({titre:'__proto__ constructor prototype'}),[],['devis'])),'1');assert.strictEqual({}.devis,undefined)});
 
+await t('tri préparé : envoyer, garder, écarter, avec une phrase prudente',()=>{
+ const a=analyser(F({titre:'Décret relatif aux mentions obligatoires des devis de travaux'}),J);assert.deepStrictEqual([a.tri,a.aFaireProp],['envoyer','Vérifie tes modèles de devis avant la date d\'application.']);
+ const b=analyser(F({titre:'TVA - Taux réduit des travaux de rénovation',categorie:'clarification',dateVigueur:''}),J);assert.strictEqual(b.tri,'envoyer');assert.ok(/TVA/.test(b.aFaireProp));
+ assert.deepStrictEqual(analyser(F({titre:'Proposition de loi sur la sous-traitance',categorie:'proposition'}),J).tri,'garder');
+ assert.strictEqual(analyser(F({titre:'Arrêté relatif à la sécurité des chantiers'}),J).tri,'garder');
+ assert.strictEqual(analyser(F({titre:'Nomination au conseil d\'administration'}),J).tri,'ecarter');
+ assert.strictEqual(analyser(F({titre:'Décret relatif aux devis',categorie:'non_confirme',bloque:true}),J).tri,'');
+ const {A_FAIRE}=require('../serveur/veille/analyse.js');for(const k of Object.keys(A_FAIRE))assert.ok(!/obligatoire|doit|interdit|sanction/i.test(A_FAIRE[k]),k)});
+
 /* de bout en bout : collecte, analyse, décision du propriétaire, serveur */
 const rep=c=>({ok:true,status:200,text:async()=>c,json:async()=>JSON.parse(c)});
 const item=(id,titre,texte)=>'<item><title>'+titre+'</title><link>https://www.service-public.gouv.fr/particuliers/actualites/'+id+'</link><description>'+texte+'</description><guid>'+id+'_x</guid><dc:date>2026-11-12T00:00:00+01:00</dc:date></item>';
 let items=item('A20001','TVA des travaux : ce qui change pour les devis','Le taux réduit de TVA s\'applique à compter du 1er décembre 2026.')+item('A20002','Proposition de loi sur la sous-traitance dans le bâtiment','Le texte est en discussion.');
-const flux=async u=>rep(/bofip/.test(String(u))?'<rss><channel></channel></rss>':'<rss><channel>'+items+'</channel></rss>');
+const flux=async u=>rep(/actu-actu-pro/.test(String(u))?'<rss><channel>'+items+'</channel></rss>':'<rss><channel></channel></rss>');
 let heure='2026-11-16T06:00:00Z';const dir=fs.mkdtempSync(path.join(os.tmpdir(),'caso-veille-'));
 const v=creer({dir,env:{},fetch:flux,log:()=>{},maintenant:()=>new Date(heure)});
 
@@ -66,6 +75,18 @@ await t('texte modifié à la source : la validation et les corrections reparten
  items=item('A20001','TVA des travaux : ce qui change pour les devis','Le taux réduit de TVA s\'applique à compter du 1er janvier 2027.');
  await v.passer();const f=v.liste().find(x=>x.id==='entreprendre:A20001');
  assert.deepStrictEqual([f.validation,f.dateVigueur,f.corrige.length,f.modules.join()],['attente','2027-01-01',0,'tva,devis,facture']);assert.ok(/1er décembre/.test(f.ancienne))});
+await t('appliquer le tri : un geste, et les textes bloqués restent à vérifier',async()=>{
+ const B=(n,titre,texte,x)=>Object.assign({source:'legifrance',idSource:'JORFTEXT00005200'+n,titre,url:'https://www.legifrance.gouv.fr/jorf/id/JORFTEXT00005200'+n,datePub:'2026-11-11',resume:'',texte,nature:'DECRET',numero:'',nor:'',dateVigueur:''},x||{});
+ const w=creer({dir:fs.mkdtempSync(path.join(os.tmpdir(),'caso-veille-')),env:{},log:()=>{},maintenant:()=>new Date('2026-11-17T06:00:00Z'),sources:{actives:()=>['test'],collecter:async()=>({erreurs:[],bruts:[
+  B('5001','Décret n° 2026-5001 du 10 novembre 2026 relatif aux mentions obligatoires des devis','Le présent décret entre en vigueur le 1er décembre 2026.'),
+  B('5002','Décret n° 2026-5002 du 10 novembre 2026 relatif à la sécurité des chantiers','Le présent décret entre en vigueur le 1er juin 2027.'),
+  B('5003','Décret n° 2026-5003 du 10 novembre 2026 portant nomination au conseil','Le présent décret entre en vigueur le 1er juin 2027.'),
+  B('5004','Décret n° 2026-5004 du 10 novembre 2026 relatif aux devis','Ces dispositions entrent en vigueur à une date fixée par décret.')]})}});
+ await w.passer();const r=w.trier();assert.deepStrictEqual(r,{envoyes:1,gardes:1,ecartes:1,laisses:0});
+ const L=id=>w.lire('legifrance:JORFTEXT00005200'+id);
+ assert.deepStrictEqual([L('5001').validation,L('5001').lettre,L('5001').aFaire,L('5001').publieLe],['valide',true,'Vérifie tes modèles de devis avant la date d\'application.','2026-11-17']);
+ assert.deepStrictEqual([L('5002').validation,L('5002').lettre||false],['valide',false]);assert.strictEqual(L('5003').validation,'refuse');
+ assert.deepStrictEqual([L('5004').validation,L('5004').bloque],['attente',true]);assert.deepStrictEqual(w.lettre().map(x=>x.id),['legifrance:JORFTEXT000052005001'])});
 await t('la priorité suit le délai, jour après jour',async()=>{
  const w=creer({dir:fs.mkdtempSync(path.join(os.tmpdir(),'caso-veille-')),env:{},log:()=>{},maintenant:()=>new Date(heure),
   sources:{actives:()=>['test'],collecter:async()=>({erreurs:[],bruts:[{source:'legifrance',idSource:'JORFTEXT000052000901',titre:'Décret n° 2026-1901 du 8 novembre 2026 relatif à la facturation électronique',url:'https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000052000901',datePub:'2026-11-11',resume:'',texte:'Le présent décret entre en vigueur le 1er mars 2027.',nature:'DECRET',numero:'',nor:'',dateVigueur:''}]})}});

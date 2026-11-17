@@ -63,6 +63,8 @@ a{color:inherit}
 .tete{display:block;width:100%;text-align:left;border:0;background:none;padding:14px 16px}
 .etiq{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
 .tag{font:600 11px/1 var(--mono);border-radius:6px;padding:4px 7px;background:var(--soft);color:var(--mut)}
+.tri{padding:16px}.tri p{margin:0 0 4px;font-size:15px}.tri small{display:block;color:var(--mut);font-size:13px;margin-bottom:12px}.tri .oui{width:100%}
+.tag.tri-envoyer{background:var(--acc);color:#18181a}.tag.tri-ecarter{text-decoration:line-through}
 .tag.P0{background:var(--ko);color:#fff}.tag.P1{background:var(--warn);color:#fff}.tag.bl{color:var(--ko)}.tag.env{color:var(--ok)}
 .tete h2{margin:0;font-size:16px;line-height:1.35;font-weight:600}
 .tete small{display:block;margin-top:4px;font-size:13px;color:var(--mut)}
@@ -118,7 +120,8 @@ summary::after{content:'›';font-size:18px;line-height:1;transition:transform .
 const $=id=>document.getElementById(id),el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
 const CAT={confirme:'Changement confirmé',echeance:'Échéance à venir',clarification:'Clarification',proposition:'Proposition',non_confirme:'Non confirmé',aucun:'Aucun changement'};
 const DOM={fiscalite:'Fiscalité',facturation:'Facturation',assurance:'Assurance',construction:'Construction',renovation:'Rénovation',urbanisme:'Urbanisme',numerique:'Numérique',donnees:'Protection des données'};
-const SRC={bofip:'BOFiP',entreprendre:'Entreprendre',legifrance:'Légifrance'};
+const SRC={bofip:'BOFiP',entreprendre:'Entreprendre',legifrance:'Légifrance',particuliers:'Service-Public',viepublique:'Vie publique',ecologie:'Écologie',cnil:'CNIL'};
+const TRI={envoyer:'À envoyer',garder:'À garder',ecarter:'À écarter'};
 const TUILES=[['attente','À valider'],['verifier','À vérifier'],['critiques','Critiques'],['echeances','Échéances']],ONGLETS=[['valide','Validés'],['adapter','À adapter dans casô'],['refuse','Refusés']];
 const VIDE={attente:['Rien à valider','Tout est traité. La prochaine collecte se fait demain matin.'],verifier:['Rien à vérifier','Aucun texte bloqué.'],critiques:['Aucun texte critique','Rien n\'entre en vigueur dans les 30 jours.'],
  echeances:['Aucune échéance à venir',''],valide:['Aucun texte validé',''],adapter:['Rien à adapter','Aucun texte validé ne touche un module de casô.'],refuse:['Aucun texte refusé','']};
@@ -166,6 +169,10 @@ function dessiner(){
  const sd=$('dom');sd.textContent='';[['','Tous les domaines']].concat(Object.keys(DOM).map(k=>[k,DOM[k]])).forEach(([k,l])=>{const o=el('option',null,l);o.value=k;o.selected=k===dom;sd.append(o)});
  if(E.erreursDernier>0&&!$('msg').textContent)dire('À la dernière collecte, '+E.erreursDernier+' source(s) n\'ont pas répondu.',true);
  const L=$('liste');L.textContent='';const C=choisis();
+ /* le tri préparé : il ne reste qu'à confirmer */
+ if(vue==='attente'&&C.length){const n={envoyer:0,garder:0,ecarter:0};C.forEach(f=>{if(n[f.tri]!=null)n[f.tri]++});
+  if(n.envoyer+n.garder+n.ecarter){const t=el('section','carte tri'),p=el('p'),b=el('button','oui','Appliquer le tri');p.append(el('b',null,'Tri prêt'),document.createTextNode(' · '+[n.envoyer?n.envoyer+' à envoyer':'',n.garder?n.garder+' à garder':'',n.ecarter?n.ecarter+' à écarter':''].filter(Boolean).join(' · ')));
+   b.onclick=trier;t.append(p,el('small',null,'Ouvre un texte pour changer sa phrase ou son choix avant.'),b);L.append(t)}}
  if(!C.length){const v=el('div','vide'),t=VIDE[vue];v.append(el('b',null,E.dernierPassage?t[0]:'Aucune collecte pour l\'instant'),document.createTextNode(E.dernierPassage?t[1]:'Le serveur en fait une chaque matin. Tu peux lancer la première maintenant.'));
   if(!E.dernierPassage){const b=el('button','oui','Lancer une collecte');b.onclick=collecter;v.append(document.createElement('br'),b)}return void L.append(v)}
  if(vue==='adapter'){const par={};C.forEach(f=>f.modules.forEach(m=>(par[m]=par[m]||[]).push(f)));
@@ -175,7 +182,7 @@ function dessiner(){
 function carte(f){
  const c=el('article','carte'),t=el('button','tete'),e=el('div','etiq');t.type='button';t.setAttribute('aria-expanded',String(ouvert===f.id));
  e.append(el('span','tag '+(f.priorite||''),f.priorite||'—'),el('span','tag',CAT[f.categorie]||f.categorie));
- if(f.bloque)e.append(el('span','tag bl','Bloqué'));if(f.lettre&&f.validation==='valide')e.append(el('span','tag env',f.publieLe?'Envoi le '+fr(f.publieLe):'Envoi'));
+ if(f.bloque)e.append(el('span','tag bl','Bloqué'));else if(f.validation==='attente'&&TRI[f.tri])e.append(el('span','tag tri-'+f.tri,TRI[f.tri]));if(f.lettre&&f.validation==='valide')e.append(el('span','tag env',f.publieLe?'Envoi le '+fr(f.publieLe):'Envoi'));
  t.append(e,el('h2',null,f.titre),el('small',null,(SRC[f.source]||f.source)+' · publié le '+fr(f.datePub)+dans(f)));t.onclick=()=>{ouvert=ouvert===f.id?'':f.id;dessiner()};c.append(t);
  if(ouvert!==f.id)return c;
  const b=el('div','corps');c.append(b);
@@ -185,8 +192,8 @@ function carte(f){
  if(/^https:\/\//.test(f.url||'')){const a=el('a',null,'Ouvrir le texte officiel');a.href=f.url;a.target='_blank';a.rel='noopener noreferrer';li('Source',a)}
  li('Référence',f.numero);li('Application',f.dateVigueur?fr(f.dateVigueur)+dans(f).replace(' · ',' (')+(dans(f)?')':''):'Non trouvée');li('Articles',(f.articles||[]).join(' ; '));
  li('Concerne',(f.pros||[]).join(', '));li('Domaines',(f.domaines||[]).map(d=>DOM[d]||d).join(', '));li('Modules casô',(f.modules||[]).join(', '));li('À prévoir',(f.actions||[]).join(' '));li('Avant',f.ancienne);b.append(dl);
- b.append(el('h3',null,'Pour l\'artisan'));const af=el('input','champ');af.type='text';af.maxLength=240;af.value=f.aFaire||'';af.placeholder='À faire, en une phrase';af.setAttribute('aria-label','À faire, pour l\'artisan');
- const lb=el('label','choix'),lc=el('input');lc.type='checkbox';lc.checked=f.lettre===true;lb.append(lc,document.createTextNode('Envoyer aux artisans'));b.append(af,lb);
+ b.append(el('h3',null,'Pour l\'artisan'));const af=el('input','champ');af.type='text';af.maxLength=240;af.value=f.aFaire||(f.validation==='attente'?f.aFaireProp||'':'');af.placeholder='À faire, en une phrase';af.setAttribute('aria-label','À faire, pour l\'artisan');
+ const lb=el('label','choix'),lc=el('input');lc.type='checkbox';lc.checked=f.lettre===true||(f.validation==='attente'&&f.tri==='envoyer');lb.append(lc,document.createTextNode('Envoyer aux artisans'));b.append(af,lb);
  const de=el('details'),g=el('div','grille'),sc=el('select','champ'),sp=el('select','champ'),dv=el('input','champ');dv.type='date';dv.value=f.dateVigueur||'';de.append(el('summary',null,'Corriger'));
  Object.keys(CAT).filter(k=>k!=='aucun').forEach(k=>{const o=el('option',null,CAT[k]);o.value=k;o.selected=k===f.categorie;sc.append(o)});
  ['P0','P1','P2','P3'].forEach(k=>{const o=el('option',null,k);o.value=k;o.selected=k===f.priorite;sp.append(o)});
@@ -200,6 +207,8 @@ function carte(f){
  const bt=(c,l,d)=>{const x=el('button',c,l);x.type='button';x.onclick=()=>envoyer(d);act.append(x)};
  bt('oui',f.validation==='valide'?'Enregistrer':'Valider','valide');if(f.validation!=='refuse')bt('non','Refuser','refuse');if(f.validation!=='attente')bt('non','Remettre en attente','attente');
  b.append(act);return c}
+async function trier(){if(occupe)return;occupe=true;dire('Tri en cours…');
+ try{const r=await api('trier',{});dire('');await charger();dire(r.envoyes+' envoyé(s), '+r.gardes+' gardé(s), '+r.ecartes+' écarté(s).'+(r.laisses?' '+r.laisses+' laissé(s) à revoir.':''))}catch(e){dire(e.message,true)}occupe=false}
 async function collecter(){if(occupe)return;occupe=true;const b=$('collecte');b.classList.add('tourne');dire('Collecte en cours…');
  try{const r=await api('passer',{});dire('');await charger();dire(r.nouveaux||r.modifies?r.nouveaux+' nouveau(x), '+r.modifies+' modifié(s)'+(r.bloques?', dont '+r.bloques+' à vérifier':'')+'.':'Rien de nouveau.'+(r.erreurs?' '+r.erreurs+' source(s) en erreur.':''),r.erreurs>0&&!(r.nouveaux||r.modifies))}
  catch(e){dire(e.message,true)}b.classList.remove('tourne');occupe=false}
