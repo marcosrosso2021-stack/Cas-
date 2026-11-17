@@ -231,7 +231,7 @@ function reponse(t){if(!P.ready||typeof db==="undefined"||typeof CHAT==="undefin
   if(memoire(t,s))return true;
   if(RESTE.test(s))return reste(t);
   if((m=brut(t).match(RAPVOIR))&&rapports(t,m[1]))return true;
-  if(RECIT.test(brut(t))&&!(B().isQuestion&&B().isQuestion(t))&&(cl=client(t))&&brut(t).split(" ").length>=6&&rapport(t,cl))return true;
+  if(RECIT.test(brut(t))&&!demandeQ(brut(t))&&!(B().isQuestion&&B().isQuestion(t))&&(cl=client(t))&&brut(t).split(" ").length>=6&&rapport(t,cl))return true;
   /* « la salle de bain fait 8 m², je veux tout refaire » : la pièce et sa surface en une phrase ouvrent le projet (ensuite : les travaux, puis « fais le devis ») */
   var mpj=brut(t).match(/^(?:la |ma |une |sa |leur )?(salle de bains?|sdb|cuisine|chambre|salon|sejour|wc|toilettes|couloir|entree|garage|bureau)(?: fait| de| mesure)? (\d+(?:[.,]\d+)?) ?(?:m2|m²|metres? carres?) (?:et )?(?:je veux |on veut |il faut |faut |je dois |on doit |a )?(?:tout refaire|refaire (?:tout|a neuf|entierement|en entier)|tout renover|renover (?:tout|entierement)|(?:je |on )?refais tout|tout est a refaire)$/);
   if(mpj&&q0){var n0=CHAT.m.length;if(q0.call(P,"je dois refaire la "+mpj[1])&&CHAT.m.length>n0){q0.call(P,mpj[2]+" m²");var seg=CHAT.m.splice(n0),bots=seg.filter(function(x){return x.who==="bot";});
@@ -282,7 +282,9 @@ P.pasTravail=pasTravail;
 if(typeof window.parseNote==="function"){var pn0=window.parseNote;window.parseNote=function(t){try{if(pasTravail(t)){var a2=[].slice.call(arguments);a2[0]="";return pn0.apply(this,a2);}}catch(x){}return pn0.apply(this,arguments);};}
 
 /* « ajoute deux heures sur le devis » : « sur le devis » n'est pas le nom de la ligne */
-function entiere(t){try{var k=brut(t);return M_REGLE.test(String(t))||M_MOT1.test(String(t))||RECIT.test(k)&&!!client(t)&&k.split(" ").length>=6;}catch(x){return false;}}
+/* une demande ou une question n'est pas un récit : « montre-moi ce qu'on a fait chez Martin », « qu'est-ce qu'on a posé chez Petit » */
+function demandeQ(k){return /^(?:montre|affiche|ouvre|voir|donne|dis|rappelle|fais|sors|envoie|cherche|trouve|combien|ou|quand|quoi|quel|quelle|quels|quelles|qui|est ce|qu est ce|c est quoi|pourquoi|comment)\b|\b(?:ce qu on a|ce que j ai|ce qu il|ce qu ils|qu est ce qu)\b/.test(k);}
+function entiere(t){try{var k=brut(t);return M_REGLE.test(String(t))||M_MOT1.test(String(t))||RECIT.test(k)&&!demandeQ(k)&&!!client(t)&&k.split(" ").length>=6;}catch(x){return false;}}
 if(typeof P.decoupe==="function"){var dc0=P.decoupe;P.decoupe=function(t){if(entiere(t))return false;return dc0.apply(this,arguments);};}
 var r1=P.renvoi;
 P.renvoi=function(t){
