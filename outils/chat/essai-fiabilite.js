@@ -30,10 +30,10 @@ const ESSAIS=[
  ["fr",["client Martin, 20 m² de carrelage, 6 heures de main d'oeuvre"],[/Carrelage 20 m² × 45,00 €.*Main d'œuvre 6 h/]],
  ["fr",["ajoute 20 m2 de carrelage au devis de Martin"],[/Carrelage|20 m²/]],
  /* plusieurs actions dans une phrase : la commande, puis la description pour le devis (plus de « maquette 3D ») */
- ["fr",["nouveau devis pour Dupont et ajoute du carrelage"],[/nouveau devis pour Dupont.*\/.*Carrelage m² × 45 €.*Quantités à préciser/]],
- ["fr",["nouveau devis pour Dupont et ajoute 20 m² de carrelage"],[/nouveau devis pour Dupont.*\/.*Carrelage 20 m² × 45 € 900 €/]],
+ ["fr",["nouveau devis pour Dupont et ajoute du carrelage"],[/Dupont D2026-003.*\/.*Carrelage m² × 45 €.*Quantités à préciser/]],
+ ["fr",["nouveau devis pour Dupont et ajoute 20 m² de carrelage"],[/Dupont D2026-003.*\/.*Carrelage 20 m² × 45 € 900 €/]],
  ["fr",["nouveau devis pour Petit, ajoute du carrelage et des plinthes puis envoie-le"],[/Petit.*\/.*Carrelage m².*Plinthes ml.*\/.*envoyer/]],
- ["en",["new quote for Dupont and add tiling"],[/new quote for Dupont.*\/.*Carrelage m²/]],
+ ["en",["new quote for Dupont and add tiling"],[/Dupont D2026-003.*\/.*Carrelage m²/]],
  /* l'exemple du cahier des charges : chantier Martin, douche italienne, carrelage, surfaces à donner */
  ["fr",["Pour le chantier Martin, ajoute la rénovation de la salle de bain, prévois une douche italienne, remplace le carrelage, calcule les surfaces et prépare un devis.","4 m sur 2 m"],[/Douche italienne 1 u.*prix à remplir.*Carrelage m².*Quantités à préciser.*550 € TTC/,/Carrelage 8 m² × 45 € 360 €.*946 € TTC/]],
  /* jamais le devis d'un autre client : les lignes de Martin vont sur le brouillon de Martin, pas sur celui de Dupont ouvert */

@@ -478,7 +478,7 @@ function projet(t,s,c){var m,LG=window.CASO_LANGAGE;if(typeof q==="undefined")re
   /* plusieurs travaux dans le message (« dépose carrelage, pose faïence, receveur ») : chacun est lu à part */
   var nouv=[],brutS=[];String(t).split(/\s*[,;]\s*/).forEach(function(m0){if(!m0.trim())return;var sub=m0.split(/\s+(?:et|puis)\s+/);
     /* « un receveur et une paroi » : deux travaux ; « au sol et aux murs » : un seul */
-    if(sub.length>1&&LG&&sub.every(function(x){return !!LG.terme(x);}))sub.forEach(function(x){brutS.push(x);});else brutS.push(m0);});
+    if(sub.length>1&&LG&&sub.every(function(x){var tx=LG.terme(x);return !!tx&&!/^(?:mur|sol|plafond|dalle)s?$/.test(tx.id||"")&&!/^(?:au |aux |le |les |du |des |sur le |sur les |par )?(?:sols?|murs?|plafonds?)$/.test(hn(x).trim());}))sub.forEach(function(x){brutS.push(x);});else brutS.push(m0);});
   brutS.forEach(function(t1){var s1=hn(t1).replace(/[’']/g," ").replace(/[.!?]+/g," ").replace(/\s+/g," ").trim();
   var y=s1.replace(/^(?:et |puis |ensuite |aussi )?(?:on (?:va |doit )?|il faut |faut |je (?:vais |dois )?|faudra )/,"").replace(/\b(?:tout le|toute la|tous les|toutes les)\b/g,"le").trim(),dep=PJ_DEP.test(y);
   var lieux=[];if(/\b(?:au |le |du |par )?sol\b/.test(y))lieux.push("sol");if(/\b(?:aux? |les? |des |sur les )?murs?\b|\bmural/.test(y))lieux.push("mur");if(/\bplafond\b/.test(y))lieux.push("plafond");
