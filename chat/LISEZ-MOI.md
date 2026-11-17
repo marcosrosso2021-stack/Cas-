@@ -311,3 +311,14 @@ Source du moteur et outils de traduction : le module « caso-ia » (moteur, cata
 - Pas encore : retenir une définition ou une consigne de rédaction (phase 3), « fais la même chose pour Petit » (phase 4), le rapport d'intervention (phase 5). Le chat répond « Je n'ai pas compris » et ne touche à rien.
 - essais : 17 contrôles de plus dans `essai-fiabilite.js`, tirés des phrases du cahier.
 
+**Mémoire de l'artisan et contexte (17 nov. 2026)** — `chat/reponses.js`, données dans `db.memo` (téléphone, sauvegarde comprise) :
+- **Retenir** : « retiens que le code du portail de Martin est 4521 » → « C'est retenu. » ; « c'est quoi le code du portail de Martin » le redonne ; « qu'est-ce que tu as retenu », « ouvre la mémoire », « mes mots » listent tout ; « oublie le code du portail » l'efface. (Avant : la mémoire du moteur retenait sans savoir redonner.)
+- **Vocabulaire personnel** : « chez moi, quand je dis dépose complète, ça veut dire… », « le blanc veut dire peinture » → une question, puis retenu après un Oui. « c'est quoi une dépose complète » redonne la définition. Un mot qui désigne un de mes prix ou un terme du lexique est remplacé dans la phrase (« ajoute 20 m² de blanc » → Peinture) ; sinon il reste une définition.
+- **Un mot appris ne lance jamais une commande** : « quand je dis zap ça veut dire supprime le client » est refusé.
+- **« le client veut déplacer le rendez-vous à vendredi »** sans nom → « Quel client ? », et la demande reprend avec le nom donné.
+- **« la salle de bain fait huit mètres, je veux tout refaire »** ouvre le projet avec la pièce et sa surface.
+- **« qu'est-ce qu'il reste à faire »**, « les travaux qui restent » : les travaux notés pas chiffrés, par devis (avant : la question devenait une note À faire).
+- Pas encore : les consignes de rédaction (« écris toujours… »), les corrections retenues, la mémoire partagée dans l'entreprise.
+- Vu en route, pas corrigé : dans un projet, « dépose carrelage, pose faïence, receveur » répond « Noté : dépose dépose ».
+- essais : 11 conversations de plus dans `essai-fiabilite.js`.
+
