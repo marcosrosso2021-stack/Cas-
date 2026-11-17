@@ -6498,7 +6498,7 @@ function importAll(inp){
   if(!confirm('Remplacer toutes les données actuelles ?'))return;
   const now=Date.now();['prices','quotes','hist','chantiers','people','pts','clients','suppliers','projects','plans','events','invoices','cvTpl'].forEach(k=>{if(!Array.isArray(d[k]))d[k]=[];d[k]=d[k].filter(x=>x&&typeof x==='object'&&(x.id==null||okId(x.id)));d[k].forEach(x=>{if(x.id)x.updatedAt=now})});
   ['prices','quotes','pts','plans','events','invoices'].forEach(k=>{d[k]=d[k].map(x=>recClean(k,x)).filter(Boolean)});
-  if(!d.sup||typeof d.sup!=='object')d.sup={};if(!d.prof||typeof d.prof!=='object')d.prof={};if(!(d.counter>=0))d.counter=0;
+  if(!d.sup||typeof d.sup!=='object')d.sup={};d.prof=profClean(d.prof);if(!(d.counter>=0))d.counter=0;
   db=d;ensurePt();initSnap();{const c=getSync();if(c.token)setSync(Object.assign(c,{rev:0,lastPush:0}))}save();try{init()}catch(e){location.reload()}}catch(e){alert('Fichier invalide.')}};
  r.readAsText(f);inp.value='';
 }
@@ -6508,16 +6508,18 @@ addEventListener('pagehide',()=>{if(profT){clearTimeout(profT);saveProf()}});
 const ibanMask=v=>{v=String(v||'').replace(/\s+/g,'');return v.length>8?v.slice(0,4)+' •••• •••• '+v.slice(-4):v};
 function ibanShow(){const e=$('eIban');if(!e)return;e.dataset.open='';e.value=ibanMask((db.prof||{}).iban)}
 async function ibanOpen(e){if(e.dataset.open==='1'||e.dataset.ask)return;
+ if(profVerrou()){e.blur();toast(i18nT('Réservé au patron.'));return}
  if(sansMdp()){e.dataset.ask='1';e.blur();const ok=await bioConf();delete e.dataset.ask;if(!ok)return}
  else if(window.VAULT&&VAULT.on){e.dataset.ask='1';e.blur();const pw=await askPw(i18nT('Mot de passe'));delete e.dataset.ask;
   if(pw==null)return;if(!(await VAULT.checkPw(pw))){toast(i18nT('Mot de passe incorrect.'));return}}
  e.dataset.open='1';e.value=(db.prof||{}).iban||'';e.focus()}
-async function ibanSet(v){
+async function ibanSet(v){if(profVerrou()){toast(i18nT('Réservé au patron.'));return}
+
  if(sansMdp()){if(!(await bioConf()))return}
  else{const pw=await askPw(i18nT('Mot de passe'));if(pw==null)return;
   if(!(await VAULT.checkPw(pw))){toast(i18nT('Mot de passe incorrect.'));return}}
  db.prof=Object.assign({},db.prof||{},{iban:v});db.profAt=Date.now();save();ibanShow();toast(i18nT('Enregistré.'))}
-function saveProf(){clearTimeout(profT);profT=0;setTimeout(()=>{try{window.CasoAuth&&CasoAuth.profil()}catch(e){}},0);db.prof=Object.assign({},db.prof||{},{nom:$('eNom').value,adr:$('eAdr').value,siret:$('eSiret').value,siren:$('eSiren').value.replace(/\D/g,'')||$('eSiret').value.replace(/\D/g,'').slice(0,9),tel:$('eTel').value,assur:$('eAssur').value,valid:$('eValid').value,forme:$('eForme').value,metier:$('eMetier').value,rm:$('eRm').value,tvai:$('eTvai').value,email:$('eMail').value,zone:$('eZone').value,iban:$('eIban').dataset.open==='1'?$('eIban').value:((db.prof||{}).iban||''),bic:$('eBic').value,delai:$('eDelai').value,capital:$('eCapital').value,franchise:$('eFranch').checked,rcpro:$('eRcpro').value,mediateur:$('eMed').value,tauxH:$('eTauxH').value,depl:$('eDepl').value,acompteType:$('eAccT').value,acomptePct:$('eAccP').value});if(typeof entExtra==='function')entExtra();db.profAt=Date.now();save()}
+function saveProf(){clearTimeout(profT);profT=0;setTimeout(()=>{try{window.CasoAuth&&CasoAuth.profil()}catch(e){}},0);const P0=db.prof||{};db.prof=Object.assign({},P0,{nom:$('eNom').value,adr:$('eAdr').value,siret:$('eSiret').value,siren:$('eSiren').value.replace(/\D/g,'')||$('eSiret').value.replace(/\D/g,'').slice(0,9),tel:$('eTel').value,assur:$('eAssur').value,valid:$('eValid').value,forme:$('eForme').value,metier:$('eMetier').value,rm:$('eRm').value,tvai:$('eTvai').value,email:$('eMail').value,zone:$('eZone').value,iban:$('eIban').dataset.open==='1'?$('eIban').value:((db.prof||{}).iban||''),bic:$('eBic').value,delai:$('eDelai').value,capital:$('eCapital').value,franchise:$('eFranch').checked,rcpro:$('eRcpro').value,mediateur:$('eMed').value,tauxH:$('eTauxH').value,depl:$('eDepl').value,acompteType:$('eAccT').value,acomptePct:$('eAccP').value},profVerrou()?{iban:P0.iban||'',bic:P0.bic||'',siret:P0.siret||'',siren:P0.siren||''}:{});if(typeof entExtra==='function')entExtra();db.profAt=Date.now();save()}
 
 /* ---------- Historique ---------- */
 const ST={brouillon:'Brouillon',envoye:'En cours de signature',accepte:'Validé',paye:'Payé',refuse:'Refusé',expire:'Expiré'};
@@ -6571,9 +6573,6 @@ function renderFour(){
 /* ---------- Import intelligent ---------- */
 let impRows=[];
 function setImpMsg(t){$('impMsg').textContent=t}
-function getKey(){try{return localStorage.getItem('devis_key')||''}catch(e){return ''}}
-function saveKey(){try{localStorage.setItem('devis_key',$('apiKey').value.trim())}catch(e){}}
-function impModeChange(){$('keyBox').style.display=$('impMode').value==='ai'?'block':'none'}
 
 /* --- image --- */
 function enhance(c){
@@ -6852,28 +6851,6 @@ async function ocrExtract(f){
   const res=await w.recognize(d);
   return rowsFromWords(res.data.words||[],res.data.text||'');
  }finally{try{await w.terminate()}catch(e){}}
-}
-
-/* --- IA --- */
-async function aiExtract(f){
- const key=getKey();if(!key)throw new Error('Saisis ta clé API dans le champ prévu.');
- let block;
- if(f.type==='application/pdf')block={type:'document',source:{type:'base64',media_type:'application/pdf',data:await fileB64(f)}};
- else{const d=await loadImgData(f);block={type:'image',source:{type:'base64',media_type:'image/jpeg',data:d.split(',')[1]}}}
- const prompt='Voici un devis ou une facture de fournisseur du bâtiment. Extrais chaque ligne d\'article ou de prestation. Réponds UNIQUEMENT par un objet JSON, sans texte autour, de la forme {"supplier":"nom du fournisseur ou vide","lines":[{"label":"désignation","qty":nombre,"unit":"unité","pu":prix unitaire HT en nombre,"tva":taux de TVA en nombre}]}. Si une information est absente, mets qty 1, unit "u", tva 20. N\'invente rien. Ignore les totaux, les remises globales et les mentions légales.';
- const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
-  headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-  body:JSON.stringify({model:'claude-sonnet-5-5',max_tokens:4000,messages:[{role:'user',content:[block,{type:'text',text:prompt}]}]})});
- if(!r.ok){const t=await r.text();throw new Error('Service IA '+r.status+' : '+t.slice(0,150))}
- const j=await r.json().catch(()=>({}));const txt=(j.content||[]).map(c=>c.text||'').join('');
- const m=txt.match(/\{[\s\S]*\}/);if(!m)throw new Error('Réponse illisible.');
- const o=JSON.parse(m[0]);
- if(o.supplier&&!$('impFour').value){$('impFour').value=o.supplier;supHint()}
- const sup=supGet($('impFour').value);
- return (o.lines||[]).map(l=>{
-  let label=String(l.label||'');const raw=label;
-  if(sup&&sup.labels&&sup.labels[label.toLowerCase()])label=sup.labels[label.toLowerCase()];
-  return{on:true,label,rawLabel:raw,qty:+l.qty||1,unit:String(l.unit||'u'),pu:+l.pu||0,tva:(l.tva==null||isNaN(+l.tva))?20:+l.tva,nums:[],ok:undefined,warn:'',src:'ai'}});
 }
 
 async function runImport(inp){
@@ -7513,6 +7490,16 @@ const rcHtml=(()=>{
     if(k==='style'){const s=style(a.value);if(s)n.setAttribute('style',s);else n.removeAttribute('style')}})});
   return doc.body.innerHTML}})();
 function rcLines(L){return Array.isArray(L)?L.filter(l=>l&&typeof l==='object').map(l=>Object.assign(l,{qty:rcN(l.qty),pu:rcN(l.pu),tva:rcN(l.tva)})):[]}
+/* profil d'entreprise reçu d'ailleurs : objet simple ; le logo n'est gardé que si c'est une image (png, jpeg, webp) */
+function profClean(v){const o={};if(!v||typeof v!=='object'||Array.isArray(v))return o;
+ for(const k of Object.keys(v)){if(k==='__proto__'||k==='constructor'||k==='prototype')continue;const x=v[k];
+  if(k==='logo'){if(rcImg(x))o.logo=x;continue}
+  if(typeof x==='string')o[k]=x.length>4000&&!/^data:image\//.test(x)?x.slice(0,4000):x;
+  else if(typeof x==='number'||typeof x==='boolean'||x===null)o[k]=x;
+  else if(typeof x==='object'){try{o[k]=JSON.parse(JSON.stringify(x))}catch(e){}}}
+ return o}
+/* dans une équipe, l'IBAN, le BIC et le SIRET de l'entreprise ne se changent que depuis le compte du patron */
+function profVerrou(){try{const c=getSync();return !!(c&&c.token&&c.role&&c.role!=='patron')}catch(e){return false}}
 function recClean(c,r){if(!r||typeof r!=='object'||!okId(r.id))return null;
  const D=k=>{if(!RC_D(r[k]))r[k]=''};
  if(c==='quotes'){r.lines=rcLines(r.lines);r.remise=rcN(r.remise);r.acompte=rcN(r.acompte);D('date');
@@ -7542,7 +7529,7 @@ function applyRemote(d,resp){
    else return;
    (snap[c]||(snap[c]={}))[rec.id]=fp(rec);n++;if(c==='quotes'&&typeof q!=='undefined'&&q&&q.id===rec.id&&d===db)qRemote=rec})});
  const pr=resp.changes&&resp.changes.prof&&resp.changes.prof[0];
- if(pr&&pr.updatedAt>(d.profAt||0)){d.prof=pr.v||{};d.profAt=pr.updatedAt;n++}
+ if(pr&&pr.updatedAt>(d.profAt||0)){d.prof=profClean(pr.v);d.profAt=pr.updatedAt;n++}
  (resp.tomb||[]).forEach(t=>{
   const l=d[t.c];if(!l)return;
   const i=l.findIndex(x=>x.id===t.id);
@@ -7736,6 +7723,7 @@ function init(){
  $('eTel').value=db.prof.tel||'';$('eAssur').value=db.prof.assur||'';$('eValid').value=db.prof.valid||30;
  renderQuick();renderPrices();fillForm();
 }
+try{localStorage.removeItem('devis_key')}catch(e){}
 init();
 
 vnInit();sigInit();chatLoad();renderAcct();
@@ -8112,7 +8100,7 @@ function dvOpen(id){drawerClose(true);const box=$('dvx');box.hidden=false;docume
 function dvClose(rester){$('dvx').hidden=true;document.body.classList.remove('dv-on');if(!rester)go('chat')}
 function entLogo(inp){const f=inp.files[0];inp.value='';if(!f)return;const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const k=Math.min(1,480/Math.max(i.naturalWidth,i.naturalHeight)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(i.naturalWidth*k));c.height=Math.max(1,Math.round(i.naturalHeight*k));c.getContext('2d').drawImage(i,0,0,c.width,c.height);
   db.prof=Object.assign({},db.prof||{},{logo:c.toDataURL('image/png'),couleurs:[],couleur:'',logoCle:''});db.profAt=Date.now();save();entExtra();toast(i18nT('Enregistré.'))};i.src=r.result};r.readAsDataURL(f)}
-function entExtra(){const p=db.prof||{},v=$('eLogoV');if(v)v.innerHTML=p.logo?`<img src="${p.logo}" alt="">`:'';const cw=$('eCapW');if(cw)cw.hidden=!p.forme||/^(EI|micro)$/i.test(p.forme);const tw=$('eTvaW');if(tw)tw.hidden=!!p.franchise}
+function entExtra(){const p=db.prof||{},v=$('eLogoV');if(v)v.innerHTML=rcImg(p.logo)?`<img src="${p.logo}" alt="">`:'';const cw=$('eCapW');if(cw)cw.hidden=!p.forme||/^(EI|micro)$/i.test(p.forme);const tw=$('eTvaW');if(tw)tw.hidden=!!p.franchise}
 </script>
 <script type="text/x-caso" data-src="chat/engine.js"></script>
 <script type="text/x-caso" data-src="chat/brain.js"></script>
