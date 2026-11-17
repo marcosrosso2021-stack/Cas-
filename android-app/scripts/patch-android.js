@@ -1,7 +1,7 @@
 /*
  * Ajoute au projet Android généré par Capacitor : le plugin de zones,
- * les permissions de localisation, les deux récepteurs et la bibliothèque
- * Google de géorepérage. Sans danger si lancé deux fois.
+ * les permissions de localisation, les deux récepteurs, la bibliothèque
+ * Google de géorepérage, et la clé biométrique du coffre (plugin CasoBio). Sans danger si lancé deux fois.
  */
 const fs = require('fs');
 const path = require('path');
@@ -49,6 +49,14 @@ if (m.indexOf('caso-geo') === -1) {
   console.log('AndroidManifest.xml mis à jour');
 }
 
+// Face ID / empreinte pour ouvrir le coffre (plugin CasoBio)
+m = fs.readFileSync(manifestPath, 'utf8');
+if (m.indexOf('android.permission.USE_BIOMETRIC') === -1) {
+  m = m.replace('</manifest>', '    <!-- caso-bio -->\n    <uses-permission android:name="android.permission.USE_BIOMETRIC" />\n</manifest>');
+  fs.writeFileSync(manifestPath, m);
+  console.log('AndroidManifest.xml : biométrie ajoutée');
+}
+
 const gradlePath = path.join(android, 'app', 'build.gradle');
 let g = fs.readFileSync(gradlePath, 'utf8');
 if (g.indexOf('play-services-location') === -1) {
@@ -57,4 +65,11 @@ if (g.indexOf('play-services-location') === -1) {
   g = g.replace(re, "\ndependencies {\n    implementation 'com.google.android.gms:play-services-location:21.3.0'");
   fs.writeFileSync(gradlePath, g);
   console.log('build.gradle mis à jour');
+}
+if (g.indexOf('androidx.biometric') === -1) {
+  const re = /\ndependencies\s*\{/;
+  if (!re.test(g)) throw new Error('app/build.gradle : bloc dependencies introuvable');
+  g = g.replace(re, "\ndependencies {\n    implementation 'androidx.biometric:biometric:1.1.0'");
+  fs.writeFileSync(gradlePath, g);
+  console.log('build.gradle : biométrie ajoutée');
 }
