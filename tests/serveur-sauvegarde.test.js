@@ -25,7 +25,7 @@ const essaie=f=>{try{f();return null}catch(e){return e.code||e.message}};
  await req(S,'/api/sync',cli('c1','Client Sauvegarde Secret'),tk(tok));
  fs.writeFileSync(path.join(d,'comptes.json'),JSON.stringify({comptes:{x:{email:'secret@test.fr'}}}));
  let s1=await S.sauvegarder(true);
- ok('sauvegarde créée, chiffrée, au bon nom',!!s1&&s1.chiffre===true&&SV.NOM.test(s1.nom)&&s1.fichiers.includes('data.json')&&s1.fichiers.includes('comptes.json'),s1&&s1.nom);
+ ok('sauvegarde créée, chiffrée, au bon nom',!!s1&&s1.chiffre===true&&SV.NOM.test(s1.nom)&&s1.fichiers.includes('espaces/e1/data.json')&&!s1.fichiers.includes('data.json')&&s1.fichiers.includes('comptes.json'),s1&&s1.nom);
  const brut=fs.readFileSync(s1.chemin);
  ok('rien de lisible dans le fichier (client, e-mail, identifiant)',!/Client Sauvegarde Secret|secret@test\.fr|Marcos/.test(brut.toString('latin1')));
  let v=essaie(()=>{const r=SV.verifier(s1.chemin,{cle:PHRASE});if(!r.ok||r.fichiers.length!==2)throw new Error('contenu')});
@@ -54,12 +54,12 @@ const essaie=f=>{try{f();return null}catch(e){return e.code||e.message}};
  /* ---- essai 10 : restauration après corruption ---- */
  await req(S,'/api/sync',cli('c2','Après la sauvegarde'),tk(tok));
  S.server.close();await S.flush();
- fs.writeFileSync(path.join(d,'data.json'),'{"rev":12,"users":{"marc');            // fichier abîmé
+ fs.writeFileSync(path.join(d,'espaces','e1','data.json'),'{"rev":12,"users":{"marc');            // fichier abîmé
  let e=essaie(()=>createServer({dataDir:d,noTimers:true}));
  ok('fichier de données abîmé : le serveur refuse de démarrer, sans rien écraser',/illisible/.test(String(e)),String(e).slice(0,60));
- const mis=fs.readdirSync(d).filter(n=>/^data\.json\.illisible-/.test(n));ok('le fichier abîmé est mis de côté',mis.length===1);
+ const mis=fs.readdirSync(path.join(d,'espaces','e1')).filter(n=>/^data\.json\.illisible-/.test(n));ok('le fichier abîmé est mis de côté',mis.length===1);
  const der=SV.trouver(d,'derniere');const rr=SV.restaurer(der.chemin,d,{cle:PHRASE});
- ok('restauration de la dernière sauvegarde',rr.fichiers.includes('data.json')&&fs.existsSync(rr.avant));
+ ok('restauration de la dernière sauvegarde',rr.fichiers.includes('espaces/e1/data.json')&&fs.existsSync(rr.avant));
  S=await neuf({dataDir:d,cleSauvegarde:PHRASE});
  r=await req(S,'/api/sync',{since:0,changes:{}},tk(tok));
  ok('le serveur redémarre avec les données de la sauvegarde (connexion comprise)',r.status===200&&(r.j.changes.clients||[]).some(c=>c.nom==='Client Sauvegarde Secret'));
@@ -82,7 +82,7 @@ const essaie=f=>{try{f();return null}catch(e){return e.code||e.message}};
  ok('variable laissée en place : la restauration n’est pas rejouée, le nouveau travail reste',/Nouveau travail/.test(noms),noms);
  S.server.close();await S.flush();
  ok('sauvegarde demandée introuvable : le serveur refuse de démarrer',/introuvable/.test(String(essaie(()=>createServer({dataDir:d,noTimers:true,restaurer:'2020-01-01T00-00-00Z.caso'})))));
- ok('mauvaise phrase au démarrage : rien n’est touché',essaie(()=>createServer({dataDir:d,noTimers:true,cleSauvegarde:'fausse',restaurer:sb.nom}))==='cle'&&fs.existsSync(path.join(d,'data.json')));
+ ok('mauvaise phrase au démarrage : rien n’est touché',essaie(()=>createServer({dataDir:d,noTimers:true,cleSauvegarde:'fausse',restaurer:sb.nom}))==='cle'&&fs.existsSync(path.join(d,'espaces','e1','data.json')));
 
  /* ---- sans phrase secrète : sauvegarde locale en clair, jamais téléchargeable ---- */
  d=path.join(tmp,'c');S=await neuf({dataDir:d,cleSauvegarde:''});
@@ -92,6 +92,23 @@ const essaie=f=>{try{f();return null}catch(e){return e.code||e.message}};
  ok('une sauvegarde en clair ne sort pas du serveur',r.status===409,String(r.status));
  S.server.close();
 
+ /* ---- espaces : chaque espace est sauvegardé ; l'ancien data.json de la racine ne l'est plus ; une sauvegarde d'avant se restaure encore ---- */
+ d=path.join(tmp,'esp');fs.mkdirSync(path.join(d,'espaces','e1'),{recursive:true});fs.mkdirSync(path.join(d,'espaces','e2'),{recursive:true});fs.mkdirSync(path.join(d,'espaces','..x'),{recursive:true});
+ fs.writeFileSync(path.join(d,'data.json'),'{"rev":1,"vieux":1}');fs.writeFileSync(path.join(d,'espaces','e1','data.json'),'{"rev":5,"qui":"e1"}');fs.writeFileSync(path.join(d,'espaces','e2','data.json'),'{"rev":7,"qui":"e2"}');
+ const se=await SV.creer(d,{cle:PHRASE});
+ ok('deux espaces : les deux sont dans la sauvegarde, pas la vieille copie de la racine',se.fichiers.join()==='espaces/e1/data.json,espaces/e2/data.json',se.fichiers.join());
+ fs.writeFileSync(path.join(d,'espaces','e1','data.json'),'{"rev":9,"qui":"abime"}');fs.mkdirSync(path.join(d,'espaces','e3'));fs.writeFileSync(path.join(d,'espaces','e3','data.json'),'{"rev":1,"qui":"e3"}');
+ const re=SV.restaurer(se.chemin,d,{cle:PHRASE}),lisj=(...p)=>JSON.parse(fs.readFileSync(path.join(...p),'utf8'));
+ ok('restauration : chaque espace retrouve son fichier, sans mélange',lisj(d,'espaces','e1','data.json').qui==='e1'&&lisj(d,'espaces','e2','data.json').qui==='e2'&&lisj(d,'data.json').vieux===1);
+ ok('ce qui était en place est rangé à côté, espace par espace',lisj(re.avant,'espaces','e1','data.json').qui==='abime'&&lisj(re.avant,'espaces','e3','data.json').qui==='e3'&&!fs.existsSync(path.join(d,'espaces','e3','data.json')));
+ d=path.join(tmp,'vieux');fs.mkdirSync(d);fs.writeFileSync(path.join(d,'data.json'),JSON.stringify({rev:3,counter:0,users:{},tokens:{},invites:{},recs:{clients:{c9:{id:'c9',nom:'Ancien rangement',updatedAt:1,rev:3}}},tombs:[]}));
+ const sv0=await SV.creer(d,{cle:PHRASE});                                         // sauvegarde faite avant les espaces
+ ok('sauvegarde d’avant les espaces : elle contient data.json',sv0.fichiers.join()==='data.json');
+ S=await neuf({dataDir:d,cleSauvegarde:PHRASE});S.data().recs.clients.c9.nom='Modifié depuis';await S.persist();S.server.close();await S.flush();
+ await pause(1200);S=await neuf({dataDir:d,cleSauvegarde:PHRASE,restaurer:sv0.nom});
+ ok('elle se restaure encore : le serveur repart sur ses données',S.data().recs.clients.c9.nom==='Ancien rangement',S.data().recs.clients.c9&&S.data().recs.clients.c9.nom);
+ S.server.close();await S.flush();
+
  /* ---- rotation ---- */
  d=path.join(tmp,'r');fs.mkdirSync(d);fs.writeFileSync(path.join(d,'data.json'),'{"rev":1}');
  for(let j=0;j<70;j++)await SV.creer(d,{date:new Date(Date.UTC(2026,10,17,3,0,0)-j*864e5)});
@@ -99,7 +116,7 @@ const essaie=f=>{try{f();return null}catch(e){return e.code||e.message}};
  ok('rotation : 14 jours gardés, plus la dernière de chaque mois',reste.length===16&&reste[0].startsWith('2026-11-17')&&reste.includes('2026-10-31T03-00-00Z.caso')&&reste.includes('2026-09-30T03-00-00Z.caso')&&suppr.length===54,reste.length+' gardées, '+suppr.length+' supprimées');
 
  /* ---- essai 4 : arrêt brutal du serveur pendant une écriture ---- */
- d=path.join(tmp,'k');let valides=0,tours=6;
+ d=path.join(tmp,'k');let valides=0,lus=0,tours=6;
  const enfant=`const {createServer}=require(${JSON.stringify(path.join(__dirname,'..','serveur','server.js'))});
   const s=createServer({dataDir:${JSON.stringify(d)},noTimers:true});const D=s.data();D.recs.clients=D.recs.clients||{};let n=0;
   const gros='x'.repeat(200000);(function f(){for(let i=0;i<40;i++)D.recs.clients['c'+(n++)]={id:'c'+n,nom:gros,updatedAt:Date.now()};D.rev=n;
@@ -107,9 +124,9 @@ const essaie=f=>{try{f();return null}catch(e){return e.code||e.message}};
  for(let t=0;t<tours;t++){
   const c=spawn(process.execPath,['-e',enfant],{stdio:['ignore','pipe','ignore']});let ecrits=0;c.stdout.on('data',x=>{ecrits+=x.length});
   await pause(250+t*130);c.kill('SIGKILL');await new Promise(r=>c.on('exit',r));
-  let lis=null;try{lis=JSON.parse(fs.readFileSync(path.join(d,'data.json'),'utf8'))}catch(e){lis=fs.existsSync(path.join(d,'data.json'))?null:'absent'}
-  if(lis&&(lis==='absent'||typeof lis.rev==='number'))valides++}
- ok('serveur tué '+tours+' fois en pleine écriture : le fichier de données reste toujours entier',valides===tours,valides+'/'+tours);
+  let lis=null;try{lis=JSON.parse(fs.readFileSync(path.join(d,'espaces','e1','data.json'),'utf8'))}catch(e){lis=fs.existsSync(path.join(d,'espaces','e1','data.json'))?null:'absent'}
+  if(lis&&lis!=='absent')lus++;if(lis&&(lis==='absent'||typeof lis.rev==='number'))valides++}
+ ok('serveur tué '+tours+' fois en pleine écriture : le fichier de données reste toujours entier',valides===tours&&lus>=tours-1,valides+'/'+tours+', '+lus+' fichiers relus');
  e=essaie(()=>{const s=createServer({dataDir:d,noTimers:true});if(typeof s.data().rev!=='number')throw new Error('rev')});
  ok('après ces arrêts brutaux, le serveur redémarre sur un fichier lisible',e===null,String(e));
 

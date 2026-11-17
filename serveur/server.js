@@ -39,7 +39,6 @@ function lanAddresses(){
 function createServer(opts={}){
  const DIR=opts.dataDir||process.env.DATA_DIR||(process.env.APP_HOME?path.join(process.env.APP_HOME,'donnees'):path.join(__dirname,'donnees'));// Clever Cloud : dossier « donnees » monté par le FS Bucket
  fs.mkdirSync(DIR,{recursive:true});
- const FILE=path.join(DIR,'data.json');
  /* Sauvegardes (serveur/sauvegarde.js). CASO_CLE_SAUVEGARDE : phrase secrète qui les chiffre.
     RESTAURER=<nom du fichier> ou « derniere » : au démarrage, cette sauvegarde est remise en place une seule fois
     (les fichiers d'avant sont rangés à côté), puis le serveur démarre dessus. */
@@ -49,6 +48,18 @@ function createServer(opts={}){
    if(!x)throw new Error('RESTAURER : sauvegarde « '+veut+' » introuvable.');
    if(deja!==String(veut)+' '+x.nom){const r=sauvegarde.restaurer(x.chemin,DIR,{cle:SV_CLE});fs.writeFileSync(marque,String(veut)+' '+x.nom);
     console.log('[casô] sauvegarde '+x.nom+' restaurée ('+r.fichiers.join(', ')+'). Fichiers d\'avant : '+path.basename(r.avant)+'. Retire la variable RESTAURER.')}}}
+ /* Un espace = une entreprise (son patron, son équipe, ses données) dans son dossier : donnees/espaces/<espace>/data.json.
+    Pour l'instant un seul espace, « e1 ». Ce qui est commun à tous reste dans « donnees » : comptes Google / Outlook, newsletter,
+    apprentissage partagé, phrases incomprises, verrou de déploiement.
+    Passage depuis l'ancien rangement (donnees/data.json) : le fichier est copié dans l'espace e1 au premier démarrage ; l'ancien n'est
+    ni modifié ni supprimé. S'il redevient plus récent que celui de l'espace (retour au code d'avant, puis de nouveau celui-ci), il est
+    recopié et la version de l'espace est mise de côté (data.json.avant-…). */
+ const ESPACE=/^[a-z0-9]{1,24}$/.test(String(opts.espace||''))?String(opts.espace):'e1',ESP=path.join(DIR,'espaces',ESPACE);
+ fs.mkdirSync(ESP,{recursive:true});
+ const FILE=path.join(ESP,'data.json');
+ if(ESPACE==='e1'){const ANCIEN=path.join(DIR,'data.json');let a=null,n=null;try{a=fs.statSync(ANCIEN)}catch(e){if(e.code!=='ENOENT')throw e}try{n=fs.statSync(FILE)}catch(e){if(e.code!=='ENOENT')throw e}
+  if(a&&!n){fs.copyFileSync(ANCIEN,FILE);console.log('[casô] données de l\'entreprise rangées dans espaces/e1 (l\'ancien data.json est gardé).')}
+  else if(a&&n&&a.mtimeMs>n.mtimeMs+1000){fs.copyFileSync(FILE,FILE+'.avant-'+Date.now());fs.copyFileSync(ANCIEN,FILE);console.log('[casô] l\'ancien data.json était plus récent : il a été repris, la version de l\'espace est mise de côté.')}}
  // dans le dépôt : l'appli (index.html, module devis.html, chat/, lib/) est un dossier au-dessus du serveur
  const ROOT=path.join(__dirname,'..'),NEWL=!opts.appFile&&fs.existsSync(path.join(ROOT,'index.html'));
  const APP=opts.appFile||(NEWL?path.join(ROOT,'index.html'):path.join(__dirname,'devis.html'));

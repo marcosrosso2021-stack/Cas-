@@ -2,7 +2,7 @@
 /* Sauvegardes du serveur casô (aucune dépendance).
 
    Une sauvegarde est un seul fichier daté, dans le dossier « sauvegardes » des données. Elle contient les fichiers
-   du serveur (équipe, comptes, apprentissage du chat, veille), compressés, puis chiffrés en AES-256-GCM quand une
+   du serveur (données de chaque espace, comptes, apprentissage du chat, veille), compressés, puis chiffrés en AES-256-GCM quand une
    phrase secrète est donnée (variable CASO_CLE_SAUVEGARDE). La clé est dérivée de cette phrase par scrypt, avec un
    sel propre à chaque fichier. Sans la phrase, le fichier est illisible : il peut alors être copié ailleurs.
 
@@ -18,6 +18,13 @@
 const fs=require('fs'),path=require('path'),crypto=require('crypto'),zlib=require('zlib');
 
 const FICHIERS=['data.json','comptes.json','appris.json','incompris.json','veille.json'];
+/* Les données d'une entreprise sont dans espaces/<espace>/data.json. Le data.json à la racine est l'ancien rangement :
+   il n'est sauvegardé que s'il n'y a encore aucun espace (sinon c'est une vieille copie, plus à jour). */
+const ESPACE=/^espaces\/[a-z0-9]{1,24}\/data\.json$/;
+const connu=f=>FICHIERS.includes(f)||ESPACE.test(f);
+function espaces(dir){let l=[];try{l=fs.readdirSync(path.join(dir,'espaces'))}catch(e){return[]}
+ return l.filter(n=>/^[a-z0-9]{1,24}$/.test(n)).sort().map(n=>'espaces/'+n+'/data.json').filter(f=>fs.existsSync(path.join(dir,f)))}
+const aPrendre=dir=>{const e=espaces(dir);return (e.length?FICHIERS.filter(f=>f!=='data.json'):FICHIERS).concat(e)};
 const MAGIE=Buffer.from('CASOSV1\n');
 const NOM=/^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}Z\.caso$/;
 const SCRYPT={N:1<<15,r:8,p:1,maxmem:128*1024*1024};
@@ -31,9 +38,10 @@ const err=(code,msg)=>Object.assign(new Error(msg),{code});
 async function creer(dir,o={}){
  const le=o.date||new Date(),D=dossier(dir),fichiers={};
  // tout passe par la mémoire : au-delà de 100 Mo de données, on s'arrête plutôt que de faire tomber le serveur
- let total=0;for(const f of FICHIERS){try{total+=fs.statSync(path.join(dir,f)).size}catch(e){}}
+ const liste=aPrendre(dir);
+ let total=0;for(const f of liste){try{total+=fs.statSync(path.join(dir,f)).size}catch(e){}}
  if(total>(o.max||100e6))throw err('gros','Données trop volumineuses pour ce format de sauvegarde ('+Math.round(total/1e6)+' Mo).');
- for(const f of FICHIERS){try{fichiers[f]=fs.readFileSync(path.join(dir,f)).toString('base64')}catch(e){if(e.code!=='ENOENT')throw e}}
+ for(const f of liste){try{fichiers[f]=fs.readFileSync(path.join(dir,f)).toString('base64')}catch(e){if(e.code!=='ENOENT')throw e}}
  const noms=Object.keys(fichiers);
  if(!noms.length)return null;                                   // rien à sauvegarder
  const clair=await pro(zlib.gzip,Buffer.from(JSON.stringify({v:1,le:le.toISOString(),fichiers})));
@@ -72,7 +80,7 @@ function lire(chemin,o={}){
  if(crypto.createHash('sha256').update(clair).digest('hex')!==tete.sha256)throw err('abime','Sauvegarde abîmée : son contenu a changé.');
  let j;try{j=JSON.parse(zlib.gunzipSync(clair).toString('utf8'))}catch(e){throw err('abime','Sauvegarde abîmée.')}
  const fichiers={};
- for(const f of Object.keys(j.fichiers||{}))if(FICHIERS.includes(f))fichiers[f]=Buffer.from(j.fichiers[f],'base64');
+ for(const f of Object.keys(j.fichiers||{}))if(connu(f))fichiers[f]=Buffer.from(j.fichiers[f],'base64');
  return{le:tete.le,chiffre:!!tete.chiffre,fichiers}}
 
 /* Lit la sauvegarde et contrôle que chaque fichier est du JSON valide. */
@@ -109,11 +117,14 @@ function restaurer(chemin,dir,o={}){
  verifier(chemin,o);
  const s=lire(chemin,o),avant=path.join(dir,'avant-restauration-'+nomDe(o.date||new Date()).replace('.caso',''));
  fs.mkdirSync(avant,{recursive:true});
- for(const f of FICHIERS){try{fs.renameSync(path.join(dir,f),path.join(avant,f))}catch(e){if(e.code!=='ENOENT')throw e}}
- for(const f of Object.keys(s.fichiers)){const cible=path.join(dir,f),tmp=cible+'.tmp';fs.writeFileSync(tmp,s.fichiers[f]);fs.renameSync(tmp,cible)}
+ // l'ancien data.json de la racine n'est déplacé que si la sauvegarde date de l'ancien rangement : il sera alors repris par le serveur
+ const vieille=!Object.keys(s.fichiers).some(f=>ESPACE.test(f));
+ for(const f of FICHIERS.filter(f=>vieille||f!=='data.json').concat(espaces(dir))){
+  try{fs.mkdirSync(path.dirname(path.join(avant,f)),{recursive:true});fs.renameSync(path.join(dir,f),path.join(avant,f))}catch(e){if(e.code!=='ENOENT')throw e}}
+ for(const f of Object.keys(s.fichiers)){const cible=path.join(dir,f),tmp=cible+'.tmp';fs.mkdirSync(path.dirname(cible),{recursive:true});fs.writeFileSync(tmp,s.fichiers[f]);fs.renameSync(tmp,cible)}
  return{le:s.le,fichiers:Object.keys(s.fichiers),avant}}
 
-module.exports={creer,lire,verifier,lister,trouver,elaguer,restaurer,dossier,FICHIERS,NOM};
+module.exports={creer,lire,verifier,lister,trouver,elaguer,restaurer,dossier,espaces,FICHIERS,NOM};
 
 if(require.main===module){
  const dir=process.env.DATA_DIR||(process.env.APP_HOME?path.join(process.env.APP_HOME,'donnees'):path.join(__dirname,'donnees'));

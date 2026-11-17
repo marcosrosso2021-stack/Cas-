@@ -61,7 +61,7 @@ L'adresse de l'entreprise, c'est `http://` + cette adresse + `:8787`. Exemple : 
 
 ## Sauvegarde
 
-Copie régulièrement le dossier `donnees` (fichier `data.json`) sur une clé USB. Ne le mets jamais sur GitHub.
+Copie régulièrement le dossier `donnees` en entier sur une clé USB (les données de l'entreprise sont dans `donnees/espaces/e1/data.json`). Ne le mets jamais sur GitHub.
 
 ## Sécurité
 
@@ -89,7 +89,7 @@ Réglages conseillés sur Clever Cloud (onglet **Variables d'environnement**) :
 
 **Une seule instance.** Le serveur garde les données en mémoire et les écrit dans un seul fichier : sur Clever Cloud, laisse la mise à l'échelle sur **1 instance**. Pendant un déploiement, deux serveurs tournent quelques secondes : le nouveau prend la main, l'ancien finit ses écritures puis répond « réessaie », et les téléphones renvoient tout seuls leur demande. Rien à régler.
 
-**Sauvegardes.** Le serveur fait une sauvegarde par jour dans le dossier `sauvegardes` des données : un seul fichier daté qui contient l'équipe, les comptes, l'apprentissage du chat et la veille. Il garde les 14 dernières, plus la dernière de chaque mois pendant 6 mois.
+**Sauvegardes.** Le serveur fait une sauvegarde par jour dans le dossier `sauvegardes` des données : un seul fichier daté qui contient les données de chaque espace, les comptes, l'apprentissage du chat et la veille. Il garde les 14 dernières, plus la dernière de chaque mois pendant 6 mois.
 
 - Ajoute la variable `CASO_CLE_SAUVEGARDE` (une phrase longue, gardée aussi ailleurs que sur Clever Cloud) : les sauvegardes sont alors chiffrées (AES-256-GCM). Sans cette phrase, elles sont en clair et ne peuvent pas sortir du serveur. **Si la phrase est perdue, les sauvegardes chiffrées sont illisibles.**
 - Ces sauvegardes sont sur le même stockage que les données : elles protègent d'un fichier abîmé ou d'une erreur, pas de la perte du stockage. Pour en garder une copie ailleurs, télécharge une sauvegarde chiffrée avec la clé du propriétaire : `GET /api/proprio/sauvegarde/derniere`, en-tête `x-caso-cle`. La liste : `GET /api/proprio/sauvegardes`. En créer une tout de suite : `POST /api/proprio/sauvegardes`.
@@ -358,4 +358,14 @@ Vitesse (mesurée sur un processeur ralenti comme un téléphone) : ouverture en
 - `GET /api/appris?d=3d`, `POST /api/appris` avec `d:"3d"` : mots appris par le chat du module 3D (synonymes de meubles, noms de couleurs), publiés à partir de 2 usagers.
 - `POST /api/incompris` : phrases incomprises, masquées sur l'appareil. `GET /api/incompris` avec l'en-tête `x-caso-cle` : seulement si la variable
   `CASO_CLE_IA` est définie sur le serveur (Clever Cloud › Environment variables), et seulement les phrases envoyées par au moins 3 usagers. Fichier : `incompris.json`.
+
+## Rangement par espace (17 nov. 2026)
+
+Un espace, c'est une entreprise : son patron, son équipe, ses données. Chaque espace a son dossier : `donnees/espaces/<espace>/data.json`.
+
+- Pour l'instant il n'y a qu'un espace, `e1`. C'est la première étape du plan « un espace par abonné » ; la création d'un espace par compte Google ou Outlook vient ensuite.
+- Ce qui est commun à tous reste dans `donnees` : comptes Google / Outlook, newsletter, apprentissage partagé, phrases incomprises, verrou de déploiement.
+- **Passage depuis l'ancien rangement** : au premier démarrage, `donnees/data.json` est copié dans `donnees/espaces/e1/`. L'ancien fichier n'est ni modifié ni supprimé.
+- **Retour en arrière** : le code d'avant relit `donnees/data.json`, resté tel qu'au jour du passage. Si ce fichier redevient plus récent que celui de l'espace (retour au code d'avant, puis de nouveau celui-ci), il est repris, et la version de l'espace est mise de côté (`data.json.avant-…`).
+- Essais : `node tests/serveur-espaces.test.js` (15 contrôles : dossier neuf, deux espaces qui ne se voient pas, reprise de l'ancien fichier, redémarrage, retour en arrière).
 

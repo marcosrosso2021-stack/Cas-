@@ -301,3 +301,24 @@ Source du moteur et outils de traduction : le module « caso-ia » (moteur, cata
 - Moteur : « Tu veux : SMS à Martin ? » (avant : « sMS »).
 - essais : 21 contrôles de plus dans `essai-fiabilite.js`.
 
+**Fiabilité, phase 1 du cahier « Intelligence Evolution » (17 nov. 2026)** — `chat/reponses.js`, une garde dans `chatSend` :
+- **Rien n'est écrit dans un devis pour une phrase qui n'est pas un travail** (`casoPont.pasTravail`) : une consigne (« retiens… », « écris toujours… »), une définition (« quand je dis… ça veut dire… »), une suite (« la même chose », « plutôt »), un récit au passé (« on a déposé le carrelage… »). Avant, la note de devis de dernier recours en faisait une ligne (« Retiens que code portail est 4521 », « Mets plutôt, 3 u ») ou changeait le client du devis. « retiens que… » arrive maintenant à la mémoire du moteur (« C'est retenu. »).
+- **« mets plutôt 3 »**, « plutôt 12 » juste après une ligne posée : c'est sa quantité, annulable. « mets plutôt le rdv de Martin à 15h » reste un rendez-vous.
+- **« ajoute deux heures sur le devis »** : 2 h de main d'œuvre (avant : une ligne nommée « Sur le devis »).
+- **« ouvre le devis de Martin »**, « acompte de 30 % pour Martin » : le brouillon de Martin devient le devis en cours (avant : la ligne suivante allait dans un autre devis ; « Il n'y a pas encore de devis »).
+- **« nouveau client Martin »** déjà enregistré : « Martin est déjà dans tes clients. » (avant : « Fiche à jour »).
+- « ajoute du carrelage » marche aussi sur un devis tout neuf ; « annule » défait un réglage de Mon entreprise.
+- Pas encore : retenir une définition ou une consigne de rédaction (phase 3), « fais la même chose pour Petit » (phase 4), le rapport d'intervention (phase 5). Le chat répond « Je n'ai pas compris » et ne touche à rien.
+- essais : 17 contrôles de plus dans `essai-fiabilite.js`, tirés des phrases du cahier.
+
+**Mémoire de l'artisan et contexte (17 nov. 2026)** — `chat/reponses.js`, données dans `db.memo` (téléphone, sauvegarde comprise) :
+- **Retenir** : « retiens que le code du portail de Martin est 4521 » → « C'est retenu. » ; « c'est quoi le code du portail de Martin » le redonne ; « qu'est-ce que tu as retenu », « ouvre la mémoire », « mes mots » listent tout ; « oublie le code du portail » l'efface. (Avant : la mémoire du moteur retenait sans savoir redonner.)
+- **Vocabulaire personnel** : « chez moi, quand je dis dépose complète, ça veut dire… », « le blanc veut dire peinture » → une question, puis retenu après un Oui. « c'est quoi une dépose complète » redonne la définition. Un mot qui désigne un de mes prix ou un terme du lexique est remplacé dans la phrase (« ajoute 20 m² de blanc » → Peinture) ; sinon il reste une définition.
+- **Un mot appris ne lance jamais une commande** : « quand je dis zap ça veut dire supprime le client » est refusé.
+- **« le client veut déplacer le rendez-vous à vendredi »** sans nom → « Quel client ? », et la demande reprend avec le nom donné.
+- **« la salle de bain fait huit mètres, je veux tout refaire »** ouvre le projet avec la pièce et sa surface.
+- **« qu'est-ce qu'il reste à faire »**, « les travaux qui restent » : les travaux notés pas chiffrés, par devis (avant : la question devenait une note À faire).
+- Pas encore : les consignes de rédaction (« écris toujours… »), les corrections retenues, la mémoire partagée dans l'entreprise.
+- Vu en route, pas corrigé : dans un projet, « dépose carrelage, pose faïence, receveur » répond « Noté : dépose dépose ».
+- essais : 11 conversations de plus dans `essai-fiabilite.js`.
+

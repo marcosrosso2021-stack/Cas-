@@ -77,6 +77,12 @@ window.VAULT=(()=>{
   }).catch(()=>{});
   V._fly.set(k,p);p.then(()=>{if(V._fly.get(k)===p)V._fly.delete(k)});return p}
  const settle=()=>Promise.all([...V._fly.values()]).catch(()=>{});
+ /* Appli installée (enveloppe Capacitor, Android et iPhone) : la passkey du navigateur n'existe pas dans la WebView.
+    Le secret biométrique est alors gardé par le téléphone (Keychain iOS, Keystore Android) et rendu seulement après
+    Face ID / empreinte, par le plugin natif CasoBio. Aucune donnée biométrique ne sort du téléphone. */
+ let natP;const NAT=()=>{if(natP!==undefined)return natP;natP=null;
+  try{const c=window.Capacitor;if(c&&c.isNativePlatform&&c.isNativePlatform()&&typeof c.registerPlugin==='function')natP=c.registerPlugin('CasoBio')}catch(e){}return natP};
+ const RAISON='Ouvrir casô';
  const act=()=>{V._last=Date.now()};
  const V={on:false,dk:null,cache:Object.create(null),overflow:{},onFail:null,_gen:{},_fly:new Map(),_last:Date.now(),
   BG:5*60e3,IDLE:15*60e3,prot,
@@ -111,7 +117,7 @@ window.VAULT=(()=>{
    V.shim(window);V.shimFrames();
    ks.forEach(queue);await settle();await V.backup();V.photos();V.watch();return true},
   // redemande Face ID pour confirmer une action sensible (compte sans mot de passe)
-  async bioCheck(){const m=getMeta();if(!m||!m.b)throw new Error('bio');const out=await V.bioPrf(unb64(m.b.c),unb64(m.b.s));await unwrap('b',await kekBio(out),m.b);return true},
+  async bioCheck(){const m=getMeta();if(!m||!m.b)throw new Error('bio');await unwrap('b',await kekBio(await V.bioGet(m.b)),m.b);return true},
   async unlockPw(pw){const m=getMeta();await V.open(await unwrap('p',await kekPw(pw,unb64(m.p.s),m.p.i),m.p))},
   async unlockCode(code){const m=getMeta();if(!m||!m.r)throw new Error('code');await V.open(await unwrap('r',await kekPw(code,unb64(m.r.s),m.r.i),m.r))},
   async wrapPass(pw){if(!V.on)return;const m=getMeta();m.p=await slotPw('p',pw);putMeta(m)},
@@ -128,17 +134,25 @@ window.VAULT=(()=>{
    if(o.z===1)p=await flate(p,DecompressionStream);return td.decode(p)},
   // membre d'équipe sans compte : il choisit un mot de passe pour ce téléphone
   setup(){return new Promise(res=>{if(!C||V.on||getMeta())return res(false);ui('setup',null,null,()=>res(true))})},
-  async bioOk(){try{return !!(C&&window.PublicKeyCredential&&await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable())}catch(e){return false}},
+  async bioOk(){const N=NAT();if(N){try{const r=await N.disponible();return !!(C&&r&&r.ok)}catch(e){return false}}
+   try{return !!(C&&window.PublicKeyCredential&&await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable())}catch(e){return false}},
   async bioPrf(id,salt){const a=await navigator.credentials.get({publicKey:{challenge:rnd(32),allowCredentials:[{type:'public-key',id}],userVerification:'required',timeout:60000,extensions:{prf:{eval:{first:salt}}}}});
    const x=a.getClientExtensionResults(),f=x&&x.prf&&x.prf.results&&x.prf.results.first;if(!f)throw new Error('prf');return new Uint8Array(f)},
-  async bioOn(u){if(!V.on)return false;u=u||{};
+  // nouveau secret biométrique de 32 octets : gardé par le téléphone dans l'appli installée, sinon tiré d'une passkey (PRF)
+  async bioNew(u){u=u||{};const N=NAT();
+   if(N){const r=await N.creer({raison:RAISON});if(!r||!r.secret)throw new Error('bio');return{out:unb64(r.secret),extra:{nat:1}}}
    const c=await navigator.credentials.create({publicKey:{rp:{name:'casô'},user:{id:rnd(16),name:u.email||'casô',displayName:u.prenom||'casô'},challenge:rnd(32),
     pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required',residentKey:'preferred'},timeout:60000,extensions:{prf:{}}}});
    const x=c.getClientExtensionResults();if(x&&x.prf&&x.prf.enabled===false)throw new Error('prf');
-   const cid=new Uint8Array(c.rawId),s=rnd(32),out=await V.bioPrf(cid,s);
-   const m=getMeta();m.b=await wrap('b',await kekBio(out),{c:b64(cid),s:b64(s)});putMeta(m);return true},
-  bioOff(){const m=getMeta();if(m){delete m.b;putMeta(m)}},
-  async unlockBio(){const m=getMeta();const out=await V.bioPrf(unb64(m.b.c),unb64(m.b.s));await V.open(await unwrap('b',await kekBio(out),m.b))},
+   const cid=new Uint8Array(c.rawId),s=rnd(32);return{out:await V.bioPrf(cid,s),extra:{c:b64(cid),s:b64(s)}}},
+  // relit ce secret : Face ID / empreinte demandé par le téléphone à chaque fois
+  async bioGet(b){if(!b)throw new Error('bio');
+   if(b.nat){const N=NAT();if(!N)throw new Error('bio');const r=await N.lire({raison:RAISON});if(!r||!r.secret)throw new Error('bio');return unb64(r.secret)}
+   return V.bioPrf(unb64(b.c),unb64(b.s))},
+  async bioOn(u){if(!V.on)return false;
+   const n=await V.bioNew(u),m=getMeta();m.b=await wrap('b',await kekBio(n.out),n.extra);putMeta(m);return true},
+  bioOff(){const m=getMeta();if(m){if(m.b&&m.b.nat){const N=NAT();if(N)try{Promise.resolve(N.effacer()).catch(()=>{})}catch(e){}}delete m.b;putMeta(m)}},
+  async unlockBio(){const m=getMeta();await V.open(await unwrap('b',await kekBio(await V.bioGet(m.b)),m.b))},
   // copie de secours (IndexedDB) : seulement le chiffré
   async backup(){if(typeof CBK==='undefined')return;const ts=Date.now(),ls={};try{raw.set('caso_ts',String(ts))}catch(e){}
    raw.keys().forEach(k=>{if(/^(caso_|devis)/.test(k)&&!/^caso_(test|essai_v|bk)/.test(k)&&!prot(k))ls[k]=raw.get(k)});
@@ -4062,6 +4076,8 @@ function chatSend(text){
  if(typeof prixChat==='function'&&prixChat(t))return;
  if(typeof agChat==='function'&&agChat(t))return;
  if(!adrSeule&&window.casoPont&&casoPont.essaie(t,true))return;
+ /* une consigne, une définition, un récit (« retiens… », « mets plutôt… », « on a déposé… ») : rien n'est écrit dans le devis */
+ if(window.casoPont&&casoPont.pasTravail&&casoPont.pasTravail(t)){CHAT.m.push({who:'me',text:t});CHAT.m.push({who:'bot',html:`<p data-noi18n>${esc(casoPont.ready?casoPont.incompris():'Je n’ai pas compris.')}</p>`});chatSave();chatRender(true);return}
  const R=parseNote(t,db.prices,VN.lang);VN.last=R;
  /* « Lui Dire », « Carreler » : des mots de la phrase, pas un client ; « FONTAINE » tapé en majuscules : Fontaine */
  const nomOk=n=>!(window.casoPont&&casoPont.ready&&casoPont.pasUnNom(n)),casse=chatCasse;
