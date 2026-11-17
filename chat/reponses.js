@@ -247,7 +247,7 @@ function reponse(t){if(!P.ready||typeof db==="undefined"||typeof CHAT==="undefin
   if(RESTE.test(s))return reste(t);
   if((m=brut(t).match(RAPENV))&&rapEnvoi(t,m[1]))return true;
   if((m=brut(t).match(RAPVOIR))&&rapports(t,m[1]))return true;
-  if(RECIT.test(brut(t))&&!(B().isQuestion&&B().isQuestion(t))&&(cl=client(t))&&brut(t).split(" ").length>=6&&rapport(t,cl))return true;
+  if(RECIT.test(brut(t))&&!demandeQ(brut(t))&&!(B().isQuestion&&B().isQuestion(t))&&(cl=client(t))&&brut(t).split(" ").length>=6&&rapport(t,cl))return true;
   /* « la salle de bain fait 8 m², je veux tout refaire » : la pièce et sa surface en une phrase ouvrent le projet (ensuite : les travaux, puis « fais le devis ») */
   var mpj=brut(t).match(/^(?:la |ma |une |sa |leur )?(salle de bains?|sdb|cuisine|chambre|salon|sejour|wc|toilettes|couloir|entree|garage|bureau)(?: fait| de| mesure)? (\d+(?:[.,]\d+)?) ?(?:m2|m²|metres? carres?) (?:et )?(?:je veux |on veut |il faut |faut |je dois |on doit |a )?(?:tout refaire|refaire (?:tout|a neuf|entierement|en entier)|tout renover|renover (?:tout|entierement)|(?:je |on )?refais tout|tout est a refaire)$/);
   if(mpj&&q0){var n0=CHAT.m.length;if(q0.call(P,"je dois refaire la "+mpj[1])&&CHAT.m.length>n0){q0.call(P,mpj[2]+" m²");var seg=CHAT.m.splice(n0),bots=seg.filter(function(x){return x.who==="bot";});
@@ -310,7 +310,9 @@ function corrige(t){var k=brut(t),m=k.match(/^((?:non|ah non|pardon|en fait|fina
   var a=ANNULEE;if(!a||Date.now()-a.at>3*60000)return null;if(!m[1]&&!/^(?:je voulais|je veux|c etait|plutot)/.test(k))return null;ANNULEE=null;
   var x=String(t).replace(/[.!\s]+$/,"").split(/\s+/).slice(-m[2].split(" ").length).join(" ");
   return a.qty==null||a.qty===""?"ajoute du "+x:"ajoute "+String(a.qty).replace(".",",")+" "+(a.unit&&a.unit!=="u"?a.unit+" de ":"")+x;}
-function entiere(t){try{var k=brut(t);return M_REGLE.test(String(t))||M_MOT1.test(String(t))||RECIT.test(k)&&!!client(t)&&k.split(" ").length>=6;}catch(x){return false;}}
+/* une demande ou une question n'est pas un récit : « montre-moi ce qu'on a fait chez Martin », « qu'est-ce qu'on a posé chez Petit » */
+function demandeQ(k){return /^(?:montre|affiche|ouvre|voir|donne|dis|rappelle|fais|sors|envoie|cherche|trouve|combien|ou|quand|quoi|quel|quelle|quels|quelles|qui|est ce|qu est ce|c est quoi|pourquoi|comment)\b|\b(?:ce qu on a|ce que j ai|ce qu il|ce qu ils|qu est ce qu)\b/.test(k);}
+function entiere(t){try{var k=brut(t);return M_REGLE.test(String(t))||M_MOT1.test(String(t))||RECIT.test(k)&&!demandeQ(k)&&!!client(t)&&k.split(" ").length>=6;}catch(x){return false;}}
 if(typeof P.decoupe==="function"){var dc0=P.decoupe;P.decoupe=function(t){if(entiere(t))return false;return dc0.apply(this,arguments);};}
 var r1=P.renvoi;
 P.renvoi=function(t){

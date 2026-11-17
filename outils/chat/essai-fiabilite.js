@@ -210,7 +210,8 @@ const ESSAIS=[
  /* fiabilité : une phrase qui n'est pas un travail n'écrit rien dans le devis (phrases du cahier « Intelligence Evolution ») */
  ["fr",["retiens que le code du portail de Martin est 4521"],[/C’est retenu/,"js:!db.quotes.some(o=>(o.lines||[]).some(l=>/portail|retiens/i.test(l.label||'')))&&!(q.lines||[]).some(l=>/portail|retiens/i.test(l.label||''))"]],
  ["fr",["nouveau devis pour Martin","Ajoute deux heures sur le devis.","Mets plutôt 3.","annule"],[/./,"js:q.lines.filter(l=>l.label).length===1&&/main/i.test(q.lines[0].label)&&q.lines[0].qty==2","js:q.lines.filter(l=>l.label).length===1&&q.lines[0].qty==3","js:q.lines[0].qty==2"]],
- ["fr",["nouveau devis pour Martin","ajoute 2h de main d'oeuvre","Fais la même chose pour Petit."],[/./,/./,"js:q.client==='Martin'&&q.lines.filter(l=>l.label).length===1&&!(q.notes||[]).length"]],
+ ["fr",["nouveau devis pour Martin","ajoute 2h de main d'oeuvre","Fais la même chose pour Petit."],[/./,/./,"js:q.client==='Petit'&&q.lines.filter(l=>l.label).length===1&&!(q.notes||[]).length&&db.quotes.some(o=>o.client==='Martin'&&(o.lines||[]).some(l=>l.qty==2))"]],
+ ["fr",["Montre-moi ce qu'on a fait la semaine dernière chez Martin."],["js:!/Rapport d’intervention/.test(CHAT.m[CHAT.m.length-1].html||'')"]],
  ["fr",["nouveau devis pour Dupont","ajoute 20 m² de carrelage","Chez moi, quand je dis dépose complète, ça veut dire enlever le carrelage et la colle jusqu'au support."],[/./,/./,"js:q.lines.filter(l=>l.label).length===1&&!(q.notes||[]).length"]],
  ["fr",["Dans mes devis, écris toujours dépose et évacuation des anciens matériaux au lieu de juste dépose."],["js:document.querySelector('section.on').id==='s-chat'"]],
  ["fr",["Chez Martin, on a déposé le carrelage, il y avait de l'humidité derrière, on a arrêté pour voir d'où ça vient."],["js:!db.quotes.some(o=>(o.lines||[]).some(l=>/d[ée]pose/i.test(l.label||'')&&o.id==='q3'))&&!(q.lines||[]).some(l=>/d[ée]pose/i.test(l.label||''))"]],
