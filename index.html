@@ -6573,9 +6573,6 @@ function renderFour(){
 /* ---------- Import intelligent ---------- */
 let impRows=[];
 function setImpMsg(t){$('impMsg').textContent=t}
-function getKey(){try{return localStorage.getItem('devis_key')||''}catch(e){return ''}}
-function saveKey(){try{localStorage.setItem('devis_key',$('apiKey').value.trim())}catch(e){}}
-function impModeChange(){$('keyBox').style.display=$('impMode').value==='ai'?'block':'none'}
 
 /* --- image --- */
 function enhance(c){
@@ -6854,28 +6851,6 @@ async function ocrExtract(f){
   const res=await w.recognize(d);
   return rowsFromWords(res.data.words||[],res.data.text||'');
  }finally{try{await w.terminate()}catch(e){}}
-}
-
-/* --- IA --- */
-async function aiExtract(f){
- const key=getKey();if(!key)throw new Error('Saisis ta clé API dans le champ prévu.');
- let block;
- if(f.type==='application/pdf')block={type:'document',source:{type:'base64',media_type:'application/pdf',data:await fileB64(f)}};
- else{const d=await loadImgData(f);block={type:'image',source:{type:'base64',media_type:'image/jpeg',data:d.split(',')[1]}}}
- const prompt='Voici un devis ou une facture de fournisseur du bâtiment. Extrais chaque ligne d\'article ou de prestation. Réponds UNIQUEMENT par un objet JSON, sans texte autour, de la forme {"supplier":"nom du fournisseur ou vide","lines":[{"label":"désignation","qty":nombre,"unit":"unité","pu":prix unitaire HT en nombre,"tva":taux de TVA en nombre}]}. Si une information est absente, mets qty 1, unit "u", tva 20. N\'invente rien. Ignore les totaux, les remises globales et les mentions légales.';
- const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
-  headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-  body:JSON.stringify({model:'claude-sonnet-5-5',max_tokens:4000,messages:[{role:'user',content:[block,{type:'text',text:prompt}]}]})});
- if(!r.ok){const t=await r.text();throw new Error('Service IA '+r.status+' : '+t.slice(0,150))}
- const j=await r.json().catch(()=>({}));const txt=(j.content||[]).map(c=>c.text||'').join('');
- const m=txt.match(/\{[\s\S]*\}/);if(!m)throw new Error('Réponse illisible.');
- const o=JSON.parse(m[0]);
- if(o.supplier&&!$('impFour').value){$('impFour').value=o.supplier;supHint()}
- const sup=supGet($('impFour').value);
- return (o.lines||[]).map(l=>{
-  let label=String(l.label||'');const raw=label;
-  if(sup&&sup.labels&&sup.labels[label.toLowerCase()])label=sup.labels[label.toLowerCase()];
-  return{on:true,label,rawLabel:raw,qty:+l.qty||1,unit:String(l.unit||'u'),pu:+l.pu||0,tva:(l.tva==null||isNaN(+l.tva))?20:+l.tva,nums:[],ok:undefined,warn:'',src:'ai'}});
 }
 
 async function runImport(inp){
@@ -7745,6 +7720,7 @@ function init(){
  $('eTel').value=db.prof.tel||'';$('eAssur').value=db.prof.assur||'';$('eValid').value=db.prof.valid||30;
  renderQuick();renderPrices();fillForm();
 }
+try{localStorage.removeItem('devis_key')}catch(e){}
 init();
 
 vnInit();sigInit();chatLoad();renderAcct();
