@@ -34,7 +34,15 @@ function convertir(json,devise){
   const photo=[r.thumbnail,r.serpapi_thumbnail,Array.isArray(r.thumbnails)?r.thumbnails[0]:''].find(photoOk)||'';
   out.push({produit,prix:Math.round(prix*100)/100,devise,magasin,url,maj,photo});
  }
- return out.sort((a,b)=>a.prix-b.prix).slice(0,30);
+ return garder(out.sort((a,b)=>a.prix-b.prix),120);
+}
+/* tous les magasins trouvés restent dans la liste : au-delà de n offres, l'offre la moins chère de chaque magasin d'abord, puis les moins chères.
+   Les petites images incluses sont limitées à 600 Ko en tout (les autres passent par le relais d'images). */
+function garder(L,n){
+ if(L.length>n){const vus=new Set(),a=[],b=[];for(const x of L){const k=x.magasin.toLowerCase();if(vus.has(k))b.push(x);else{vus.add(k);a.push(x)}}
+  L=a.concat(b).slice(0,n).sort((x,y)=>x.prix-y.prix)}
+ let o=0;for(const x of L)if(x.photo.startsWith('data:')){o+=x.photo.length;if(o>6e5)x.photo=''}
+ return L;
 }
 
 function creer(opts={}){
@@ -84,4 +92,4 @@ function creer(opts={}){
  return {chercher,image,pret,etat:()=>({pret:pret(),jour:j===jour()?n:0,limite:JOUR})};
 }
 
-module.exports={creer,convertir,photoOk,PAYS};
+module.exports={creer,convertir,garder,photoOk,PAYS};

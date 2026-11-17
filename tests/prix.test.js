@@ -55,6 +55,13 @@ await t('photos : petite image ou hôte du service seulement',async()=>{
  const [c,o]=await p.image('https://encrypted-tbn0.gstatic.com/shopping?q=tbn:x');assert.strictEqual(c,200);assert.strictEqual(o.type,'image/jpeg');assert.strictEqual(o.buf.length,10);
  assert.strictEqual((await creer({env:{},fetch:img('text/html',10)}).image('https://serpapi.com/a'))[0],502);
  assert.strictEqual((await creer({env:{},fetch:img('image/png',5e5)}).image('https://serpapi.com/a'))[0],502)});
+await t('tous les magasins restent : plus de 30 offres, et un magasin cher n\'est pas écarté',()=>{
+ const L=[];for(let i=0;i<150;i++)L.push({title:'Vis '+i,extracted_price:1+i/100,source:'Pas cher'});
+ L.push({title:'Marteau pro',extracted_price:89,source:'Point.P'},{title:'Marteau',extracted_price:45,source:'Leroy Merlin'});
+ const v=convertir({shopping_results:L},'EUR');
+ assert.strictEqual(v.length,120);assert.ok(v.some(x=>x.magasin==='Point.P'));assert.ok(v.some(x=>x.magasin==='Leroy Merlin'));
+ assert.ok(v.every((x,i)=>!i||v[i-1].prix<=x.prix));
+ const w=convertir({shopping_results:Array.from({length:45},(_,i)=>({title:'P'+i,extracted_price:i+1,source:'M'+(i%9)}))},'EUR');assert.strictEqual(w.length,45)});
 await t('serveur : GET /api/prix sans compte',async()=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'caso-prix-'));
  const {createServer}=require('../serveur/server.js');
