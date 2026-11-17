@@ -18,6 +18,10 @@ const COLL=['prices','quotes','hist','chantiers','people','pts','prof','clients'
 const ROLE_PUSH={patron:COLL,chef:COLL,ouvrier:['pts']};
 const ROLE_PULL={patron:COLL,chef:COLL,ouvrier:['chantiers','people','pts','events']};
 const ROLES=Object.keys(ROLE_PUSH);
+// profil d'entreprise : ces champs ne se changent que depuis le compte du patron (un IBAN modifié détourne les virements)
+const PROF_PATRON=['iban','bic','siret','siren'];
+const LOGO_OK=/^data:image\/(png|jpe?g|webp);base64,[A-Za-z0-9+\/=]+$/;
+const IBAN_TXT={fr:'L\'IBAN de l\'entreprise a été modifié.',pt:'O IBAN da empresa foi alterado.',es:'El IBAN de la empresa ha sido modificado.',it:'L\'IBAN dell\'azienda è stato modificato.',ro:'IBAN-ul firmei a fost modificat.',tr:'Şirketin IBAN\'ı değiştirildi.',pl:'IBAN firmy został zmieniony.',en:'The company IBAN was changed.',ru:'IBAN компании изменён.',ar:'تم تغيير رقم IBAN الخاص بالشركة.'};
 // rappels du planning : la veille à 18h (v) et 1 h avant (h)
 const REM_TXT={fr:['Demain {h} : {t}','Dans 1 h ({h}) : {t}','Rendez-vous'],pt:['Amanhã {h}: {t}','Daqui a 1 h ({h}): {t}','Marcação'],es:['Mañana {h}: {t}','En 1 h ({h}): {t}','Cita'],it:['Domani {h}: {t}','Tra 1 ora ({h}): {t}','Appuntamento'],ro:['Mâine {h}: {t}','Peste 1 oră ({h}): {t}','Programare'],tr:['Yarın {h}: {t}','1 saat sonra ({h}): {t}','Randevu'],pl:['Jutro {h}: {t}','Za 1 godz. ({h}): {t}','Wizyta'],en:['Tomorrow {h}: {t}','In 1 hour ({h}): {t}','Appointment'],ar:['غدًا {h}: {t}','بعد ساعة ({h}): {t}','موعد'],ru:['Завтра {h}: {t}','Через 1 ч ({h}): {t}','Встреча']};
 const TOKEN_DAYS=30,INVITE_DAYS=7;
@@ -189,6 +193,12 @@ function createServer(opts={}){
      if(c==='invoices'&&Array.isArray(r.pays)){const m=mergePays(cur.pays,r.pays);if(m.length>(cur.pays||[]).length){cur.pays=m;cur.rev=++data.rev;dirty=true}}  // …mais on ne perd aucun paiement
      continue}
     const {rev,...rec}=r;
+    if(c==='prof'){
+     if(!rec.v||typeof rec.v!=='object'||Array.isArray(rec.v))continue;
+     if(own(rec.v,'logo')&&!(typeof rec.v.logo==='string'&&rec.v.logo.length<=2e6&&LOGO_OK.test(rec.v.logo)))delete rec.v.logo;   // le logo est une image, rien d'autre
+     const old=cur&&cur.v&&typeof cur.v==='object'?cur.v:{};
+     if(user.role!=='patron')PROF_PATRON.forEach(k=>{if(own(old,k))rec.v[k]=old[k];else delete rec.v[k]});
+     else if(cur&&String(old.iban||'').replace(/\s+/g,'')!==String(rec.v.iban||'').replace(/\s+/g,''))notifyIban().catch(()=>{})}
     if(c==='invoices'&&cur){rec.pays=mergePays(cur.pays,rec.pays);if(cur.num)INV_KEEP.forEach(k=>{if(own(cur,k))rec[k]=cur[k];else delete rec[k]})}
     // un devis signé par le client garde exactement ce qui a été signé
     if(c==='quotes'&&cur&&cur.sign&&cur.sign.st==='signed'){SIGNED_KEEP.forEach(k=>{if(own(cur,k))rec[k]=cur[k];else delete rec[k]});rec.status=rec.status==='paye'?'paye':'accepte'}
@@ -262,6 +272,14 @@ function createServer(opts={}){
   return{status:sg.status,doc:sg.doc,docHash:sg.docHash,sentAt:sg.sentAt,expires:sg.expires,
    pro:{img:sg.pro.img,name:sg.pro.name,at:sg.pro.at},
    client:sg.client?{img:sg.client.img,name:sg.client.name,at:sg.client.at}:null,proof:sg.proof||null}}
+ /* l'IBAN de l'entreprise change : tous les appareils du patron sont prévenus */
+ async function notifyIban(){
+  const who=Object.values(data.users).filter(u=>u.role==='patron').map(u=>u.name.toLowerCase());
+  const subs=data.subs.filter(s=>who.includes(s.user));let dead=false;
+  await Promise.all(subs.map(async s=>{
+   const r=await pushSend(s.sub,{title:'casô',body:IBAN_TXT[s.lang]||IBAN_TXT.fr,url:'/',tag:'iban'});
+   if(r&&(r.status===404||r.status===410)){s.dead=1;dead=true}}));
+  if(dead){data.subs=data.subs.filter(s=>!s.dead);persist()}}
  async function notifySigned(sg){
   const q=sg.doc.quote,n=q.num||'',c=(sg.client&&sg.client.name)||q.client||'';
   const who=Object.values(data.users).filter(u=>u.role==='patron'||u.role==='chef').map(u=>u.name.toLowerCase());
