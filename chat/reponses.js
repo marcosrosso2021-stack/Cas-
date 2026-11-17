@@ -114,6 +114,16 @@ function derniere(t){if(!enCours()){bulle(t,p(T("Aucun devis en cours.")));retur
   var i=q.lines.length-1;while(i>=0&&!q.lines[i].label)i--;var av=JSON.stringify(q),l0=q.lines[i];q.lines.splice(i,1);try{fillForm();store();}catch(x){}CHAT.qid=q.id;
   bulle(t,p(T("{0} retiré du devis.",[l0.label]))+p(T("Total du devis : {0} TTC",[E(tot(q).ttc)])),{undo:av});return true;}
 
+/* ================= « mets plutôt 3 » : la quantité de la ligne qui vient d'être posée ================= */
+var PLUTOT=/^(?:non |en fait |finalement |ah non )?(?:mets |met |fais |c est |ce sera )?(?:en )?plutot (\d+(?:[.,]\d+)?)(?: ?(?:h|heures?|m2|m²|m|ml|u|unites?|sacs?|jours?|j))?$/,
+    DEJA=/^(?:nouveau|nouvelle|cree|creer|ajoute|ajouter)(?: un| une| le| la)? client(?:e)? (.+)$/,
+    DEVCLI=/^(?:(?:ouvre|montre|affiche|voir|reprends|continue|rouvre)(?: moi)? (?:le |mon |ce )?devis|(?:mets |ajoute |demande )?(?:un )?acompte(?: de)? \d+ ?%?) (?:de|pour|a|chez) (.+)$/;
+function plutot(t,m){var b=CHAT.m[CHAT.m.length-1];if(!(b&&b.who==="bot"&&b.undo&&enCours()))return false;
+  var av=[];try{av=JSON.parse(b.undo).lines||[];}catch(x){}var i=-1;
+  q.lines.forEach(function(l,k){if(i<0&&l.label&&!av.some(function(a){return a.label===l.label&&a.qty===l.qty&&a.pu===l.pu;}))i=k;});
+  if(i<0)return false;var snap=JSON.stringify(q),l=q.lines[i];l.qty=parseFloat(m[1].replace(",","."));try{fillForm();store();}catch(x){}CHAT.qid=q.id;
+  bulle(t,p(l.label+" : "+B().fnumFr(l.qty)+" "+(l.unit||""))+p(T("Total du devis : {0} TTC",[E(tot(q).ttc)])),{undo:snap});return true;}
+
 /* ================= « annule » ================= */
 var ANN=/^(?:annule|annuler|annule ca|annule la derniere action|annule ce que tu viens de faire|defais|defais ca|reviens en arriere)$/;
 function annule(t){var b=CHAT.m[CHAT.m.length-1];
@@ -123,6 +133,8 @@ function annule(t){var b=CHAT.m[CHAT.m.length-1];
 function reponse(t){if(!P.ready||typeof db==="undefined"||typeof CHAT==="undefined")return false;langue();
   var c=fr(t),s=String(c.p||"").replace(/[?!.…,]+/g," ").replace(/\s+/g," ").trim(),m,cl;
   if(ANN.test(s))return annule(t);
+  /* une définition ou une consigne de rédaction : pas encore retenue (mémoire de l'artisan, à venir) ; surtout, aucun écran ouvert ni ligne écrite */
+  if(/\bquand je dis\b|\bca veut dire\b|\b(?:ecris|mets|dis|appelle|utilise) toujours\b|\bau lieu de (?:juste )?\w+$/.test(hn(t).replace(/[’']/g," ").replace(/[?!.…,;:]+/g," ").replace(/\s+/g," ").trim())){bulle(t,p(P.incompris?P.incompris():T("Je n’ai pas compris.")));return true;}
   if(POINT.test(s))return point(t);
   if((m=s.match(PCLI))&&!/\b(devis|facture|chantier|travaux|commande|rdv|rendez vous|video|analyse|maquette)\b/.test(m[1])&&(cl=client(m[1]))&&cle(m[1]).split(" ").length<=4)return pointClient(t,cl);
   if(CTRL.test(s))return controle(t);
@@ -130,8 +142,14 @@ function reponse(t){if(!P.ready||typeof db==="undefined"||typeof CHAT==="undefin
   if((m=hn(t).replace(/[?!.…]+/g," ").replace(/[’']/g," ").replace(/\s+/g," ").trim().match(PAYE)))return paye(t,m);
   if((m=s.match(FACT)))return facture(t,m);
   if(DERN.test(s))return derniere(t);
+  if((m=s.match(PLUTOT)))return plutot(t,m);
+  if((m=s.match(DEJA))&&(cl=cliNom(m[1]))){bulle(t,p(T("{0} est déjà dans tes clients.",[cl.nom])+(cl.tel?" "+cl.tel:"")));return true;}
+  /* « ouvre le devis de Martin », « acompte de 30 % pour Martin » : le brouillon de ce client devient le devis en cours, puis la demande suit son chemin */
+  if((m=s.match(DEVCLI))&&(cl=client(m[1]))&&typeof q!=="undefined"&&!(nomDe(q)&&cle(nomDe(q))===cle(cl.nom)&&brouil(q))){
+    var br=(db.quotes||[]).filter(function(o){return o&&brouil(o)&&cle(nomDe(o))===cle(cl.nom);}).sort(function(a,b){return String(b.date||"").localeCompare(String(a.date||""));})[0];
+    if(br){q=JSON.parse(JSON.stringify(br));CHAT.qid=q.id;try{fillForm();}catch(x){}}}
   /* « ajoute du carrelage » pendant un devis : une ligne à chiffrer, pas la maquette 3D */
-  if(enCours()&&(m=s.match(AJ))&&!/\b(maquette|plan|3d|mur|murs|sol|piece|photo|note|client|remise|tva|acompte)\b/.test(m[1])&&typeof P.decrire==="function"){
+  if((enCours()||typeof q!=="undefined"&&q&&brouil(q)&&nomDe(q)&&CHAT.qid===q.id)&&(m=s.match(AJ))&&!/\b(maquette|plan|3d|mur|murs|sol|piece|photo|note|client|remise|tva|acompte)\b/.test(m[1])&&typeof P.decrire==="function"){
     var ok=(db.prices||[]).some(function(x){return x&&x.nom&&cle(x.nom)===cle(m[1]);})||!!(window.CASO_LANGAGE&&CASO_LANGAGE.terme&&CASO_LANGAGE.terme(m[1]));
     if(ok)return !!P.decrire("il faut "+String(t).replace(/^\s*\S+(?:\s+moi)?\s+/i,""),{aff:t});}
   return false;}
@@ -145,6 +163,21 @@ P.renvoi=function(t){try{var s=hn(t).replace(/[?!.…]+/g," ").replace(/\s+/g," 
       if(c1&&c1.id!==c2.id){var re=new RegExp(String(c1.nom).replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),"i");if(re.test(av))return av.replace(re,c2.nom);}}
   }catch(x){if(window.console)console.error(x);}
   return r0?r0.apply(this,arguments):null;};
+
+/* Une consigne, une définition, un récit ou une suite ne sont pas des travaux à chiffrer : rien n'est écrit dans le devis.
+   (Avant : « retiens que le code du portail est 4521 » ou « mets plutôt 3 » devenaient des lignes du devis ouvert.) */
+var PASTRAV=/^(?:retiens|rappelle toi|souviens toi|note bien|apprends|memorise)\b|\bquand je dis\b|\bca veut dire\b|\bchez moi\b|\b(?:ecris|mets|dis|appelle|utilise) toujours\b|\ba partir de maintenant\b|\bdesormais\b|\bau lieu de\b|\bla meme chose\b|\bpareil que\b|\bplutot\b|\bcomme (?:sur|pour|chez|d habitude|la derniere fois)\b|\bchantier precedent\b/,
+    RECIT=/\b(?:on a|j ai|nous avons|on avait|ils ont|il a|elle a) (?!un |une |des |du |de |le |la |les |l |besoin|pas |plus |\d)\w+(?:e|i|u|is|it|ert)\b/;
+function pasTravail(t){var s=hn(t).replace(/[’']/g," ").replace(/[?!.…,;:]+/g," ").replace(/\s+/g," ").trim();return PASTRAV.test(s)||RECIT.test(s);}
+P.pasTravail=pasTravail;
+["decrire","travail"].forEach(function(k){var f=P[k];if(typeof f==="function")P[k]=function(t){try{if(pasTravail(t))return false;}catch(x){}return f.apply(this,arguments);};});
+if(typeof window.parseNote==="function"){var pn0=window.parseNote;window.parseNote=function(t){try{if(pasTravail(t)){var a2=[].slice.call(arguments);a2[0]="";return pn0.apply(this,a2);}}catch(x){}return pn0.apply(this,arguments);};}
+
+/* « ajoute deux heures sur le devis » : « sur le devis » n'est pas le nom de la ligne */
+var r1=P.renvoi;
+P.renvoi=function(t){try{var m=String(t).match(/^\s*((?:ajoute|rajoute|mets|met)\s+.+?)\s+(?:sur|à|a|dans|au)\s+(?:(?:le|ce|mon)\s+)?devis\s*[.!]*\s*$/i);
+    if(m){var x=m[1];if(/^\S+\s+\S+\s*(?:heures?|h)$/i.test(x))x+=" de main d'œuvre";return x;}}catch(x){}
+  return r1?r1.apply(this,arguments):null;};
 
 var q0=P.question;
 P.question=function(t){try{if(reponse(t))return true;}catch(x){if(window.console)console.error(x);}return q0?q0.apply(this,arguments):false;};
