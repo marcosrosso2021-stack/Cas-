@@ -193,6 +193,7 @@ function carte(f){
  li('Référence',f.numero);li('Application',f.dateVigueur?fr(f.dateVigueur)+dans(f).replace(' · ',' (')+(dans(f)?')':''):'Non trouvée');li('Articles',(f.articles||[]).join(' ; '));
  li('Concerne',(f.pros||[]).join(', '));li('Domaines',(f.domaines||[]).map(d=>DOM[d]||d).join(', '));li('Modules casô',(f.modules||[]).join(', '));li('À prévoir',(f.actions||[]).join(' '));li('Avant',f.ancienne);b.append(dl);
  b.append(el('h3',null,'Pour l\'artisan'));const af=el('input','champ');af.type='text';af.maxLength=240;af.value=f.aFaire||(f.validation==='attente'?f.aFaireProp||'':'');af.placeholder='À faire, en une phrase';af.setAttribute('aria-label','À faire, pour l\'artisan');
+ const tc=el('input','champ');tc.type='text';tc.maxLength=90;tc.value=f.clair||f.clairProp||'';tc.placeholder='Titre simple';tc.setAttribute('aria-label','Titre simple, pour l\'artisan');b.append(tc);
  const lb=el('label','choix'),lc=el('input');lc.type='checkbox';lc.checked=f.lettre===true||(f.validation==='attente'&&f.tri==='envoyer');lb.append(lc,document.createTextNode('Envoyer aux artisans'));b.append(af,lb);
  const de=el('details'),g=el('div','grille'),sc=el('select','champ'),sp=el('select','champ'),dv=el('input','champ');dv.type='date';dv.value=f.dateVigueur||'';de.append(el('summary',null,'Corriger'));
  Object.keys(CAT).filter(k=>k!=='aucun').forEach(k=>{const o=el('option',null,CAT[k]);o.value=k;o.selected=k===f.categorie;sc.append(o)});
@@ -200,7 +201,7 @@ function carte(f){
  const boite=(l,x,large)=>{const w=el('label',large?'large':null,l);w.append(x);return w};g.append(boite('Catégorie',sc,true),boite('Priorité',sp),boite('Date d\'application',dv));de.append(g);
  const mo=el('div','mods'),cases={};(E.modules||[]).forEach(m=>{const l=el('label'),i=el('input');i.type='checkbox';i.checked=(f.modules||[]).includes(m);cases[m]=i;l.append(i,document.createTextNode(m));mo.append(l)});de.append(mo);
  if(f.bloque)de.open=true;b.append(de);
- const act=el('div','actes'),envoyer=async d=>{if(occupe)return;const co={};if(af.value.trim()!==(f.aFaire||''))co.aFaire=af.value.trim();if(lc.checked!==(f.lettre===true))co.lettre=lc.checked;
+ const act=el('div','actes'),envoyer=async d=>{if(occupe)return;const co={};if(af.value.trim()!==(f.aFaire||''))co.aFaire=af.value.trim();if(tc.value.trim()!==(f.clair||''))co.clair=tc.value.trim();if(lc.checked!==(f.lettre===true))co.lettre=lc.checked;
   if(sc.value!==f.categorie)co.categorie=sc.value;if(sp.value!==f.priorite)co.priorite=sp.value;if(dv.value!==(f.dateVigueur||''))co.dateVigueur=dv.value;
   const ms=Object.keys(cases).filter(m=>cases[m].checked);if(ms.join()!==(f.modules||[]).filter(m=>cases[m]).join())co.modules=ms;
   occupe=true;try{await api('decider',{id:f.id,decision:d,corrections:co});ouvert='';dire('');await charger()}catch(e){dire(e.message,true);window.scrollTo({top:0,behavior:'smooth'})}occupe=false};

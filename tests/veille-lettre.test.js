@@ -80,7 +80,22 @@ await t('titre officiel long : nature et date à part, sujet lisible ; titre com
  w.window=w;vm.runInNewContext(src,w);await new Promise(r=>setTimeout(r,20));w.casoVeille.page();let h=E.newsList.innerHTML;
  assert.ok(/nv-nat[^>]*>Arrêté du 12 novembre 2026</.test(h)&&/<h2[^>]*>Exigences de performance/.test(h),'sujet en titre, nature et date au-dessus');
  ecoute.click({target:{closest:()=>({getAttribute:()=>'j:1'})}});h=E.newsList.innerHTML;
- assert.ok(h.includes('>'+T+'</h2>')&&/13 novembre 2026/.test(h)&&/Texte officiel/.test(h),'ouvert : titre complet, date et lien')});
+ assert.ok(h.includes('nv-off" data-noi18n lang="fr">'+T+'</p>')&&/<h2[^>]*>Exigences/.test(h)&&/13 novembre 2026/.test(h)&&/Texte officiel/.test(h),'ouvert : le titre reste court, le titre officiel complet en petit, date et lien')});
+await t('titre en clair : le thème reconnu et l\'objet, sinon rien ; déjà lu, l\'info reste en grand',async()=>{
+ const A=require('../serveur/veille/analyse.js'),T='Arrêté du 13 novembre 2026 modifiant l\'arrêté du 6 novembre 2026 prévoyant des bonifications particulières pour les opérations relatives aux offres intégrées sélectionnées dans le cadre de l\'appel à candidatures « Offres intégrées pompes à chaleur » de l\'Agence de l\'environnement et de la maîtrise de l\'énergie, dans le cadre du dispositif des certificats d\'économies d\'énergie';
+ assert.strictEqual(A.clair(T),'Aides à la rénovation : primes énergie (CEE), pompes à chaleur');
+ assert.strictEqual(A.clair('Décret relatif au taux réduit de TVA pour les travaux'),'TVA : taux réduit');assert.strictEqual(A.clair('Arrêté relatif aux ascenseurs'),'');
+ const vm=require('vm'),src=fs.readFileSync(path.join(__dirname,'..','chat','veille.js'),'utf8'),mem={},ecoute={},E={newsList:{innerHTML:''},newsDot:{hidden:true},chatIn:{value:''}};
+ const it={id:'j:2',titre:T,clair:A.clair(T),priorite:'P0',dateVigueur:'2026-11-15',pros:[],aFaire:'Vérifie les nouvelles conditions.',url:'https://www.legifrance.gouv.fr/x',publieLe:'2026-11-17'};
+ mem.caso_veille=undefined;
+ const w={CASO_APPRIS:'https://serveur.test',navigator:{onLine:true},db:{prof:{metier:'peintres'}},accountGet:()=>({mode:'artisan'}),i18nT:x=>x,location:{search:''},setTimeout:f=>f(),
+  localStorage:{getItem:k=>mem[k]!==undefined?mem[k]:null,setItem:(k,v)=>{mem[k]=v}},document:{hidden:false,getElementById:i=>E[i]||null,querySelector:()=>null,addEventListener:(n,f)=>{ecoute[n]=f}},
+  fetch:async()=>({ok:true,json:async()=>[it]}),chatPush(){},chatSend(){},go(){}};
+ w.window=w;vm.runInNewContext(src,w);await new Promise(r=>setTimeout(r,20));w.casoVeille.page();
+ assert.ok(/<h2[^>]*>Aides à la rénovation : primes énergie \(CEE\), pompes à chaleur<\/h2>/.test(E.newsList.innerHTML));
+ ecoute.click({target:{closest:()=>({getAttribute:()=>'j:2'})}});ecoute.click({target:{closest:()=>({getAttribute:()=>'j:2'})}});
+ const w2=Object.assign({},w,{document:Object.assign({},w.document,{addEventListener(){}})});w2.window=w2;vm.runInNewContext(src,w2);await new Promise(r=>setTimeout(r,20));w2.casoVeille.page();
+ const h=E.newsList.innerHTML;assert.ok(/nv-une/.test(h)&&/Aides à la rénovation/.test(h)&&!/Déjà lu/.test(h),'une seule info déjà lue : elle reste en grand, pas de liste vide')});
 await t('question ou commande : seules les tournures de question vont à la newsletter',()=>{
  for(const q of ['quoi de neuf','Quoi de neuf pour la TVA ?','des nouveautés ?','qu\'est-ce qui change pour les devis','il y a une nouvelle loi ?','la réglementation a changé ? du nouveau ?','ma newsletter'])assert.ok(V.demande(q),q);
  for(const q of ['devis pour Martin carrelage 20 m²','ajoute un client neuf rue des Lilas','change le prix du placo','nouveau client Dupont','facture pour Mme Petit','TVA 10 % sur le devis'])assert.ok(!V.demande(q),q);
@@ -103,7 +118,7 @@ await t('texte critique : sort tout de suite ; les autres le lundi suivant',asyn
  const p0=v.decider(I('2002'),'valide',{lettre:true,aFaire:'Vérifie le taux de TVA de tes devis en cours.'})[1];assert.deepStrictEqual([p0.priorite,p0.publieLe],['P0','2026-11-18']);
  const p2=v.decider(I('2001'),'valide',{lettre:true})[1];assert.deepStrictEqual([p2.priorite,p2.publieLe,p2.aFaire],['P2','2026-11-23','Rien : casô mettra tes devis à jour.']);
  const L=v.lettre();assert.deepStrictEqual(L.map(x=>x.id),[I('2002')]);
- assert.deepStrictEqual(Object.keys(L[0]).sort(),['aFaire','categorie','datePub','dateVigueur','id','priorite','pros','publieLe','resume','source','titre','url']);
+ assert.deepStrictEqual(Object.keys(L[0]).sort(),['aFaire','categorie','clair','datePub','dateVigueur','id','priorite','pros','publieLe','resume','source','titre','url']);
  assert.deepStrictEqual(v.aAnnoncer().map(x=>x.id),[I('2002')]);v.annonce([I('2002')]);assert.deepStrictEqual(v.aAnnoncer(),[]);
  heure='2026-11-19T07:00:00Z';const q0=v.decider(I('2001'),'valide',{priorite:'P0'})[1];assert.deepStrictEqual([q0.priorite,q0.publieLe],['P0','2026-11-19'],'passé en P0 après coup : part tout de suite');
  assert.deepStrictEqual(v.lettre().map(x=>x.id),[I('2001'),I('2002')]);v.decider(I('2001'),'valide',{priorite:'P2'});

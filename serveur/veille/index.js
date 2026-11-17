@@ -3,7 +3,7 @@
    Variables : PISTE_CLIENT_ID, PISTE_CLIENT_SECRET (Légifrance, facultatives). Fichiers : veille.json, veille.json.bak, veille-preuves/. */
 'use strict';
 const baseLib=require('./base.js'),sourcesLib=require('./sources.js'),{verifier}=require('./verif.js'),{classer,bilan,CAT}=require('./controle.js');
-const {analyser,apprendre,MODULES,PRIORITES,DOMAINES}=require('./analyse.js');
+const {clair,analyser,apprendre,MODULES,PRIORITES,DOMAINES}=require('./analyse.js');
 
 /* le lundi qui suit une date (jamais le jour même) */
 const IMPORTANT=g=>g.priorite==='P0'||g.priorite==='P1';
@@ -30,7 +30,7 @@ function creer(opts={}){
    else base.vu(r.id,auj)}
   /* la priorité suit le délai : elle est recalculée chaque jour pour les textes gardés, sauf si le propriétaire l'a fixée */
   for(const g of base.liste()){if(g.validation==='refuse'||!g.categorie)continue;const n=analyse(g,auj);
-   if(g.tri===undefined)base.completer(g.id,{tri:n.tri,aFaireProp:n.aFaireProp});
+   if(g.tri===undefined)base.completer(g.id,{tri:n.tri,aFaireProp:n.aFaireProp});if(g.clairProp!==n.clairProp)base.completer(g.id,{clairProp:n.clairProp});
    if(n.priorite!==g.priorite&&!(g.corrige||[]).includes('priorite')){base.journal('priorite',{id:g.id,de:g.priorite,a:n.priorite});base.completer(g.id,{priorite:n.priorite})}}
   const b=bilan(res),out={nouveaux,modifies,bloques,erreurs:erreurs.length};
   base.journal('passage',Object.assign({nouveautes:b.nouveautes},out));base.passage(maintenant().toISOString());
@@ -38,7 +38,7 @@ function creer(opts={}){
   return out}
  /* l'analyse d'une fiche, sans toucher à ce que le propriétaire a corrigé */
  function analyse(f,auj){const n=analyser(f,{aujourdhui:auj,appris:base.appris()}),p={},c=f.corrige||[];
-  for(const k of ['domaines','pros','modules','actions','priorite'])if(!c.includes(k))p[k]=n[k];p.tri=n.tri;p.aFaireProp=n.aFaireProp;return p}
+  for(const k of ['domaines','pros','modules','actions','priorite'])if(!c.includes(k))p[k]=n[k];p.tri=n.tri;p.aFaireProp=n.aFaireProp;p.clairProp=clair(f.titre);return p}
  /* la décision du propriétaire : valider, refuser, avec ou sans corrections. Sans elle, rien ne part. */
  function decider(id,decision,corr){
   const f=base.lire(id);if(!f)return [404,{error:'Texte inconnu.'}];
@@ -51,6 +51,7 @@ function creer(opts={}){
   if(corr.nouvelle!==undefined)p.nouvelle=String(corr.nouvelle).replace(/\s+/g,' ').trim().slice(0,2000);
   /* la newsletter : la ligne « À faire » écrite par le propriétaire, et son accord pour l'envoi aux artisans */
   if(corr.aFaire!==undefined)p.aFaire=String(corr.aFaire).replace(/\s+/g,' ').trim().slice(0,240);
+  if(corr.clair!==undefined)p.clair=String(corr.clair).replace(/\s+/g,' ').trim().slice(0,90);
   if(corr.lettre!==undefined)p.lettre=corr.lettre===true;
   const cat=p.categorie||f.categorie;
   /* une information non confirmée ou une date manquante ne se valide pas telle quelle : il faut la corriger ou la refuser */
@@ -74,7 +75,7 @@ function creer(opts={}){
  /* la newsletter telle que l'appli la lit : seulement ce que le propriétaire a validé et choisi d'envoyer, à partir de sa date d'envoi */
  const publies=auj=>base.liste({validation:'valide'}).filter(f=>f.lettre===true&&!f.bloque&&f.publieLe&&f.publieLe<=auj&&f.categorie!==CAT.non_confirme);
  function lettre(){const auj=maintenant().toISOString().slice(0,10);
-  return publies(auj).sort((x,y)=>x.publieLe<y.publieLe?1:x.publieLe>y.publieLe?-1:0).slice(0,50).map(f=>({id:f.id,source:f.source,titre:f.titre,resume:String(f.nouvelle||'').slice(0,600),url:f.url,datePub:f.datePub,
+  return publies(auj).sort((x,y)=>x.publieLe<y.publieLe?1:x.publieLe>y.publieLe?-1:0).slice(0,50).map(f=>({id:f.id,source:f.source,titre:f.titre,clair:f.clair||clair(f.titre),resume:String(f.nouvelle||'').slice(0,600),url:f.url,datePub:f.datePub,
    dateVigueur:f.dateVigueur,categorie:f.categorie,priorite:f.priorite,pros:f.pros||[],aFaire:f.aFaire||'',publieLe:f.publieLe}))}
  /* ce qui est sorti et n'a pas encore été annoncé par notification */
  function aAnnoncer(){const auj=maintenant().toISOString().slice(0,10);return publies(auj).filter(f=>!f.pousse).map(f=>({id:f.id,titre:f.titre,priorite:f.priorite,pros:f.pros||[]}))}
