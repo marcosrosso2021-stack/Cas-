@@ -1,5 +1,135 @@
-/* casô · Fournisseurs : import intelligent, devis et factures des fournisseurs
+/* casô · Fournisseurs : liste, fiche, prix en ligne, import intelligent, devis et factures des fournisseurs
    (sorti de index.html ; chargé dans l'ordre par le démarrage, voir modules/LISEZ-MOI.md) */
+/* ---------- Fournisseurs : liste, fiche, prix en ligne ---------- */
+let fouCur=null;
+/* Fournisseurs : une seule barre, deux onglets. « Mes fournisseurs » filtre la liste ; « Prix en ligne » interroge le serveur casô
+   (sa clé reste sur le serveur) : prix publics TTC, ajoutés à Mes prix en HT (TVA 20 %), le magasin devient le fournisseur */
+let FOU_M='mes',PRX=[],PRX_N=0,PRX_B='',PRX_F='',PRX_NO=new Set();const PRX_C=new Map();
+function prxPays(){const r=String(navigator.language||'').split('-')[1];return /^(FR|BE|CH|LU|ES|PT|IT|DE|NL|GB|US|CA|RO|PL|TR|MA)$/.test(r||'')?r:'FR'}
+function prxPrix(x){if(x.devise==='EUR')return eur(x.prix);try{return new Intl.NumberFormat(document.documentElement.lang||'fr',{style:'currency',currency:x.devise}).format(x.prix)}catch(e){return x.prix+' '+x.devise}}
+/* où est le serveur casô : celui qui a déjà répondu, l'adresse fixée, le site ouvert (appli servie par le serveur), le poste de l'entreprise, puis l'adresse par défaut */
+function prxBases(){const L=[],a=u=>{u=String(u||'').replace(/\/+$/,'');if(/^https?:\/\//.test(u)&&!L.includes(u))L.push(u)};
+ a(PRX_B);a(window.CASO_APPRIS);a(location.origin);try{a(getSync().url)}catch(e){}a('https://app-e6c6e91c-8623-4524-95ef-2cefb8b67f7b.cleverapps.io');return L}
+/* connecté (Google / Outlook) : le serveur compte les recherches de ce compte au mois, pas de l'appareil au jour */
+function prxAuth(){try{const j=window.CasoAuth&&CasoAuth.jeton();return j?{authorization:'Bearer '+j}:{}}catch(e){return {}}}
+async function prxAsk(q,plus){let err='';
+ for(const b of prxBases()){const ac=new AbortController(),to=setTimeout(()=>ac.abort(),22000);
+  try{const r=await fetch(b+'/api/prix?q='+encodeURIComponent(q)+'&pays='+prxPays()+(plus||''),{signal:ac.signal,credentials:'omit',headers:prxAuth()}),v=await r.json().catch(()=>null);
+   if(r.ok&&Array.isArray(v)){PRX_B=b;return {v}}
+   if(v&&typeof v.error==='string'&&r.status!==404&&r.status!==401){PRX_B=b;return {err:v.error}}
+  }catch(e){}finally{clearTimeout(to)}}
+ return {err:err||'Le service de prix ne répond pas, réessaie plus tard.'}}
+function prxRecGet(){try{const v=JSON.parse(localStorage.getItem('caso_prx_rec'));return Array.isArray(v)?v.filter(x=>typeof x==='string').slice(0,6):[]}catch(e){return []}}
+function prxRecAdd(q){try{const L=prxRecGet().filter(x=>x.toLowerCase()!==q.toLowerCase());L.unshift(q.slice(0,60));localStorage.setItem('caso_prx_rec',JSON.stringify(L.slice(0,6)))}catch(e){}}
+function prxRecShow(){const L=prxRecGet();$('prxRec').innerHTML=$('fouQ').value.trim()?'':L.map((x,i)=>`<button type="button" class="chip" data-noi18n onclick="prxPick(${i})">${esc(x)}</button>`).join('')}
+function prxPick(i){const x=prxRecGet()[i];if(!x)return;$('fouQ').value=x;prxGo()}
+/* favoris : produits gardés depuis les prix en ligne (prix, magasin et date du relevé), affichés quand la barre est vide */
+function favKey(x){return (x.produit+'|'+x.magasin).toLowerCase()}
+function favList(){return Array.isArray(db.favs)?db.favs:(db.favs=[])}
+/* une offre : la photo, le produit avec le magasin dessous, puis à droite le prix, l'étoile (favori) et le + (Mes prix). Toucher la ligne ouvre la page du magasin */
+function prxRow(x,ref,o){const u=/^https:\/\//i.test(x.url||'')?x.url:'',fav=o.fav,on=fav||favList().some(f=>favKey(f)===favKey(x)),
+  ex=db.prices.some(p=>p.nom.toLowerCase()===x.produit.slice(0,80).toLowerCase()&&p.four===x.magasin),r=fav?`'${x.id}'`:ref;
+ return `<div class="it prx-it"${fav?` data-sw="fav:${x.id}"`:''} style="animation-delay:${Math.min(o.n||0,12)*35}ms"><${u?`a href="${esc(u)}" target="_blank" rel="noopener noreferrer"`:'span'} class="it-main"><span class="prx-ph"${x.photo?` data-ph="${esc(x.photo)}"`:''}><svg class="i i-sm"><use href="#i-tag"/></svg></span><span class="prx-n"><span data-noi18n>${esc(x.produit)}</span><span class="mut"><span data-noi18n>${esc(x.magasin)}</span>${x.src==='site'?'':' · <span>TTC</span>'}${fav&&x.maj?` · <span data-noi18n>${esc(dFR(x.maj))}</span>`:''}</span></span></${u?'a':'span'}>`+
+  `<span class="prx-r"><b class="prx-p" data-noi18n>${esc(prxPrix(x))}</b><span class="prx-b"><button class="ib${on?' on':''}" type="button" aria-pressed="${on}" aria-label="${esc(i18nT('Mes favoris'))}" onclick="favToggle(${r},this)"><svg class="i i-sm"><use href="#i-star"/></svg></button>`+
+  (x.devise==='EUR'?`<button class="ib" type="button" aria-label="${esc(i18nT('Ajouter à mes prix'))}" ${ex?'disabled':''} onclick="prxAdd(${r},this)"><svg class="i i-sm"><use href="#i-${ex?'check':'plus'}"/></svg></button>`:'')+'</span></span></div>'}
+/* une seule liste, du moins cher au plus cher */
+function prxListe(L,o){return '<div class="lst">'+L.map((x,i)=>({x,i})).filter(e=>!o.mag||e.x.magasin===o.mag).sort((a,b)=>a.x.prix-b.x.prix).map((e,n)=>prxRow(e.x,e.i,{fav:o.fav,n})).join('')+'</div>'}
+/* photos : l'appli refuse les images d'autres sites ; une petite image vient dans la réponse, les autres passent par le serveur casô */
+const PRX_IMG=new Map();
+async function prxImg(u){if(u.startsWith('data:image/'))return u;if(PRX_IMG.has(u))return PRX_IMG.get(u);
+ const p=(async()=>{for(const b of prxBases()){try{const r=await fetch(b+'/api/prix/img?u='+encodeURIComponent(u),{credentials:'omit'});
+   if(r.ok&&/^image\//.test(r.headers.get('content-type')||'')){PRX_B=PRX_B||b;return URL.createObjectURL(await r.blob())}}catch(e){}}return ''})();
+ PRX_IMG.set(u,p);return p}
+let PRX_IO=null;
+function prxPhoto(el){const u=el.dataset.ph;if(!u)return;el.removeAttribute('data-ph');prxImg(u).then(src=>{if(!src||!el.isConnected)return;
+ const im=new Image();im.alt='';im.decoding='async';im.onload=()=>{el.textContent='';el.appendChild(im)};im.src=src})}
+function prxPhotos(box){const L=box.querySelectorAll('[data-ph]');if(!('IntersectionObserver' in window))return L.forEach(prxPhoto);
+ PRX_IO=PRX_IO||new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){PRX_IO.unobserve(e.target);prxPhoto(e.target)}}),{rootMargin:'400px'});L.forEach(el=>PRX_IO.observe(el))}
+/* enseignes du pays absentes des résultats : un appui ouvre la recherche du produit sur leur site */
+const PRX_ENS={FR:[['Leroy Merlin','leroymerlin.fr'],['Castorama','castorama.fr'],['Brico Dépôt','bricodepot.fr'],['Point.P','pointp.fr'],['Cedeo','cedeo.fr'],['Rexel','rexel.fr'],['Bricoman','bricoman.fr'],['Bricomarché','bricomarche.com'],['Mr.Bricolage','mr-bricolage.fr'],['Gedimat','gedimat.fr'],['Sonepar','sonepar.fr'],['Würth','wurth.fr'],['ManoMano','manomano.fr']],
+ BE:[['Brico','brico.be'],['Gamma','gamma.be'],['Hubo','hubo.be']],CH:[['Jumbo','jumbo.ch'],['Hornbach','hornbach.ch'],['Bauhaus','bauhaus.ch']],
+ ES:[['Leroy Merlin','leroymerlin.es'],['Bauhaus','bauhaus.es'],['ManoMano','manomano.es']],PT:[['Leroy Merlin','leroymerlin.pt']],IT:[['Leroy Merlin','leroymerlin.it'],['OBI','obi-italia.it'],['ManoMano','manomano.it']],
+ DE:[['OBI','obi.de'],['Hornbach','hornbach.de'],['Bauhaus','bauhaus.info'],['toom','toom.de']],GB:[['Screwfix','screwfix.com'],['Toolstation','toolstation.com'],['Wickes','wickes.co.uk'],['B&Q','diy.com']]};
+/* enseignes du pays absentes de la liste : un appui va chercher leurs prix (une recherche de plus) et les ajoute à la liste ;
+   si l'enseigne n'en publie pas, sa pastille devient un lien vers la recherche du produit sur son site */
+function prxAutres(q){const nk=t=>vnNorm(t).replace(/[^a-z0-9]/g,''),vus=PRX.map(x=>nk(x.magasin)),
+  L=(PRX_ENS[prxPays()]||[]).filter(e=>{const k=nk(e[0]);return !vus.some(v=>v.includes(k)||k.includes(v))});
+ return L.length?`<h2 class="grp"><span>Autres magasins</span></h2><div class="chips prx-aut">`+L.map(e=>PRX_NO.has(e[1])?
+   `<a class="chip no" data-noi18n href="https://www.google.com/search?q=${encodeURIComponent(q+' site:'+e[1])}" target="_blank" rel="noopener noreferrer">${esc(e[0])}<svg class="i i-sm i-flip"><use href="#i-arrow"/></svg></a>`:
+   `<button type="button" class="chip" data-noi18n data-d="${esc(e[1])}" data-n="${esc(e[0])}" onclick="prxMag(this)">${esc(e[0])}</button>`).join('')+'</div>':''}
+async function prxMag(btn){const d=btn.dataset.d,nom=btn.dataset.n,q=$('fouQ').value.trim().replace(/\s+/g,' '),n=PRX_N;if(btn.disabled||q.length<2)return;
+ if(navigator.onLine===false)return toast(i18nT('Pas de connexion.'));
+ btn.disabled=true;btn.classList.add('wait');
+ const r=await prxAsk(q,'&mag='+encodeURIComponent(d)+'&nom='+encodeURIComponent(nom));if(n!==PRX_N)return;
+ if(r.err){btn.disabled=false;btn.classList.remove('wait');return toast(i18nT(r.err))}
+ const v=r.v.filter(x=>x&&x.produit&&x.magasin&&+x.prix>0);
+ if(!v.length){PRX_NO.add(d);prxShow(q,!PRX.length);return toast(nom+' : '+i18nT('Aucun résultat.'))}
+ const vus=new Set(PRX.map(favKey));PRX=PRX.concat(v.filter(x=>!vus.has(favKey(x))));PRX_F=v[0].magasin;
+ PRX_C.set(prxPays()+'|'+q.toLowerCase(),{t:Date.now(),v:PRX});prxShow(q);try{$('prxRes').scrollIntoView({block:'start',behavior:'smooth'})}catch(e){}}
+function prxMags(){const M=new Map();PRX.forEach(x=>M.set(x.magasin,(M.get(x.magasin)||0)+1));if(M.size<2)return '';
+ if(PRX_F&&!M.has(PRX_F))PRX_F='';
+ return '<div class="chips prx-mag">'+`<button type="button" class="chip${PRX_F?'':' on'}" aria-pressed="${!PRX_F}" onclick="prxFiltre('')"><span>Tous</span> <span class="mut" data-noi18n>${PRX.length}</span></button>`+
+  [...M].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).map(([m,n])=>`<button type="button" class="chip${PRX_F===m?' on':''}" aria-pressed="${PRX_F===m}" data-noi18n data-m="${esc(m)}" onclick="prxFiltre(this.dataset.m)">${esc(m)} <span class="mut">${n}</span></button>`).join('')+'</div>'}
+function prxFiltre(m){PRX_F=m||'';const q=$('fouQ').value.trim().replace(/\s+/g,' ');prxShow(q);const on=document.querySelector('#prxRes .prx-mag .chip.on');if(on&&on.scrollIntoView)try{on.scrollIntoView({inline:'center',block:'nearest'})}catch(e){}}
+function prxShow(q,vide){const box=$('prxRes');box.innerHTML=(vide?`<div class="lst"><div class="lst-empty mut">${esc(i18nT('Aucun résultat.'))}</div></div>`:prxMags()+prxListe(PRX,{mag:PRX_F}))+prxAutres(q);prxPhotos(box)}
+function favShow(){const L=favList(),box=$('prxFav');if(!box)return;
+ box.innerHTML=!L.length||$('fouQ').value.trim()?'':`<h2 class="grp"><span>Mes favoris</span><span class="cnt" data-noi18n>${L.length}</span></h2>`+prxListe(L,{fav:true});prxPhotos(box)}
+function favToggle(ref,btn){const L=favList(),x=typeof ref==='number'?PRX[ref]:L.find(f=>f.id===ref);if(!x)return;
+ const k=favKey(x),i=L.findIndex(f=>favKey(f)===k);
+ if(i>=0)L.splice(i,1);else L.unshift({id:uid(),produit:x.produit,prix:x.prix,devise:x.devise,magasin:x.magasin,url:x.url||'',maj:x.maj||ymdL(),photo:x.photo||''});
+ save();if(typeof ref==='number'){btn.classList.toggle('on',i<0);btn.setAttribute('aria-pressed',i<0)}else favShow()}
+function prxHome(){prxRecShow();favShow()}
+async function prxGo(){
+ const box=$('prxRes'),q=$('fouQ').value.trim().replace(/\s+/g,' '),n=++PRX_N,msg=t=>{if(n===PRX_N)box.innerHTML=`<div class="lst"><div class="lst-empty mut">${esc(i18nT(t))}</div></div>`};
+ PRX=[];PRX_F='';PRX_NO=new Set();$('prxRec').innerHTML='';$('prxFav').innerHTML='';if(q.length<2){box.innerHTML='';prxHome();return}
+ const k=prxPays()+'|'+q.toLowerCase(),c=PRX_C.get(k);
+ if(c&&Date.now()-c.t<36e5){PRX=c.v;return prxShow(q)}
+ if(navigator.onLine===false)return msg('Pas de connexion.');
+ box.innerHTML='<div class="lst" role="status" aria-label="'+esc(i18nT('Recherche…'))+'">'+'<div class="prx-sk"><i></i><i></i></div>'.repeat(4)+'</div>';
+ const r=await prxAsk(q);if(n!==PRX_N)return;
+ if(r.err)return msg(r.err);
+ PRX=r.v.filter(x=>x&&x.produit&&x.magasin&&+x.prix>0);if(!PRX.length)return prxShow(q,true);
+ PRX_C.set(k,{t:Date.now(),v:PRX});prxRecAdd(q);prxShow(q)}
+function prxAdd(ref,btn){const x=typeof ref==='number'?PRX[ref]:favList().find(f=>f.id===ref);if(!x)return;
+ const nom=x.produit.slice(0,80),ht=Math.round(x.prix/1.2*100)/100,ex=db.prices.find(p=>p.nom.toLowerCase()===nom.toLowerCase());
+ if(ex){ex.prix=ht;ex.four=x.magasin}else db.prices.push({id:uid(),nom,unit:'u',prix:ht,tva:20,four:x.magasin});
+ save();try{renderPrices();renderQuick()}catch(e){}
+ if(btn){btn.disabled=true;btn.innerHTML='<svg class="i i-sm"><use href="#i-check"/></svg>'}toast(i18nT('Ajouté à tes prix'))}
+function fouMode(m){FOU_M=m==='web'?'web':'mes';const w=FOU_M==='web';
+ [...$('fouSeg').children].forEach(b=>b.classList.toggle('on',b.dataset.m===FOU_M));$('fouMes').hidden=w;$('fouWeb').hidden=!w;
+ $('fouAct').hidden=w;fouBtn();$('fouQ').placeholder=i18nT(w?"Prix d'un matériau en ligne":'Chercher');
+ if(w){if($('fouQ').value.trim().length>1)prxGo();else{$('prxRes').innerHTML='';prxHome()}}else fouRender()}
+/* la loupe est le bouton de recherche : elle s'allume dans « Prix en ligne » dès qu'il y a un mot à chercher */
+function fouBtn(){$('fouBtn').classList.toggle('go',FOU_M==='web'&&$('fouQ').value.trim().length>1)}
+function fouType(){fouBtn();if(FOU_M==='mes')return fouRender();if(!$('fouQ').value.trim()){PRX_N++;$('prxRes').innerHTML='';prxHome()}}
+function fouGo(){if(FOU_M==='web'){try{$('fouQ').blur()}catch(e){}prxGo()}else fouRender()}
+/* liste : rien quand il n'y a encore aucun fournisseur ; si le mot cherché n'est chez aucun fournisseur, on propose de le chercher en ligne */
+function fouRender(){syncSuppliersFromPrices();const fd=$('fouDue');if(fd)fd.innerHTML=fouDueHtml();
+ const q=$('fouQ').value.trim(),k=vnNorm(q),n=db.suppliers.filter(x=>!k||vnNorm(x.nom+' '+(x.tel||'')+' '+(x.adr||'')).includes(k)).length,box=$('fouList');
+ if(FOU_M!=='mes')return;
+ if(n){box.className='lst';box.innerHTML=db.suppliers.filter(x=>!k||vnNorm(x.nom+' '+(x.tel||'')+' '+(x.adr||'')).includes(k)).sort((a,b)=>a.nom.localeCompare(b.nom)).map(x=>
+   `<div class="it fou-it" data-sw="fou:${x.id}"><button type="button" class="it-main" onclick="fouEdit('${x.id}')"><span class="av" data-noi18n aria-hidden="true">${esc((x.nom.trim()[0]||'?'))}</span><span class="fou-tx"><b data-noi18n>${esc(x.nom)}</b>${x.tel||x.adr?`<span class="mut it-s" data-noi18n>${esc([x.tel,x.adr].filter(Boolean).join(' · '))}</span>`:''}</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button></div>`).join('')}
+ else if(q.length>1){box.className='lst';box.innerHTML=`<button type="button" class="it it-main" onclick="fouMode('web')"><span class="it-t"><b><span>Prix en ligne</span> : <span data-noi18n>${esc(q)}</span></b><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></span></button>`}
+ else{box.className='';box.innerHTML=''}}
+function fouEdit(id){
+ fouCur=id?db.suppliers.find(x=>x.id===id):null;formFill('fou',fouCur,fouCur?fouCur.nom:'Nouveau fournisseur');
+ let h='';
+ if(fouCur){const A=(db.achats||[]).filter(a=>nameKey(a.four)===nameKey(fouCur.nom));
+  h+=`<button class="btn sec" onclick="fouPhoto()"><svg class="i"><use href="#i-cam"/></svg><span>Photo d'un devis ou d'une facture</span></button>`;
+  if(A.length){const due=A.filter(a=>a.type!=='devis'&&!a.paid);h+=`<h2 class="grp"><span>Achats</span><span class="cnt">${A.length}</span></h2>`+(due.length?`<p class="mut ach-sum"><span>${i18nT('{1} à payer').replace('{1}',due.length)}</span> · <b data-noi18n>${eur(due.reduce((s,a)=>s+(a.ttc||0),0))}</b></p>`:'')+`<div class="lst">${achHtml(A.slice(0,30))}</div>`}}
+ if(fouCur){const k=nameKey(fouCur.nom),P=db.prices.filter(p=>nameKey(p.four)===k),H=(db.hist||[]).filter(x=>nameKey(x.four)===k).slice().reverse().slice(0,12);
+  if(P.length)h+=`<h2 class="grp"><span>Services</span><span class="cnt">${P.length}</span></h2><div class="lst">`+P.map(p=>`<div class="it"><span class="it-t"><b>${esc(pDisp(p))}</b><span>${eur(p.prix)} / ${esc(p.unit)}</span></span></div>`).join('')+'</div>';
+  if(H.length)h+=`<h2 class="grp"><span>Historique des prix</span></h2><div class="lst">`+H.map(x=>`<div class="it"><span class="it-t"><span>${esc(x.nom)}</span><span>${eur(x.prix)} / ${esc(x.unit)}</span></span><span class="mut it-s">${dFR(x.date)}</span></div>`).join('')+'</div>'}
+ $('fouMore').innerHTML=h;$('fouActs').innerHTML=fouCur?cfActs(fouCur):'';go('fouf')}
+function fouSave(){
+ const n=$('fouNom').value.trim();if(!n){alert('Écris le nom.');return}
+ if(!fouCur){const dup=findBy(db.suppliers,n);fouCur=dup||{id:uid()};if(!dup)db.suppliers.push(fouCur)}
+ formRead('fou',fouCur);save();toast(i18nT('Enregistré.'));go('fou')}
+function fouDelete(){if(!fouCur||!confirm('Supprimer ce fournisseur ?'))return;db.suppliers=db.suppliers.filter(x=>x!==fouCur);save();go('fou')}
+
+
+
+
 /* ---------- Fournisseurs ---------- */
 function renderFour(){
  const by={};db.hist.forEach(h=>{(by[h.four]=by[h.four]||[]).push(h)});

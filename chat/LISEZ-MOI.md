@@ -279,14 +279,14 @@ Source du moteur et outils de traduction : le module « caso-ia » (moteur, cata
 
 **Les fonctions arrivées depuis dans les exécutions du chat (16 nov. 2026)** — après la fusion de `main` (Newsletter, Fournisseurs simple, vidéo reprise, sécurité discrète) :
 - **« Mon entreprise » en quatre pages** (`pont.js` → `ecran`) : le chat ouvre la page du réglage demandé. Avant, « mon équipe », « invite un ouvrier », « change la langue », « ouvre les notifications » ouvraient la page Entreprise, où le réglage est caché. La page est lue sur le `data-cp` du réglage : rien à tenir à jour si un réglage change de page.
-- **Newsletter** (`veille.js`) : « ouvre la newsletter », « newsletter » ouvrent la page. « quoi de neuf » répond toujours dans le chat.
+- **Newsletter** (`modules/newsletter.js`) : « ouvre la newsletter », « newsletter » ouvrent la page. « quoi de neuf » répond toujours dans le chat.
 - **métier** (moteur `parseApp`, `APP_METIERS`) : « mon métier c'est plombier », « je suis électricien » règlent le métier de Mon entreprise (celui qui trie la Newsletter). Un métier hors liste (carreleur, plaquiste…) donne « Autre métier du bâtiment ». Lu sur le texte tapé : la correction des fautes change « carreleur » en « carrelage ».
 - **zone couverte par l'assurance**, et « mon iban », « change mon siret » ouvrent le champ.
 - **prix en ligne** (`app.prix_ligne`) : « cherche le prix du placo en ligne », « compare les prix de la laine de verre » ouvrent Fournisseurs → Prix en ligne et lancent la recherche. « prix du BA13 en magasin » répond toujours depuis les achats enregistrés.
 - **vidéo** (`app.video`) : « filme la pièce pour la maquette », « reprends l'analyse de la vidéo » ouvrent le module 3D ; « où en est la vidéo » donne l'étape en cours.
 - **Face ID / empreinte** (`app.faceid`) : un bouton, comme pour le code de secours ; il ouvre Sauvegarde et fait le réglage, ou dit que le téléphone ne le permet pas.
 - Ces phrases sont comprises en français ; « newsletter » dans les 10 langues. Les réponses sont traduites.
-- `veille.js` : « du nouveau » n'est une question sur la Newsletter qu'en début ou en fin de phrase (« on met du nouveau au sol » est un travail).
+- `modules/newsletter.js` : « du nouveau » n'est une question sur la Newsletter qu'en début ou en fin de phrase (« on met du nouveau au sol » est un travail).
 - essais : 23 contrôles de plus dans `essai-fiabilite.js` (245).
 
 **Des réponses qui tiennent compte de la situation (17 nov. 2026)** — `chat/reponses.js`, chargé après `langage.js`. Rien n'est ajouté à l'écran. Chaque réponse ne dit que ce qui est enregistré : aucun chiffre deviné, aucun conseil inventé.
