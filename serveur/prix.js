@@ -2,6 +2,7 @@
    - la clé reste sur le serveur : variable SEARCHAPI_KEY (conseillée) ou SERPAPI_KEY, sur Clever Cloud
    - PRIX_MOIS : recherches payantes au plus par mois et par compte casô (défaut 300) ; une réponse gardée en cache ne compte pas
    - sans compte : PRIX_JOUR recherches payantes par jour pour tous les anonymes ensemble (défaut 100), PRIX_IP par adresse (défaut 30)
+   - SEARCHAPI_KEY et SERPAPI_KEY ensemble : SearchApi.io d'abord, SerpApi aussitôt si SearchApi.io ne répond pas (bascule automatique)
    - PRIX_CACHE_H : une même recherche n'est payée qu'une fois pendant ce temps, pour tous les usagers, en heures (défaut 12)
    - cache et compteurs gardés dans le dossier des données (prix.json) : ils survivent à un redéploiement
    Réponse : [{produit, prix (TTC), devise, magasin, url, maj, photo}] du moins cher au plus cher.
@@ -93,17 +94,32 @@ function creer(opts={}){
   if(id){const u=parCompte[id]||0;if(u>=MOIS)return false;parCompte[id]=u+1;payees++;marquer();return true}
   if(j!==jour()){j=jour();n=0;parIp.clear()}const mi=parIp.get(ip)||0;if(mi>=PARIP||n>=JOUR)return false;parIp.set(ip,mi+1);n++;payees++;marquer();return true}
  const refus=id=>id?MOIS_PLEIN:TROP;
+ /* aucun service n'a répondu : rien n'a été facturé, la recherche est rendue à l'usager */
+ function rendre(ip,id){if(id){if(parCompte[id]>0)parCompte[id]--}else{const mi=parIp.get(ip)||0;if(mi>0)parIp.set(ip,mi-1);if(n>0)n--}if(payees>0)payees--;marquer();return PANNE}
  /* un appel au service : la réponse, null en cas de panne ; « aucun résultat » (une erreur chez SerpApi) donne {} */
- async function appel(params){
-  const p=new URLSearchParams(Object.assign({},params,{api_key:KSA||KSP}));
-  const url=KSA?'https://www.searchapi.io/api/v1/search?'+p:'https://serpapi.com/search.json?'+p;
+ /* Les services, dans l'ordre : SearchApi.io d'abord (moins cher), puis SerpApi en secours.
+    Si l'un ne répond pas, le suivant est essayé aussitôt ; celui en panne est mis de côté quelques minutes (PRIX_PAUSE_MIN, 5 par défaut)
+    pour ne pas faire attendre chaque recherche. S'ils sont tous en pause, on les réessaie quand même. */
+ const SERVICES=[KSA&&{nom:'searchapi',cle:KSA,url:'https://www.searchapi.io/api/v1/search?'},KSP&&{nom:'serpapi',cle:KSP,url:'https://serpapi.com/search.json?'}].filter(Boolean);
+ const PAUSE=(+env.PRIX_PAUSE_MIN||5)*6e4,enPanne=Object.create(null);let dernier='';
+ async function appelUn(sv,params){
+  const p=new URLSearchParams(Object.assign({},params,{api_key:sv.cle}));
   const ac=new AbortController(),to=setTimeout(()=>ac.abort(),20000);
-  try{const r=await F(url,{signal:ac.signal});const js=await r.json().catch(()=>null);
+  try{const r=await F(sv.url+p,{signal:ac.signal});const js=await r.json().catch(()=>null);
    if(js&&typeof js.error==='string'&&/hasn'?t returned any results|no results/i.test(js.error))return {};
-   if(!r.ok||!js||js.error){(opts.log||console.error)('[casô] prix : service en erreur',r.status,court(js&&js.error,200));return null}
+   if(!r.ok||!js||js.error){(opts.log||console.error)('[casô] prix : '+sv.nom+' en erreur',r.status,court(js&&js.error,200));return null}
    return js;
-  }catch(e){(opts.log||console.error)('[casô] prix : service injoignable',e&&e.name);return null}
+  }catch(e){(opts.log||console.error)('[casô] prix : '+sv.nom+' injoignable',e&&e.name);return null}
   finally{clearTimeout(to)}
+ }
+ async function appel(params){
+  const t=Date.now(),dispo=SERVICES.filter(sv=>!(enPanne[sv.nom]>t)),ordre=dispo.length?dispo:SERVICES;
+  for(const sv of ordre){
+   const js=await appelUn(sv,params);
+   if(js){delete enPanne[sv.nom];if(dernier&&dernier!==sv.nom)(opts.log||console.error)('[casô] prix : bascule sur '+sv.nom);dernier=sv.nom;return js}
+   enPanne[sv.nom]=Date.now()+PAUSE;
+  }
+  return null;
  }
  function garde(cle,v){cache.delete(cle);cache.set(cle,{t:Date.now(),v});while(cache.size>MAXC)cache.delete(cache.keys().next().value);marquer();return [200,v]}
 
@@ -117,7 +133,7 @@ function creer(opts={}){
   const [gl,hl,devise]=PAYS[pays]||PAYS.FR,cle=(PAYS[pays]?pays:'FR')+'|'+q.toLowerCase();
   const c=cache.get(cle);if(c&&Date.now()-c.t<TTL)return [200,c.v];
   if(!quota(ip,id))return refus(id);
-  const js=await appel({engine:'google_shopping',q,gl,hl});if(!js)return PANNE;
+  const js=await appel({engine:'google_shopping',q,gl,hl});if(!js)return rendre(ip,id);
   return garde(cle,convertir(js,devise));
  }
  /* Une enseigne absente de la liste générale (le service ne rend qu'une quarantaine d'offres par recherche) :
@@ -130,11 +146,11 @@ function creer(opts={}){
   const c=cache.get(cle);if(c&&Date.now()-c.t<TTL)return [200,c.v];
   const nk=t=>String(t).normalize('NFD').toLowerCase().replace(/[^a-z0-9]/g,''),k=nk(nom),kd=nk(mag.split('.')[0]);
   if(!quota(ip,id))return refus(id);
-  const a=await appel({engine:'google_shopping',q:q+' '+nom,gl,hl});if(!a)return PANNE;
+  const a=await appel({engine:'google_shopping',q:q+' '+nom,gl,hl});if(!a)return rendre(ip,id);
   let v=convertir(a,devise).filter(x=>{const m=nk(x.magasin);return m.includes(k)||k.includes(m)||m.includes(kd)});
   if(!v.length){
    if(!quota(ip,id))return refus(id);
-   const b=await appel({engine:'google',q:q+' site:'+mag,gl,hl});if(!b)return PANNE;
+   const b=await appel({engine:'google',q:q+' site:'+mag,gl,hl});if(!b)return rendre(ip,id);
    v=surSite(b,devise,mag,nom);
   }
   return garde(cle,v);
@@ -154,7 +170,7 @@ function creer(opts={}){
  /* reste du mois pour un compte (affichable dans l'appli) */
  function reste(id){if(m!==mois())return MOIS;return Math.max(0,MOIS-(parCompte[id]||0))}
  return {chercher,image,pret,reste,ecrire,
-  etat:()=>({pret:pret(),jour:j===jour()?n:0,limite:JOUR,mois:m,payeesMois:payees,parCompte:MOIS,comptes:Object.keys(parCompte).length,cache:cache.size})};
+  etat:()=>({pret:pret(),services:SERVICES.map(sv=>sv.nom),dernier,enPanne:Object.keys(enPanne).filter(k=>enPanne[k]>Date.now()),jour:j===jour()?n:0,limite:JOUR,mois:m,payeesMois:payees,parCompte:MOIS,comptes:Object.keys(parCompte).length,cache:cache.size})};
 }
 
 module.exports={creer,convertir,surSite,garder,photoOk,PAYS};
