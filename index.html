@@ -1451,7 +1451,7 @@ body.tr-on{overflow:hidden}
 .pt-tj{display:inline-flex;align-items:center;gap:8px;margin:0;font-family:inherit;font-size:13px;font-weight:500;text-transform:none;letter-spacing:0;color:var(--mut);cursor:pointer}.pt-tj input{width:18px;height:18px;margin:0;accent-color:var(--acc-d)}
 .ag-sh-h{display:flex;align-items:center;gap:4px;margin:0 0 12px}.ag-sh-h h3{flex:1;margin:0;text-align:start;font-size:19px;letter-spacing:-.01em}
 .ag-sh-b{width:40px;height:40px;border:0;border-radius:50%;background:transparent;color:var(--ink);display:grid;place-items:center;cursor:pointer}.ag-sh-b:hover{background:var(--bg)}.ag-sh-b.ko{color:#c0392b}
-.ag-typ{margin:0 0 10px}.ag-cli{display:flex;flex-direction:column;gap:8px;margin:8px 0 2px}#agEti{margin:0}
+.ag-typ{margin:0 0 10px}.row>.ag-ej{flex:0 0 84px}.ag-ej input{text-align:center}.ag-ev .ag-n{font-weight:600;color:var(--ink)}.ag-cli{display:flex;flex-direction:column;gap:8px;margin:8px 0 2px}#agEti{margin:0}
 .ag-plus{margin:6px 0 12px}.ag-plus summary{cursor:pointer;color:var(--mut);font-size:14px;font-weight:600;padding:8px 0;list-style-position:inside}
 .ag-sh-f{display:flex;justify-content:space-between;gap:12px;margin-top:8px}.ag-sh-f:not(:has(button:not([hidden]))){display:none}.lnk.ko{color:#c0392b}
 .ag-grid{cursor:copy}
@@ -2285,6 +2285,15 @@ body.tr-on{overflow:hidden}
  <button class="btn del-go" id="delGo" type="button" onclick="delGo()">Supprimer définitivement</button>
  <button type="button" class="lnk sheet-x" onclick="delClose()">Annuler</button>
 </div>
+<div class="sheet-bg" id="relBg" hidden onclick="aboRelierFermer()"></div>
+<div class="sheet" id="relSh" role="dialog" aria-modal="true" aria-labelledby="relT" hidden>
+ <div class="sheet-grip"></div>
+ <div class="ab-h"><h3 id="relT">Relier mon compte</h3><button type="button" class="ab-x" onclick="aboRelierFermer()" aria-label="Fermer"><svg class="i"><use href="#i-x"/></svg></button></div>
+ <p class="ab-mot">Ton essai et tes modules te suivent sur tous tes téléphones.</p>
+ <form onsubmit="event.preventDefault();aboRelierGo()"><input type="email" id="relMail" autocomplete="username" hidden><label for="relPw">Ton mot de passe</label><input type="password" id="relPw" autocomplete="current-password" oninput="$('relErr').hidden=true">
+ <div id="relErr" class="err" hidden role="alert"></div>
+ <button class="btn" id="relGo" type="submit"><svg class="i"><use href="#i-link"/></svg>Relier</button></form>
+</div>
 <div class="sheet-bg" id="abBg" hidden onclick="aboClose()"></div>
 <div class="sheet ab-sh" id="abSh" role="dialog" aria-modal="true" aria-labelledby="abT" hidden>
  <div class="sheet-grip"></div>
@@ -2328,7 +2337,7 @@ body.tr-on{overflow:hidden}
  <input type="hidden" id="agEtyp" value="rdv">
  <input id="agEti" placeholder="Quoi ? Ex. Pose de carrelage" aria-label="Quoi" data-noi18n>
  <div class="ag-cli" id="agEcliW"><input id="agEcl" list="agEclDl" autocapitalize="words" autocomplete="off" placeholder="Client" aria-label="Client" onchange="agEclPick()" data-noi18n><datalist id="agEclDl"></datalist><input id="agEadr" placeholder="Adresse" aria-label="Adresse" data-noi18n></div>
- <div class="row"><div><label for="agEd">Date</label><input id="agEd" type="date"></div><div id="agEd2W"><label for="agEd2">Jusqu'au</label><input id="agEd2" type="date"></div></div>
+ <div class="row"><div><label for="agEd">Date</label><input id="agEd" type="date"></div><div id="agEd2W"><label for="agEd2">Jusqu'au</label><input id="agEd2" type="date"></div><div id="agEjW" class="ag-ej"><label for="agEj">Jours</label><input id="agEj" type="number" min="1" max="60" step="1" inputmode="numeric" value="1" onchange="agEdAll()"></div></div>
  <div class="row" id="agEtimes"><div><label for="agEa">De</label><input id="agEa" type="time"></div><div><label for="agEb">À</label><input id="agEb" type="time"></div></div>
  <label class="pl-ck"><input type="checkbox" id="agEall" onchange="agEdAll()"> <span>Toute la journée</span></label>
  <details class="ag-plus" id="agPlus"><summary>Plus d'options</summary>
@@ -2471,7 +2480,7 @@ body.tr-on{overflow:hidden}
    <div class="dw-pop-s"></div>
    <button class="dw-pi dw-out" role="menuitem" type="button" onclick="dwPopClose();logout()"><svg class="i"><use href="#i-logout"/></svg><span>Se déconnecter</span></button>
   </div>
-  <button class="dw-plan" id="dwPlanGo" type="button" hidden onclick="drawerClose(true);aboOpen()" aria-label="On construit le plan"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 7.5l8 4.5 8-4.5L12 3Z M4 12l8 4.5 8-4.5 M4 16.5 12 21l8-4.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg><b id="dwPlanA"></b><span id="dwPlanB"></span></button>
+  <button class="dw-plan" id="dwPlanGo" type="button" hidden onclick="drawerClose(true);dwPlanTap()" aria-label="On construit le plan"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 7.5l8 4.5 8-4.5L12 3Z M4 12l8 4.5 8-4.5 M4 16.5 12 21l8-4.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg><b id="dwPlanA"></b><span id="dwPlanB"></span></button>
   <button class="dw-me" id="dwMe" type="button" aria-haspopup="menu" aria-expanded="false" onclick="dwPopToggle()"><span class="dw-ini" id="dwIni" aria-hidden="true"></span><span class="dw-who"><b id="dwName"></b></span><svg class="dw-ud" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 9.5 12 5.5l4 4M8 14.5l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
  </div>
 </aside>

@@ -57,7 +57,10 @@ function dwLocked(){
 function authLigne(){
  const A=window.CasoAuth,c=A&&A.compte(),go=$('dwPlanGo');if(!go)return;
  const n=($('dwName')||{}).textContent||'',ini=$('dwIni');if(ini)ini.textContent=(n.trim()[0]||'·').toUpperCase();
- go.hidden=!(c&&c.mode&&window.CasoPlan);if(go.hidden)return;
+ /* pas de session casô : compte e-mail → « Relier mon compte » ; Google / Outlook expiré → « Se reconnecter » */
+ if(!c){const a=accountGet();const r=!!(a&&a.email&&(a.hash||a.sso)&&window.CasoAuth);go.hidden=!r;go.dataset.k=r?(a.sso?'sso':'rel'):'';
+  if(r){$('dwPlanA').textContent=i18nT(a.sso?'Se reconnecter':'Relier mon compte');$('dwPlanB').textContent=''}return}
+ go.dataset.k='plan';go.hidden=!(c.mode&&window.CasoPlan);if(go.hidden)return;
  const nb=((c.plan&&c.plan.modules)||[]).length,prix=c.plan&&c.plan.total?CasoPlan.euros(c.plan.total):'';
  let a,b='';
  if(c.offre==='artisan_curieux'&&c.essaiFin){a=i18nT('Essai');b=Math.max(1,Math.ceil((c.essaiFin-Date.now())/864e5))+' '+i18nT('j')}
@@ -65,6 +68,7 @@ function authLigne(){
  else if(nb){a=nb+' '+i18nT(nb>1?'modules':'module');b=prix}
  else a=i18nT('On construit le plan');
  $('dwPlanA').textContent=a;$('dwPlanB').textContent=b}
+function dwPlanTap(){const k=$('dwPlanGo').dataset.k;if(k==='rel')return aboRelier();if(k==='sso'){const a=accountGet();return authVia(a&&a.sso)}aboOpen()}
 /* petit menu du compte (au-dessus de la ligne du bas) */
 function dwPopToggle(){const p=$('dwPop');p.hidden?dwPopOpen():dwPopClose()}
 function dwPopOpen(){const p=$('dwPop');p.hidden=false;$('dwMe').setAttribute('aria-expanded','true');requestAnimationFrame(()=>p.classList.add('on'));

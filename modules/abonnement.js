@@ -86,5 +86,20 @@ const aboMois=x=>{const t=x.creeLe?new Date(x.creeLe):null;return t&&!isNaN(t)?y
 
 window.addEventListener('caso-auth',()=>{aboMenu();const s=document.querySelector('section.on');if(s)aboBandeau(s.id.slice(2))});
 aboMenu();
+/* compte e-mail pas encore relié au serveur casô (ouvert par Face ID, ou créé hors ligne) : le mot de passe est demandé
+   une seule fois, au démarrage ; ensuite « Relier mon compte » reste dans le profil */
+function aboRelier(){const a=accountGet();if(!a||!a.hash)return;$('relMail').value=a.email;$('relPw').value='';$('relErr').hidden=true;
+ $('relBg').hidden=false;$('relSh').hidden=false;requestAnimationFrame(()=>{$('relSh').classList.add('on');$('relBg').classList.add('on')});setTimeout(()=>{try{$('relPw').focus()}catch(e){}},250)}
+function aboRelierFermer(){const s=$('relSh'),b=$('relBg');if(!s||s.hidden)return;s.classList.remove('on');b.classList.remove('on');setTimeout(()=>{s.hidden=true;b.hidden=true},200)}
+async function aboRelierGo(){const a=accountGet(),pw=$('relPw').value,btn=$('relGo'),err=t=>{$('relErr').textContent=i18nT(t);$('relErr').hidden=false};
+ if(!a||!pw)return;if(navigator.onLine===false)return err('Pas de connexion.');
+ btn.disabled=true;
+ try{if(!(await accountCheck(a.email,pw))){err('Mot de passe incorrect.');return}
+  await CasoAuth.mail(a.email,pw,a.prenom);aboRelierFermer();authLigne();toast(i18nT('Compte relié.'))}
+ catch(e){err(e&&e.code===401?'Ce compte casô a un autre mot de passe : utilise celui de ton premier téléphone.':e&&e.code===0?'Pas de connexion.':'Ça n\'a pas marché. Réessaie dans un instant.')}
+ finally{btn.disabled=false}}
+setTimeout(()=>{try{const a=accountGet();if(!a||!a.hash||a.sso||window.__casoMdpVu||!window.CasoAuth||CasoAuth.connecte()||navigator.onLine===false)return;
+ if(localStorage.getItem('caso_relie_vu'))return;localStorage.setItem('caso_relie_vu',String(Date.now()));
+ if(!document.body.classList.contains('starting'))aboRelier()}catch(e){}},4000);
 /* la pastille du profil : dessinée aussi au démarrage (la session casô a pu répondre avant que l'appli soit prête) */
 try{authLigne()}catch(e){}

@@ -53,6 +53,8 @@ function agScan(F){
  agEach(o,new RegExp('(?<![\\p{L}\\d])(\\d{1,2})\\s+('+AG_MRX+')(?:\\s+(\\d{4}))?(?![\\p{L}])','gu'),m=>{const d=agMk(+m[1],AG_MONTHS.indexOf(m[2]),m[3]);if(!d)return false;agPD(o,d)});
  agEach(o,/(?<![\d/])(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?(?![\d/])/g,m=>{const d=agMk(+m[1],+m[2]-1,m[3]);if(!d)return false;agPD(o,d)});
  agEach(o,/(?<![\p{L}])le\s+(\d{1,2})(?![\d\p{L}h/])/gu,m=>{const d=agMk(+m[1],null);if(!d)return false;agPD(o,d)});
+ /* « jeudi 26 » (sans mois) : le 26, ce mois-ci ou le suivant */
+ agEach(o,new RegExp('(?<![\\p{L}])(?:ce |le )?(?:'+AG_DRX+')\\s+(?:le\\s+)?(\\d{1,2})(?:er)?(?![\\d\\p{L}h/:])(?!\\s+(?:'+AG_MRX+'))','gu'),m=>{const d=agMk(+m[1],null);if(!d)return false;agPD(o,d)});
  // jours de la semaine : lundi, lundi prochain, ce mardi
  agEach(o,new RegExp('(?<![\\p{L}])(?:ce |le |cette )?('+AG_DRX+')(\\s+prochain|\\s+qui vient)?(?![\\p{L}])','gu'),m=>{
   const k=AG_DAYS.indexOf(m[1]);if(o.listDays){o.listDays.push(k);return}
@@ -89,8 +91,30 @@ function agBookTitle(t){let s=' '+String(t||'')+' ';
  const E=/^(le|la|les|l'|un|une|pour|de|du|des|the|for|a|an|el|los|las|una|para|um|uma|il|lo|per|pentru|dla|na|для|на|o)\s+|\s+(le|la|les|un|une|pour|de|du|des|the|for|a|an|el|para|per|pentru|dla|для|na|o)$/iu;
  s=s.replace(/\s+/g,' ').trim();for(let k=0;k<8;k++){const s0=s;s=s.replace(E,'').trim();if(s===s0)break}
  return s?s[0].toUpperCase()+s.slice(1):''}
+/* chantier sur plusieurs jours : « 3 jours », « pendant 2 semaines », « 20 h de travail », « du lundi au jeudi »,
+   ou « planifie le chantier de Martin » (heures de main-d'œuvre de son devis) */
+const AG_NB={un:1,une:1,deux:2,trois:3,quatre:4,cinq:5,six:6,sept:7,huit:8,neuf:9,dix:10,onze:11,douze:12,quinze:15,vingt:20};
+const AG_SER_V=/(?<![\p{L}])(planifie|planifier|programme|programmer|cale|caler|prevois|prevoir|organise|organiser|lance|lancer)(?:-moi)?\s+(?:le |les |mon |ce |un |une )?chantiers?(?![\p{L}])/u;
+function agSerieDe(f,o,cl){const nb=x=>AG_NB[x]||+x,N='(\\d{1,2}|'+Object.keys(AG_NB).join('|')+')';
+ let m=new RegExp('(?<![\\p{L}])(?<!dans |il y a |y a )'+N+'\\s*(jours?|j|semaines?)(?![\\p{L}])(\\s*et demi)?','u').exec(f);
+ if(m&&!/(?<![\p{L}])(prochaine?s?|derniere?s?)$/u.test(f.slice(m.index+m[0].length).trim().split(/\s+/)[0]||'')){const n=nb(m[1]);
+  if(/^s/.test(m[2]))return{semaines:n};if(m[3])return{heures:(n+0.5)*7};if(n>1)return{jours:n};return null}
+ m=/(?<![\p{L}\d])(\d{1,3})\s*h(?:eures?)?\s*(?:de travail|de boulot|de chantier|de taf|de main d'oeuvre|de main d'œuvre)/u.exec(f);if(m&&+m[1]>0)return{heures:+m[1]};
+ if(o.drange&&o.drange[1]>o.drange[0])return{d1:o.drange[1]};
+ if(AG_SER_V.test(f)&&cl){/* devis du client : les lignes à l'heure (main-d'œuvre) */
+  const D=(db.quotes||[]).filter(x=>nameKey(x.client)===nameKey(cl.nom)).sort((a,b)=>(['accepte','paye'].includes(b.status)?1:0)-(['accepte','paye'].includes(a.status)?1:0)||String(b.date||'').localeCompare(String(a.date||'')))[0];
+  const h=D?(D.lines||[]).filter(l=>String(l.unit||'').trim()==='h').reduce((s,l)=>s+(+l.qty||0),0):0;if(h>0)return{heures:h,devis:D.num||''}}
+ return null}
+/* titre du chantier : sans la durée ni « à partir de » */
+function agSerieTitre(t){const N='(?:\\d{1,3}|'+Object.keys(AG_NB).join('|')+')';
+ return t.replace(new RegExp('(?:pendant|sur|durant|en|pour)?\\s*'+N+'\\s*(?:jours?|j|semaines?)(?:\\s*et demi)?(?![\\p{L}])','giu'),' ')
+  .replace(/(?:\d{1,3}\s*(?:h(?:eures?)?)?\s*)?de (?:travail|boulot|chantier|taf|main d['’](?:oe|œ)uvre)/giu,' ')
+  .replace(/(?<![\p{L}])(?:à|a) partir(?: de| du| d['’])?(?![\p{L}])/giu,' ').replace(/^(?:le |les |un |une )?chantiers?\s*(?:de |chez |pour )?/i,'')
+  .replace(/[,;:–-]+/g,' ').replace(/\s+/g,' ').replace(/^\s*(?:pendant|sur|en|de|du)\s+|\s+(?:pendant|sur|en|de|du)\s*$/gi,'').trim()}
 function agIntent(f,o){
  const has=re=>re.test(f);
+ if(AG_SER_V.test(f)&&!has(/(?<![\p{L}])(annule|supprime|decale|deplace|reporte)(?![\p{L}])/u))return'rdv';
+ if(/(?<![\p{L}])(chez|chantier)(?![\p{L}])/u.test(f)&&/(?<![\p{L}])(?<!dans |il y a )(\d{1,2}|deux|trois|quatre|cinq|six|sept|huit|neuf|dix)\s*(jours|semaines?)(?![\p{L}])|\d\s*h(eures?)? de (travail|boulot|chantier)/u.test(f))return'rdv';
  if(has(AG_BOOKV)&&has(AG_BOOKN)&&!o.ranges.length&&!/(?<![\p{L}])(a|vers)\s+\d{1,2}\s*h/u.test(f))return'book';
  const rdvN=has(/(?<![\p{L}])(rdv|rendez-vous|rendez vous|rendezvous|creneau|reunion|visite|intervention|passage|chantier prevu|planning)(?![\p{L}])/u);
  if(has(/(?<![\p{L}])(annule|annuler|desiste|decommande)(?![\p{L}])/u)||rdvN&&has(/(?<![\p{L}])(supprime|supprimer|enleve|efface|retire|laisse tomber|oublie|vire|zappe)(?![\p{L}])/u))return'cancel';
@@ -172,7 +196,13 @@ function agChat(t){
   if(o.times.length&&P.intent==='cancel')C=C.filter(x=>x.e.a===o.times[0]);
   C.sort((a,b)=>(a.n+(a.e.a||'')).localeCompare(b.n+(b.e.a||'')));
   const ev=C[0]&&C[0].e,occ=C[0]&&C[0].n,all=/(?<![\p{L}])(tous|toutes|serie|chaque|tout)(?![\p{L}])/u.test(agFold(P.F));
-  if(!ev)out.push(narrow?`<p>Je ne trouve pas ce rendez-vous dans ton planning.</p>`:`<p>Précise le rendez-vous : le client, le jour ou l'heure.</p>`);
+  /* chantier sur plusieurs jours : annulé ou recalé en entier (sauf « ce jour-là » / jour précis à annuler) */
+  if(ev&&ev.g&&!(P.intent==='cancel'&&(o.date||/(?<![\p{L}])(ce jour|seulement|juste)(?![\p{L}])/u.test(agFold(P.F))))&&!(P.intent==='move'&&!o.dates.length)){const S=agSerie(ev);
+   if(P.intent==='cancel'){undo='sers:'+JSON.stringify(S)+'|';db.events=db.events.filter(e=>e.g!==ev.g);out.push(`<p><svg class="i i-sm"><use href="#i-x"/></svg> <span>Chantier annulé</span></p>`+agSerieCard(S))}
+   else{const N=agSerieRecale(S,o.dates[o.dates.length-1]);
+    if(!N)out.push(`<p>Aucun jour de travail libre à partir de cette date.</p>`);
+    else{undo='sers:'+JSON.stringify(S)+'|'+N[0].g;out.push(`<p><svg class="i i-sm"><use href="#i-clock"/></svg> <span>Chantier recalé</span></p>`+agSerieCard(N));act.push(goBtn(N[0].d))}}}
+  else if(!ev)out.push(narrow?`<p>Je ne trouve pas ce rendez-vous dans ton planning.</p>`:`<p>Précise le rendez-vous : le client, le jour ou l'heure.</p>`);
   else if(P.intent==='cancel'&&ev.rr&&!all){undo='mod:'+JSON.stringify(ev);ev.ex=(ev.ex||[]).concat(occ);ev.at=Date.now();agRemCompute(ev);out.push(`<p><svg class="i i-sm"><use href="#i-x"/></svg> <span>Rendez-vous annulé pour ce jour-là (la répétition continue)</span></p>`+agCard(ev,null,occ))}
   else if(P.intent==='cancel'){undo='del:'+JSON.stringify(ev);db.events=db.events.filter(e=>e!==ev);out.push(`<p><svg class="i i-sm"><use href="#i-x"/></svg> <span>Rendez-vous annulé</span></p>`+agCard(ev,null,occ))}
   else if(ev.rr){undo='mod:'+JSON.stringify(ev);const nd=o.dates.length?o.dates[o.dates.length-1]:occ,nt=o.times.length?o.times[o.times.length-1]:(o.ranges[0]?o.ranges[0][0]:ev.a),dur=ev.a&&ev.b?agMin(ev.b)-agMin(ev.a):60;
@@ -197,6 +227,18 @@ function agChat(t){
   else{const kc=knownClient(t);if(kc){const M=cliMatches(kc.nom);if(M.length>1)pickM=M;else cl=kc}}
   if(cl&&P.title){const k=nameKey(cl.nom),w=P.title.split(/\s+/),nb=cl.nom.trim().split(/\s+/).length;
    if(nameKey(w.slice(0,nb).join(' '))===k&&w.length>nb){const r=w.slice(nb).join(' ').replace(/^(?:pour|:|-)\s*(?:le\s+|la\s+|les\s+|l['’]\s*|un\s+|une\s+|du\s+|des\s+)?/i,'').trim();if(r)P.title=r.charAt(0).toUpperCase()+r.slice(1)}}
+  /* chantier sur plusieurs jours : calé tout seul sur les jours et créneaux de travail libres */
+  const se=!rr&&!sup?agSerieDe(agFold(P.F),o,cl):null;
+  if(se){const d0=o.drange?o.drange[0]:(o.date||agAdd(agToday(),1));
+   const PL=agPlanSerie({d0,jours:se.jours,heures:se.heures,d1:se.d1||(se.semaines?agAdd(d0,se.semaines*7-1):null),a:o.ranges[0]?o.ranges[0][0]:null,b:o.ranges[0]?o.ranges[0][1]:null});
+   if(PL.length){let tt=agSerieTitre(P.title||'');if(cl&&nameKey(tt)===nameKey(cl.nom))tt='';
+    const S=agSerieCree(PL,{title:tt?tt[0].toUpperCase()+tt.slice(1):i18nT('Chantier'),cid:cl?cl.id:undefined,adr:cl&&cl.adr||'',who:P.team&&P.team.length?P.team.slice():undefined,src:'chat'});
+    undo='ser:'+S[0].g+(isNew?':'+cl.id:'');P._ev=S[0].id;
+    out.push(`<p><svg class="i i-sm"><use href="#i-cal"/></svg> <span>Chantier calé</span>${se.devis?` <span class="mut">· <span>d'après le devis</span> <span data-noi18n>${esc(se.devis)}</span></span>`:''}</p>`+agSerieCard(S));
+    if(pickM)out.push(cliPickHtml(P.who?P.who.nom:pickM[0].nom,pickM,'ev:'+S[0].id));
+    act.push(goBtn(S[0].d));save();out.push(`<div class="msg-act">${act.join('')}</div>`);
+    CHAT.m.push({who:'bot',html:out.join(''),agUndo:undo,ev:P._ev});chatSave();chatRender(true);
+    if(typeof agRender==='function'&&$('s-agenda')&&$('s-agenda').classList.contains('on'))agRender();return true}}
   const ev={id:uid(),t:'rdv',d,d2:o.drange?o.drange[1]:undefined,a,b,title:P.title||(sup?sup.nom:'')||(pickM&&P.who?P.who.nom:''),cid:cl?cl.id:undefined,adr:cl&&cl.adr||'',src:'chat',at:Date.now()};
   if(rr)ev.rr=rr;if(P.team&&P.team.length)ev.who=P.team.slice();agRemCompute(ev);
   if(sup&&!/chez/i.test(ev.title))ev.title=(P.title?P.title+' · ':'')+sup.nom;

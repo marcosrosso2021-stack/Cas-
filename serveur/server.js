@@ -13,7 +13,7 @@
 'use strict';
 const http=require('http'),fs=require('fs'),path=require('path'),crypto=require('crypto'),os=require('os');
 const webpush=require('./webpush.js'),prixLib=require('./prix.js'),authLib=require('./auth.js'),veilleLib=require('./veille/index.js');
-const sauvegarde=require('./sauvegarde.js'),s3Lib=require('./s3.js');
+const sauvegarde=require('./sauvegarde.js'),s3Lib=require('./s3.js'),PLAN=require('../lib/plan.js');
 
 const COLL=['prices','quotes','hist','chantiers','people','pts','prof','clients','suppliers','projects','plans','events','invoices','memo','rapports'];
 const ROLE_PUSH={patron:COLL,chef:COLL,ouvrier:['pts']};
@@ -621,7 +621,9 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
 
    /* prix des matériaux en ligne : la clé du service reste ici ; 300 recherches payantes par mois et par compte, limites par jour et par adresse sans compte */
    if(req.method==='GET'&&url==='/api/prix'){const sp=new URLSearchParams(req.url.split('?')[1]||'');
-    const cpt=auth.compte(req);/* connecté (Google / Outlook) : limite au mois par compte ; sinon limites anonymes */
+    const cpt=auth.compte(req);/* connecté (Google / Outlook / e-mail) : limite au mois par compte ; sinon limites anonymes */
+    /* compte Artisan après l'essai : les prix en ligne font partie du module Fournisseurs (même règle que l'appli, lib/plan.js) */
+    if(cpt&&!PLAN.droits(auth.pub(cpt),opts.maintenant?opts.maintenant():Date.now()).ouvert('fournisseurs'))return send(res,403,{error:'Le module Fournisseurs n\'est pas dans ton abonnement.',module:'fournisseurs'});
     const [c,b]=await prix.chercher(sp.get('q')||'',sp.get('pays')||'FR',ip,sp.get('mag')||'',sp.get('nom')||'',cpt&&cpt.id);return send(res,c,b)}
    if(req.method==='GET'&&url==='/api/prix/img'){const sp=new URLSearchParams(req.url.split('?')[1]||'');
     const [c,o]=await prix.image(sp.get('u')||'');if(c!==200)return send(res,c,o);

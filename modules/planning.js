@@ -122,7 +122,7 @@ function agFreeRanges(d){ // créneaux de travail du jour (minutes), moins les a
 function agCheck(ev,day){ // hors créneaux ? chevauchements ?
  const out={hors:false,over:[]};if(ev.t!=='rdv')return out;const D=day||(ev.rr?agNextOcc(ev,ev.d):ev.d)||ev.d;
  const F=agFreeRanges(D);
- if(ev.a){const a=agMin(ev.a),b=ev.b?agMin(ev.b):a+60;out.hors=!F.some(([x,y])=>a>=x&&b<=y)}else out.hors=!F.length;
+ if(ev.a){const a=agMin(ev.a),b=ev.b?agMin(ev.b):a+60;out.hors=ev.g&&F.length?!(a>=F[0][0]&&b<=F[F.length-1][1]):!F.some(([x,y])=>a>=x&&b<=y)}else out.hors=!F.length;/* jour de chantier : la pause de midi au milieu n'est pas « hors créneaux » */
  if(ev.a)out.over=db.events.filter(e=>e!==ev&&e.id!==ev.id&&e.t==='rdv'&&agOccurs(e,D)&&e.a&&agMin(e.a)<(ev.b?agMin(ev.b):agMin(ev.a)+60)&&(e.b?agMin(e.b):agMin(e.a)+60)>agMin(ev.a));
  return out}
 function agFmtD(d,o){try{return agDate(d).toLocaleDateString(I18N.lang==='fr'?'fr-FR':I18N.lang,Object.assign({weekday:'long',day:'numeric',month:'long'},o||{}))}catch(e){return d}}
@@ -144,10 +144,53 @@ function agUndoLast(){
  if(u==='none')db.events=db.events.filter(e=>e.id!=='dispo');
  else if(u.startsWith('add:')){const [,id,cid]=u.split(':');db.events=db.events.filter(e=>e.id!==id);if(cid&&!db.quotes.some(x=>x.client&&db.clients.find(c=>c.id===cid&&nameKey(c.nom)===nameKey(x.client))))db.clients=db.clients.filter(c=>c.id!==cid)}
  else if(u.startsWith('del:'))db.events.push(JSON.parse(u.slice(4)));
+ else if(u.startsWith('ser:')){const [g,cid]=u.slice(4).split(':');db.events=db.events.filter(e=>e.g!==g);if(cid&&!db.quotes.some(x=>x.client&&db.clients.find(c=>c.id===cid&&nameKey(c.nom)===nameKey(x.client))))db.clients=db.clients.filter(c=>c.id!==cid)}
+ else if(u.startsWith('sers:')){const i=u.lastIndexOf('|'),old=JSON.parse(u.slice(5,i)),g=u.slice(i+1);db.events=db.events.filter(e=>e.g!==g&&!old.some(o=>o.id===e.id)).concat(old)}
  else if(u.startsWith('mv2:')){const [js,nid]=[u.slice(4,u.lastIndexOf('|')),u.slice(u.lastIndexOf('|')+1)],ev=JSON.parse(js),i=db.events.findIndex(e=>e.id===ev.id);if(i>=0)db.events[i]=ev;db.events=db.events.filter(e=>e.id!==nid)}
  else if(u.startsWith('mod:')){const ev=JSON.parse(u.slice(4)),i=db.events.findIndex(e=>e.id===ev.id);if(i>=0)db.events[i]=ev}
  else{const ev=JSON.parse(u),i=db.events.findIndex(e=>e.id==='dispo');if(i>=0)db.events[i]=ev}
  save();CHAT.m.pop();const me=CHAT.m[CHAT.m.length-1];if(me&&me.who==='me'){$('chatIn').value=me.text;CHAT.m.pop()}chatSave();chatRender()}
+
+/* ---- chantier sur plusieurs jours : une suite de rendez-vous, un par jour de travail, reliés par g ----
+   Calage : jours de travail seulement (créneaux, sinon du lundi au vendredi), sans les absences, dans le plus grand trou libre du jour
+   (les rendez-vous déjà pris sont évités). jours : nombre de jours entiers ; heures : durée du travail à répartir ;
+   a/b : heures voulues chaque jour (saisie à la main) ; d1 : dernier jour possible (« du lundi au jeudi »). */
+function agSerie(e){return e&&e.g?db.events.filter(x=>x.g===e.g).sort((x,y)=>x.d.localeCompare(y.d)||(x.a||'').localeCompare(y.a||'')):e?[e]:[]}
+function agJourTravail(d){if(agHours())return agFreeRanges(d).length>0;const w=agDate(d).getDay();return w>0&&w<6&&!db.events.some(e=>e.t==='off'&&!e.a&&agOccurs(e,d))}
+function agPlanSerie(o){const out=[],sauf=new Set(o.sauf||[]);let d=o.d0,reste=o.heures?Math.round(o.heures*60):null;
+ for(let k=0;k<120;k++,d=agAdd(d,1)){
+  if(o.d1&&d>o.d1)break;if(o.jours&&out.length>=o.jours)break;if(reste!=null&&reste<=0)break;
+  if(!agJourTravail(d))continue;
+  if(o.a&&o.b){const h=agMin(o.b)-agMin(o.a);out.push({d,a:o.a,b:o.b,h});if(reste!=null)reste-=h;continue}
+  /* les rendez-vous de la suite elle-même (re-calage) ne gênent pas */
+  const r0=reste;let B=agBlocs(d,sauf).filter(x=>x.t>=Math.min(120,r0!=null?r0:120));if(!B.length)continue;/* pas de bout de journée de moins de 2 h, sauf pour finir */
+  /* le plus long bloc de travail du jour ; les heures sont décomptées sans les pauses */
+  const bl=B.reduce((m,x)=>x.t>m.t?x:m,B[0]);let fin=bl.p[bl.p.length-1][1],pris=bl.t;
+  if(reste!=null&&reste<bl.t){let r=reste;for(const [x,y] of bl.p){if(r<=y-x){fin=x+r;break}r-=y-x}pris=reste}
+  out.push({d,a:agHm(bl.p[0][0]),b:agHm(fin),h:pris});if(reste!=null)reste-=pris}
+ return out}
+/* blocs de travail libres du jour : les trous séparés seulement par une pause (pas par un rendez-vous) ne font qu'un bloc */
+function agBlocs(d,sauf){const G=agGapsSans(d,sauf);if(!G.length)return[];
+ const E=db.events,busy=()=>{db.events=E.filter(e=>!sauf.has(e.id));try{return agBusy(d)}finally{db.events=E}};const Bz=busy(),R=[];
+ G.forEach(g=>{const l=R[R.length-1];if(l&&!Bz.some(([a,b])=>a<g[0]&&b>l.p[l.p.length-1][1]))l.p.push(g);else R.push({p:[g]})});
+ R.forEach(r=>r.t=r.p.reduce((s,[a,b])=>s+b-a,0));return R}
+function agGapsSans(d,sauf){if(!sauf.size)return agGaps(d,60);const E=db.events,keep=E.filter(e=>!sauf.has(e.id));db.events=keep;try{return agGaps(d,60)}finally{db.events=E}}
+/* crée la suite ; base : titre, client, adresse, équipe, chantier, note communs */
+function agSerieCree(P,base){const g='g'+uid();return P.map(x=>{const e=Object.assign({},base,{id:uid(),t:'rdv',d:x.d,a:x.a,b:x.b,h:x.h,g,at:Date.now()});delete e.rr;delete e.d2;db.events.push(e);return e}).map(e=>{agRemCompute(e);return e})}
+/* résumé court : « lun 23 → jeu 26 · 4 jours », ou « 3 jours : lun 23, mar 24, jeu 26 » quand un jour est sauté */
+function agSerieTxt(S){if(!S.length)return'';const lc=I18N.lang==='fr'?'fr-FR':I18N.lang,f=d=>agDate(d).toLocaleDateString(lc,{weekday:'short',day:'numeric'}),n=S.length;
+ const suite=S.every((x,i)=>!i||agAdd(S[i-1].d,1)===x.d||(agDate(S[i-1].d).getDay()===5&&agAdd(S[i-1].d,3)===x.d));
+ return n===1?f(S[0].d):(suite?f(S[0].d)+' → '+f(S[n-1].d):S.map(x=>f(x.d)).join(', '))+' · '+n+' '+i18nT('jours')}
+function agSerieCard(S,ck){const e=S[0],c=e.cid&&db.clients.find(x=>x.id===e.cid),h=agSerieH(S);
+ return `<div class="ag-card"><div class="ag-cd"><b data-noi18n>${esc(agSerieTxt(S))}</b><span data-noi18n>${h?esc(agFmtH(h)):''}</span></div>
+  <div class="ag-ct"><b data-noi18n dir="auto">${esc(e.title||i18nT('Chantier'))}</b>${c?`<span class="mut"><svg class="i i-sm"><use href="#i-user"/></svg> <span data-noi18n>${esc(c.nom)}</span></span>`:''}</div></div>`}
+/* heures de travail de la suite (sans les pauses) */
+function agSerieH(S){return S.reduce((s,x)=>s+(x.h!=null?x.h:x.a&&x.b?agMin(x.b)-agMin(x.a):0),0)}
+/* recale toute la suite à partir du jour d0 (mêmes heures de travail au total) */
+function agSerieRecale(S,d0){const base=Object.assign({},S[0]);['id','d','a','b','h','g','rem','at'].forEach(k=>delete base[k]);
+ const ids=new Set(S.map(x=>x.id)),PL=agPlanSerie({d0,heures:agSerieH(S)/60,sauf:[...ids]});if(!PL.length)return null;
+ db.events=db.events.filter(e=>!ids.has(e.id));return agSerieCree(PL,base)}
+function agFmtH(m){const h=Math.floor(m/60),r=m%60;return h+' h'+(r?' '+String(r).padStart(2,'0'):'')}
 
 /* ---- 6. notification « Nouveau client ajouté ! » ---- */
 function agNotify(cl,ev){
@@ -403,7 +446,7 @@ function agRenderDay(){
  const cols=[];tim.filter(e=>e.t==='rdv').forEach(e=>{const a=agMin(e.a),b=e.b?agMin(e.b):a+60;let c=0;while(cols[c]&&cols[c]>a)c++;cols[c]=b;e._c=c});
  const nc=Math.max(1,cols.length);
  tim.forEach(e=>{const a=agMin(e.a),b=e.b?agMin(e.b):a+60,ck=agCheck(e,d),c=e._c||0,cl=e.cid&&db.clients.find(x=>x.id===e.cid);
-  g+=`<button class="ag-ev ${e.t}${ck.hors?' hors':''}" style="top:${y(a)}px;height:${Math.max(30,y(b)-y(a)-2)}px;left:calc(52px + (100% - 56px) * ${c}/${nc});width:calc((100% - 56px)/${nc} - 4px)" onclick="agEdit('${e.id}','${d}')"><b data-noi18n dir="auto">${e.rr?'<svg class="i i-sm ag-rri"><use href="#i-undo"/></svg>':''}${esc(e.title||i18nT(e.t==='off'?'Indisponible':'Rendez-vous'))}</b><span data-noi18n>${esc(agFmtR(e))}${cl?' · '+esc(cl.nom):''}${e.who&&e.who.length?' · '+esc(agTeamTxt(e)):''}</span></button>`});
+  g+=`<button class="ag-ev ${e.t}${ck.hors?' hors':''}" style="top:${y(a)}px;height:${Math.max(30,y(b)-y(a)-2)}px;left:calc(52px + (100% - 56px) * ${c}/${nc});width:calc((100% - 56px)/${nc} - 4px)" onclick="agEdit('${e.id}','${d}')"><b data-noi18n dir="auto">${e.rr?'<svg class="i i-sm ag-rri"><use href="#i-undo"/></svg>':''}${esc(e.title||i18nT(e.t==='off'?'Indisponible':'Rendez-vous'))}</b><span data-noi18n>${e.g?(S=>`<b class="ag-n">${S.indexOf(e)+1}/${S.length}</b> · `)(agSerie(e)):''}${esc(agFmtR(e))}${cl?' · '+esc(cl.nom):''}${e.who&&e.who.length?' · '+esc(agTeamTxt(e)):''}</span></button>`});
  if(d===agToday()){const n=new Date(),m=n.getHours()*60+n.getMinutes();if(m>=h0*60&&m<=h1*60)g+=`<div class="ag-now" style="top:${y(m)}px"></div>`}
  const all=E.filter(e=>!e.a);
  $('agAll').innerHTML=all.map(e=>`<button class="ag-chip ${e.t}" onclick="agEdit('${e.id}','${d}')"><b data-noi18n dir="auto">${esc(e.title||i18nT(e.t==='off'?'Indisponible':'Rendez-vous'))}</b> <span>${e.t==='off'?'Indisponible':'Toute la journée'}</span></button>`).join('')+(!F.length&&!all.some(e=>e.t==='off')?`<div class="ag-chip off"><b>Indisponible</b> <span>toute la journée</span></div>`:'');
@@ -449,15 +492,18 @@ function agEdit(id,day,heure){agEd=id?db.events.find(e=>e.id===id):null;agEdDay=
  $('agErr').value=e.rr?(e.rr.f==='w'&&e.rr.days&&e.rr.days.length>1?'w5':e.rr.f):'';$('agErr').dataset.v0=$('agErr').value;$('agEru').value=e.rr&&e.rr.u||'';
  ensurePt();$('agEwho').innerHTML=db.people.map(p=>`<label class="ag-who"><input type="checkbox" value="${p.id}" ${(e.who||[]).includes(p.id)?'checked':''}> <span data-noi18n>${esc(p.nom)}</span></label>`).join('');$('agEwhoW').hidden=!db.people.length;$('agEchW').hidden=!db.chantiers.length;
  $('agEch').innerHTML=`<option value="" data-noi18n>${esc(i18nT('Automatique (client ou adresse)'))}</option>`+db.chantiers.map(c=>`<option value="${c.id}" ${e.ch===c.id?'selected':''} data-noi18n>${esc(c.nom)}</option>`).join('');
- $('agEdel1').hidden=!(agEd&&agEd.rr);
+ $('agEdel1').hidden=!(agEd&&(agEd.rr||agEd.g));$('agEj').value=agEd&&agEd.g?agSerie(agEd).length:1;
  $('agEclDl').innerHTML=db.clients.map(c=>`<option value="${esc(c.nom)}">`).join('');agEdAll();
  $('agEdel').hidden=!agEd;$('agEq').hidden=!agEd||!e.cid||e.t!=='rdv';
  /* options déjà remplies : ouvertes ; sinon fermées pour garder l'écran court */
- $('agPlus').open=!!(e.rr||(e.who&&e.who.length)||e.ch||e.note);
+ $('agPlus').open=!!(e.rr||(e.who&&e.who.length)||e.ch||e.note);agEdAll();
  $('agShBg').hidden=false;$('agSh').hidden=false;requestAnimationFrame(()=>{$('agSh').classList.add('on');$('agShBg').classList.add('on')})}
-function agEdAll(){const a=$('agEall').checked,off=$('agEtyp').value==='off';$('agEtimes').hidden=a;$('agEd2W').hidden=!off||!!$('agErr').value;$('agEruW').hidden=!$('agErr').value;
+function agEdAll(){const a=$('agEall').checked,off=$('agEtyp').value==='off',nj=+$('agEj').value||1;$('agEtimes').hidden=a;$('agEd2W').hidden=!off||!!$('agErr').value;$('agEruW').hidden=!$('agErr').value;
+ /* plusieurs jours : pas de répétition (et inversement) ; une indisponibilité garde « Jusqu'au » */
+ $('agEjW').hidden=off||!!$('agErr').value;$('agErr').closest('.row').hidden=!off&&nj>1;
  $('agEcliW').hidden=off;$('agEq').hidden=!agEd||off||!agEd.cid;$('agEti').placeholder=i18nT(off?'Pourquoi ? Ex. Congés':'Quoi ? Ex. Pose de carrelage');
- $('agEt').textContent=i18nT(agEd?(off?'Indisponibilité':'Rendez-vous'):(off?'Nouvelle indisponibilité':'Nouveau rendez-vous'))}
+ const S=agEd&&agEd.g?agSerie(agEd):null;
+ $('agEt').textContent=S?i18nT('Chantier')+' · '+(S.indexOf(agEd)+1)+'/'+S.length:i18nT(agEd?(off?'Indisponibilité':'Rendez-vous'):(off?'Nouvelle indisponibilité':(nj>1?'Nouveau chantier':'Nouveau rendez-vous')))}
 function agTyp(t){$('agEtyp').value=t;segOn('agTyp',t);agEdAll()}
 /* client choisi dans la liste : son adresse vient toute seule si elle n'est pas déjà écrite */
 function agEclPick(){const c=findBy(db.clients,$('agEcl').value);if(c&&c.adr&&!$('agEadr').value.trim())$('agEadr').value=c.adr}
@@ -470,7 +516,8 @@ function agSave(){
  const t=$('agEtyp').value,d=$('agEd').value,all=$('agEall').checked,a=all?null:$('agEa').value,b=all?null:$('agEb').value;
  if(!d){toast(i18nT('Choisis une date.'));return}
  if(!all&&(!a||(b&&agMin(b)<=agMin(a)))){toast(i18nT('La fin doit être après le début.'));return}
- const nm=t==='rdv'?$('agEcl').value.trim():'';let cl=null,isNew=false;/* une indisponibilité n'a ni client ni adresse */if(nm){const r=upsert('clients',{nom:nm,adr:$('agEadr').value.trim()});cl=r.x;isNew=r.isNew}
+ const nm=t==='rdv'?$('agEcl').value.trim():'';let cl=null,isNew=false;/* une indisponibilité n'a ni client ni adresse */
+ if(t==='rdv'&&agSaveSerie(d,all,a,b,nm))return;if(nm){const r=upsert('clients',{nom:nm,adr:$('agEadr').value.trim()});cl=r.x;isNew=r.isNew}
  const e=agEd||{id:uid(),src:'main'},rv=$('agErr').value,ru=$('agEru').value,who=[...document.querySelectorAll('#agEwho input:checked')].map(x=>x.value);
  const rr=rv?(agEd&&agEd.rr&&rv===$('agErr').dataset.v0?Object.assign({},agEd.rr):(rv==='w5'?{f:'w',days:[1,2,3,4,5]}:{f:rv})):undefined;if(rr){delete rr.u;if(ru>d)rr.u=ru}
  // modifier une répétition depuis un jour : la répétition garde sa date de départ
@@ -480,8 +527,26 @@ function agSave(){
  if(!agEd)db.events.push(e);save();agShClose();agSel=d;agRender();
  const ck=agCheck(e);toast(i18nT(ck.hors?'Enregistré, en dehors de tes créneaux de travail.':ck.over.length?'Enregistré : chevauche un autre rendez-vous.':'Enregistré.'));
  if(isNew)setTimeout(()=>agNotify(cl,e),300)}
-function agDel(){if(!agEd||!confirm(i18nT(agEd.rr?'Supprimer toute la répétition ?':'Supprimer ce rendez-vous ?')))return;db.events=db.events.filter(e=>e!==agEd);save();agShClose();agRender()}
-function agDelOne(){if(!agEd||!agEd.rr)return;const d=agEdDay||agNextOcc(agEd);agEd.ex=(agEd.ex||[]).concat(d);agEd.at=Date.now();agRemCompute(agEd);save();agShClose();agRender();toast(i18nT('Supprimé pour ce jour-là.'))}
+function agDel(){if(!agEd)return;
+ if(agEd.g){const n=agSerie(agEd).length;if(!confirm(i18nT('Supprimer tout le chantier ({1} jours) ?').replace('{1}',n)))return;const g=agEd.g;db.events=db.events.filter(e=>e.g!==g);save();agShClose();agRender();return}
+ if(!confirm(i18nT(agEd.rr?'Supprimer toute la répétition ?':'Supprimer ce rendez-vous ?')))return;db.events=db.events.filter(e=>e!==agEd);save();agShClose();agRender()}
+/* fiche : chantier sur plusieurs jours (champ « Jours »). Rend vrai si l'enregistrement est fait ici.
+   - même nombre de jours et même date : titre, client, adresse, équipe, note pour tous les jours ; heures pour ce jour seulement ;
+   - sinon : la suite est recalée (à partir de la date choisie, ou de son premier jour), les heures saisies valent pour chaque jour. */
+function agSaveSerie(d,all,a,b,nm){const nj=Math.max(1,Math.min(60,Math.round(+$('agEj').value||1))),S0=agEd&&agEd.g?agSerie(agEd):null;
+ if(nj<2&&!S0)return false;
+ let cl=null,isNew=false;if(nm){const r=upsert('clients',{nom:nm,adr:$('agEadr').value.trim()});cl=r.x;isNew=r.isNew}
+ const who=[...document.querySelectorAll('#agEwho input:checked')].map(x=>x.value);
+ const base={title:$('agEti').value.trim(),cid:cl?cl.id:undefined,adr:$('agEadr').value.trim(),note:$('agEno').value.trim(),who:who.length?who:undefined,ch:$('agEch').value||undefined,src:'main'};
+ if(S0&&nj===S0.length&&d===agEd.d){S0.forEach(e=>{Object.assign(e,base,{at:Date.now()});agRemCompute(e)});
+  if(!all&&a){agEd.a=a;agEd.b=b||agHm(Math.min(1439,agMin(a)+60));agEd.h=agMin(agEd.b)-agMin(agEd.a)}save();agShClose();agSel=d;agRender();toast(i18nT('Enregistré.'));return true}
+ if(nj<2){/* redevient un rendez-vous d'un jour : les autres jours partent */db.events=db.events.filter(e=>e===agEd||e.g!==agEd.g);delete agEd.g;delete agEd.h;return false}
+ const d0=S0&&d===agEd.d?S0[0].d:d,PL=agPlanSerie({d0,jours:nj,a:all?null:a,b:all?null:(b||null),sauf:S0?S0.map(x=>x.id):[]});
+ if(!PL.length){toast(i18nT('Aucun jour de travail libre à partir de cette date.'));return true}
+ if(S0)db.events=db.events.filter(e=>e.g!==agEd.g);
+ const S=agSerieCree(PL,base);save();agShClose();agSel=S[0].d;agRender();
+ toast(agSerieTxt(S));if(isNew)setTimeout(()=>agNotify(cl,S[0]),300);return true}
+function agDelOne(){if(agEd&&agEd.g){db.events=db.events.filter(e=>e!==agEd);save();agShClose();agRender();return}if(!agEd||!agEd.rr)return;const d=agEdDay||agNextOcc(agEd);agEd.ex=(agEd.ex||[]).concat(d);agEd.at=Date.now();agRemCompute(agEd);save();agShClose();agRender();toast(i18nT('Supprimé pour ce jour-là.'))}
 function agEdQuote(){if(agEd&&agEd.cid){agShClose();agQuote(agEd.cid,agEd.id)}}
 function agEdPt(){if(!agEd)return;agShClose();go('pt');setTimeout(()=>agPtGo(agEd.id),60)}
 // export vers l'agenda du téléphone (.ics)
@@ -513,6 +578,7 @@ const agTs=(d,t)=>{const x=agDate(d),[h,m]=(t||'08:00').split(':').map(Number);x
 function agRemPrefs(){const d=agDispo();return Object.assign({v:true,h:true},d&&d.rem||{})}
 function agRemCompute(e){
  if(!e||e.t!=='rdv'){if(e)delete e.rem;return}
+ if(e.g){const S=agSerie(e);if(S.length&&S[0]!==e){delete e.rem;return}}/* chantier sur plusieurs jours : rappels du premier jour seulement */
  const P=agRemPrefs(),out=[],td=agToday(),now=Date.now();
  for(let k=-1;k<15;k++){const d=agAdd(td,k);if(!agOccurs(e,d))continue;
   if(P.v)out.push([agTs(agAdd(d,-1),'18:00'),'v',d]);

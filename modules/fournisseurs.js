@@ -16,6 +16,8 @@ async function prxAsk(q,plus){let err='';
  for(const b of prxBases()){const ac=new AbortController(),to=setTimeout(()=>ac.abort(),22000);
   try{const r=await fetch(b+'/api/prix?q='+encodeURIComponent(q)+'&pays='+prxPays()+(plus||''),{signal:ac.signal,credentials:'omit',headers:prxAuth()}),v=await r.json().catch(()=>null);
    if(r.ok&&Array.isArray(v)){PRX_B=b;return {v}}
+   /* le serveur sait que le module manque (essai fini, plan changé ailleurs) : liste des modules remise à jour, plan ouvert */
+   if(r.status===403&&v&&v.module){PRX_B=b;try{CasoAuth.rafraichir()}catch(e){}if(typeof aboVerrou==='function')aboVerrou(v.module);return {err:v.error}}
    if(v&&typeof v.error==='string'&&r.status!==404&&r.status!==401){PRX_B=b;return {err:v.error}}
   }catch(e){}finally{clearTimeout(to)}}
  return {err:err||'Le service de prix ne répond pas, réessaie plus tard.'}}

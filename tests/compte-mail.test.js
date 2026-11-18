@@ -47,6 +47,20 @@ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'caso-mail-'));
   await p.evaluate(()=>CasoAuth.mail('paul@exemple.fr','nouveau-mdp-2').catch(()=>{}));
   ok('mot de passe changé : l\'ancien est refusé, le nouveau accepté',a==='401'&&await session(p));await c.close()}
 
+ /* 6. compte e-mail du téléphone pas encore relié (ouvert par Face ID, créé hors ligne) : le mot de passe est demandé une fois */
+ {const {c,p,errs}=await tel();
+  await p.evaluate(async()=>{const s=crypto.getRandomValues(new Uint8Array(16));
+   accountPut({v:1,id:'u9',prenom:'Zoé',email:'zoe@exemple.fr',algo:'pbkdf2-sha256',iter:1000,salt:hex(s),hash:await pwHash('motdepasse1',s,1000),createdAt:Date.now()})});
+  await p.reload();await p.waitForFunction(()=>typeof aboRelier==='function',null,{timeout:30000});
+  ok('pas relié : la fiche « Relier mon compte » s\'ouvre toute seule',await p.waitForFunction(()=>!$('relSh').hidden,null,{timeout:8000}).then(()=>true,()=>false));
+  await p.fill('#relPw','mauvais');await p.click('#relGo');await p.waitForTimeout(800);
+  ok('pas relié : mauvais mot de passe refusé sur le téléphone, rien envoyé',await p.evaluate(()=>!$('relErr').hidden&&!CasoAuth.connecte())&&!comptes().some(x=>x.email==='zoe@exemple.fr'));
+  await p.fill('#relPw','motdepasse1');await p.click('#relGo');
+  ok('pas relié : bon mot de passe → compte casô créé et session ouverte',await session(p)&&comptes().some(x=>x.email==='zoe@exemple.fr'&&x.via==='mail'));
+  await p.evaluate(()=>{localStorage.removeItem('caso_auth')});await p.reload();await p.waitForFunction(()=>typeof aboRelier==='function',null,{timeout:30000});await p.waitForTimeout(5000);
+  ok('pas relié : demandé une seule fois ; ensuite « Relier mon compte » reste dans le profil',await p.evaluate(()=>$('relSh').hidden&&$('dwPlanGo').dataset.k==='rel'&&!$('dwPlanGo').hidden));
+  ok('pas relié : aucune erreur JavaScript',!errs.length,errs.join(' | '));await c.close()}
+
  /* 5. sans serveur joignable : l'appli continue, rien ne casse */
  {const c=await br.newContext(),p=await c.newPage(),errs=[];p.on('pageerror',e=>errs.push(e.message));
   await p.addInitScript(()=>{window.CASO_AUTH_SRV='http://127.0.0.1:9';try{localStorage.setItem('caso_test','1')}catch(e){}});
