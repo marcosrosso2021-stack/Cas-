@@ -888,6 +888,9 @@ input[aria-invalid="true"]{border-color:var(--ko)}
 .ab-x{width:36px;height:36px;border:0;border-radius:50%;background:var(--bg);color:var(--ink);display:grid;place-items:center;cursor:pointer}
 .ab-x .i{width:18px;height:18px}
 .ab-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.abo-ro{display:flex;align-items:center;gap:10px;margin:0 0 12px;padding:10px 12px;border-radius:12px;background:var(--bg);font-size:14px}.abo-ro span{flex:1;min-width:0}.abo-ro>.i{flex:none;width:18px;height:18px;color:var(--mut)}
+.abo-lk{width:14px;height:14px;color:var(--mut);margin-inline-start:6px;flex:none}nav button{position:relative}nav button .abo-lk{position:absolute;top:2px;inset-inline-end:calc(50% - 26px);margin:0}
+.alk-t{display:flex;gap:10px;align-items:flex-start;font-size:16px;line-height:1.4;margin:8px 0 16px}.alk-t .i{flex:none;width:22px;height:22px}
 .ab-t{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:10px;min-height:96px;padding:12px;border:1.5px solid transparent;border-radius:16px;background:var(--bg);color:var(--ink);font:inherit;text-align:start;cursor:pointer;transition:border-color .15s,background .15s,transform .1s}
 .ab-t:active{transform:scale(.97)}
 .ab-t>.i{width:22px;height:22px;color:var(--mut);transition:color .15s}
@@ -2280,6 +2283,13 @@ body.tr-on{overflow:hidden}
   <button class="ab-go" id="abGo" type="button" onclick="aboSave()"><svg class="i"><use href="#i-check"/></svg><span>Valider</span></button>
  </div>
 </div>
+<div class="sheet-bg" id="alkBg" hidden onclick="aboVerrouFermer()"></div>
+<div class="sheet" id="alkSh" role="dialog" aria-modal="true" aria-labelledby="alkT" hidden>
+ <div class="sheet-grip"></div>
+ <p class="alk-t"><svg class="i"><use href="#i-lock"/></svg><span id="alkT"></span></p>
+ <button class="btn" id="alkGo" type="button"><svg class="i"><use href="#i-plus"/></svg>Ajouter à mon abonnement</button>
+ <button type="button" class="lnk sheet-x" onclick="aboVerrouFermer()">Plus tard</button>
+</div>
 <div class="sheet-bg" id="faPayBg" hidden onclick="faPayClose()"></div>
 <div class="sheet" id="faPay" role="dialog" aria-modal="true" aria-labelledby="faPayT" hidden>
  <div class="sheet-grip"></div>
@@ -2543,6 +2553,7 @@ draw();if(!still)requestAnimationFrame(tick);window.__splashGo=()=>{if(!still){l
 })();</script>
 <script type="text/x-caso" data-src="modules/listes.js"></script>
 <script type="text/x-caso" data-src="modules/devis-module.js"></script>
+<script type="text/x-caso" data-src="modules/abonnement.js"></script>
 <script type="text/x-caso" data-src="chat/engine.js"></script>
 <script type="text/x-caso" data-src="chat/brain.js"></script>
 <script type="text/x-caso" data-src="chat/caso-mini.js"></script>
@@ -2561,11 +2572,13 @@ draw();if(!still)requestAnimationFrame(tick);window.__splashGo=()=>{if(!still){l
 <script>/* démarrage : le coffre s'ouvre (ou il n'y en a pas), puis les scripts de l'appli s'exécutent dans l'ordre.
    Les modules de l'appli (modules/*.js) sont lus tout de suite, pendant que le coffre s'ouvre, puis exécutés d'un seul tenant
    et dans l'ordre, comme quand ils étaient écrits dans cette page. Si un fichier ne se lit pas, il est chargé normalement.
-   Dès qu'un fichier est chargé normalement (chat/, pointage/…), tous ceux qui suivent le sont aussi, pour garder l'ordre. */
+   Dès qu'un fichier est chargé normalement (chat/, pointage/…), tous ceux qui suivent le sont aussi, pour garder l'ordre.
+   La newsletter n'est pas chargée quand le compte Artisan ne l'a pas dans son abonnement (elle ne fait pas partie du socle gratuit). */
 (function(){const T=[...document.querySelectorAll('script[type="text/x-caso"]')];
+ const sansVeille=()=>{try{const c=(JSON.parse(localStorage.getItem('caso_auth'))||{}).compte;return !!(c&&c.mode==='artisan'&&Array.isArray(c.modules)&&c.modules.indexOf('veille')<0)}catch(e){return false}};
  let n=0;while(n<T.length&&/^modules\/[\w.-]+\.js$/.test(T[n].dataset.src||''))n++;
  const lu=T.map((t,i)=>i<n?fetch(t.dataset.src).then(r=>r.ok?r.text():null).catch(()=>null):Promise.resolve(null));
- VAULT.start(()=>Promise.all(lu).then(X=>{let src=false;T.forEach((t,i)=>{const e=document.createElement('script');
+ VAULT.start(()=>Promise.all(lu).then(X=>{let src=false;const sv=sansVeille();T.forEach((t,i)=>{if(sv&&t.dataset.src==='modules/newsletter.js'){t.remove();return}const e=document.createElement('script');
   if(X[i]!=null&&!src)e.textContent=X[i]+'\n//# sourceURL='+t.dataset.src;
   else if(t.dataset.src){src=true;e.src=t.dataset.src;e.async=false}else e.textContent=t.textContent;t.replaceWith(e)})}))})();
 </script>

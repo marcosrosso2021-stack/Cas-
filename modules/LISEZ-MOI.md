@@ -43,6 +43,7 @@ Un fichier de `modules/` placé après `chat/` ou `pointage/` (comme `newsletter
 | `paiement-phrases.js` | factures et paiements dictés (« Osvald a payé 500 € ») | paiement |
 | `listes.js` | glisser une ligne vers la gauche pour la corbeille | commun |
 | `devis-module.js` | module Devis (`devis.html`) branché sur le bouton Devis | devis |
+| `abonnement.js` | verrous des modules non pris : bandeau de lecture seule, fiche « Ajouter à mon abonnement », réponse du chat, cadenas du menu, devis gratuit du mois | commun |
 | `newsletter.js` | page « Newsletter », pastille du non-lu, « Ça me concerne ? » (chargé après `chat/`) | veille |
 
 La partie serveur de la newsletter est dans `serveur/veille/`. Le module 3D reste dans `lib/m3d.html`, le moteur du chat dans `chat/`, le pointage automatique dans `pointage/`.

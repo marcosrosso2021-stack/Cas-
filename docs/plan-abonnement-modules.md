@@ -40,7 +40,7 @@ newsletter (qui ne sert à rien d'autre) n'est pas chargé quand le module n'est
 - Limite connue : sans e-mail de vérification, quelqu'un peut créer un compte casô avec l'adresse d'un autre.
   L'essai reste limité à une fois par SIRET. Un code par e-mail pourra être ajouté quand un service d'envoi sera branché.
 
-### 3. Verrous dans l'appli
+### 3. Verrous dans l'appli ✅ (`modules/abonnement.js`)
 - Chaque écran est rattaché à un module ; un écran non pris affiche « Ajouter à mon abonnement » (ouvre « On construit le plan »).
 - Lecture seule : listes et documents visibles, boutons de création et de modification masqués.
 - Le chat répond « Le module Devis n'est pas dans ton abonnement · Ajouter » au lieu d'agir.
@@ -48,9 +48,17 @@ newsletter (qui ne sert à rien d'autre) n'est pas chargé quand le module n'est
 - Sans réseau : la dernière liste connue est gardée (on ne verrouille jamais tout parce que le téléphone est hors ligne).
 - Tant que le compte n'a pas encore de session serveur : traité comme en essai.
 
-### 4. Chargement
+### 4. Chargement ✅
 - `modules/newsletter.js` n'est pas chargé si le module Newsletter n'est pas pris (ni en essai).
 
-### 5. Essais
-- Serveur : création e-mail, connexion, mauvais mot de passe, essai, fin d'essai, plan.
-- Navigateur : en essai (tout ouvert), après l'essai sans plan (socle seul, 1 devis par mois), avec plan, lecture seule, hors ligne.
+### 5. Essais ✅
+- Serveur : création e-mail, connexion, mauvais mot de passe, essai, fin d'essai, plan (`tests/auth.test.js`, `tests/compte-mail.test.js`).
+- Navigateur : en essai (tout ouvert), après l'essai sans plan (socle seul, 1 devis par mois), avec plan, lecture seule,
+  sans compte casô, Bricoleur (`tests/abonnement.test.js`).
+
+## Reste à faire
+- **Face ID seul** : sans mot de passe saisi, un compte e-mail déjà créé n'est pas rattaché au serveur, donc rien n'est verrouillé.
+  Proposer une fois « Relie ton compte casô » (mot de passe demandé une seule fois).
+- **Pointage** : « Pointer » est verrouillé ; ajouter un chantier ou une personne dans l'écran Pointage ne l'est pas encore.
+- **Le serveur ne contrôle pas encore** le devis gratuit du mois ni les modules : tout est vérifié sur le téléphone.
+  À faire avec le paiement (Stripe) : le serveur refusera les actions des modules non payés (numéros de facture, signature, prix en ligne).
