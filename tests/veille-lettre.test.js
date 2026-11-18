@@ -56,8 +56,8 @@ await t('dans l\'appli (faux navigateur) : page Newsletter et pastille, rien dan
  const a=monter('artisan',items);await new Promise(r=>setTimeout(r,20));
  assert.strictEqual(a.w.appel,'https://serveur.test/api/veille/lettre');assert.strictEqual(a.pousse.length,0);assert.strictEqual(a.E.newsDot.hidden,false);
  a.w.casoVeille.page();const h=a.E.newsList.innerHTML;assert.ok(/Devis : nouvelle mention/.test(h)&&/TVA des travaux de peinture/.test(h)&&/Ça me concerne/.test(h)&&!/Électriciens seulement/.test(h)&&!/msg bot/.test(h));
- a.ecoute.click({target:{closest:()=>({getAttribute:()=>'legifrance:A'})}});assert.ok(/Rien\./.test(a.E.newsList.innerHTML));assert.strictEqual(a.E.newsDot.hidden,false);
- a.ecoute.click({target:{closest:()=>({getAttribute:()=>'legifrance:B'})}});assert.strictEqual(a.E.newsDot.hidden,true);assert.ok(/Oui, toi : peintres/.test(a.E.newsList.innerHTML));
+ a.ecoute.click({target:{closest:s=>s==='[data-nvf]'?null:({getAttribute:()=>'legifrance:A'})}});assert.ok(/Rien\./.test(a.E.newsList.innerHTML));assert.strictEqual(a.E.newsDot.hidden,false);
+ a.ecoute.click({target:{closest:s=>s==='[data-nvf]'?null:({getAttribute:()=>'legifrance:B'})}});assert.strictEqual(a.E.newsDot.hidden,true);assert.ok(/Oui, toi : peintres/.test(a.E.newsList.innerHTML));
  a.w.chatSend('quoi de neuf pour la tva ?');assert.deepStrictEqual(a.pousse.map(m=>m.who),['me','bot']);assert.ok(/TVA des travaux de peinture/.test(a.pousse[1].html)&&!/nouvelle mention/.test(a.pousse[1].html)&&/À faire : Vérifie tes devis\./.test(a.pousse[1].html));
  a.w.chatSend('qu\'est-ce qui change ?');assert.ok(/nouvelle mention/.test(a.pousse[3].html)&&/TVA/.test(a.pousse[3].html)&&!/Électriciens/.test(a.pousse[3].html));
  a.w.chatSend('devis pour Martin peinture 30 m² TVA 10');assert.deepStrictEqual(a.envois,['devis pour Martin peinture 30 m² TVA 10']);assert.strictEqual(a.pousse.length,4);
@@ -66,8 +66,20 @@ await t('dans l\'appli (faux navigateur) : page Newsletter et pastille, rien dan
  const e=monter('artisan',[{id:'x:1',titre:'Lointain',priorite:'P2',dateVigueur:'2099-01-01',pros:[]},{id:'x:2',titre:'Critique',priorite:'P0',dateVigueur:'2098-01-01',pros:[]},{id:'x:3',titre:'Plus proche',priorite:'P2',dateVigueur:'2090-01-01',pros:[]}]);
  await new Promise(r=>setTimeout(r,20));e.w.casoVeille.page();const he=e.E.newsList.innerHTML;
  assert.ok(/nv-une[\s\S]*Critique[\s\S]*À lire aussi[\s\S]*Plus proche[\s\S]*Lointain/.test(he),'le plus important en grand, puis l\'échéance la plus proche');assert.ok(/3 à lire/.test(he)&&/J-\d+/.test(he));
- e.ecoute.click({target:{closest:()=>({getAttribute:()=>'x:2'})}});const h2=e.E.newsList.innerHTML;assert.ok(/nv-une[\s\S]*Critique[\s\S]*nv-a/.test(h2)&&/2 à lire/.test(h2),'lu pendant la visite : garde sa place');assert.ok(!/Pour qui|Quand|Oui, toi/.test(h2),'partie dépliée courte');
+ e.ecoute.click({target:{closest:s=>s==='[data-nvf]'?null:({getAttribute:()=>'x:2'})}});const h2=e.E.newsList.innerHTML;assert.ok(/nv-une[\s\S]*Critique[\s\S]*nv-a/.test(h2)&&/2 à lire/.test(h2),'lu pendant la visite : garde sa place');assert.ok(!/Pour qui|Quand|Oui, toi/.test(h2),'partie dépliée courte');
  const d=monter('artisan',[]);await new Promise(r=>setTimeout(r,20));d.w.casoVeille.page();assert.ok(/Rien de nouveau pour ton métier/.test(d.E.newsList.innerHTML));d.w.chatSend('des nouveautés ?');assert.ok(/Rien de nouveau/.test(d.pousse[1].html))});
+await t('liste entière : toutes les infos du métier, filtres Tout / Règles / Métier',async()=>{
+ const vm=require('vm'),src=fs.readFileSync(path.join(__dirname,'..','chat','veille.js'),'utf8'),mem={},ecoute={},E={newsList:{innerHTML:''},newsDot:{hidden:true},chatIn:{value:''}};
+ const items=[];for(let i=0;i<40;i++)items.push({id:'x:'+i,titre:(i<25?'Règle numéro ':'Nouvel outil de chantier numéro ')+i,categorie:i<25?'confirme':'nouveaute',priorite:i<25?'P2':'P3',pros:[],datePub:'2026-11-17',publieLe:'2026-11-18',url:'https://www.legifrance.gouv.fr/x'});
+ const w={CASO_APPRIS:'https://serveur.test',navigator:{onLine:true},db:{prof:{metier:'peintres'}},accountGet:()=>({mode:'artisan'}),i18nT:x=>x,location:{search:''},setTimeout:f=>f(),
+  localStorage:{getItem:k=>k in mem?mem[k]:null,setItem:(k,v)=>{mem[k]=v}},document:{hidden:false,getElementById:i=>E[i]||null,querySelector:()=>null,addEventListener:(n,f)=>{ecoute[n]=f}},
+  fetch:async()=>({ok:true,json:async()=>items}),chatPush(){},chatSend(){},go(){}};
+ w.window=w;vm.runInNewContext(src,w);await new Promise(r=>setTimeout(r,20));w.casoVeille.page();
+ const n=h=>(h.match(/data-veille="x:/g)||[]).length,h0=E.newsList.innerHTML;assert.strictEqual(n(h0),40,'les 40 infos, pas une seule');
+ assert.ok(/data-nvf=""[^>]*>Tout <b>40<\/b>/.test(h0)&&/>Règles <b>25<\/b>/.test(h0)&&/>Métier <b>15<\/b>/.test(h0));
+ const fil=k=>ecoute.click({target:{closest:s=>s==='[data-nvf]'?{getAttribute:()=>k}:null}});
+ fil('metier');let h=E.newsList.innerHTML;assert.strictEqual(n(h),15);assert.ok(!/Règle numéro/.test(h)&&/aria-pressed="true">Métier/.test(h));
+ assert.ok(!/Déjà lu/.test(h0)&&/>40 à lire</.test(h0),'rien d\'ouvert : rien de « déjà lu »');fil('regle');h=E.newsList.innerHTML;assert.strictEqual(n(h),25);assert.ok(!/Nouvel outil/.test(h));fil('');assert.strictEqual(n(E.newsList.innerHTML),40)});
 await t('titre officiel long : nature et date à part, sujet lisible ; titre complet une fois ouvert',async()=>{
  const T='Arrêté du 12 novembre 2026 relatif aux exigences de performance énergétique et environnementale des constructions de bâtiments en France métropolitaine et portant diverses dispositions';
  assert.deepStrictEqual(V.titreCourt(T),{nat:'Arrêté du 12 novembre 2026',t:'Exigences de performance énergétique et environnementale des constructions de bâtiments en France métropolitaine et portant diverses dispositions'});
@@ -79,7 +91,7 @@ await t('titre officiel long : nature et date à part, sujet lisible ; titre com
   fetch:async()=>({ok:true,json:async()=>[{id:'j:1',titre:T,priorite:'P1',dateVigueur:'2026-11-13',pros:[],aFaire:'Regarde si tes chantiers sont concernés.',url:'https://www.legifrance.gouv.fr/x',publieLe:'2026-11-17'}]}),chatPush(){},chatSend(){},go(){}};
  w.window=w;vm.runInNewContext(src,w);await new Promise(r=>setTimeout(r,20));w.casoVeille.page();let h=E.newsList.innerHTML;
  assert.ok(/nv-nat[^>]*>Arrêté du 12 novembre 2026</.test(h)&&/<h2[^>]*>Exigences de performance/.test(h),'sujet en titre, nature et date au-dessus');
- ecoute.click({target:{closest:()=>({getAttribute:()=>'j:1'})}});h=E.newsList.innerHTML;
+ ecoute.click({target:{closest:s=>s==='[data-nvf]'?null:({getAttribute:()=>'j:1'})}});h=E.newsList.innerHTML;
  assert.ok(h.includes('nv-off" data-noi18n lang="fr">'+T+'</p>')&&/<h2[^>]*>Exigences/.test(h)&&/13 novembre 2026/.test(h)&&/Texte officiel/.test(h),'ouvert : le titre reste court, le titre officiel complet en petit, date et lien')});
 await t('titre en clair : le thème reconnu et l\'objet, sinon rien ; déjà lu, l\'info reste en grand',async()=>{
  const A=require('../serveur/veille/analyse.js'),T='Arrêté du 13 novembre 2026 modifiant l\'arrêté du 6 novembre 2026 prévoyant des bonifications particulières pour les opérations relatives aux offres intégrées sélectionnées dans le cadre de l\'appel à candidatures « Offres intégrées pompes à chaleur » de l\'Agence de l\'environnement et de la maîtrise de l\'énergie, dans le cadre du dispositif des certificats d\'économies d\'énergie';
@@ -93,7 +105,7 @@ await t('titre en clair : le thème reconnu et l\'objet, sinon rien ; déjà lu,
   fetch:async()=>({ok:true,json:async()=>[it]}),chatPush(){},chatSend(){},go(){}};
  w.window=w;vm.runInNewContext(src,w);await new Promise(r=>setTimeout(r,20));w.casoVeille.page();
  assert.ok(/<h2[^>]*>Aides à la rénovation : primes énergie \(CEE\), pompes à chaleur<\/h2>/.test(E.newsList.innerHTML));
- ecoute.click({target:{closest:()=>({getAttribute:()=>'j:2'})}});ecoute.click({target:{closest:()=>({getAttribute:()=>'j:2'})}});
+ ecoute.click({target:{closest:s=>s==='[data-nvf]'?null:({getAttribute:()=>'j:2'})}});ecoute.click({target:{closest:s=>s==='[data-nvf]'?null:({getAttribute:()=>'j:2'})}});
  const w2=Object.assign({},w,{document:Object.assign({},w.document,{addEventListener(){}})});w2.window=w2;vm.runInNewContext(src,w2);await new Promise(r=>setTimeout(r,20));w2.casoVeille.page();
  const h=E.newsList.innerHTML;assert.ok(/nv-une/.test(h)&&/Aides à la rénovation/.test(h)&&!/Déjà lu/.test(h),'une seule info déjà lue : elle reste en grand, pas de liste vide')});
 await t('question ou commande : seules les tournures de question vont à la newsletter',()=>{
@@ -114,15 +126,14 @@ await t('rien ne sort sans validation et sans accord d\'envoi',async()=>{
  await v.passer();assert.deepStrictEqual(v.lettre(),[]);assert.strictEqual(lundi('2026-11-18'),'2026-11-23');assert.strictEqual(lundi('2026-11-23'),'2026-11-30');
  v.decider(I('2003'),'valide');assert.deepStrictEqual(v.lettre(),[]);
  assert.strictEqual(v.decider(I('2001'),'attente',{lettre:true,aFaire:'Rien : casô mettra tes devis à jour.'})[1].publieLe,'');assert.deepStrictEqual(v.lettre(),[])});
-await t('texte critique : sort tout de suite ; les autres le lundi suivant',async()=>{
+await t('newsletter à jour toute seule : tout texte validé sort le jour même, quelle que soit sa priorité',async()=>{
  const p0=v.decider(I('2002'),'valide',{lettre:true,aFaire:'Vérifie le taux de TVA de tes devis en cours.'})[1];assert.deepStrictEqual([p0.priorite,p0.publieLe],['P0','2026-11-18']);
- const p2=v.decider(I('2001'),'valide',{lettre:true})[1];assert.deepStrictEqual([p2.priorite,p2.publieLe,p2.aFaire],['P2','2026-11-23','Rien : casô mettra tes devis à jour.']);
- const L=v.lettre();assert.deepStrictEqual(L.map(x=>x.id),[I('2002')]);
+ const p2=v.decider(I('2001'),'valide',{lettre:true})[1];assert.deepStrictEqual([p2.priorite,p2.publieLe,p2.aFaire],['P2','2026-11-18','Rien : casô mettra tes devis à jour.']);
+ const L=v.lettre();assert.deepStrictEqual(L.map(x=>x.id).sort(),[I('2001'),I('2002')]);
  assert.deepStrictEqual(Object.keys(L[0]).sort(),['aFaire','categorie','clair','datePub','dateVigueur','id','priorite','pros','publieLe','resume','source','titre','url']);
- assert.deepStrictEqual(v.aAnnoncer().map(x=>x.id),[I('2002')]);v.annonce([I('2002')]);assert.deepStrictEqual(v.aAnnoncer(),[]);
- heure='2026-11-19T07:00:00Z';const q0=v.decider(I('2001'),'valide',{priorite:'P0'})[1];assert.deepStrictEqual([q0.priorite,q0.publieLe],['P0','2026-11-19'],'passé en P0 après coup : part tout de suite');
- assert.deepStrictEqual(v.lettre().map(x=>x.id),[I('2001'),I('2002')]);v.decider(I('2001'),'valide',{priorite:'P2'});
- heure='2026-11-23T07:00:00Z';assert.deepStrictEqual(v.lettre().map(x=>x.id),[I('2001'),I('2002')]);assert.deepStrictEqual(v.aAnnoncer().map(x=>x.id),[I('2001')])});
+ assert.deepStrictEqual(v.aAnnoncer().map(x=>x.id).sort(),[I('2001'),I('2002')]);v.annonce([I('2001'),I('2002')]);assert.deepStrictEqual(v.aAnnoncer(),[]);
+ heure='2026-11-19T07:00:00Z';const q0=v.decider(I('2001'),'valide',{priorite:'P0'})[1];assert.deepStrictEqual([q0.priorite,q0.publieLe],['P0','2026-11-18'],'déjà sorti : la date ne change pas');
+ v.decider(I('2001'),'valide',{priorite:'P2'});assert.deepStrictEqual(v.lettre().map(x=>x.id).sort(),[I('2001'),I('2002')])});
 await t('accord retiré, refus, ou texte modifié à la source : la carte ne sort plus',async()=>{
  v.decider(I('2002'),'valide',{lettre:false});assert.deepStrictEqual(v.lettre().map(x=>x.id),[I('2001')]);
  bruts=[brut('2001','Décret n° 2026-2001 du 10 novembre 2026 relatif aux mentions obligatoires des devis','Le présent décret entre en vigueur le 1er avril 2027.')];
