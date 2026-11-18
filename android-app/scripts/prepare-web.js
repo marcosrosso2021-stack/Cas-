@@ -16,8 +16,8 @@ const files = fs.readdirSync(root).filter(f =>
   /\.(html|webmanifest|png|ico|svg|json)$/.test(f) || f === 'sw.js');
 files.forEach(f => fs.copyFileSync(path.join(root, f), path.join(www, f)));
 
-// bibliothèques hébergées et module 3D (lib/), moteur du chat (chat/), traductions de l'interface (i18n/) : copiés tels quels
-['lib', 'chat', 'i18n', 'pointage'].forEach(d => {
+// bibliothèques hébergées et module 3D (lib/), code de l'appli par module (modules/), moteur du chat (chat/), traductions de l'interface (i18n/) : copiés tels quels
+['lib', 'modules', 'chat', 'i18n', 'pointage'].forEach(d => {
   if (fs.existsSync(path.join(root, d))) fs.cpSync(path.join(root, d), path.join(www, d), { recursive: true });
 });
 

@@ -8,7 +8,7 @@ on:
     - cron: '17 5 * * 1'
   workflow_dispatch:
   pull_request:
-    paths: ['chat/**', 'index.html', 'outils/chat/**', 'outils/ia/**', 'serveur/veille/**', 'tests/veille*', 'tests/veille/**']
+    paths: ['chat/**', 'index.html', 'modules/**', 'outils/chat/**', 'outils/ia/**', 'serveur/veille/**', 'tests/veille*', 'tests/veille/**']
 
 permissions:
   contents: read

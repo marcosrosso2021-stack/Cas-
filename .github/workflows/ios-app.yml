@@ -5,7 +5,7 @@ name: Appli iPhone (vérification)
 on:
   push:
     branches: ['ios-enveloppe*']
-    paths: ['android-app/**', 'pointage/**', 'index.html', 'sw.js', '.github/workflows/ios-app.yml']
+    paths: ['android-app/**', 'pointage/**', 'index.html', 'modules/**', 'sw.js', '.github/workflows/ios-app.yml']
   workflow_dispatch:
 
 jobs:
