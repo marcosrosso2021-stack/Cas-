@@ -46,6 +46,7 @@ async function forgotSubmit(){
  if(!a.rhash||(await pwHash(rcNorm($('fgCode').value),unhex(a.rsalt),a.riter||a.iter))!==a.rhash){lkFail();const w=lkWait();return err(w?lkMsg(w):'Code de secours incorrect.')}
  lkOk();const salt=crypto.getRandomValues(new Uint8Array(16));a.iter=Math.max(a.iter||0,ACC_ITER());a.salt=hex(salt);a.hash=await pwHash(pw,salt,a.iter);accountPut(a);
  try{if(window.VAULT){if(VAULT.on)await VAULT.wrapPass(pw);else await VAULT.create(pw)}}catch(e){}
+ casoMailMdp(pw);
  const code=await rcSet();
  try{localStorage.removeItem('caso_locked')}catch(e){}
  $('fgForm').hidden=true;document.body.classList.remove('starting');go('devis');toast(i18nT('Mot de passe changé.'));

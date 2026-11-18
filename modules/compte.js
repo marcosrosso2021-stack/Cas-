@@ -89,10 +89,14 @@ async function accountCreate(d){
  const acc={v:1,id:'u'+uid(),prenom:d.prenom,email:d.email.toLowerCase(),algo:'pbkdf2-sha256',iter,salt:hex(salt),hash:await pwHash(d.pass,salt,iter),createdAt:Date.now()};
  if(!accountPut(acc))throw new Error('stockage');
  try{if(window.VAULT)await VAULT.create(d.pass)}catch(e){}
+ casoMail(acc.email,d.pass,d.prenom);
  db.me=Object.assign({},db.me||{},{prenom:d.prenom});
  db.prof=Object.assign({},db.prof||{},{nom:d.ent,email:acc.email});
  db.profAt=Date.now();save();
  return acc}
+/* compte casô sur le serveur (essai, abonnement) : ouvert à chaque mot de passe saisi, sans bloquer l'appli */
+function casoMail(email,pass,prenom){try{if(window.CasoAuth&&CasoAuth.mail)CasoAuth.mail(email,pass,prenom).catch(()=>{})}catch(e){}}
+function casoMailMdp(pass){try{if(window.CasoAuth&&CasoAuth.mailMdp)CasoAuth.mailMdp(pass).catch(()=>{})}catch(e){}}
 async function accountCheck(email,pass){
  const a=accountGet();if(!a||a.email!==String(email).trim().toLowerCase())return false;
  return (await pwHash(pass,unhex(a.salt),a.iter))===a.hash}

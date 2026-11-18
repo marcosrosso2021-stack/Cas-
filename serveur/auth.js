@@ -1,4 +1,4 @@
-/* casô — module AUTH (serveur) : connexion directe avec Google ou Microsoft (Outlook, Hotmail, Microsoft 365).
+/* casô — module AUTH (serveur) : connexion directe avec Google ou Microsoft (Outlook, Hotmail, Microsoft 365), ou par e-mail et mot de passe.
    - aucun écran en plus, aucun mot de passe : l'appli envoie l'usager chez son fournisseur, qui le renvoie connecté
    - aucune dépendance (Node 18 ou plus) ; OpenID Connect, code d'autorisation + PKCE
    - rien de secret en clair : états, tickets et sessions sont hachés (SHA-256) ; le jeton ne passe jamais dans une adresse
@@ -35,6 +35,10 @@ function siretOk(s){
  let t=0;for(let i=0;i<14;i++){let d=+s[13-i];if(i%2){d*=2;if(d>9)d-=9}t+=d}
  return t%10===0}
 const normSiret=s=>String(s||'').replace(/[\s.]/g,'');
+const MAIL_OK=/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+/* preuve du mot de passe (compte e-mail) : scrypt + sel ; comparaison à temps constant */
+function mdpHache(preuve){const sel=crypto.randomBytes(16).toString('hex');return{sel,h:crypto.scryptSync(preuve,sel,32).toString('hex')}}
+function mdpBon(m,preuve){const a=Buffer.from(m.h,'hex'),b=crypto.scryptSync(preuve,m.sel,32);return a.length===b.length&&crypto.timingSafeEqual(a,b)}
 
 /* Offre du compte tant que les abonnements Stripe ne sont pas branchés : essai de 30 jours pour l'artisan, gratuit pour le bricoleur. */
 function offre(c,now){
@@ -182,6 +186,25 @@ function creer(opts){
     if(!t||t.exp<now()||!d.comptes[t.id])return send(res,401,{error:'Connexion expirée, recommence.'}),true;
     return send(res,200,session(d.comptes[t.id])),true}
 
+   /* 4. compte par e-mail : même compte, même essai, même plan que Google / Microsoft.
+      L'appli n'envoie jamais le mot de passe : seulement une preuve dérivée (PBKDF2, différente de la clé du coffre),
+      que le serveur hache encore (scrypt, sel propre au compte). */
+   if(POST&&(url==='/api/auth/mail/creer'||url==='/api/auth/mail/entrer')){
+    const creer=url.endsWith('/creer');
+    if(trop('mail-ip:'+ip,creer?10:30))return send(res,429,{error:'Trop d\'essais. Réessaie dans une heure.'}),true;
+    const b=await x.readBody(req),email=cut(b.email,120).trim().toLowerCase(),preuve=String(b.preuve||'');
+    if(!MAIL_OK.test(email))return send(res,400,{error:'E-mail invalide.'}),true;
+    if(!/^[a-f0-9]{64}$/.test(preuve))return send(res,400,{error:'Demande invalide.'}),true;
+    if(trop('mail:'+sha(email),creer?5:10))return send(res,429,{error:'Trop d\'essais. Réessaie dans une heure.'}),true;
+    let c=parCle('mail:'+email);
+    if(creer){
+     if(c)return send(res,409,{error:'Un compte existe déjà avec cet e-mail. Connecte-toi.'}),true;
+     c={id:'c'+(++d.n)+crypto.randomBytes(4).toString('hex'),cle:'mail:'+email,via:'mail',email,prenom:cut(b.prenom,60).trim(),mode:null,creeLe:now(),mdp:mdpHache(preuve)};
+     d.comptes[c.id]=c;persist();return send(res,200,session(c)),true}
+    if(!c)return send(res,404,{error:'Aucun compte casô avec cet e-mail.'}),true;
+    if(!c.mdp||!mdpBon(c.mdp,preuve))return send(res,401,{error:'E-mail ou mot de passe incorrect.'}),true;
+    return send(res,200,session(c)),true}
+
    /* --- à partir d'ici : connecté --- */
    const c=compte(req);
    if(!c)return send(res,401,{error:'Non connecté.'}),true;
@@ -209,6 +232,13 @@ function creer(opts){
     c.plan={modules:PLAN.nettoyer(c.mode,b.modules),le:now()};
     persist();return send(res,200,{compte:pub(c)}),true}
 
+   /* mot de passe changé dans l'appli (compte e-mail) : la nouvelle preuve remplace l'ancienne */
+   if(POST&&url==='/api/auth/mail/mdp'){
+    const b=await x.readBody(req),preuve=String(b.preuve||'');
+    if(c.via!=='mail')return send(res,400,{error:'Ce compte se connecte avec '+(c.via==='google'?'Google':'Microsoft')+'.'}),true;
+    if(!/^[a-f0-9]{64}$/.test(preuve))return send(res,400,{error:'Demande invalide.'}),true;
+    c.mdp=mdpHache(preuve);persist();return send(res,200,{ok:true}),true}
+
    if(POST&&url==='/api/auth/sortir'){delete d.sessions[sha(jetonDe(req))];persist();return send(res,200,{ok:true}),true}
 
    if(POST&&url==='/api/auth/supprimer'){
@@ -230,7 +260,7 @@ function creer(opts){
   const offres={},parJour=[];for(const c of C){const o=offre(c,t)||'sans_choix';offres[o]=(offres[o]||0)+1}
   for(let i=13;i>=0;i--){const j=new Date(t-i*J).toISOString().slice(0,10);parJour.push({j,n:C.filter(c=>c.creeLe&&new Date(c.creeLe).toISOString().slice(0,10)===j).length})}
   return {total:C.length,artisan:C.filter(c=>c.mode==='artisan').length,bricoleur:C.filter(c=>c.mode==='bricoleur').length,sansChoix:C.filter(c=>!c.mode).length,
-   google:C.filter(c=>c.via==='google').length,microsoft:C.filter(c=>c.via==='microsoft').length,
+   google:C.filter(c=>c.via==='google').length,microsoft:C.filter(c=>c.via==='microsoft').length,mail:C.filter(c=>c.via==='mail').length,
    nouveaux7:C.filter(c=>c.creeLe&&t-c.creeLe<7*J).length,nouveaux30:C.filter(c=>c.creeLe&&t-c.creeLe<30*J).length,
    actifs7:C.filter(c=>vu[c.id]&&t-vu[c.id]<7*J).length,actifs30:C.filter(c=>vu[c.id]&&t-vu[c.id]<30*J).length,
    essaisFin7:C.filter(c=>c.mode==='artisan'&&!(c.abo&&c.abo.offre)&&c.essaiFin&&c.essaiFin>t&&c.essaiFin-t<7*J).length,offres,parJour}}

@@ -155,6 +155,9 @@ function ptTick(){ // met à jour la durée des présents sans redessiner l'écr
  document.querySelectorAll('#ptBody [data-since]').forEach(e=>{e.textContent=fmtH(Date.now()-(+e.dataset.since))})}
 setInterval(()=>{if(document.getElementById('s-pt')&&document.getElementById('s-pt').classList.contains('on'))ptTick()},30000);
 
+/* « GPS toujours » : le chantier est surveillé tous les jours, même sans rendez-vous au planning */
+function ptToujours(id,on){const c=db.chantiers.find(x=>x.id===id);if(!c)return;c.toujours=!!on;c.at=Date.now();save();
+ try{if(window.CasoAuto)CasoAuto.run()}catch(e){}toast(i18nT(on?'Ce chantier est surveillé tous les jours.':'Surveillé seulement les jours de rendez-vous.'))}
 function renderPt(){
  ensurePt();
  const AU=window.CasoAuto,auto=!!(AU&&AU.active());
@@ -163,15 +166,16 @@ function renderPt(){
  const keepC=($('ptC')&&$('ptC').value)||'',keepP=($('ptP')&&$('ptP').value)||'';
  const ready=db.chantiers.length&&db.people.length;
  const one=a=>a.length===1?' hidden':'';
- /* --- Pointer --- */
- let go=auto?'':agPtCard();
- if(auto)go+=AU.card();
- else go+=`<div class="card pt-now">${AU?AU.line():''}`+(ready
-  ?`<div id="ptCtx" class="pt-ctx"></div>
+ /* --- Pointer : le GPS d'abord ; à la main seulement si besoin (petit dépliant quand le GPS existe sur ce téléphone) --- */
+ const man=ready?`<div id="ptCtx" class="pt-ctx"></div>
    <select id="ptC" aria-label="Chantier"${one(db.chantiers)} onchange="ptBtn()">${opt(db.chantiers,keepC)}</select>
    <select id="ptP" aria-label="Personne"${one(db.people)} onchange="ptBtn(1)">${opt(db.people,keepP)}</select>
-   <button id="ptGo" class="btn pt-go" onclick="manualPunch()">Entrée</button>`
-  :ptSetupHtml())+`</div>`;
+   <button id="ptGo" class="btn pt-go" onclick="manualPunch()">Entrée</button>`:'';
+ let go='';
+ if(!ready)go+=`<div class="card pt-now">${ptSetupHtml()}</div>`;
+ /* le GPS pointe vraiment tout seul : plus de pointage à la main ; sinon « Pointer à la main », déplié */
+ if(AU){go+=AU.card();if(man&&!auto)go+=`<details class="pt-man" open><summary>Pointer à la main</summary><div class="card pt-now">${man}</div></details>`}
+ else if(man)go+=agPtCard()+`<div class="card pt-now">${man}</div>`;
  go+=`<div class="card"><h2><span class="hi"><svg class="i"><use href="#i-users"/></span>Présents</h2>`+
   (sm.open.length?sm.open.map(s=>`<div class="tot"><span data-noi18n>${esc(pName(s.p))} · ${esc(chName(s.c))}</span><span><b>depuis ${fmtT(s.a)}</b> <span class="pt-els" data-noi18n data-since="${s.a}">${fmtH(Date.now()-s.a)}</span></span></div>`).join(''):'<div class="mut">Personne.</div>')+`</div>`;
  /* --- Heures et journal --- */
@@ -199,7 +203,7 @@ function renderPt(){
  /* --- Chantiers et personnes --- */
  let st=`<div class="card"><h2><span class="hi"><svg class="i"><use href="#i-pin"/></svg></span>Chantiers</h2>
   <div class="row"><input id="chNew" placeholder="Nouveau chantier" data-adr autocomplete="off"><button class="btn sm" style="flex:0 0 auto" onclick="addCh()">Ajouter</button></div>`+
-  db.chantiers.map(c=>`<div class="line" data-sw="ch:${c.id}"><div class="t"><span data-noi18n>${esc(c.nom)}</span></div>${AU?AU.zone(c):''}</div>`).join('')+`</div>`;
+  db.chantiers.map(c=>`<div class="line" data-sw="ch:${c.id}"><div class="t"><span data-noi18n>${esc(c.nom)}</span>${AU&&(c.adr||c.geo)?`<label class="pt-tj"><span>GPS toujours</span><input type="checkbox" role="switch" ${c.toujours?'checked':''} onchange="ptToujours('${c.id}',this.checked)"></label>`:''}</div>${AU?AU.zone(c):''}</div>`).join('')+`</div>`;
  st+=`<div class="card"><h2><span class="hi"><svg class="i"><use href="#i-user"/></svg></span>Personnes</h2>
   <div class="row"><input id="pnNew" placeholder="Prénom"><button class="btn sm" style="flex:0 0 auto" onclick="addPerson()">Ajouter</button></div>`+
   db.people.map(p=>`<div class="line" data-sw="pe:${p.id}"><div class="t"><span data-noi18n>${esc(p.nom)}</span></div></div>`).join('')+`</div>`;

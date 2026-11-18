@@ -53,17 +53,18 @@ function dwLocked(){
  return false}
 /* module AUTH (lib/auth.js) : « Continuer avec Google / Outlook » sur les écrans Connexion et Créer mon compte ; l'offre en une ligne dans le menu profil */
 /* plus d'offres toutes faites : l'usager construit son abonnement ; la ligne dit seulement où il en est */
-const AUTH_OFFRES={artisan_curieux:'Essai gratuit',artisan_fin_essai:'Essai terminé',plan:'Mon abonnement',bricoleur:'Bricoleur du dimanche'};
+/* pastille discrète au-dessus du compte (profil) : où en est l'usager ; un appui ouvre « On construit le plan » */
 function authLigne(){
- const A=window.CasoAuth,c=A&&A.compte(),pl=$('dwPlan');if(!pl)return;
- let t=c&&AUTH_OFFRES[c.offre]?i18nT(AUTH_OFFRES[c.offre]):'';
- if(t&&c.offre==='artisan_curieux'&&c.essaiFin){const d=new Date(c.essaiFin);t+=' · '+String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')}
- const prix=c&&c.plan&&c.plan.total&&window.CasoPlan?CasoPlan.euros(c.plan.total)+' '+i18nT(c.plan.unite):'';
- if(t&&c.offre==='plan'&&prix)t+=' · '+prix;
- pl.textContent=t;pl.hidden=!t;
+ const A=window.CasoAuth,c=A&&A.compte(),go=$('dwPlanGo');if(!go)return;
  const n=($('dwName')||{}).textContent||'',ini=$('dwIni');if(ini)ini.textContent=(n.trim()[0]||'·').toUpperCase();
- /* « On construit le plan » dans le petit menu du compte, dès que le compte a un mode */
- const go=$('dwPlanGo');if(go){go.hidden=!(c&&c.mode&&window.CasoPlan);$('dwPlanP').textContent=prix}}
+ go.hidden=!(c&&c.mode&&window.CasoPlan);if(go.hidden)return;
+ const nb=((c.plan&&c.plan.modules)||[]).length,prix=c.plan&&c.plan.total?CasoPlan.euros(c.plan.total):'';
+ let a,b='';
+ if(c.offre==='artisan_curieux'&&c.essaiFin){a=i18nT('Essai');b=Math.max(1,Math.ceil((c.essaiFin-Date.now())/864e5))+' '+i18nT('j')}
+ else if(c.offre==='bricoleur'){a=i18nT('Bricoleur')}
+ else if(nb){a=nb+' '+i18nT(nb>1?'modules':'module');b=prix}
+ else a=i18nT('On construit le plan');
+ $('dwPlanA').textContent=a;$('dwPlanB').textContent=b}
 /* petit menu du compte (au-dessus de la ligne du bas) */
 function dwPopToggle(){const p=$('dwPop');p.hidden?dwPopOpen():dwPopClose()}
 function dwPopOpen(){const p=$('dwPop');p.hidden=false;$('dwMe').setAttribute('aria-expanded','true');requestAnimationFrame(()=>p.classList.add('on'));
@@ -75,8 +76,9 @@ function dwPopEsc(e){if(e.key==='Escape')dwPopClose()}
 /* « On construit le plan » (lib/plan.js) : tuiles à cocher, total en direct ; le serveur recalcule et garde le choix */
 const ABO={sel:new Set(),mode:'artisan',busy:false};
 const ABO_IC={devis:'quote',planning:'cal',pointage:'helmet',paiement:'tag','3d':'blocks',renovation:'cam',fournisseurs:'truck',veille:'mail',verification:'shield',estimation:'calc'};
-function aboOpen(){
+function aboOpen(mot){
  const A=window.CasoAuth,c=A&&A.compte();if(!c||!c.mode||!window.CasoPlan)return;
+ const mt=$('abMot');if(mt){mt.textContent=mot||'';mt.hidden=!mot}
  ABO.mode=c.mode==='bricoleur'?'bricoleur':'artisan';
  ABO.sel=new Set(((c.plan&&c.plan.modules)||[]).filter(Boolean));
  drawerClose();aboDraw();
@@ -186,6 +188,7 @@ async function loginSubmit(){
  const ok=await accountCheck($('lgMail').value,$('lgPass').value);
  if(!ok){lkFail();const w=lkWait();$('lgErr').textContent=w?lkMsg(w):'E-mail ou mot de passe incorrect.';$('lgErr').hidden=false;return}
  lkOk();try{await accUpgrade($('lgPass').value)}catch(e){}
+ casoMail(accountGet().email,$('lgPass').value);
  let neuf=false;try{if(window.VAULT&&!VAULT.on)neuf=await VAULT.create($('lgPass').value)}catch(e){}
  try{localStorage.removeItem('caso_locked')}catch(e){}
  $('lgPass').value='';modeEnter();

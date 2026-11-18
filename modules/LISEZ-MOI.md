@@ -33,7 +33,7 @@ Un fichier de `modules/` placé après `chat/` ou `pointage/` (comme `newsletter
 | `plan-photo.js` | plan à partir d'une photo, tour de la pièce | 3d / rénovation |
 | `planning.js` | moteur de langage local, écran « Mon planning », rappels, agenda, équipe | planning |
 | `facturation.js` | factures, PDF, liste des factures | devis |
-| `paiement.js` | paiements reçus, relance, avoir, encaissements, export pour le comptable | paiement |
+| `paiement.js` | écran Encaissements (à encaisser, encaissé sur la période), paiements reçus, relance, avoir, export pour le comptable | paiement (« Encaissements ») |
 | `devis.js` | rendu du devis, éditeur à blocs, devis, mes services, historique | devis |
 | `fournisseurs.js` | liste et fiche des fournisseurs, prix en ligne, favoris, import intelligent, devis et factures des fournisseurs | fournisseurs |
 | `pointage.js` | écran Pointage et ses actions | pointage |
@@ -43,6 +43,7 @@ Un fichier de `modules/` placé après `chat/` ou `pointage/` (comme `newsletter
 | `paiement-phrases.js` | factures et paiements dictés (« Osvald a payé 500 € ») | paiement |
 | `listes.js` | glisser une ligne vers la gauche pour la corbeille | commun |
 | `devis-module.js` | module Devis (`devis.html`) branché sur le bouton Devis | devis |
+| `abonnement.js` | verrous des modules non pris : bandeau de lecture seule, ouverture directe de « On construit le plan » avec un petit mot, cadenas du menu, devis gratuit du mois | commun |
 | `newsletter.js` | page « Newsletter », pastille du non-lu, « Ça me concerne ? » (chargé après `chat/`) | veille |
 
 La partie serveur de la newsletter est dans `serveur/veille/`. Le module 3D reste dans `lib/m3d.html`, le moteur du chat dans `chat/`, le pointage automatique dans `pointage/`.

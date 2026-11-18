@@ -17,5 +17,16 @@ ok('plafonds : 25 € HT artisan, 10 € TTC bricoleur',P.CATALOGUE.artisan.plaf
 const somme=m=>P.CATALOGUE[m].modules.reduce((s,x)=>s+x.prix,0);
 ok('aucun module gratuit ou négatif ; total brut au-dessus du plafond (le plafond sert)',Object.keys(P.CATALOGUE).every(m=>P.CATALOGUE[m].modules.every(x=>x.prix>0)&&somme(m)>P.CATALOGUE[m].plafond));
 ok('peut() : lit la liste du compte',P.peut({modules:['devis']},'devis')&&!P.peut({modules:['devis']},'paiement')&&!P.peut(null,'devis')&&!P.peut({},'devis'));
+{const T=Date.UTC(2026,10,18),J=864e5,tous=P.catalogue('artisan').modules.map(m=>m.id);
+ let d=P.droits(null,T);ok('droits : sans compte serveur, rien n\'est verrouillé',d.tout&&d.ouvert('devis')&&d.ouvert('pointage')&&d.devisGratuits===Infinity);
+ d=P.droits({mode:'bricoleur',modules:[]},T);ok('droits : Bricoleur inchangé (rien verrouillé)',d.tout&&d.ouvert('3d'));
+ d=P.droits({mode:null},T);ok('droits : mode pas encore choisi, rien verrouillé',d.tout);
+ d=P.droits({mode:'artisan',essaiFin:T+10*J,modules:tous},T);ok('droits : en essai, tout le mode Artisan est ouvert',!d.tout&&d.essai&&tous.every(m=>d.ouvert(m))&&d.devisGratuits===Infinity);
+ d=P.droits({mode:'artisan',essaiFin:T-J,modules:[]},T);
+ ok('droits : après l\'essai sans plan, socle gratuit seulement',!d.essai&&d.ouvert('chat')&&d.ouvert('clients')&&d.ouvert('rdv')&&!d.ouvert('devis')&&!d.ouvert('planning')&&!d.ouvert('veille'));
+ ok('droits : 1 devis gratuit par mois',d.devisGratuits===1&&P.devisRestants(d,0)===1&&P.devisRestants(d,1)===0&&P.devisRestants(d,5)===0);
+ d=P.droits({mode:'artisan',essaiFin:T-J,modules:['devis','pointage','__proto__']},T);
+ ok('droits : plan devis + pointage, le reste fermé, devis illimités',d.ouvert('devis')&&d.ouvert('pointage')&&!d.ouvert('paiement')&&!d.ouvert('__proto__')&&P.devisRestants(d,40)===Infinity);
+ ok('droits : le socle n\'est pas dans le catalogue (rien à payer)',P.GRATUIT.every(g=>!tous.includes(g)))}
 ok('euros()',P.euros(1500)==='15 €'&&P.euros(1050)==='10,50 €'&&P.euros(0)==='0 €');
 console.log(R.join('\n'));if(R.some(x=>x.startsWith('FAIL')))process.exit(1);

@@ -21,62 +21,62 @@
     'Autorise la position « Toujours » pour pointer tout seul.', 'Autoriser',
     'Ce téléphone n’est lié à aucune personne. Ajoute ton prénom dans Personnes.',
     'Aucun chantier prévu avec une adresse.', 'Zone',
-    'Autorise la position pour pointer tout seul quand casô est ouvert.'];
+    'Autorise la position pour pointer tout seul quand casô est ouvert.', 'GPS actif'];
   var TR = {
     en: ['Automatic clocking', 'On site', 'since', 'Leaving', 'Next job site', 'Expected on site',
       'Tomorrow', 'Done', 'Absent', 'Address not found', 'Permission needed',
       'Allow location “Always” to clock in automatically.', 'Allow',
       'This phone isn’t linked to anyone. Add your first name under People.',
       'No job site planned with an address.', 'Zone',
-      'Allow location to clock in automatically while casô is open.'],
+      'Allow location to clock in automatically while casô is open.', 'GPS on'],
     pt: ['Ponto automático', 'No local', 'desde', 'A sair', 'Próxima obra', 'Esperado no local',
       'Amanhã', 'Concluído', 'Ausente', 'Morada não encontrada', 'Autorização necessária',
       'Autoriza a posição «Sempre» para picar o ponto automaticamente.', 'Autorizar',
       'Este telemóvel não está associado a nenhuma pessoa. Adiciona o teu nome próprio em Pessoas.',
       'Nenhuma obra prevista com morada.', 'Zona',
-      'Autoriza a posição para picar o ponto automaticamente com o casô aberto.'],
+      'Autoriza a posição para picar o ponto automaticamente com o casô aberto.', 'GPS ativo'],
     es: ['Fichaje automático', 'En la obra', 'desde', 'Saliendo', 'Próxima obra', 'Esperado en la obra',
       'Mañana', 'Terminado', 'Ausente', 'Dirección no encontrada', 'Permiso necesario',
       'Permite la ubicación «Siempre» para fichar automáticamente.', 'Permitir',
       'Este teléfono no está vinculado a ninguna persona. Añade tu nombre en Personas.',
       'Ninguna obra prevista con dirección.', 'Zona',
-      'Permite la ubicación para fichar automáticamente con casô abierto.'],
+      'Permite la ubicación para fichar automáticamente con casô abierto.', 'GPS activo'],
     it: ['Timbratura automatica', 'In cantiere', 'dalle', 'In uscita', 'Prossimo cantiere', 'Atteso in cantiere',
       'Domani', 'Terminato', 'Assente', 'Indirizzo non trovato', 'Autorizzazione necessaria',
       'Consenti la posizione «Sempre» per timbrare automaticamente.', 'Consenti',
       'Questo telefono non è collegato a nessuna persona. Aggiungi il tuo nome in Persone.',
       'Nessun cantiere previsto con un indirizzo.', 'Zona',
-      'Consenti la posizione per timbrare automaticamente con casô aperto.'],
+      'Consenti la posizione per timbrare automaticamente con casô aperto.', 'GPS attivo'],
     ro: ['Pontaj automat', 'Pe șantier', 'de la', 'Pleacă', 'Următorul șantier', 'Așteptat pe șantier',
       'Mâine', 'Terminat', 'Absent', 'Adresa nu a fost găsită', 'Permisiune necesară',
       'Permite locația „Întotdeauna” pentru pontaj automat.', 'Permite',
       'Acest telefon nu este asociat niciunei persoane. Adaugă-ți prenumele în Persoane.',
       'Niciun șantier programat cu adresă.', 'Zonă',
-      'Permite locația pentru pontaj automat cât timp casô este deschis.'],
+      'Permite locația pentru pontaj automat cât timp casô este deschis.', 'GPS activ'],
     tr: ['Otomatik puantaj', 'Şantiyede', 'giriş:', 'Çıkıyor', 'Sıradaki şantiye', 'Şantiyede bekleniyor',
       'Yarın', 'Bitti', 'Yok', 'Adres bulunamadı', 'İzin gerekli',
       'Otomatik puantaj için konuma «Her zaman» izni ver.', 'İzin ver',
       'Bu telefon hiçbir kişiyle eşleşmedi. Adını Kişiler bölümüne ekle.',
       'Adresi olan planlı şantiye yok.', 'Bölge',
-      'casô açıkken otomatik giriş için konuma izin ver.'],
+      'casô açıkken otomatik giriş için konuma izin ver.', 'GPS açık'],
     pl: ['Automatyczny czas pracy', 'Na budowie', 'od', 'Wychodzi', 'Następna budowa', 'Oczekiwany na budowie',
       'Jutro', 'Zakończone', 'Nieobecny', 'Nie znaleziono adresu', 'Wymagane zezwolenie',
       'Zezwól na lokalizację „Zawsze”, aby rejestrować czas pracy automatycznie.', 'Zezwól',
       'Ten telefon nie jest przypisany do żadnej osoby. Dodaj swoje imię w sekcji Osoby.',
       'Brak zaplanowanych budów z adresem.', 'Strefa',
-      'Zezwól na lokalizację, aby rejestrować czas automatycznie, gdy casô jest otwarte.'],
+      'Zezwól na lokalizację, aby rejestrować czas automatycznie, gdy casô jest otwarte.', 'GPS włączony'],
     ar: ['الحضور التلقائي', 'في الورشة', 'منذ', 'يغادر', 'الورشة التالية', 'في انتظاره بالورشة',
       'غدًا', 'انتهى', 'غائب', 'لم يتم العثور على العنوان', 'الإذن مطلوب',
       'اسمح بالموقع «دائمًا» لتسجيل الحضور تلقائيًا.', 'السماح',
       'هذا الهاتف غير مرتبط بأي شخص. أضف اسمك الشخصي في الأشخاص.',
       'لا توجد ورشة مخطط لها بعنوان.', 'منطقة',
-      'اسمح بالموقع للتسجيل التلقائي أثناء فتح casô.'],
+      'اسمح بالموقع للتسجيل التلقائي أثناء فتح casô.', 'GPS مفعّل'],
     ru: ['Автоматический учёт времени', 'На объекте', 'с', 'Уходит', 'Следующий объект', 'Ожидается на объекте',
       'Завтра', 'Завершено', 'Отсутствует', 'Адрес не найден', 'Нужно разрешение',
       'Разреши геопозицию «Всегда», чтобы время учитывалось автоматически.', 'Разрешить',
       'Этот телефон не привязан ни к одному человеку. Добавь своё имя в разделе «Люди».',
       'Нет запланированных объектов с адресом.', 'Зона',
-      'Разрешите геолокацию для автоматического учёта, пока casô открыт.']
+      'Разрешите геолокацию для автоматического учёта, пока casô открыт.', 'GPS включён']
   };
 
   /* Ajoute ces textes au dictionnaire de casô, sans écraser une traduction qui existe déjà. */
@@ -155,6 +155,16 @@
           if (k >= 0 && upcoming.indexOf(cid) < 0) upcoming.push(cid);
         });
       }
+      /* chantiers « GPS toujours » : surveillés chaque jour de 6 h à 20 h, même sans rendez-vous au planning
+         (une arrivée et un départ par jour ; pas d'« attendu » ni d'« absent » : personne n'y est attendu à une heure précise) */
+      (db.chantiers || []).forEach(function (c) {
+        if (!c.toujours || !(c.adr || c.geo)) return;
+        for (var j = -2; j <= 1; j++) {
+          var dj = env.agAdd(today, j);
+          plan.push({ id: 'tj:' + c.id + ':' + dj, siteId: c.id, start: at(dj, '06:00'), end: at(dj, '20:00'), addr: c.adr || '', toujours: true });
+        }
+        if (upcoming.indexOf(c.id) < 0) upcoming.push(c.id);
+      });
       return { plan: plan, upcoming: upcoming };
     }
 
@@ -279,7 +289,7 @@
     /* ---------- la journée ---------- */
     function todayRows() {
       var day = env.agToday(), s0 = at(day, '00:00'), s1 = s0 + DAY, s = st.state;
-      return view.plan.filter(function (p) { return p.start >= s0 && p.start < s1; })
+      return view.plan.filter(function (p) { return p.start >= s0 && p.start < s1 && (!p.toujours || (st.log[p.id] && st.log[p.id].in)); })
         .sort(function (a, b) { return a.start - b.start; })
         .map(function (p) {
           var l = st.log[p.id] || {}, k = 'todo';
@@ -297,9 +307,11 @@
       if (s.phase === 'leaving') return { k: 'leaving', site: siteName(s.siteId) };
       if (view.missing.length) return { k: 'nogeo', site: siteName(view.missing[0]) };
       var nx = view.plan.filter(function (p) {
-        return !s.done[p.id] && p.end > now && view.sites[p.siteId];
+        return !p.toujours && !s.done[p.id] && p.end > now && view.sites[p.siteId];
       }).sort(function (a, b) { return a.start - b.start; })[0];
       if (nx) return { k: 'next', site: siteName(nx.siteId), at: nx.start, tomorrow: nx.start >= at(env.agToday(), '00:00') + DAY };
+      var tj = []; view.plan.forEach(function (p) { if (p.toujours && view.sites[p.siteId] && tj.indexOf(p.siteId) < 0) tj.push(p.siteId); });
+      if (tj.length && !todayRows().length) return { k: 'watch', site: tj.map(siteName).join(' · ') };
       var rows = todayRows();
       if (rows.length) {
         var total = 0;
@@ -326,6 +338,8 @@
         case 'next':
           return pill('wait', s.at > env.now() ? T('Prochain chantier') : T('Attendu sur place')) + nm(s.site) +
             sub((s.tomorrow ? T('Demain') + ' ' : '') + env.fmtT(s.at));
+        case 'watch':
+          return pill('wait', T('GPS actif')) + nm(s.site);
         case 'done':
           return pill('', T('Terminé')) + (s.total ? '<div class="au-big" data-noi18n>' + env.fmtH(s.total) + '</div>' : '');
         case 'nogeo':

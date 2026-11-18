@@ -86,7 +86,7 @@ function hdBackSync(){const b=$('hdBack');if(b)b.hidden=!document.querySelector(
 /* titre de la page affichée, recopié dans la barre du haut */
 function hdTitle(){const t=document.querySelector('section.on .pg-t'),h=$('hdT');if(!h)return;const v=t?t.textContent.trim():'';if(h.textContent!==v)h.textContent=v}
 {let q=0;new MutationObserver(()=>{if(!q)q=requestAnimationFrame(()=>{q=0;hdTitle()})}).observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['class']})}
-function go(n){const m={enc:-1,fact:-1,agenda:-1,plan:-1,sigp:-1,devis:-1,chat:-1,edit:-1,prix:1,imp:-1,pt:2,histo:3,mes:-1,four:-1,cpt:-1,tr:-1,sign:0,cli:-1,clif:-1,fou:-1,fouf:-1,news:-1};tab(n,document.querySelectorAll('nav button')[m[n]])}
+function go(n){const m={enc:-1,fact:-1,agenda:1,plan:-1,sigp:-1,devis:-1,chat:-1,edit:-1,prix:-1,imp:-1,pt:2,histo:3,mes:-1,four:-1,cpt:-1,tr:-1,sign:0,cli:-1,clif:-1,fou:-1,fouf:-1,news:-1};tab(n,document.querySelectorAll('nav button')[m[n]])}
 
 /* ---------- Langue de l'appli (le devis, le PDF et le message restent en français) ---------- */
 /* traductions de l'interface : i18n/ui-xx.json, seulement la langue choisie ; gardée sur l'appareil, mise à jour en arrière-plan */

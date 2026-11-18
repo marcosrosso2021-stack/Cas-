@@ -73,6 +73,36 @@ t('journée normale : zone inscrite, entrée et sortie aux heures du système', 
   assert.ok(m.A.card().includes('Terminé') && m.A.card().includes('4 h 02'));
 });
 
+t('GPS toujours : chantier surveillé sans rendez-vous, entrée et sortie écrites, jamais « attendu » ni « absent »', async () => {
+  const m = mk({ events: [] });
+  m.db.chantiers.push({ id: 'k1', nom: 'Dépôt Martin', adr: '3 rue Victor Hugo, Lyon' });
+  await m.A.run();
+  assert.strictEqual(m.calls.set.length, 0, 'sans « GPS toujours » : aucune zone');
+  m.db.chantiers[0].toujours = true;
+  await m.A.run();
+  assert.strictEqual(m.calls.set.length, 1);
+  assert.strictEqual(m.calls.set[0].sites[0].id, 'k1');
+  assert.strictEqual(m.A.status().k, 'watch', 'état « GPS actif », pas « Prochain chantier » : personne n\'y est attendu');
+  assert.ok(m.A.card().includes('GPS actif') && m.A.card().includes('Dépôt Martin'));
+  m.q.push(ev('enter', '09:58', 'k1'), ev('dwell', '09:59', 'k1'), ev('exit', '15:00', 'k1'));
+  m.clock.t = ts('15:15');
+  await m.A.run();
+  assert.deepStrictEqual(m.db.pts.map(x => [x.t, x.c, x.ts]), [['in', 'k1', ts('09:58')], ['out', 'k1', ts('15:00')]]);
+  m.clock.t = ts('23:00');
+  await m.A.run();
+  assert.ok(!m.A.rows().some(r => r.k === 'absent'), 'jamais « absent »');
+});
+
+t('GPS toujours : la nuit (avant 4 h, après 21 h 30) un passage ne compte pas', async () => {
+  const m = mk({ events: [] });
+  m.db.chantiers.push({ id: 'k1', nom: 'Dépôt', adr: '3 rue Victor Hugo, Lyon', toujours: true });
+  await m.A.run();
+  m.q.push(ev('enter', '02:00', 'k1'), ev('dwell', '02:01', 'k1'));
+  m.clock.t = ts('02:10');
+  await m.A.run();
+  assert.strictEqual(m.db.pts.length, 0);
+});
+
 t('sur place : l\'état affiche le chantier et l\'heure d\'arrivée', async () => {
   const m = mk();
   await m.A.run();

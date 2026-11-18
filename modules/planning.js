@@ -407,7 +407,7 @@ function agRenderDay(){
  if(d===agToday()){const n=new Date(),m=n.getHours()*60+n.getMinutes();if(m>=h0*60&&m<=h1*60)g+=`<div class="ag-now" style="top:${y(m)}px"></div>`}
  const all=E.filter(e=>!e.a);
  $('agAll').innerHTML=all.map(e=>`<button class="ag-chip ${e.t}" onclick="agEdit('${e.id}','${d}')"><b data-noi18n dir="auto">${esc(e.title||i18nT(e.t==='off'?'Indisponible':'Rendez-vous'))}</b> <span>${e.t==='off'?'Indisponible':'Toute la journée'}</span></button>`).join('')+(!F.length&&!all.some(e=>e.t==='off')?`<div class="ag-chip off"><b>Indisponible</b> <span>toute la journée</span></div>`:'');
- $('agGrid').style.height=((h1-h0)*PX+8)+'px';$('agGrid').innerHTML=g;
+ $('agGrid').style.height=((h1-h0)*PX+8)+'px';$('agGrid').innerHTML=g;$('agGrid').dataset.h0=h0;$('agGrid').dataset.px=PX;
  $('agDayT').textContent=agFmtD(d)}
 function agRenderWeek(){
  const ws=agWeekStart(agSel);let h='';
@@ -441,28 +441,41 @@ function agSetAdd(k){const {dp,M}=agSetGet();const r=M[k]||[];const last=r[r.len
 function agSetDel(k,i){const {dp,M}=agSetGet();M[k].splice(i,1);agSetPut(dp,M)}
 // feuille d'édition
 let agEdDay=null;
-function agEdit(id,day){agEd=id?db.events.find(e=>e.id===id):null;agEdDay=day||null;const e=agEd||{t:'rdv',d:day||agSel,a:'08:00',b:'10:00',title:''};
- $('agEt').textContent=i18nT(agEd?'Modifier':'Nouveau rendez-vous');$('agEtyp').value=e.t;$('agEti').value=e.title||'';$('agEd').value=e.d;$('agEd2').value=e.d2||'';
+/* nouveau rendez-vous : appui sur une heure du planning (heure = « 14:30 »), sinon 8 h – 10 h */
+function agEdit(id,day,heure){agEd=id?db.events.find(e=>e.id===id):null;agEdDay=day||null;
+ const e=agEd||{t:'rdv',d:day||agSel,a:heure||'08:00',b:heure?agHm(Math.min(1439,agMin(heure)+60)):'10:00',title:''};
+ $('agEtyp').value=e.t;segOn('agTyp',e.t);$('agEti').value=e.title||'';$('agEd').value=e.d;$('agEd2').value=e.d2||'';
  $('agEa').value=e.a||'';$('agEb').value=e.b||'';$('agEall').checked=!e.a;$('agEcl').value=e.cid?((db.clients.find(c=>c.id===e.cid)||{}).nom||''):'';$('agEadr').value=e.adr||'';$('agEno').value=e.note||'';
  $('agErr').value=e.rr?(e.rr.f==='w'&&e.rr.days&&e.rr.days.length>1?'w5':e.rr.f):'';$('agErr').dataset.v0=$('agErr').value;$('agEru').value=e.rr&&e.rr.u||'';
- ensurePt();$('agEwho').innerHTML=db.people.length?db.people.map(p=>`<label class="ag-who"><input type="checkbox" value="${p.id}" ${(e.who||[]).includes(p.id)?'checked':''}> <span data-noi18n>${esc(p.nom)}</span></label>`).join(''):`<span class="mut">Ajoute ton équipe dans Pointage.</span>`;
+ ensurePt();$('agEwho').innerHTML=db.people.map(p=>`<label class="ag-who"><input type="checkbox" value="${p.id}" ${(e.who||[]).includes(p.id)?'checked':''}> <span data-noi18n>${esc(p.nom)}</span></label>`).join('');$('agEwhoW').hidden=!db.people.length;$('agEchW').hidden=!db.chantiers.length;
  $('agEch').innerHTML=`<option value="" data-noi18n>${esc(i18nT('Automatique (client ou adresse)'))}</option>`+db.chantiers.map(c=>`<option value="${c.id}" ${e.ch===c.id?'selected':''} data-noi18n>${esc(c.nom)}</option>`).join('');
  $('agEdel1').hidden=!(agEd&&agEd.rr);
  $('agEclDl').innerHTML=db.clients.map(c=>`<option value="${esc(c.nom)}">`).join('');agEdAll();
- $('agEdel').hidden=!agEd;$('agEq').hidden=!agEd||!e.cid;$('agEics').hidden=!agEd;$('agEpt').hidden=!agEd||agEd.t!=='rdv';
+ $('agEdel').hidden=!agEd;$('agEq').hidden=!agEd||!e.cid||e.t!=='rdv';
+ /* options déjà remplies : ouvertes ; sinon fermées pour garder l'écran court */
+ $('agPlus').open=!!(e.rr||(e.who&&e.who.length)||e.ch||e.note);
  $('agShBg').hidden=false;$('agSh').hidden=false;requestAnimationFrame(()=>{$('agSh').classList.add('on');$('agShBg').classList.add('on')})}
-function agEdAll(){const a=$('agEall').checked;$('agEtimes').hidden=a;$('agEd2W').hidden=$('agEtyp').value!=='off'||!!$('agErr').value;$('agEruW').hidden=!$('agErr').value}
+function agEdAll(){const a=$('agEall').checked,off=$('agEtyp').value==='off';$('agEtimes').hidden=a;$('agEd2W').hidden=!off||!!$('agErr').value;$('agEruW').hidden=!$('agErr').value;
+ $('agEcliW').hidden=off;$('agEq').hidden=!agEd||off||!agEd.cid;$('agEti').placeholder=i18nT(off?'Pourquoi ? Ex. Congés':'Quoi ? Ex. Pose de carrelage');
+ $('agEt').textContent=i18nT(agEd?(off?'Indisponibilité':'Rendez-vous'):(off?'Nouvelle indisponibilité':'Nouveau rendez-vous'))}
+function agTyp(t){$('agEtyp').value=t;segOn('agTyp',t);agEdAll()}
+/* client choisi dans la liste : son adresse vient toute seule si elle n'est pas déjà écrite */
+function agEclPick(){const c=findBy(db.clients,$('agEcl').value);if(c&&c.adr&&!$('agEadr').value.trim())$('agEadr').value=c.adr}
+/* appui sur une heure libre du jour : nouveau rendez-vous à cette heure (à la demi-heure) */
+document.addEventListener('click',ev=>{const g=ev.target.closest&&ev.target.closest('#agGrid');if(!g||ev.target.closest('.ag-ev'))return;
+ const r=g.getBoundingClientRect(),h0=+g.dataset.h0||0,px=+g.dataset.px||46,m=Math.round(((ev.clientY-r.top)/px*60+h0*60)/30)*30;
+ if(m<0||m>=1440)return;agEdit(null,agSel,agHm(m))});
 function agShClose(){$('agSh').classList.remove('on');$('agShBg').classList.remove('on');setTimeout(()=>{$('agSh').hidden=true;$('agShBg').hidden=true},200)}
 function agSave(){
  const t=$('agEtyp').value,d=$('agEd').value,all=$('agEall').checked,a=all?null:$('agEa').value,b=all?null:$('agEb').value;
  if(!d){toast(i18nT('Choisis une date.'));return}
  if(!all&&(!a||(b&&agMin(b)<=agMin(a)))){toast(i18nT('La fin doit être après le début.'));return}
- const nm=$('agEcl').value.trim();let cl=null,isNew=false;if(nm){const r=upsert('clients',{nom:nm,adr:$('agEadr').value.trim()});cl=r.x;isNew=r.isNew}
+ const nm=t==='rdv'?$('agEcl').value.trim():'';let cl=null,isNew=false;/* une indisponibilité n'a ni client ni adresse */if(nm){const r=upsert('clients',{nom:nm,adr:$('agEadr').value.trim()});cl=r.x;isNew=r.isNew}
  const e=agEd||{id:uid(),src:'main'},rv=$('agErr').value,ru=$('agEru').value,who=[...document.querySelectorAll('#agEwho input:checked')].map(x=>x.value);
  const rr=rv?(agEd&&agEd.rr&&rv===$('agErr').dataset.v0?Object.assign({},agEd.rr):(rv==='w5'?{f:'w',days:[1,2,3,4,5]}:{f:rv})):undefined;if(rr){delete rr.u;if(ru>d)rr.u=ru}
  // modifier une répétition depuis un jour : la répétition garde sa date de départ
  const d0=agEd&&agEd.rr&&rr&&agEdDay&&d===agEdDay?agEd.d:d;
- Object.assign(e,{t,d:d0,d2:t==='off'&&!rr&&$('agEd2').value>d?$('agEd2').value:undefined,a,b:a?(b||agHm(Math.min(1439,agMin(a)+60))):null,title:$('agEti').value.trim(),cid:cl?cl.id:undefined,adr:$('agEadr').value.trim(),note:$('agEno').value.trim(),rr,who:who.length?who:undefined,ch:$('agEch').value||undefined,at:Date.now()});
+ Object.assign(e,{t,d:d0,d2:t==='off'&&!rr&&$('agEd2').value>d?$('agEd2').value:undefined,a,b:a?(b||agHm(Math.min(1439,agMin(a)+60))):null,title:$('agEti').value.trim(),cid:cl?cl.id:undefined,adr:t==='rdv'?$('agEadr').value.trim():'',note:$('agEno').value.trim(),rr,who:who.length?who:undefined,ch:$('agEch').value||undefined,at:Date.now()});
  if(!rr){delete e.rr;delete e.ex}agRemCompute(e);
  if(!agEd)db.events.push(e);save();agShClose();agSel=d;agRender();
  const ck=agCheck(e);toast(i18nT(ck.hors?'Enregistré, en dehors de tes créneaux de travail.':ck.over.length?'Enregistré : chevauche un autre rendez-vous.':'Enregistré.'));
