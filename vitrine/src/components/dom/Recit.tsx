@@ -9,6 +9,9 @@ import { BeforeAfterSlider } from './BeforeAfterSlider'
 import { DemoAppel } from './demos/DemoAppel'
 import { DemoDevis } from './demos/DemoDevis'
 import { DemoPoint } from './demos/DemoPoint'
+import { DemoPrix } from './demos/DemoPrix'
+import { DemoVeille } from './demos/DemoVeille'
+import { Accroche } from './Accroche'
 import { DemoSemaine } from './demos/DemoSemaine'
 import { DemoTerrain } from './demos/DemoTerrain'
 import { Fleche } from './Icone'
@@ -61,12 +64,14 @@ function Moment({
   i,
   hauteur,
   troisD,
+  large,
   demo,
   children,
 }: {
   i: number
   hauteur: string
   troisD?: boolean
+  large?: boolean
   demo?: ReactNode
   children?: ReactNode
 }) {
@@ -80,7 +85,7 @@ function Moment({
           <p className="ch-p">{m.texte}</p>
           {children}
         </div>
-        {demo && <div className="ch-demo">{demo}</div>}
+        {demo && <div className={`ch-demo${large ? ' large' : ''}`}>{demo}</div>}
       </div>
     </section>
   )
@@ -112,23 +117,25 @@ function Ouverture() {
   const webgl = useShowcase((s) => s.webgl)
   const touche = useShowcase((s) => s.touche)
   const camera = useShowcase((s) => s.camera)
+  const depart = useShowcase((s) => s.depart)
   return (
-    <section className="ch trois-d ouverture" data-ch={0} id="moment-0">
+    <section className={`ch trois-d ouverture${depart ? ' parti' : ''}`} data-ch={0} id="moment-0">
       <div className="ch-colle">
         <div className="ch-texte">
           <p className="mono">{m.heure}</p>
           <h1>{m.titre}</h1>
           <p className="ch-p">{m.texte}</p>
           <div className="actions">
-            <button type="button" className="btn" onClick={() => allerAuMoment(1)}>
-              Commencer la visite <Fleche />
-            </button>
-            <a className="btn clair" href={LIENS.creerCompte} target="_blank" rel="noopener">
-              Créer mon compte
+            <a className="btn jaune" href={LIENS.creerCompte} target="_blank" rel="noopener">
+              Essayer casô <Fleche />
             </a>
+            <button type="button" className="btn clair" onClick={() => allerAuMoment(1)}>
+              Voir une journée
+            </button>
           </div>
         </div>
       </div>
+      <Accroche />
       <RoomExplorer />
       {webgl && (
         <>
@@ -170,9 +177,11 @@ export function Recit() {
         )}
         <p className="mono exemple">Démonstration</p>
       </Moment>
-      <Moment i={5} hauteur="200svh" demo={<DemoDevis />} />
-      <Moment i={6} hauteur="190svh" demo={<DemoSemaine />} />
-      <Moment i={7} hauteur="180svh" demo={<DemoPoint />}>
+      <Moment i={5} hauteur="190svh" demo={<DemoPrix />} />
+      <Moment i={6} hauteur="200svh" large demo={<DemoDevis />} />
+      <Moment i={7} hauteur="190svh" demo={<DemoSemaine />} />
+      <Moment i={8} hauteur="190svh" demo={<DemoVeille />} />
+      <Moment i={9} hauteur="180svh" demo={<DemoPoint />}>
         <ul className="aussi" aria-label="Aussi dans casô">
           {AUSSI.map((a) => (
             <li key={a}>{a}</li>

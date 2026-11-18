@@ -15,7 +15,8 @@ const Hero3D = dynamic(() => import('@/components/canvas/Hero3D'), { ssr: false 
  */
 export function Fond3D() {
   const webgl = useShowcase((s) => s.webgl)
-  const vu = useShowcase((s) => s.mode !== 'cache')
+  // Pendant l'histoire du crayon, la maison n'est pas encore là.
+  const vu = useShowcase((s) => s.mode !== 'cache' && s.depart)
 
   useEffect(() => {
     const { setWebgl, setQualite, setVisible } = useShowcase.getState()

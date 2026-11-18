@@ -39,7 +39,7 @@ export function DemoDevis() {
           {signe && <span className="pastille">Signé · envoyé par lien</span>}
         </header>
         {lignes.map((l, i) => (
-          <div className="lg ap" key={l.nom} style={{ '--a': 0.08 + i * 0.09 } as CSSProperties}>
+          <div className="lg ap" key={l.nom} style={{ '--a': 0.06 + i * 0.08 } as CSSProperties}>
             <span>{l.nom}</span>
             <b>{euro(l.qte * l.prix)}</b>
             <small>

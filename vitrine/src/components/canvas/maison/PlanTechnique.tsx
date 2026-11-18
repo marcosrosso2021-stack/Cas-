@@ -1,16 +1,18 @@
 'use client'
 
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { LX, LZ, MURS } from '@/data/maison'
+import { anim, borne } from './anim'
 
 /**
- * Le plan technique de la maison, tracé au sol : murs, ouvertures et lignes de cote.
- * Il s'affiche à l'ouverture, puis s'efface quand les murs montent.
+ * Le plan de la maison, tracé au sol trait après trait comme au crayon :
+ * murs, ouvertures et lignes de cote. Il s'efface quand les murs sont montés.
  */
 export function PlanTechnique() {
-  const { geometrie, matiere } = useMemo(() => {
+  const traits = useRef<THREE.LineSegments>(null)
+  const { plan, trame, crayon, leger } = useMemo(() => {
     const pts: number[] = []
     const trait = (x1: number, z1: number, x2: number, z2: number) => pts.push(x1, 0.03, z1, x2, 0.03, z2)
 
@@ -22,7 +24,6 @@ export function PlanTechnique() {
       const uz = dz / l
       const nx = (-uz * m.ep) / 2
       const nz = (ux * m.ep) / 2
-      // deux traits par mur, interrompus aux ouvertures
       let s = 0
       const coupes = [...m.ouvertures].sort((p, q) => p.s - q.s)
       const segment = (a: number, b: number) => {
@@ -31,7 +32,6 @@ export function PlanTechnique() {
       }
       for (const o of coupes) {
         segment(s, o.s)
-        // tableau de l'ouverture
         for (const t of [o.s, o.e]) trait(m.a[0] + ux * t + nx, m.a[1] + uz * t + nz, m.a[0] + ux * t - nx, m.a[1] + uz * t - nz)
         s = o.e
       }
@@ -46,40 +46,52 @@ export function PlanTechnique() {
         [x1, z1],
         [x2, z2],
       ])
-        horizontal ? trait(x, z - 0.25, x, z + 0.25) : trait(x - 0.25, z, x + 0.25, z)
+        if (horizontal) trait(x, z - 0.25, x, z + 0.25)
+        else trait(x - 0.25, z, x + 0.25, z)
     }
     cote(-LX, LZ + 1.1, LX, LZ + 1.1)
     cote(LX + 1.1, -LZ, LX + 1.1, LZ)
 
     // trame au sol, tous les mètres
-    const trame: number[] = []
-    for (let x = -LX - 2; x <= LX + 2; x++) trame.push(x, 0.02, -LZ - 2, x, 0.02, LZ + 2)
-    for (let z = -LZ - 2; z <= LZ + 2; z++) trame.push(-LX - 2, 0.02, z, LX + 2, 0.02, z)
+    const carreaux: number[] = []
+    for (let x = -LX - 2; x <= LX + 2; x++) carreaux.push(x, 0.02, -LZ - 2, x, 0.02, LZ + 2)
+    for (let z = -LZ - 2; z <= LZ + 2; z++) carreaux.push(-LX - 2, 0.02, z, LX + 2, 0.02, z)
 
-    const g = new THREE.BufferGeometry()
-    g.setAttribute('position', new THREE.Float32BufferAttribute([...pts, ...trame], 3))
-    g.addGroup(0, pts.length / 3, 0)
-    g.addGroup(pts.length / 3, trame.length / 3, 1)
-    const fort = new THREE.LineBasicMaterial({ color: '#18181a', transparent: true })
-    const leger = new THREE.LineBasicMaterial({ color: '#18181a', transparent: true })
-    return { geometrie: g, matiere: [fort, leger] }
+    const g1 = new THREE.BufferGeometry()
+    g1.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3))
+    const g2 = new THREE.BufferGeometry()
+    g2.setAttribute('position', new THREE.Float32BufferAttribute(carreaux, 3))
+    return {
+      plan: g1,
+      trame: g2,
+      crayon: new THREE.LineBasicMaterial({ color: '#18181a', transparent: true }),
+      leger: new THREE.LineBasicMaterial({ color: '#18181a', transparent: true, opacity: 0 }),
+    }
   }, [])
 
   useEffect(
     () => () => {
-      geometrie.dispose()
-      matiere.forEach((m) => m.dispose())
+      plan.dispose()
+      trame.dispose()
+      crayon.dispose()
+      leger.dispose()
     },
-    [geometrie, matiere],
+    [plan, trame, crayon, leger],
   )
 
-  useFrame((etat) => {
-    // L'opacité est décidée par HouseScene, sur le groupe parent.
-    const parent = etat.scene.getObjectByName('plan-technique')?.parent
-    const o = (parent?.userData.opacite as number | undefined) ?? 0
-    matiere[0].opacity = o
-    matiere[1].opacity = o * 0.14
+  useFrame(() => {
+    const reste = 1 - borne((anim.entree - 0.62) / 0.33)
+    const total = plan.attributes.position.count
+    // Le trait avance : deux sommets par segment.
+    plan.setDrawRange(0, Math.floor((total / 2) * borne(anim.entree / 0.24)) * 2)
+    crayon.opacity = reste
+    leger.opacity = 0.13 * reste * borne(anim.entree / 0.08)
   })
 
-  return <lineSegments name="plan-technique" geometry={geometrie} material={matiere} />
+  return (
+    <>
+      <lineSegments geometry={trame} material={leger} />
+      <lineSegments ref={traits} geometry={plan} material={crayon} />
+    </>
+  )
 }

@@ -13,8 +13,8 @@ export const MOMENTS: Moment[] = [
   {
     rail: 'Ouverture',
     heure: 'Pour les artisans du bâtiment',
-    titre: 'Une journée de chantier, en plus simple.',
-    texte: 'Suivez un chantier, du premier appel au devis signé. Faites tourner la maison, ou commencez la visite.',
+    titre: 'Du crayon au devis.',
+    texte: 'Ce que vous griffonniez sur un carnet, dites-le à casô. Il range, chiffre et dessine le chantier.',
   },
   {
     rail: 'L’appel',
@@ -41,6 +41,12 @@ export const MOMENTS: Moment[] = [
     texte: 'Montrez-lui la salle de bain avant et après. Changez le sol ou les murs devant lui.',
   },
   {
+    rail: 'Les prix',
+    heure: '11 h',
+    titre: 'Il vous faut le bon prix.',
+    texte: 'Un outil, un matériau : casô cherche dans les magasins et classe par prix. Gardez vos favoris.',
+  },
+  {
     rail: 'Le devis',
     heure: '14 h',
     titre: 'Le devis se prépare.',
@@ -51,6 +57,12 @@ export const MOMENTS: Moment[] = [
     heure: 'Lundi',
     titre: 'Votre semaine tient sur un écran.',
     texte: 'Vos chantiers et vos créneaux. Un client décale ? Vous déplacez l’intervention.',
+  },
+  {
+    rail: 'La veille',
+    heure: 'Mardi, au café',
+    titre: 'Votre métier bouge. Vous suivez.',
+    texte: 'Les règles qui changent et les nouveautés de votre métier arrivent déjà triées, dans la newsletter.',
   },
   {
     rail: 'Le point',
@@ -68,6 +80,6 @@ export const ORIGINES = {
 } as const
 
 /** Le reste de l'appli, en une ligne. */
-export const AUSSI = ['Prix des matériaux en ligne', 'Veille de votre métier', 'Données chiffrées', 'Sans réseau', '10 langues']
+export const AUSSI = ['Données chiffrées', 'Fonctionne sans réseau', '10 langues', 'Votre équipe']
 
 export const SIGNATURE = 'Moins de complexité dans vos journées. Plus de maîtrise sur vos projets.'

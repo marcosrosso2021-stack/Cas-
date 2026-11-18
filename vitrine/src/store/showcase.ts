@@ -12,7 +12,7 @@ export type Qualite = 'high' | 'medium' | 'low'
 export type Mode = 'libre' | 'eclate' | 'renov' | 'cache'
 export type Statut = 'saisie' | 'mesuree' | 'estimee'
 
-const MODES: Mode[] = ['libre', 'cache', 'cache', 'eclate', 'renov', 'cache', 'cache', 'cache']
+const MODES: Mode[] = ['libre', 'cache', 'cache', 'eclate', 'renov', 'cache', 'cache', 'cache', 'cache', 'cache']
 
 /** Commandes que la caméra expose à l'interface (boutons de zoom). */
 export interface ApiCamera {
@@ -20,7 +20,10 @@ export interface ApiCamera {
 }
 
 interface EtatShowcase {
-  /** Moment de la visite affiché à l'écran, de 0 à 7. */
+  /** L'histoire du crayon est finie : la maison peut se monter. */
+  depart: boolean
+  setDepart: () => void
+  /** Moment de la visite affiché à l'écran, de 0 à 9. */
   chapitre: number
   setChapitre: (c: number) => void
   mode: Mode
@@ -54,6 +57,8 @@ interface EtatShowcase {
 }
 
 export const useShowcase = create<EtatShowcase>((set) => ({
+  depart: false,
+  setDepart: () => set({ depart: true }),
   chapitre: 0,
   setChapitre: (chapitre) =>
     set((s) => {

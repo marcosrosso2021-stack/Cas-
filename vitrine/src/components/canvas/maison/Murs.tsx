@@ -1,6 +1,9 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
+import { useFrame } from '@react-three/fiber'
+import type * as THREE from 'three'
+import { anim, borne, doux } from './anim'
 import { COUPE, H, MURS, type Face, type Mur, type ZoneId } from '@/data/maison'
 import { useMatieres, useVariantes } from '../matieres/MatieresContext'
 import { couper, longueurMur, planMetres, pleins, type Rect } from './geometrie'
@@ -95,8 +98,17 @@ function Menuiseries({ mur, base }: { mur: Mur; base: number }) {
   )
 }
 
-function MurCouche({ mur, couche }: { mur: Mur; couche: Couche }) {
+function MurCouche({ mur, couche, rang }: { mur: Mur; couche: Couche; rang: number }) {
   const { communs } = useMatieres()
+  const groupe = useRef<THREE.Group>(null)
+  // Chaque mur monte à son tour ; le haut se replie quand le toit s'ouvre.
+  useFrame(() => {
+    if (!groupe.current) return
+    const depart = (couche === 'bas' ? 0.24 : 0.42) + rang * 0.032
+    const e = doux(borne((anim.entree - depart) / 0.22)) * (couche === 'haut' ? 1 - anim.ouvert : 1)
+    groupe.current.scale.y = Math.max(0.001, e)
+    groupe.current.visible = e > 0.004
+  })
   const longueur = longueurMur(mur)
   const [ya, yb, base] = couche === 'bas' ? [0, COUPE, 0] : [COUPE, H, COUPE]
 
@@ -123,7 +135,7 @@ function MurCouche({ mur, couche }: { mur: Mur; couche: Couche }) {
   const z = mur.ep / 2 + 0.004
 
   return (
-    <group position={[mur.a[0], 0, mur.a[1]]} rotation={[0, Math.atan2(-dz, dx), 0]}>
+    <group ref={groupe} position={[mur.a[0], 0, mur.a[1]]} rotation={[0, Math.atan2(-dz, dx), 0]}>
       {blocs.map((r, i) => (
         <mesh
           key={i}
@@ -154,7 +166,7 @@ export function Murs({ couche }: { couche: Couche }) {
   return (
     <>
       {MURS.map((m, i) => (
-        <MurCouche key={i} mur={m} couche={couche} />
+        <MurCouche key={i} mur={m} couche={couche} rang={i} />
       ))}
     </>
   )

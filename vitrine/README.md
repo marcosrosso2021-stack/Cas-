@@ -1,6 +1,6 @@
 # casô — vitrine 3D
 
-Site vitrine de casô : une visite guidée en huit moments, « une journée de chantier ». La maison 3D ouvre la visite, s'ouvre pour montrer ses cotes, puis sert à l'avant / après ; les autres moments montrent le chat, le téléphone sur le chantier, le devis, la semaine et le point de fin de semaine.
+Site vitrine de casô : une visite guidée en dix moments, « une journée de chantier ». L'ouverture raconte une petite histoire : un crayon note un chantier sur un carnet, la note devient une fiche casô, puis la maison 3D se dessine et se monte. La maison s'ouvre ensuite pour montrer ses cotes et sert à l'avant / après ; les autres moments reprennent les écrans de l'appli : le chat, le téléphone sur le chantier, la recherche de prix, le devis, la semaine, la newsletter du métier et le point de fin de semaine.
 
 **Ce dossier est indépendant de l'appli.** Il a ses propres dépendances et ne lit ni ne modifie aucun fichier de casô (`index.html`, `serveur/`, `lib/`…). L'appli continue de se lancer avec `node serveur/server.js`, sans rien installer de plus.
 
@@ -33,7 +33,7 @@ src/store/               état partagé (moment de la visite, mode de la scène,
 src/lib/recit.ts         avancement de chaque moment au défilement, lu sans passer par React
 src/lib/appareil.ts      détection de l'appareil et de WebGL
 src/components/dom/      tout ce qui est HTML
-  Recit                  les huit moments et la lecture du défilement
+  Recit                  les dix moments et la lecture du défilement
   Rail                   navigation libre entre les moments
   Fond3D                 la couche 3D fixée derrière la page
   demos/                 l'appel, le chantier, le devis, la semaine, le point
@@ -51,7 +51,7 @@ src/components/canvas/   tout ce qui est 3D
   CameraController       rotation, zoom, vues de chaque moment
   matieres/              matières et textures dessinées dans le navigateur
 public/models/           dossiers prêts pour de futurs modèles .glb
-public/fonts/            police des titres (Fraunces, licence OFL)
+app/crayon.css          écriture au crayon (Caveat, licence OFL, intégrée)
 ```
 
 ## Le défilement

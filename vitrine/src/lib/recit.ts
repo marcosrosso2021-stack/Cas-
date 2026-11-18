@@ -5,7 +5,7 @@
  * pas par React : la scène 3D et les démonstrations les lisent directement,
  * pour que le défilement reste fluide.
  */
-export const NB_CHAPITRES = 8
+export const NB_CHAPITRES = 10
 
 export const recit = {
   /** Avancement de chaque moment, de 0 (il arrive) à 1 (il repart). */

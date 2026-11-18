@@ -9,7 +9,7 @@ import { mouvementReduit } from '@/lib/appareil'
 /** Repères posés sur les éléments de la pièce affichée : nom et mesure d'exemple. */
 export function RoomHotspots() {
   const id = useShowcase((s) => s.piece)
-  const libre = useShowcase((s) => s.mode === 'libre')
+  const libre = useShowcase((s) => s.mode === 'libre' && s.depart)
   const [pret, setPret] = useState(false)
 
   // Les repères arrivent après l'animation d'entrée, puis après chaque transition.
@@ -17,7 +17,7 @@ export function RoomHotspots() {
     setPret(false)
     const t = setTimeout(() => setPret(true), mouvementReduit() ? 0 : id === 'exterieur' ? 3900 : 900)
     return () => clearTimeout(t)
-  }, [id])
+  }, [id, libre])
 
   if (!pret || !libre) return null
   return (

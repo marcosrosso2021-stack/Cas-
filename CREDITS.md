@@ -13,4 +13,4 @@ casô utilise les données et logiciels suivants, avec les mentions que leurs li
 
 ## Vitrine (dossier `vitrine/`)
 
-- Police des titres **Fraunces** (`vitrine/public/fonts/`), The Fraunces Project Authors, licence SIL Open Font License 1.1. https://github.com/undercasetype/Fraunces
+- Écriture au crayon de l'ouverture : police **Caveat** (intégrée dans `vitrine/app/crayon.css`), The Caveat Project Authors, licence SIL Open Font License 1.1. https://github.com/googlefonts/caveat

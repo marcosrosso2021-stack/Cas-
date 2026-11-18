@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { rampe, suivre } from '@/lib/recit'
+import { BarreChat, EcranCaso } from '../EcranCaso'
 
 const ADRESSE = '12 rue des Lilas, Angers'
 
-/** L'artisan dicte : la fiche client et le chantier se créent dans le chat de casô. */
+/** L'accueil de casô, le chat : l'artisan dicte, la fiche client et le chantier se créent. */
 export function DemoAppel() {
   const [nom, setNom] = useState('Mme Martin')
   const texte = useRef<HTMLSpanElement>(null)
@@ -16,34 +17,35 @@ export function DemoAppel() {
   useEffect(
     () =>
       suivre(1, (p) => {
-        if (texte.current) texte.current.textContent = phrase.slice(0, Math.round(phrase.length * rampe(p, 0.06, 0.42)))
+        if (texte.current) texte.current.textContent = phrase.slice(0, Math.round(phrase.length * rampe(p, 0.06, 0.4)))
       }),
     [phrase],
   )
 
   return (
-    <div className="chat carte">
-      <div className="chat-tete">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="logo-caso.png" alt="" width={26} height={26} />
-        casô
-      </div>
-      <p className="bulle">
-        <span ref={texte} />
-        <i className="curs" />
-      </p>
-      <div className="reponse ap" style={{ '--a': 0.44 } as CSSProperties}>
-        <strong>Client créé</strong>
-        <span>
-          {client} · {ADRESSE}
-        </span>
-      </div>
-      <div className="reponse ap" style={{ '--a': 0.52 } as CSSProperties}>
-        <strong>Chantier créé</strong>
-        <span>
-          {client} – {ADRESSE}
-        </span>
-      </div>
+    <div>
+      <EcranCaso>
+        <div className="fil">
+          <p className="msg-bot">Bonjour ! Dis-moi le client, les travaux et les quantités : je prépare ton devis.</p>
+          <p className="msg-moi">
+            <span ref={texte} />
+            <i className="curs" />
+          </p>
+          <div className="msg-bot ap" style={{ '--a': 0.42 } as CSSProperties}>
+            <strong>Client créé</strong>
+            <span>
+              {client} · {ADRESSE}
+            </span>
+          </div>
+          <div className="msg-bot ap" style={{ '--a': 0.5 } as CSSProperties}>
+            <strong>Chantier créé</strong>
+            <span>
+              {client} – {ADRESSE}
+            </span>
+          </div>
+        </div>
+        <BarreChat />
+      </EcranCaso>
       <label className="essai" htmlFor="essai-nom">
         <span className="mono">Essayez avec un autre nom</span>
         <input id="essai-nom" value={nom} maxLength={28} onChange={(e) => setNom(e.target.value)} autoComplete="off" />

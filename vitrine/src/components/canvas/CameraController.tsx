@@ -145,7 +145,10 @@ export function CameraController() {
     const k = 1 - Math.exp(-d * 3.2)
 
     // Rotation lente tant que le visiteur n'a rien touché.
+    // La caméra attend la fin de l'histoire du crayon pour s'approcher.
+    if (!etat.depart) return
     if (!etat.touche && !reduit && etat.mode === 'libre') e.gAz += d * 0.05
+    if (!reduit && etat.mode === 'eclate') e.gAz += d * 0.035
 
     e.az += (e.gAz - e.az) * k
     e.pol += (e.gPol - e.pol) * k
