@@ -239,7 +239,8 @@ window.VAULT=(()=>{
    try{if(mode==='unlock')await V.unlockPw(pw);
     else{if((await pbk(pw,unhex(acc.salt),acc.iter))!==acc.hash)throw new Error('mdp');await V.create(pw)}}
    catch(e){busy=false;wait(btn,false);return bad()}
-   wait(btn,false);busy=false;done(mode==='migrate'?newCode:null)}
+   wait(btn,false);busy=false;const em=(acc&&acc.email)||mail;
+   done(()=>{if(mode==='migrate')newCode();try{if(typeof casoMail==='function'&&em)casoMail(em,pw)}catch(e){}})}
   async function forgot(){
    if(busy)return;const w=lkWait();if(w)return err('fgErr',lkMsg(w));
    const pw=$('fgPass').value;if(pw.length<8)return err('fgErr','8 caractères minimum.');
@@ -251,7 +252,7 @@ window.VAULT=(()=>{
    try{if(acc){const s=rnd(16);acc.iter=Math.max(acc.iter||0,ITER);acc.salt=hex(s);acc.hash=await pbk(pw,s,acc.iter);raw.set('caso_account',JSON.stringify(acc))}
     if(mode==='unlock')await V.wrapPass(pw);else await V.create(pw)}catch(e){}
    wait(btn,false);busy=false;
-   done(()=>{newCode();try{if(typeof toast==='function')toast(typeof i18nT==='function'?i18nT('Mot de passe changé.'):'Mot de passe changé.')}catch(e){}})}
+   done(()=>{newCode();try{if(typeof casoMailMdp==='function')casoMailMdp(pw)}catch(e){}try{if(typeof toast==='function')toast(typeof i18nT==='function'?i18nT('Mot de passe changé.'):'Mot de passe changé.')}catch(e){}})}
   // essai automatique à l'ouverture : il ne bloque ni n'occupe l'écran ; le mot de passe reste utilisable
   async function bio(user){
    if(user){if(busy)return;busy=true;wait(bioB,true)}

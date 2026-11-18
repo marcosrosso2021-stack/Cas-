@@ -204,6 +204,33 @@ function req(srv,p,o){o=o||{};return new Promise((res,ko)=>{
  d=await aller('google');T+=11*60e3;qui={nonce:d.nonce,claims:gClaims('g-5','cinq@gmail.com')};
  ok('état expiré après 10 minutes (400)',(await revenir('google',d)).status===400);
  ok('CORS présent sur /api/auth ; route inconnue → 401 sans session',(await P('moi',undefined,jC)).headers['access-control-allow-origin']==='*'&&(await P('inconnu',{})).status===401);
+
+ // ---- compte par e-mail : même compte, même essai, même plan ----
+ {const PR='a'.repeat(64),PR2='b'.repeat(64),SIRET3='40000000000002',PL=require('../lib/plan.js');
+  a=await P('mail/creer',{email:'Paul@Exemple.fr',preuve:PR,prenom:'Paul'});
+  ok('e-mail : création → session, compte sans mode',a.status===200&&/^[a-f0-9]{64}$/.test(a.j.jeton)&&a.j.compte.via==='mail'&&a.j.compte.email==='paul@exemple.fr'&&a.j.compte.mode===null);
+  const jM=a.j.jeton;
+  ok('e-mail : rien de secret dans la réponse',!/mdp|scrypt|"h"|sel/.test(JSON.stringify(a.j))&&!JSON.stringify(a.j).includes(PR));
+  const brut=fs.readFileSync(path.join(dir,'comptes.json'),'utf8');
+  ok('e-mail : la preuve n\'est pas gardée telle quelle',!brut.includes(PR));
+  a=await P('mail/creer',{email:'paul@exemple.fr',preuve:PR2});ok('e-mail : deuxième création refusée (409)',a.status===409);
+  a=await P('mail/entrer',{email:'PAUL@exemple.fr',preuve:PR});ok('e-mail : connexion avec la bonne preuve',a.status===200&&a.j.compte.email==='paul@exemple.fr');
+  a=await P('mail/entrer',{email:'paul@exemple.fr',preuve:PR2});ok('e-mail : mauvaise preuve refusée (401)',a.status===401&&!a.j.jeton);
+  a=await P('mail/entrer',{email:'personne@exemple.fr',preuve:PR});ok('e-mail : adresse inconnue (404)',a.status===404);
+  a=await P('mail/creer',{email:'pas-un-mail',preuve:PR});ok('e-mail : adresse invalide refusée',a.status===400);
+  a=await P('mail/creer',{email:'x@exemple.fr',preuve:'motdepasse'});ok('e-mail : mot de passe en clair refusé (preuve exigée)',a.status===400);
+  a=await P('profil',{mode:'artisan',nom:'Paul Plomberie',siret:SIRET3},jM);
+  ok('e-mail : même essai de 30 jours au SIRET, tout le mode Artisan ouvert',a.status===200&&a.j.compte.offre==='artisan_curieux'&&a.j.compte.essaiFin===T+30*J&&a.j.compte.modules.length===PL.catalogue('artisan').modules.length);
+  ok('e-mail : droits() en essai, rien de fermé',PL.droits(a.j.compte,T).essai&&PL.droits(a.j.compte,T).ouvert('veille'));
+  a=await P('plan',{modules:['devis','pointage']},jM);ok('e-mail : plan enregistré',a.status===200&&a.j.compte.plan.modules.join()==='devis,pointage');
+  T+=31*J;a=await P('moi',undefined,jM);const dr=PL.droits(a.j.compte,T);
+  ok('e-mail : après l\'essai, plan + socle gratuit',a.j.compte.offre==='plan'&&!dr.essai&&dr.ouvert('devis')&&dr.ouvert('pointage')&&dr.ouvert('chat')&&dr.ouvert('clients')&&dr.ouvert('rdv')&&!dr.ouvert('veille')&&!dr.ouvert('planning'));
+  a=await P('mail/mdp',{preuve:PR2},jM);ok('e-mail : mot de passe changé',a.status===200&&(await P('mail/entrer',{email:'paul@exemple.fr',preuve:PR2})).status===200&&(await P('mail/entrer',{email:'paul@exemple.fr',preuve:PR})).status===401);
+  const jG=(await connecter('google',gClaims('g-88','g88@gmail.com'))).jeton;
+  a=await P('mail/mdp',{preuve:PR},jG);ok('e-mail : changer de mot de passe refusé pour un compte Google',a.status===400);
+  let n429=0;for(let i=0;i<12;i++){const r=await req(S.server,'/api/auth/mail/entrer',{body:{email:'cible@exemple.fr',preuve:PR},ip:'6.6.6.'+i});if(r.status===429)n429++}
+  ok('e-mail : au plus 10 essais par heure pour une même adresse, même depuis plusieurs IP',n429===2,String(n429));
+  a=await P('supprimer',{confirm:'SUPPRIMER'},jM);ok('e-mail : suppression du compte',a.status===200&&(await P('mail/entrer',{email:'paul@exemple.fr',preuve:PR2})).status===404)}
  await new Promise(r=>S.server.close(r));
 
  // ---- serveur sans clés : rien ne casse ----

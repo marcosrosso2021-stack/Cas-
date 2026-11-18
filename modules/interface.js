@@ -186,6 +186,7 @@ async function loginSubmit(){
  const ok=await accountCheck($('lgMail').value,$('lgPass').value);
  if(!ok){lkFail();const w=lkWait();$('lgErr').textContent=w?lkMsg(w):'E-mail ou mot de passe incorrect.';$('lgErr').hidden=false;return}
  lkOk();try{await accUpgrade($('lgPass').value)}catch(e){}
+ casoMail(accountGet().email,$('lgPass').value);
  let neuf=false;try{if(window.VAULT&&!VAULT.on)neuf=await VAULT.create($('lgPass').value)}catch(e){}
  try{localStorage.removeItem('caso_locked')}catch(e){}
  $('lgPass').value='';modeEnter();
