@@ -7,7 +7,7 @@ const DEVIS=/\/devis\.html$/;
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>Promise.all([
  fetch(self.registration.scope,{cache:'reload'}).then(r=>{if(r.ok)return c.put(home(),r)}).catch(()=>{}),
  fetch(new URL('devis.html',self.registration.scope),{cache:'reload'}).then(r=>{if(r.ok)return c.put(home()+'devis.html',r)}).catch(()=>{})])))});
-self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x.startsWith('caso-app-99')&&x!==CACHE).map(x=>caches.delete(x)))).then(()=>self.clients.claim())));
+self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x.startsWith('caso-'+'app-')&&x!==CACHE).map(x=>caches.delete(x)))).then(()=>self.clients.claim())));
 const LIB=/^https:\/\/cdn\.jsdelivr\.net\/npm\/(?:tesseract\.js@5\.1\.1|tesseract\.js-core@5\.1\.1|@tesseract\.js-data\/fra@1\.0\.0|pdfjs-dist@3\.11\.174)\//;
 self.addEventListener('fetch',e=>{const q=e.request;if(q.method!=='GET')return;
  if(LIB.test(q.url)){e.respondWith(caches.open('caso-lib-1').then(c=>c.match(q.url).then(m=>m||fetch(q).then(r=>{if(r.ok||r.type==='opaque')c.put(q.url,r.clone());return r}))));return}const u=new URL(q.url);if(u.origin!==location.origin||!APP.test(u.pathname))return;
