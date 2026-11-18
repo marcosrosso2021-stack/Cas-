@@ -322,3 +322,25 @@ Source du moteur et outils de traduction : le module « caso-ia » (moteur, cata
 - Vu en route, pas corrigé : dans un projet, « dépose carrelage, pose faïence, receveur » répond « Noté : dépose dépose ».
 - essais : 11 conversations de plus dans `essai-fiabilite.js`.
 
+**Consignes de rédaction, rapport d'intervention, « la même chose » (17 nov. 2026)** — `chat/reponses.js` :
+- **Consigne de rédaction** (`db.memo.regles`) : « dans mes devis, écris toujours dépose et évacuation des anciens matériaux au lieu de juste dépose » → une question, retenue après un Oui, puis appliquée d'office : une ligne nommée exactement « Dépose » prend le nouveau nom (« Dépose carrelage » n'est pas touchée). Annulable avec la ligne ; « oublie la consigne dépose » l'efface ; « ouvre la mémoire » la montre.
+- **Nom des lignes** : « ajoute une dépose de 12 m² » pose « Dépose » (avant : « Ajoute une dépose »). Fait au moment d'enregistrer la réponse (`chatSave`), pour toutes les façons de poser une ligne.
+- **Rapport d'intervention** (`db.rapports`) : un récit au passé qui nomme un client (« chez Martin, on a déposé le carrelage, il y avait de l'humidité derrière, on a arrêté pour voir d'où ça vient ») → un brouillon en quatre rubriques (travaux réalisés, observations, situation, suite à prévoir), avec les mots de l'artisan ; rien n'est déduit ni reformulé. Rangé chez le client après un Oui. « rapport d'intervention de Martin », « rapports d'intervention » les redonnent. Ces phrases ne sont ni nettoyées ni découpées (`entiere`).
+- **« fais la même chose pour Petit »** : le devis en cours est copié pour Petit (la copie de devis existante). « mets la même chose que sur le chantier précédent » : le dernier devis d'un autre client, pour le client en cours.
+- **« ajoute un receveur », « ajoute 3 prises »** pendant un devis : une ligne (avant : pas compris, ou la maquette 3D). « ajoute un canapé » reste une demande de maquette.
+- « on a une fuite chez Martin » n'écrit plus de ligne dans un devis.
+- Pas encore : le rapport dans la fiche chantier et son envoi au client ; les corrections retenues ; la mémoire partagée dans l'entreprise.
+
+**Corrections, rapport dans la fiche chantier, mémoire de l'entreprise (17 nov. 2026)** :
+- **Correction** (`corrige` dans `reponses.js`) : « ajoute 20 m² de faïence », « non », « je voulais du parquet » → 20 m² de parquet (la quantité de la ligne annulée, dans les 3 minutes). « non, du carrelage » juste après la ligne fait les deux d'un coup. Sans ligne annulée avant, « je voulais du parquet » ne fait rien. C'est une correction de la demande, pas un apprentissage : pour apprendre un mot, « X veut dire Y ».
+- **Rapport d'intervention dans la fiche chantier** (`chantier.js` : `rapportsDe`, `lR`) : « fiche du chantier Martin » et « qu'est-ce que j'ai fait chez Martin » montrent les rapports ; « qu'est-ce qu'il reste chez Martin » montre leur « Suite à prévoir ».
+- **Envoi au client** : « envoie le rapport à Martin » affiche le texte et un lien (e-mail si le client en a un, sinon SMS) ; c'est le téléphone qui envoie, après un toucher. Sans numéro ni e-mail, le chat le dit.
+- **Mémoire de l'entreprise** : `db.memo` est maintenant une liste de fiches (`k` : fait, mot, regle) et `db.rapports` aussi ; les deux sont ajoutées aux collections synchronisées (`COLL`, `SYNC_COLL` dans `index.html`, `COLL` dans `serveur/server.js`). Avec une entreprise reliée, le patron et les chefs partagent mots, consignes, choses retenues et rapports ; les ouvriers ne les reçoivent pas (mêmes droits que les clients et les prix). Sans entreprise reliée, tout reste dans le téléphone. Ce qui arrive du serveur est remis à plat (`recClean` : texte seulement, longueurs bornées).
+- Il n'y a qu'un niveau de mémoire : celle de l'entreprise quand elle est reliée. Pas de mémoire séparée par personne dans une même entreprise.
+- **À faire côté serveur** : redéployer `serveur/server.js` pour que les deux collections soient acceptées ; d'ici là elles restent dans le téléphone.
+- « le client veut… » ne pose la question « Quel client ? » que pour un rendez-vous, un devis, une facture ou un passage.
+
+**Projet : plusieurs travaux dans un message ; carte du devis sans phrase au-dessus (17 nov. 2026)** :
+- `intel.js` (suite d'un projet) : « dépose carrelage, pose faïence, receveur » donne trois travaux (avant : « Noté : dépose dépose »). Le message est coupé aux virgules ; à « et » seulement quand chaque côté nomme un travail (« un receveur et une paroi » : deux ; « au sol et aux murs » : un seul matériau, deux endroits).
+- `pont.js` (`html`) : quand la carte du devis est affichée, la phrase à l'infinitif du moteur (« Commencer un nouveau devis pour Dupont », « Dupliquer le devis de Martin pour Petit ») n'est plus écrite au-dessus : la carte dit déjà le client et le numéro. Sans carte, la phrase reste (« Acompte de 30 % », « Ouvrir le devis de Martin »).
+

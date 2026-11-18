@@ -475,16 +475,26 @@ function projet(t,s,c){var m,LG=window.CASO_LANGAGE;if(typeof q==="undefined")re
   /* un travail : « on enlève tout le carrelage », « on met du nouveau au sol et aux murs », « changer le lavabo » */
   if(B().isQuestion&&B().isQuestion(t))return false;
   if(/^(?:nouveau|nouvelle|rdv|rendez vous|envoie|ouvre|montre|affiche|supprime|annule|relance|combien|client)\b/.test(s)||/\d\s*(?:€|euros?)/.test(s))return false;
-  var y=s.replace(/^(?:et |puis |ensuite |aussi )?(?:on (?:va |doit )?|il faut |faut |je (?:vais |dois )?|faudra )/,"").replace(/\b(?:tout le|toute la|tous les|toutes les)\b/g,"le").trim(),dep=PJ_DEP.test(y),nouv=[];
+  /* plusieurs travaux dans le message (« dépose carrelage, pose faïence, receveur ») : chacun est lu à part */
+  var nouv=[],brutS=[];String(t).split(/\s*[,;]\s*/).forEach(function(m0){if(!m0.trim())return;var sub=m0.split(/\s+(?:et|puis)\s+/);
+    /* « un receveur et une paroi » : deux travaux ; « au sol et aux murs » : un seul */
+    if(sub.length>1&&LG&&sub.every(function(x){var tx=LG.terme(x);return !!tx&&!/^(?:mur|sol|plafond|dalle)s?$/.test(tx.id||"")&&!/^(?:au |aux |le |les |du |des |sur le |sur les |par )?(?:sols?|murs?|plafonds?)$/.test(hn(x).trim());}))sub.forEach(function(x){brutS.push(x);});else brutS.push(m0);});
+  brutS.forEach(function(t1){var s1=hn(t1).replace(/[’']/g," ").replace(/[.!?]+/g," ").replace(/\s+/g," ").trim();
+  var y=s1.replace(/^(?:et |puis |ensuite |aussi )?(?:on (?:va |doit )?|il faut |faut |je (?:vais |dois )?|faudra )/,"").replace(/\b(?:tout le|toute la|tous les|toutes les)\b/g,"le").trim(),dep=PJ_DEP.test(y);
   var lieux=[];if(/\b(?:au |le |du |par )?sol\b/.test(y))lieux.push("sol");if(/\b(?:aux? |les? |des |sur les )?murs?\b|\bmural/.test(y))lieux.push("mur");if(/\bplafond\b/.test(y))lieux.push("plafond");
-  var tm=LG?LG.terme(t):null;if(tm&&/^(mur|dalle)$/.test(tm.id)&&lieux.length)tm=null;var mat=tm&&tm.type==="mat"?tm.ecrit.toLowerCase():null;
+  var tm=LG?LG.terme(t1):null;
+  /* « dépose carrelage » : le travail est la dépose, le terme est ce qu'on dépose */
+  if(dep&&LG&&(!tm||/^d[ée]pose/i.test(tm.ecrit||""))){var t2=String(t1).replace(/(?:d[ée]poser?|enlever|retirer|virer|arracher|d[ée]molir)/ig," "),tm2=LG.terme(t2);if(tm2&&!/^d[ée]pose/i.test(tm2.ecrit||""))tm=tm2;}
+  if(tm&&/^(mur|dalle)$/.test(tm.id)&&lieux.length)tm=null;var mat=tm&&tm.type==="mat"?tm.ecrit.toLowerCase():null;
   /* « du nouveau », « du neuf » : le dernier matériau dit */
   if(!tm&&/\b(?:du |le |un )?(?:nouveau|neuf|pareil|meme)\b/.test(y)&&P0.mat)mat=P0.mat;
   if(mat){if(tm&&tm.type==="mat")P0.mat=mat;
     if(dep)nouv.push("dépose "+mat);
     else if(lieux.length>1||lieux[0]==="mur"&&/carrelage|parquet|vinyle/.test(mat))lieux.forEach(function(l){nouv.push(l==="mur"?(mat==="carrelage"?"carrelage mural":mat+" murs"):l==="plafond"?mat+" plafond":mat);});
     else nouv.push(mat);}
-  else if(tm){nouv.push((dep?"dépose ":"")+tm.ecrit.toLowerCase());}
+  else if(tm&&!(dep&&/^d[ée]pose/i.test(tm.ecrit||""))){nouv.push((dep?"dépose ":"")+tm.ecrit.toLowerCase());}
+  });
+  nouv=nouv.filter(function(n,i){return nouv.indexOf(n)===i;});
   if(!nouv.length)return false;
   nouv.forEach(function(n){if(P0.items.indexOf(n)<0)P0.items.push(n);});P0.at=Date.now();
   bulle(t,p(T("Noté : {0}.",[nouv.join(", ")])));return true;}
