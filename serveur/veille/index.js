@@ -67,7 +67,7 @@ function creer(opts={}){
   /* date d'envoi : tout de suite pour un texte important (P0, P1), sinon le lundi suivant ; retirée si l'accord est retiré */
   {const g=base.lire(id),envoi=g.validation==='valide'&&g.lettre===true;
    if(!envoi)base.completer(id,{publieLe:'',pousse:false});
-   else if(!g.publieLe)base.completer(id,{publieLe:IMPORTANT(g)?auj:lundi(auj),pousse:false});
+   else if(!g.publieLe)base.completer(id,{publieLe:auj,pousse:false});   // visible tout de suite dans la newsletter ; les notifications, elles, restent groupées
    else if(IMPORTANT(g)&&g.publieLe>auj)base.completer(id,{publieLe:auj,pousse:false})}   // devenu important après coup : il part tout de suite
   base.journal('decision',{id,decision,champs:Object.keys(corr).slice(0,10)});
   try{base.enregistrer()}catch(e){log('[casô] veille : base non enregistrée',e&&e.code)}
@@ -75,7 +75,7 @@ function creer(opts={}){
  /* la newsletter telle que l'appli la lit : seulement ce que le propriétaire a validé et choisi d'envoyer, à partir de sa date d'envoi */
  const publies=auj=>base.liste({validation:'valide'}).filter(f=>f.lettre===true&&!f.bloque&&f.publieLe&&f.publieLe<=auj&&f.categorie!==CAT.non_confirme);
  function lettre(){const auj=maintenant().toISOString().slice(0,10);
-  return publies(auj).sort((x,y)=>x.publieLe<y.publieLe?1:x.publieLe>y.publieLe?-1:0).slice(0,50).map(f=>({id:f.id,source:f.source,titre:f.titre,clair:f.clair||clair(f.titre),resume:String(f.nouvelle||'').slice(0,600),url:f.url,datePub:f.datePub,
+  return publies(auj).sort((x,y)=>x.publieLe<y.publieLe?1:x.publieLe>y.publieLe?-1:0).slice(0,120).map(f=>({id:f.id,source:f.source,titre:f.titre,clair:f.clair||clair(f.titre),resume:String(f.nouvelle||'').slice(0,600),url:f.url,datePub:f.datePub,
    dateVigueur:f.dateVigueur,categorie:f.categorie,priorite:f.priorite,pros:f.pros||[],aFaire:f.aFaire||'',publieLe:f.publieLe}))}
  /* ce qui est sorti et n'a pas encore été annoncé par notification */
  function aAnnoncer(){const auj=maintenant().toISOString().slice(0,10);return publies(auj).filter(f=>!f.pousse).map(f=>({id:f.id,titre:f.titre,priorite:f.priorite,pros:f.pros||[]}))}
@@ -84,7 +84,7 @@ function creer(opts={}){
  function trier(){const out={envoyes:0,gardes:0,ecartes:0,laisses:0},auj=maintenant().toISOString().slice(0,10);
   for(const f of base.liste({validation:'attente',bloque:false})){
    const n=analyse(f,auj),t=n.tri;   // recalculé : les textes collectés avant ce tri n'en avaient pas
-   const r=t==='envoyer'?decider(f.id,'valide',{lettre:true,aFaire:f.aFaire||n.aFaireProp}):t==='garder'?decider(f.id,'valide',{}):t==='ecarter'?decider(f.id,'refuse',{}):[0];
+   const r=t==='envoyer'||t==='garder'?decider(f.id,'valide',{lettre:true,aFaire:f.aFaire||n.aFaireProp}):t==='ecarter'?decider(f.id,'refuse',{}):[0];
    if(r[0]!==200){out.laisses++;continue}out[t==='envoyer'?'envoyes':t==='garder'?'gardes':'ecartes']++}
   return out}
  /* une fiche telle que le tableau de bord la montre : avec son délai du jour */
