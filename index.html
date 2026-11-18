@@ -879,14 +879,38 @@ input[aria-invalid="true"]{border-color:var(--ko)}
 .sheet .chan>button{background:var(--bg);color:var(--ink);border:1.5px solid var(--line);min-height:64px;flex-direction:column;gap:4px}
 .sheet .chan .i{width:24px;height:24px;margin:0}
 .sheet-x{display:flex;margin:6px auto 0;justify-content:center}
-.pl-rac{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:0 0 10px}
-.pl-rac button{border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
-.pl-rac button.on{border-color:var(--acc);background:var(--acc);color:var(--ink)}
-.pl-lst label{display:flex;align-items:center;gap:12px;min-height:48px;border-bottom:1px solid var(--line);cursor:pointer;margin:0;font:inherit;font-size:16px;text-transform:none;letter-spacing:0;color:var(--ink)}
-.pl-lst input{width:22px;height:22px;accent-color:var(--ink);flex:none;margin:0}
-.pl-lst span{flex:1}.pl-lst em{font-style:normal;color:var(--mut)}
-.pl-tot{display:flex;justify-content:space-between;align-items:baseline;margin:14px 0 2px;font-size:15px}.pl-tot b{font-size:22px}
-.pl-note{text-align:center;font-size:13px;min-height:18px;margin:0 0 10px}
+/* « On construit le plan » : tuiles à cocher, total collé en bas */
+.ab-sh{max-height:92dvh;overflow:auto;padding-bottom:0}
+.ab-h{display:flex;align-items:center;justify-content:space-between;margin:0 0 12px}
+.ab-h h3{margin:0;text-align:start;font-size:19px;letter-spacing:-.01em}
+.ab-x{width:36px;height:36px;border:0;border-radius:50%;background:var(--bg);color:var(--ink);display:grid;place-items:center;cursor:pointer}
+.ab-x .i{width:18px;height:18px}
+.ab-seg{display:flex;gap:4px;padding:4px;border-radius:12px;background:var(--bg);margin:0 0 14px}
+.ab-seg button{flex:1;min-height:36px;border:0;border-radius:9px;background:transparent;color:var(--mut);font:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:background .15s,color .15s,box-shadow .15s}
+.ab-seg button[aria-pressed=true]{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(15,34,56,.14)}
+.ab-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ab-t{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:10px;min-height:96px;padding:12px;border:1.5px solid transparent;border-radius:16px;background:var(--bg);color:var(--ink);font:inherit;text-align:start;cursor:pointer;transition:border-color .15s,background .15s,transform .1s}
+.ab-t:active{transform:scale(.97)}
+.ab-t>.i{width:22px;height:22px;color:var(--mut);transition:color .15s}
+.ab-t b{font-size:14px;font-weight:600;line-height:1.25}
+.ab-t em{font-style:normal;font-size:13px;color:var(--mut);margin-top:auto}
+.ab-ck{position:absolute;top:10px;right:10px;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--line);display:grid;place-items:center;transition:background .15s,border-color .15s}
+.ab-ck svg{width:12px;height:12px;opacity:0;transform:scale(.6);transition:opacity .15s,transform .15s}
+[dir=rtl] .ab-ck{right:auto;left:10px}
+.ab-t[aria-checked=true]{border-color:var(--ink);background:var(--card)}
+.ab-t[aria-checked=true]>.i{color:var(--ink)}
+.ab-t[aria-checked=true] .ab-ck{background:var(--ink);border-color:var(--ink);color:var(--card)}
+.ab-t[aria-checked=true] .ab-ck svg{opacity:1;transform:none}
+.ab-t:focus-visible,.ab-seg button:focus-visible,.ab-go:focus-visible{outline:2px solid var(--acc-d);outline-offset:2px}
+.ab-ft{position:sticky;bottom:0;display:flex;align-items:center;gap:12px;margin:14px -16px 0;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));background:var(--card);border-top:1px solid var(--line)}
+.ab-sum{display:flex;align-items:baseline;gap:6px;flex:1;min-width:0}
+.ab-sum b{font-size:26px;font-weight:700;letter-spacing:-.02em}
+.ab-sum s{font-size:14px;color:var(--mut)}
+.ab-sum span{font-size:13px;color:var(--mut)}
+.ab-go{display:inline-flex;align-items:center;gap:8px;min-height:48px;padding:0 22px;border:0;border-radius:999px;background:var(--ink);color:var(--card);font:inherit;font-size:16px;font-weight:600;cursor:pointer}
+.ab-go .i{width:18px;height:18px}
+.ab-go:disabled{opacity:.5}
+@media (prefers-reduced-motion:reduce){.ab-t,.ab-seg button,.ab-ck,.ab-ck svg{transition:none}}
 
 @media (prefers-reduced-motion:reduce){.sheet,.sheet-bg{transition:none}}
 .sent{border:1.5px solid var(--acc);border-radius:14px;padding:12px;margin:12px 0;background:color-mix(in srgb,var(--acc) 10%,var(--card))}
@@ -2247,16 +2271,16 @@ body.tr-on{overflow:hidden}
  <button class="btn del-go" id="delGo" type="button" onclick="delGo()">Supprimer définitivement</button>
  <button type="button" class="lnk sheet-x" onclick="delClose()">Annuler</button>
 </div>
-<div class="sheet-bg" id="plBg" hidden onclick="planClose()"></div>
-<div class="sheet" id="plSh" role="dialog" aria-modal="true" aria-labelledby="plT" hidden>
+<div class="sheet-bg" id="abBg" hidden onclick="aboClose()"></div>
+<div class="sheet ab-sh" id="abSh" role="dialog" aria-modal="true" aria-labelledby="abT" hidden>
  <div class="sheet-grip"></div>
- <h3 id="plT">On construit le plan</h3>
- <div id="plRac" class="pl-rac"></div>
- <div id="plLst" class="pl-lst"></div>
- <div class="pl-tot"><span id="plTotL"></span><b id="plTot"></b></div>
- <div id="plNote" class="mut pl-note"></div>
- <button class="btn" id="plGo" type="button" onclick="planSave()"><svg class="i"><use href="#i-check"/></svg>Enregistrer</button>
- <button type="button" class="lnk sheet-x" onclick="planClose()">Annuler</button>
+ <div class="ab-h"><h3 id="abT">On construit le plan</h3><button type="button" class="ab-x" onclick="aboClose()" aria-label="Fermer"><svg class="i"><use href="#i-x"/></svg></button></div>
+ <div class="ab-seg" id="abRac" role="group"></div>
+ <div class="ab-grid" id="abGrid" role="group" aria-labelledby="abT"></div>
+ <div class="ab-ft">
+  <div class="ab-sum" aria-live="polite"><s id="abBrut" hidden></s><b id="abTot"></b><span id="abUnit"></span></div>
+  <button class="ab-go" id="abGo" type="button" onclick="aboSave()"><svg class="i"><use href="#i-check"/></svg><span>Valider</span></button>
+ </div>
 </div>
 <div class="sheet-bg" id="faPayBg" hidden onclick="faPayClose()"></div>
 <div class="sheet" id="faPay" role="dialog" aria-modal="true" aria-labelledby="faPayT" hidden>
@@ -2431,7 +2455,7 @@ body.tr-on{overflow:hidden}
  <div class="dw-acc">
   <div class="dw-pop" id="dwPop" role="menu" hidden>
    <div class="dw-pop-m" id="dwMail"></div>
-   <button class="dw-pi" id="dwPlanGo" role="menuitem" type="button" onclick="dwPopClose();planOpen()" hidden><svg class="i"><use href="#i-blocks"/></svg><span>On construit le plan</span><em id="dwPlanP"></em></button>
+   <button class="dw-pi" id="dwPlanGo" role="menuitem" type="button" onclick="dwPopClose();aboOpen()" hidden><svg class="i"><use href="#i-blocks"/></svg><span>On construit le plan</span><em id="dwPlanP"></em></button>
    <div class="dw-pop-s"></div>
    <button class="dw-pi dw-out" role="menuitem" type="button" onclick="dwPopClose();logout()"><svg class="i"><use href="#i-logout"/></svg><span>Se déconnecter</span></button>
   </div>
@@ -3388,36 +3412,41 @@ function dwPopClose(){const p=$('dwPop');if(!p||p.hidden)return;p.classList.remo
  document.removeEventListener('pointerdown',dwPopOut,true);document.removeEventListener('keydown',dwPopEsc);setTimeout(()=>{if(!p.classList.contains('on'))p.hidden=true},150)}
 function dwPopOut(e){if(!e.target.closest('.dw-acc'))dwPopClose()}
 function dwPopEsc(e){if(e.key==='Escape')dwPopClose()}
-/* « On construit le plan » (lib/plan.js) : l'usager coche ses modules, le total se met à jour en direct ; le serveur recalcule et garde le choix */
-const PLN={sel:new Set(),mode:'artisan',busy:false};
-function planOpen(){
+/* « On construit le plan » (lib/plan.js) : tuiles à cocher, total en direct ; le serveur recalcule et garde le choix */
+const ABO={sel:new Set(),mode:'artisan',busy:false};
+const ABO_IC={devis:'quote',planning:'cal',pointage:'helmet',paiement:'tag','3d':'blocks',renovation:'cam',fournisseurs:'truck',veille:'mail',verification:'shield',estimation:'calc'};
+function aboOpen(){
  const A=window.CasoAuth,c=A&&A.compte();if(!c||!c.mode||!window.CasoPlan)return;
- PLN.mode=c.mode==='bricoleur'?'bricoleur':'artisan';
- PLN.sel=new Set(((c.plan&&c.plan.modules)||[]).filter(Boolean));
- drawerClose();planDraw();
- $('plBg').hidden=false;$('plSh').hidden=false;requestAnimationFrame(()=>{$('plSh').classList.add('on');$('plBg').classList.add('on')})}
-function planClose(){$('plSh').classList.remove('on');$('plBg').classList.remove('on');setTimeout(()=>{$('plSh').hidden=true;$('plBg').hidden=true},200)}
-function planDraw(){
- const C=CasoPlan.catalogue(PLN.mode),ids=[...PLN.sel],calc=CasoPlan.calcul(PLN.mode,ids,!!(CasoAuth.compte()||{}).fondateur);
- const rac=$('plRac');rac.textContent='';
+ ABO.mode=c.mode==='bricoleur'?'bricoleur':'artisan';
+ ABO.sel=new Set(((c.plan&&c.plan.modules)||[]).filter(Boolean));
+ drawerClose();aboDraw();
+ $('abBg').hidden=false;$('abSh').hidden=false;requestAnimationFrame(()=>{$('abSh').classList.add('on');$('abBg').classList.add('on')})}
+function aboClose(){$('abSh').classList.remove('on');$('abBg').classList.remove('on');setTimeout(()=>{$('abSh').hidden=true;$('abBg').hidden=true},200)}
+function aboDraw(){
+ const C=CasoPlan.catalogue(ABO.mode),calc=CasoPlan.calcul(ABO.mode,[...ABO.sel],!!(CasoAuth.compte()||{}).fondateur);
+ const seg=$('abRac');seg.textContent='';seg.hidden=C.raccourcis.length<2;
  C.raccourcis.forEach(r=>{const b=document.createElement('button');b.type='button';b.textContent=i18nT(r.nom);
-  b.className=r.modules.length===calc.modules.length&&r.modules.every(m=>PLN.sel.has(m))?'on':'';
-  b.onclick=()=>{PLN.sel=new Set(r.modules);planDraw()};rac.appendChild(b)});
- const lst=$('plLst');lst.textContent='';
- C.modules.forEach(m=>{const l=document.createElement('label'),i=document.createElement('input'),n=document.createElement('span'),p=document.createElement('em');
-  i.type='checkbox';i.checked=PLN.sel.has(m.id);i.onchange=()=>{i.checked?PLN.sel.add(m.id):PLN.sel.delete(m.id);planDraw()};
-  n.textContent=i18nT(m.nom);p.textContent=CasoPlan.euros(m.prix);l.append(i,n,p);lst.appendChild(l)});
- $('plTotL').textContent=i18nT('Total par mois')+' '+i18nT(C.unite);
- $('plTot').textContent=CasoPlan.euros(calc.total);
- $('plNote').textContent=calc.plafonne?i18nT('Plafonné à')+' '+CasoPlan.euros(C.plafond):i18nT('Sans engagement');
- $('plGo').disabled=PLN.busy}
-async function planSave(){
- if(PLN.busy)return;
+  b.setAttribute('aria-pressed',String(r.modules.length===calc.modules.length&&r.modules.every(m=>ABO.sel.has(m))));
+  b.onclick=()=>{ABO.sel=new Set(r.modules);aboDraw()};seg.appendChild(b)});
+ const g=$('abGrid');g.textContent='';
+ C.modules.forEach(m=>{const t=document.createElement('button'),on=ABO.sel.has(m.id);
+  t.type='button';t.className='ab-t';t.setAttribute('role','checkbox');t.setAttribute('aria-checked',String(on));t.dataset.m=m.id;
+  t.innerHTML='<svg class="i"><use href="#i-'+(ABO_IC[m.id]||'blocks')+'"/></svg><span class="ab-ck"><svg viewBox="0 0 12 12"><path d="M2.5 6.2 5 8.6l4.5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><b></b><em></em>';
+  t.querySelector('b').textContent=i18nT(m.nom);t.querySelector('em').textContent=CasoPlan.euros(m.prix);
+  t.onclick=()=>{on?ABO.sel.delete(m.id):ABO.sel.add(m.id);aboDraw();const n=$('abGrid').querySelector('[data-m="'+m.id+'"]');if(n)n.focus()};
+  g.appendChild(t)});
+ /* plafond : l'ancien total barré, le total plafonné à côté ; pas de texte en plus */
+ const br=$('abBrut');br.hidden=!calc.plafonne;br.textContent=calc.plafonne?CasoPlan.euros(calc.brut):'';
+ $('abTot').textContent=CasoPlan.euros(calc.total);
+ $('abUnit').textContent=i18nT(C.unite)+' / '+i18nT('mois');
+ $('abGo').disabled=ABO.busy}
+async function aboSave(){
+ if(ABO.busy)return;
  if(navigator.onLine===false){toast(i18nT('Pas de connexion.'));return}
- PLN.busy=true;$('plGo').disabled=true;
- try{await CasoAuth.plan([...PLN.sel]);authLigne();toast(i18nT('Plan enregistré.'));planClose()}
+ ABO.busy=true;$('abGo').disabled=true;
+ try{await CasoAuth.plan([...ABO.sel]);authLigne();toast(i18nT('Plan enregistré.'));aboClose()}
  catch(e){toast(i18nT(e&&e.code===0?'Pas de connexion.':'Plan non enregistré.'))}
- PLN.busy=false;$('plGo').disabled=false}
+ ABO.busy=false;$('abGo').disabled=false}
 function authVia(k){if(navigator.onLine===false){toast(i18nT('Pas de connexion.'));return}window.CasoAuth&&CasoAuth.connecter(k)}
 window.CasoAuthProfil=()=>{const a=accountGet()||{};return{mode:a.mode==='bricoleur'?'bricoleur':'artisan',nom:db.prof.nom||'',siret:db.prof.siret||''}};
 window.addEventListener('caso-auth',e=>{const d=e.detail||{};authLigne();if(d.erreur)toast(i18nT(d.erreur));if(d.retour&&d.compte&&!accountGet())ssoBegin(d.compte)});
