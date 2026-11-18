@@ -60,7 +60,7 @@ function createServer(opts={}){
  if(ESPACE==='e1'){const ANCIEN=path.join(DIR,'data.json');let a=null,n=null;try{a=fs.statSync(ANCIEN)}catch(e){if(e.code!=='ENOENT')throw e}try{n=fs.statSync(FILE)}catch(e){if(e.code!=='ENOENT')throw e}
   if(a&&!n){fs.copyFileSync(ANCIEN,FILE);console.log('[casô] données de l\'entreprise rangées dans espaces/e1 (l\'ancien data.json est gardé).')}
   else if(a&&n&&a.mtimeMs>n.mtimeMs+1000){fs.copyFileSync(FILE,FILE+'.avant-'+Date.now());fs.copyFileSync(ANCIEN,FILE);console.log('[casô] l\'ancien data.json était plus récent : il a été repris, la version de l\'espace est mise de côté.')}}
- // dans le dépôt : l'appli (index.html, module devis.html, chat/, lib/) est un dossier au-dessus du serveur
+ // dans le dépôt : l'appli (index.html, modules/, module devis.html, chat/, lib/) est un dossier au-dessus du serveur
  const ROOT=path.join(__dirname,'..'),NEWL=!opts.appFile&&fs.existsSync(path.join(ROOT,'index.html'));
  const APP=opts.appFile||(NEWL?path.join(ROOT,'index.html'):path.join(__dirname,'devis.html'));
  const lan=opts.lan||lanAddresses;
@@ -500,7 +500,7 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
    if(NEWL&&req.method==='GET'&&url==='/devis.html'){/* module Devis, ouvert dans un cadre de l'appli */
     let html;try{html=fs.readFileSync(path.join(ROOT,'devis.html'),'utf8')}catch(e){return send(res,404,{error:'introuvable'})}
     return send(res,200,html,{'content-security-policy':CSP_APP.replace("frame-ancestors 'none'","frame-ancestors 'self'"),'x-frame-options':'SAMEORIGIN'})}
-   if(NEWL&&req.method==='GET'&&!url.includes('..')&&/^\/(?:chat|lib|i18n)\/[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)*\.(?:js|json|wasm|mjs|onnx)$/.test(url)){/* fichiers du chat, bibliothèques et traductions */
+   if(NEWL&&req.method==='GET'&&!url.includes('..')&&/^\/(?:chat|lib|i18n|modules|pointage)\/[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)*\.(?:js|json|wasm|mjs|onnx)$/.test(url)){/* fichiers du chat, modules de l'appli, pointage, bibliothèques et traductions */
     let b;try{b=fs.readFileSync(path.join(ROOT,url))}catch(e){return send(res,404,{error:'introuvable'})}
     const ty=url.endsWith('.json')?'application/json; charset=utf-8':url.endsWith('.wasm')?'application/wasm':url.endsWith('.onnx')?'application/octet-stream':'text/javascript; charset=utf-8';
     res.writeHead(200,Object.assign({'content-type':ty,'cache-control':'no-cache'},SEC));return res.end(b)}
