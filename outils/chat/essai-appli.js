@@ -19,7 +19,7 @@ db.chantiers=db.chantiers||[];db.pts=db.pts||[];db.chantiers.push({id:'ch1',cid:
 db.maq3d=[{id:'m1',at:Date.now(),d:{estimation:{lignes:[{poste:'Rebouchage de fissures',unite:'ml',quantite:3,prix_min:20,prix_max:40},{poste:'Peinture murs',unite:'m2',quantite:25,prix_min:15,prix_max:25}]}}}];save();})()`;
 /* [langue, phrases, textes attendus dans les réponses (dans l'ordre des phrases ; "" = pas de contrôle)] */
 const ESSAIS=[
- ["fr",["crée le client Durand, rendez-vous jeudi 9h et prépare le devis"],[/Nouveau client : Durand[\s\S]*Durand[\s\S]*devis de Durand/]],
+ ["fr",["crée le client Durand, rendez-vous jeudi 9h et prépare le devis"],[/Nouveau client : Durand[\s\S]*Durand[\s\S]*[Dd]evis de Durand/]],
  ["fr",["rappelle le client d'hier"],[/Dupont/]],
  ["fr",["appelle la dame de la rue des Lilas"],[/Dupont/]],
  ["fr",["fais le même devis que Martin pour Dupont"],[/Dupont[\s\S]*Carrelage/]],

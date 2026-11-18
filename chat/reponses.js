@@ -200,9 +200,9 @@ var R_SIT=/^(?:on a|j ai|nous avons|on s est|je me suis)?\s*(?:arrete|stoppe|int
     R_OBS=/^(?:il y avait|il y a|c est|c etait|y a|y avait|on a (?:trouve|vu|constate|remarque|decouvert)|j ai (?:trouve|vu|constate|remarque|decouvert)|presence)\b/,
     R_SUITE=/^(?:il faut|faut|il faudra|faudra|a prevoir|prevoir|reste a|il reste|on doit|je dois|on reviendra|je reviens|on revient|a faire)\b/,
     R_FAIT=/^(?:on a|j ai|nous avons|ils ont|il a|elle a)\s+\S+/;
-function rapport(t,c){var txt=String(t).replace(/^\s*(?:chez|pour|sur le chantier (?:de|d['’]))\s*(?:(?:m\.|mme|monsieur|madame)\s+)?/i,""),nomRe=new RegExp("^"+String(c.nom).replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\s*[,:]?\\s*","i");txt=txt.replace(nomRe,"");
+function rapport(t,c,MORC){var txt=String(t).replace(/^\s*(?:chez|pour|sur le chantier (?:de|d['’]))\s*(?:(?:m\.|mme|monsieur|madame)\s+)?/i,""),nomRe=new RegExp("^"+String(c.nom).replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\s*[,:]?\\s*","i");txt=txt.replace(nomRe,"");
   var S={fait:[],obs:[],sit:[],suite:[]};
-  txt.split(/\s*[.;!\n]+\s*|\s*,\s*|\s+(?:et|puis|mais|du coup|donc)\s+(?=(?:on|j['’]|il|c['’]|nous|faut|y a)\b)/i).forEach(function(ph){ph=ph.trim();if(ph.length<3)return;var k=brut(ph);
+  (MORC||txt.split(/\s*[.;!\n]+\s*|\s*,\s*|\s+(?:et|puis|mais|du coup|donc)\s+(?=(?:on|j['’]|il|c['’]|nous|faut|y a)\b)/i)).forEach(function(ph){ph=ph.replace(/^(?:aujourd['’]hui|ce matin|cet apr[èe]s[- ]midi|hier)\s+/i,"");ph=ph.trim();if(ph.length<3)return;var k=brut(ph);
     var but=ph.match(/^(.*?)\s+(pour\s+(?:voir|savoir|v[ée]rifier|comprendre|trouver)\s+.+)$/i),cl=function(x){x=x.replace(/^(?:on a|j['’]ai|nous avons|ils ont|il a|elle a|on s['’]est|il y avait|il y a|y avait|y a)\s+/i,"").trim();return x.charAt(0).toUpperCase()+x.slice(1);};
     if(R_SIT.test(k)){S.sit.push(cl(but?but[1]:ph));if(but)S.suite.push(cl(but[2].replace(/^pour\s+/i,"")));}
     else if(R_SUITE.test(k))S.suite.push(cl(ph.replace(/^(?:il faut|faut|il faudra|faudra|à prévoir|a prevoir|prévoir|on doit|je dois)\s+/i,"")));
@@ -231,6 +231,66 @@ function rapports(t,nom){var c=nom&&client(nom),L=(db.rapports||[]).filter(funct
   var R=[["fait",T("Travaux réalisés")],["obs",T("Observations")],["sit",T("Situation")],["suite",T("Suite à prévoir")]];
   bulle(t,L.slice(0,3).map(function(r){return '<p dir="auto"><b>'+e(r.client+" · "+date(r.date))+'</b></p>'+R.filter(function(x){return (r.r[x[0]]||[]).length;}).map(function(x){return li(x[1]+" :",r.r[x[0]].join(" ; "));}).join("");}).join(""));return true;}
 
+/* ================= dictée longue : une longue phrase dictée, sans ponctuation, coupée en demandes courtes =================
+   Le texte dicté reste affiché tel quel. Chaque partie est ensuite envoyée au chat comme un message : on voit ce qui a été compris,
+   et chaque action s'annule à part. Un récit de chantier (« on a posé… ») devient un seul rapport d'intervention.
+   La suite s'arrête dès qu'une partie demande un Oui. */
+var NBM={deux:2,trois:3,quatre:4,cinq:5,six:6,sept:7,huit:8,neuf:9,dix:10,onze:11,douze:12,treize:13,quatorze:14,quinze:15,seize:16,vingt:20,"vingt-cinq":25,trente:30,quarante:40,cinquante:50,soixante:60,cent:100};
+function chiffres(x){return String(x).replace(/(^|[^\p{L}])(deux|trois|quatre|cinq|six|sept|huit|neuf|dix|onze|douze|treize|quatorze|quinze|seize|vingt-cinq|vingt|trente|quarante|cinquante|soixante|cent)(?=\s+\p{L})/giu,function(a,b,c){return b+NBM[c.toLowerCase()];})
+  .replace(/(\d+(?:[.,]\d+)?)\s*m[èe]tres?\s+carr[ée]s?/gi,"$1 m²").replace(/(\d+(?:[.,]\d+)?)\s*m[èe]tres?\s+lin[ée]aires?/gi,"$1 ml");}
+function morceaux(t){var x=" "+chiffres(t).replace(/\s+/g," ")+" ";
+  x=x.replace(/[.;!?\n]+/g," | ").replace(/\s+(?:et\s+)?(?:ensuite|et puis|puis|apr[èe]s [çc]a|par contre|en plus|sinon)\s+/gi," | ")
+     .replace(/\s+(?:et\s+)?(?=(?:il faut|il faudra|faudra|on refait|on change|on pose|on met|on a |on s['’]est |j['’]ai |rappelle[- ]moi|pense[rz]? [àa] |il reste |(?:le|la) client(?:e)? (?:veut|voudrait|demande)))/gi," | ")
+     .replace(/\s+et\s+(?=(?:changer|pr[ée]voir|poser|refaire|d[ée]poser|ajouter|remplacer|installer|peindre|enlever)\b)/gi," | il faut ");
+  return x.split("|").map(function(m){return m.replace(/^\s*(?:(?:bon|alors|donc|euh|ben|bah|voil[àa]|ok|et|aussi|du coup|bon alors)\s+)+/i,"").replace(/\s+(?:et|aussi)\s*$/i,"").trim();}).filter(function(m){return m.split(" ").length>=2&&!/^(?:aujourd['’]hui|ce matin|cet apr[èe]s[- ]midi|hier)?\s*(?:(?:chez|pour)\s+\S+(?:\s+\S+)?)?$/i.test(m);});}
+/* « il faut déposer le carrelage au sol 12 m² », « on refait la faïence sur 20 m² » → « ajoute 12 m² de dépose carrelage au sol » : une ligne du devis, pas un calcul de matériaux */
+function enLigne(x){var m=x.match(/^(?:il faut|faut|on refait|on change|on pose|on met|il faudra|faudra)\s+(?:aussi\s+)?(.+)$/i);if(!m)return x;var r=m[1],qm=r.match(/(\d+(?:[.,]\d+)?)\s*(m²|m2|ml|m|h|heures?|sacs?|u|unit[ée]s?)?(?![\p{L}\d])/iu);
+  if(!qm)return "il faut "+r;var obj=(r.slice(0,qm.index)+" "+r.slice(qm.index+qm[0].length)).replace(/\s+/g," ").trim(),dep=/^(?:d[ée]poser|enlever|retirer|virer|arracher)\b/i.test(obj);
+  obj=obj.replace(/^(?:d[ée]poser|enlever|retirer|virer|arracher|refaire|poser|mettre|changer|remplacer|installer|pr[ée]voir|ajouter)\s+/i,"").replace(/\s+(?:sur|de|d['’])$/i,"").replace(/^(?:de |d['’]|du |de la |des |le |la |les |l['’]|un |une )/i,"").replace(/\s+(?:sur|de)\s*$/i,"").trim();
+  if(!obj)return x;var u=qm[2]?qm[2].replace(/^heures?$/i,"h").replace(/^m2$/i,"m²"):"";return "ajoute "+qm[1]+(u?" "+u+" de ":" ")+(dep?"dépose ":"")+obj;}
+var DICT_EN=false;
+function dictee(t){if(DICT_EN)return null;var mots=String(t).trim().split(/\s+/).length;if(mots<16)return null;var M=morceaux(t);return M.length>=3?M:null;}
+function enAttente(){var b=CHAT.m[CHAT.m.length-1];return !!(b&&b.who==="bot"&&/ouiBouton|<!--ask-->/.test(b.html||""));}
+function dicter(t,M){var c=client(t),nom=c?c.nom:(typeof q!=="undefined"&&q&&brouil(q)&&nomDe(q)?nomDe(q):""),sansCli=function(x){return nom?x.replace(new RegExp("\\s*\\b(?:chez|pour)\\s+(?:m\\.\\s+|mme\\s+|monsieur\\s+|madame\\s+)?"+nom.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\b","i"),"").trim():x;};
+  /* un récit : tout va dans un seul rapport d'intervention */
+  var rec=M.filter(function(m){return RECIT.test(brut(m));}).length;
+  if(c&&rec&&rec>=M.length/3){return rapport(t,c,M.map(sansCli).filter(Boolean));}
+  var L=[];M.forEach(function(m){var k=brut(m),x=sansCli(m);if(!x)return;
+    if(/^(?:le|la) client(?:e)? (?:veut|voudrait|demande) (?:un |son |le )?(?:rdv|rendez vous)/.test(k)){L.push("rdv "+(nom?nom+" ":"")+x.replace(/^.*?(?:rdv|rendez[- ]vous)\s*/i,""));return;}
+    if(/^(?:rappelle moi|pense[rz]? a)\b/.test(k)){L.push("il faut "+x.replace(/^(?:rappelle[- ]moi\s+(?:de\s+|d['’]\s*)?|pense[rz]?\s+[àa]\s+)/i,""));return;}
+    if(/^pour (?:la|le|les|l) /.test(brut(x))&&!/\b(?:il faut|faut|on )\b/.test(brut(x)))return;
+    L.push(enLigne(x.replace(/^pour (?:la|le|les)\s+\S+(?:\s+de\s+\S+)?\s+(?=il faut|faut|on )/i,"")));});
+  if(L.length<2)return false;
+  /* le devis de ce client : celui en cours, sinon son brouillon, sinon un nouveau */
+  if(c&&!(typeof q!=="undefined"&&q&&brouil(q)&&cle(nomDe(q))===cle(nom))){var br=(db.quotes||[]).filter(function(o){return o&&brouil(o)&&cle(nomDe(o))===cle(nom);}).sort(function(a,b){return String(b.date||"").localeCompare(String(a.date||""));})[0];
+    if(br){q=JSON.parse(JSON.stringify(br));CHAT.qid=q.id;try{fillForm();}catch(x){}}else L.unshift("nouveau devis pour "+nom);}
+  bulle(t,p(nb(L.length,"Dictée : {0} partie.","Dictée : {0} parties.")));
+  DICT_EN=true;var i=0;(function suite(){if(i>=L.length||enAttente()){DICT_EN=false;
+      if(i<L.length){CHAT.m.push({who:"bot",html:'<div data-noi18n>'+li(T("Pas encore traité :"),L.slice(i).join(" ; "))+'</div>'});chatSave();chatRender(true);}return;}
+    var x=L[i++];try{chatSend(x);}catch(e){if(window.console)console.error(e);}setTimeout(suite,120);})();
+  return true;}
+
+/* ================= photo de chantier : rangée chez un client, avec la phrase dite =================
+   Rien n'est lu dans l'image : la photo est rangée avec les mots de l'artisan. La photo réduite va dans le coffre des photos du
+   téléphone (PH), une vignette dans db.photosCh. « photos du chantier Martin » les montre. */
+var PHOTO_ATT=null;
+function reduit(src,max,q){return new Promise(function(ok,ko){var im=new Image();im.onload=function(){try{var k=Math.min(1,max/Math.max(im.naturalWidth,im.naturalHeight)),c=document.createElement("canvas");c.width=Math.max(1,Math.round(im.naturalWidth*k));c.height=Math.max(1,Math.round(im.naturalHeight*k));
+      var x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);ok(c.toDataURL("image/jpeg",q));}catch(e){ko(e);}};im.onerror=ko;im.src=src;});}
+function botHtml(h){CHAT.m.push({who:"bot",html:'<div data-noi18n>'+h+'</div>'});chatSave();chatRender(true);}
+function photoRange(o,c){var id=typeof uid==="function"?uid():"ph"+Date.now().toString(36);db.photosCh=Array.isArray(db.photosCh)?db.photosCh:[];
+  db.photosCh.unshift({id:id,cid:c.id,client:c.nom,date:agToday(),note:o.note||"",th:o.th});
+  db.photosCh.splice(100).forEach(function(x){try{PH.del("ch:"+x.id);}catch(e){}});
+  try{if(typeof PH!=="undefined")PH.put("ch:"+id,o.full);}catch(e){}try{save();}catch(e){}
+  botHtml('<p><img src="'+e(o.th)+'" alt="" style="width:96px;height:96px;object-fit:cover;border-radius:8px;cursor:pointer" onclick="casoPont.photoVoir(\''+e(id)+'\')"></p>'+p(T("Photo rangée chez {0}.",[c.nom]))+(o.note?'<p dir="auto" class="mut">'+e(o.note)+'</p>':''));}
+P.photoChantier=function(f,note){langue();note=String(note||"").trim();
+  var lire=new Promise(function(ok,ko){var r=new FileReader();r.onload=function(){ok(r.result);};r.onerror=ko;r.readAsDataURL(f);});
+  return lire.then(function(src){return Promise.all([reduit(src,1280,0.72),reduit(src,160,0.7)]);}).then(function(R){var o={full:R[0],th:R[1],note:note},c=note?client(note):null;
+    if(!c&&typeof q!=="undefined"&&q&&brouil(q)&&nomDe(q)&&(q.lines||[]).some(function(l){return l.label;}))c=cliNom(nomDe(q));
+    if(c)return photoRange(o,c);PHOTO_ATT={o:o,at:Date.now()};botHtml(p(T("Photo de chantier : quel client ?")));
+  }).catch(function(){botHtml(p(T("Je n’ai pas pu lire cette photo.")));});};
+P.photoVoir=function(id){var x=(db.photosCh||[]).filter(function(y){return y.id===id;})[0];if(!x||typeof PH==="undefined")return;
+  PH.get("ch:"+id).then(function(src){botHtml('<p><img src="'+e(src||x.th)+'" alt="" style="max-width:100%;border-radius:10px"></p><p dir="auto" class="mut">'+e(x.client+" · "+date(x.date)+(x.note?" · "+x.note:""))+'</p>');}).catch(function(){});};
+
 /* ================= ce qui reste à faire (les travaux notés, pas chiffrés) ================= */
 var RESTE=/^(?:(?:fais(?: moi)? le point sur |c est quoi |quels sont |montre(?: moi)? )?(?:les |le )?(?:travaux|choses|trucs) (?:qui restent|restants|qu il reste|a faire)(?: a faire)?|qu est ce qu il reste(?: a faire)?|il reste quoi(?: a faire)?|(?:fais(?: moi)? le point sur )?ce qu il reste(?: a faire)?|qu est ce qui reste(?: a faire)?)$/;
 function reste(t){var h=[],vus={};[typeof q!=="undefined"?q:null].concat(db.quotes||[]).forEach(function(o){if(!o||vus[o.id]||!brouil(o)&&o.status!=="accepte")return;vus[o.id]=1;
@@ -242,11 +302,13 @@ var LECLI=/^(?:le|la|mon|ma) client(?:e)? (?:veut|voudrait|souhaite|demande|a de
 
 function reponse(t){if(!P.ready||typeof db==="undefined"||typeof CHAT==="undefined")return false;langue();
   var c=fr(t),s=String(c.p||"").replace(/[?!.…,]+/g," ").replace(/\s+/g," ").trim(),m,cl;
+  if(PHOTO_ATT){var pa=PHOTO_ATT;PHOTO_ATT=null;var pc=Date.now()-pa.at<5*60000&&brut(t).split(" ").length<=4&&client(t);if(pc){CHAT.m.push({who:"me",text:t});photoRange(pa.o,pc);var ipp=document.getElementById("chatIn");if(ipp)ipp.value="";return true;}}
   if(ANN.test(s))return annule(t);
   if(memoire(t,s))return true;
   if(RESTE.test(s))return reste(t);
   if((m=brut(t).match(RAPENV))&&rapEnvoi(t,m[1]))return true;
   if((m=brut(t).match(RAPVOIR))&&rapports(t,m[1]))return true;
+  var DM=dictee(t);if(DM&&!demandeQ(brut(t))&&dicter(t,DM))return true;
   if(RECIT.test(brut(t))&&!demandeQ(brut(t))&&!(B().isQuestion&&B().isQuestion(t))&&(cl=client(t))&&brut(t).split(" ").length>=6&&rapport(t,cl))return true;
   /* « la salle de bain fait 8 m², je veux tout refaire » : la pièce et sa surface en une phrase ouvrent le projet (ensuite : les travaux, puis « fais le devis ») */
   var mpj=brut(t).match(/^(?:la |ma |une |sa |leur )?(salle de bains?|sdb|cuisine|chambre|salon|sejour|wc|toilettes|couloir|entree|garage|bureau)(?: fait| de| mesure)? (\d+(?:[.,]\d+)?) ?(?:m2|m²|metres? carres?) (?:et )?(?:je veux |on veut |il faut |faut |je dois |on doit |a )?(?:tout refaire|refaire (?:tout|a neuf|entierement|en entier)|tout renover|renover (?:tout|entierement)|(?:je |on )?refais tout|tout est a refaire)$/);
@@ -312,7 +374,7 @@ function corrige(t){var k=brut(t),m=k.match(/^((?:non|ah non|pardon|en fait|fina
   return a.qty==null||a.qty===""?"ajoute du "+x:"ajoute "+String(a.qty).replace(".",",")+" "+(a.unit&&a.unit!=="u"?a.unit+" de ":"")+x;}
 /* une demande ou une question n'est pas un récit : « montre-moi ce qu'on a fait chez Martin », « qu'est-ce qu'on a posé chez Petit » */
 function demandeQ(k){return /^(?:montre|affiche|ouvre|voir|donne|dis|rappelle|fais|sors|envoie|cherche|trouve|combien|ou|quand|quoi|quel|quelle|quels|quelles|qui|est ce|qu est ce|c est quoi|pourquoi|comment)\b|\b(?:ce qu on a|ce que j ai|ce qu il|ce qu ils|qu est ce qu)\b/.test(k);}
-function entiere(t){try{var k=brut(t);return M_REGLE.test(String(t))||M_MOT1.test(String(t))||RECIT.test(k)&&!demandeQ(k)&&!!client(t)&&k.split(" ").length>=6;}catch(x){return false;}}
+function entiere(t){try{var k=brut(t);if(dictee(t))return true;return M_REGLE.test(String(t))||M_MOT1.test(String(t))||RECIT.test(k)&&!demandeQ(k)&&!!client(t)&&k.split(" ").length>=6;}catch(x){return false;}}
 if(typeof P.decoupe==="function"){var dc0=P.decoupe;P.decoupe=function(t){if(entiere(t))return false;return dc0.apply(this,arguments);};}
 var r1=P.renvoi;
 P.renvoi=function(t){

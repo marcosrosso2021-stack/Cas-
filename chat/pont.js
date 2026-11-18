@@ -124,8 +124,45 @@ function bouton(act,label){return '<div class="msg-act"><button class="btn sm" t
 function lien(href,label){return '<div class="msg-act"><a class="btn sm" href="'+e(href)+'" target="_top" rel="noopener">'+e(label)+'</a></div>';}
 function msgHref(m){var t=encodeURIComponent(m.texte||""),to=String(m.to||"");if(m.canal==="mail")return "mailto:"+encodeURIComponent(to)+"?body="+t;
   if(m.canal==="whatsapp")return "https://wa.me/"+to.replace(/\D/g,"").replace(/^0/,"33")+"?text="+t;return "sms:"+to.replace(/\s/g,"")+"?&body="+t;}
+/* « Ouvrir le devis de Martin » → « Devis de Martin » : un titre, pas une phrase à l'infinitif, dans les 10 langues.
+   Chaque langue : le verbe d'ouverture (ou de recherche, de préparation) en tête est retiré, avec l'article quand il n'est pas
+   devant un possessif ; le polonais et le russe remettent le nom au nominatif ; le turc retire le verbe final et l'accusatif.
+   Une phrase qu'aucune règle ne reconnaît reste telle quelle. Testé sur les phrases du moteur (outils/chat/essai-titres.js). */
+var TITRE={
+  fr:[/^(?:Ouvrir|Afficher|Voir|Montrer|Préparer|Chercher|Retrouver|Consulter)\s+(?:(?:le|la|les|un|une|des)\s+|l[’'](?=\p{L}))?/u],
+  en:[/^(?:Open|Show|View|See|Display|Find|Prepare)\s+(?:(?:the|a|an)\s+)?/],
+  es:[/^(?:Abrir|Mostrar|Ver|Buscar|Preparar)\s+(?:(?:el|la|los|las|un|una)\s+)?/],
+  pt:[/^(?:Abrir|Mostrar|Ver|Procurar|Preparar)\s+(?:(?:o|a|os|as|um|uma)\s+)?/],
+  it:[/^(?:Aprire|Apri|Mostrare|Mostra|Vedere|Vedi|Cercare|Cerca|Preparare|Prepara)\s+(?:(?:il|lo|la|gli|le|un|una|uno)\s+(?!mi[oaie]\b)|i\s+(?!miei\b)|l['’](?=\p{L}))?/u],
+  ro:[/^(?:Deschide|Arată|Afișează|Vezi|Caută|Pregătește)\s+(?:(?:un|o)\s+)?/],
+  pl:[/^(?:Otwarcie|Otwórz|Pokaż|Zobacz|Szukanie|Szukaj|Przygotowanie|Przygotuj)\s+/],
+  ru:[/^(?:Открыть|Показать|Посмотреть|Найти|Подготовить)\s+/],
+  ar:[/^(?:فتح|عرض|البحث عن|إعداد|تحضير)\s+/],
+  tr:[]};
+/* polonais : après « Otwarcie », « Szukanie », « Przygotowanie », le nom est au génitif */
+var PL_NOM={listy:"lista",kalendarza:"kalendarz",pamięci:"pamięć",szablonu:"szablon",modelu:"model",kosztorysu:"kosztorys",faktur:"faktury",faktury:"faktura",karty:"karta",
+  wolnego:"wolny",terminu:"termin",zapytania:"zapytanie",moich:"moje",godzin:"godziny",usług:"usługi",cen:"ceny",klientów:"klientów",zakupów:"zakupów",dostawców:"dostawców",kosztorysów:"kosztorysów",klienta:"klienta"};
+/* russe : complément d'objet féminin à l'accusatif → nominatif */
+var RU_NOM={смету:"смета",карточку:"карточка",фактуру:"фактура",заявку:"заявка",папку:"папка",запись:"запись",страницу:"страница"};
+function majuscule(x){return x.charAt(0).toLocaleUpperCase()+x.slice(1);}
+function trNom(m){/* accusatif turc → forme simple : « Ajandayı » → « Ajanda », « listesini » → « listesi », « Müşterilerimi » → « Müşterilerim » */
+  var R=[/[’'][yn]?[ıiuü]$/,/([aeıioöuü])n[ıiuü]$/,/([aeıioöuü])y[ıiuü]$/,/([^aeıioöuü\s])[ıiuü]$/];for(var i=0;i<R.length;i++)if(R[i].test(m))return m.replace(R[i],i?"$1":"");return m;}
+function titreTr(x){var m=String(x).match(/^(.*?)\s+(?:aç|göster|gör|ara|hazırla)(?=$|\s*[·({]|\s*\(|\s+\S)(.*)$/);if(!m)return null;var ob=m[1],reste=m[2];
+  if(/\bbir\b/.test(ob))ob=ob.replace(/\s*\bbir\b\s*/," ").trim();else ob=ob.split(/\s+ve\s+/).map(function(g){var w=g.split(/\s+/);w[w.length-1]=trNom(w[w.length-1]);return w.join(" ");}).join(" ve ");
+  return majuscule((ob+reste).replace(/\s+/g," ").trim());}
+function titre(x){x=String(x||"");var lg=(typeof I18N!=="undefined"&&I18N.lang)||"fr",ordre=[lg].concat(Object.keys(TITRE).filter(function(l){return l!==lg;}));
+  for(var i=0;i<ordre.length;i++){var l=ordre[i];
+    if(l==="tr"){var r=titreTr(x);if(r)return r;continue;}
+    var re=TITRE[l]&&TITRE[l][0],m=re&&x.match(re);if(!m||m[0].length>=x.length)continue;var y=x.slice(m[0].length);
+    if(l==="pl"&&/^(?:Otwarcie|Szukanie|Przygotowanie)\b/.test(x)){/* l'adjectif ou le possessif, puis le nom ; « X i Y » : les deux noms. Le complément qui suit reste au génitif (« Szablon kosztorysu »). */
+      var w=y.split(" "),k=0,nom=function(){while(k<w.length&&/^(?:moich|wolnego)$/i.test(w[k])){w[k]=PL_NOM[w[k].toLowerCase()];k++;}if(k<w.length&&PL_NOM[w[k].toLowerCase()]){w[k]=PL_NOM[w[k].toLowerCase()];k++;return true;}return false;};
+      if(!nom())return x;if(w[k]==="i"){k++;nom();}y=w.join(" ");}
+    if(l==="ru"){var w2=y.split(" ");if(RU_NOM[w2[0].toLowerCase()])w2[0]=RU_NOM[w2[0].toLowerCase()];y=w2.join(" ");}
+    return l==="ar"?y:majuscule(y);}
+  return x;}
+P.titre=titre;
 function html(r,id){var h="";/* avec la carte du devis, pas de phrase à l'infinitif au-dessus (« Commencer un nouveau devis pour Dupont ») : la carte dit déjà tout */
-  if(r.explain&&!id)h+='<p class="mut" dir="auto">'+e(r.explain)+'</p>';
+  if(r.explain&&!id)h+='<p class="mut" dir="auto">'+e(titre(r.explain))+'</p>';
   (r.says||[]).filter(Boolean).forEach(function(s){h+='<p dir="auto">'+e(s)+'</p>';});
   if(id){h+="<!--carte-->"+carte(id)+"<!--/carte-->";if(P.verifier){var dv=devisDe(id);if(dv)h+=P.verifier(dv);}}
   if(r.ui==="message"&&r.msg)h+=lien(msgHref(r.msg),r.msg.canal==="mail"?P.tr("Ouvrir l’e-mail"):r.msg.canal==="whatsapp"?P.tr("Ouvrir WhatsApp"):P.tr("Envoyer le SMS"));
