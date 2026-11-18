@@ -53,9 +53,12 @@ jobs:
           (python3 -m http.server 8767 >/dev/null 2>&1 &) || true
           sleep 1
           node outils/chat/essai-fiabilite.js http://localhost:8767/index.html
+          node outils/chat/essai-photo.js http://localhost:8767/index.html
 
       - name: Essai du langage de chantier (lexique, fautes, abréviations)
         run: node outils/chat/essai-langage.js
+      - name: Titres des réponses (10 langues)
+        run: node outils/chat/essai-titres.js
 
       - name: Simulation de 40 usagers (10 langues, fautes de frappe)
         run: |
