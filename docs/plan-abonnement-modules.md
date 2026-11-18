@@ -24,7 +24,7 @@ newsletter (qui ne sert à rien d'autre) n'est pas chargé quand le module n'est
 
 ### 1. Règles communes — `lib/plan.js` ✅
 - `GRATUIT` : socle gratuit (chat, clients, rendez-vous simples, 1 devis par mois).
-- `droits(compte, maintenant)` : pour chaque module, `ouvert`, `lecture` (lecture seule) ou rien ; nombre de devis gratuits restants ce mois.
+- `droits(compte, maintenant)` : `ouvert(module)` (sinon : verrouillé, données en lecture seule) ; `devisRestants()` pour le devis gratuit du mois.
 - Le même fichier sert au serveur et à l'appli : la règle est écrite une seule fois.
 - Tests : `tests/plan.test.js`.
 
@@ -33,7 +33,8 @@ newsletter (qui ne sert à rien d'autre) n'est pas chargé quand le module n'est
 - Le mot de passe ne part jamais tel quel : l'appli envoie une empreinte dérivée (différente de celle du coffre), le serveur la hache encore (scrypt).
 - Limites d'essais par adresse IP et par e-mail ; même essai de 30 jours, même plan.
 - Appli : à la création du compte et à la connexion, la session serveur est ouverte en même temps.
-  Hors ligne : le téléphone retient qu'il faut le faire, et le fait à la prochaine connexion avec réseau.
+  Hors ligne : rien ne bloque ; la session est ouverte à la prochaine saisie du mot de passe avec réseau.
+  Ouverture par Face ID seulement : pas de mot de passe saisi, donc pas encore de rattachement (à traiter à l'étape 3).
   Comptes e-mail déjà créés : rattachés au serveur à la prochaine saisie du mot de passe.
 - Tests : `tests/auth.test.js` (serveur), `tests/compte-mail.test.js` (navigateur, avec son propre serveur).
 - Limite connue : sans e-mail de vérification, quelqu'un peut créer un compte casô avec l'adresse d'un autre.
