@@ -30,6 +30,8 @@ Sinon il reste, avec l'état au-dessus. Les entrées et sorties sont écrites da
 
 - Pour chaque rendez-vous d'aujourd'hui et de demain où la personne est dans l'équipe, avec une adresse :
   recherche des coordonnées (service de l'État, une fois par chantier), zone de 100 m inscrite auprès d'Android.
+- **GPS toujours** (interrupteur par chantier, onglet Chantiers) : le chantier est surveillé chaque jour de 6 h à 20 h,
+  même sans rendez-vous. Une arrivée et un départ par jour ; jamais « attendu » ni « absent ». La carte affiche « GPS actif ».
 - Android note l'heure d'entrée et de sortie, casô fermé. Au réveil, `pointage/pointage-auto.js` (le moteur, à la racine du dépôt) traite ces passages.
   Arrivée : 60 s dans la zone. Sortie : 10 min sans retour. Cas douteux : « à vérifier ».
 - Personne de ce téléphone : utilisateur de l'entreprise, sinon prénom du compte, sinon l'unique personne de la liste.

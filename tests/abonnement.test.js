@@ -28,30 +28,31 @@ const J=864e5,TOUS=['devis','planning','pointage','paiement','3d','renovation','
 
  /* 1. après l'essai, sans abonnement : socle gratuit seulement */
  {const {c,p,errs}=await tel(fin);
-  ok('sans abonnement : cadenas sur Planning, Encaissements, Fournisseurs, Newsletter et Pointage',await verrous(p)==='agenda,enc,fou,news,pt',await verrous(p));
+  ok('sans abonnement : cadenas sur Encaissements, Fournisseurs, Newsletter et Pointage (Planning et Mes services ouverts)',await verrous(p)==='enc,fou,news,pt',await verrous(p));
   await p.waitForFunction(()=>typeof casoPont!=='undefined'||window.casoPont,null,{timeout:10000}).catch(()=>{});await p.waitForTimeout(500);
   ok('sans abonnement : la newsletter n\'est pas chargée',await p.evaluate(()=>!window.casoVeille&&!document.querySelector('script[src="modules/newsletter.js"]')));
   ok('socle gratuit : chat, clients et rendez-vous ouverts',await p.evaluate(()=>aboOuvert('chat')&&aboOuvert('clients')&&aboOuvert('rdv')));
   await p.evaluate(()=>go('pt'));
   ok('écran Pointage : lisible, bandeau « lecture seule » avec « Ajouter »',await p.evaluate(()=>{const b=$('s-pt').previousElementSibling;if(!b||!b.classList.contains('abo-ro'))return false;return !!b&&$('s-pt').classList.contains('on')&&/Pointage/.test(b.textContent)&&!!b.querySelector('button')}));
   await p.evaluate(()=>go('cli'));ok('écran Clients : pas de bandeau',await p.evaluate(()=>!document.querySelector('.abo-ro')));
-  /* une action venant de l'usager (appui) : la fiche s'ouvre ; « Ajouter » ouvre « On construit le plan » avec le module coché */
+  /* une action venant de l'usager (appui) : « On construit le plan » s'ouvre tout de suite, le module coché, avec un petit mot */
+  const plan=()=>p.evaluate(()=>({on:!$('abSh').hidden,sel:[...ABO.sel],mot:$('abMot').hidden?'':$('abMot').textContent}));
   await p.evaluate(()=>{const b=document.createElement('button');b.id='essai';b.textContent='x';b.style.cssText='position:fixed;top:300px;left:10px;z-index:99';b.onclick=()=>faPayOpen();document.body.appendChild(b)});
-  await p.click('#essai');
-  ok('paiement depuis un écran : fiche « Ajouter à mon abonnement »',await p.evaluate(()=>!$('alkSh').hidden&&/Paiement/.test($('alkT').textContent)&&$('faPay').hidden));
-  await p.evaluate(()=>{aboVerrouFermer();$('essai').onclick=()=>tab('news')});await p.waitForTimeout(300);await p.click('#essai');
-  ok('menu : la newsletter demande le module',await p.evaluate(()=>!$('s-news').classList.contains('on')&&!$('alkSh').hidden&&/Newsletter/.test($('alkT').textContent)));
-  await p.evaluate(()=>$('alkGo').click());await p.waitForTimeout(300);
-  ok('« Ajouter » : « On construit le plan » s\'ouvre, le module déjà coché',await p.evaluate(()=>!$('abSh').hidden&&ABO.sel.has('veille')));
-  await p.evaluate(()=>aboClose());
-  /* chat : « Martin a payé 100 € » → réponse avec « Ajouter », rien d'enregistré */
-  await p.evaluate(()=>{aboVerrouFermer();go('chat')});
+  await p.click('#essai');let pl=await plan();
+  ok('encaissement depuis un écran : le plan s\'ouvre, Encaissements coché, petit mot',pl.on&&pl.sel.includes('paiement')&&/argent/.test(pl.mot)&&await p.evaluate(()=>$('faPay').hidden),JSON.stringify(pl));
+  await p.evaluate(()=>{aboClose();$('essai').onclick=()=>tab('news')});await p.waitForTimeout(300);await p.click('#essai');pl=await plan();
+  ok('menu : la newsletter ouvre le plan, Newsletter cochée',!(await p.evaluate(()=>$('s-news').classList.contains('on')))&&pl.on&&pl.sel.includes('veille')&&/règles/.test(pl.mot),JSON.stringify(pl));
+  await p.evaluate(()=>aboClose());await p.waitForTimeout(300);
+  ok('profil : pastille discrète « On construit le plan », sans « Mon abonnement »',await p.evaluate(()=>{const g=$('dwPlanGo');return !g.hidden&&/On construit le plan/.test(g.textContent)&&!/abonnement/i.test(document.getElementById('dwR').textContent)}));
+  /* chat : « Martin a payé 100 € » → le plan s'ouvre, rien d'enregistré */
+  await p.evaluate(()=>go('chat'));
   await p.fill('#chatIn','Martin a payé 100 €');await p.click('.cmp-send');await p.waitForTimeout(1200);
   await p.locator('#s-chat button',{hasText:/^Oui$/}).last().click();await p.waitForTimeout(800);
-  const ch=await p.evaluate(()=>({pays:db.invoices[0].pays.length,txt:document.getElementById('s-chat').innerText}));
-  ok('chat : paiement refusé avec une réponse, rien enregistré',ch.pays===0&&/Paiement.*abonnement/.test(ch.txt)&&/Ajouter à mon abonnement/.test(ch.txt),ch.txt.slice(-160).replace(/\s+/g,' '));
+  pl=await plan();const pays=await p.evaluate(()=>db.invoices[0].pays.length);
+  ok('chat : encaissement arrêté, le plan s\'ouvre avec Encaissements, rien enregistré',pays===0&&pl.on&&pl.sel.includes('paiement'),JSON.stringify({pays,pl}));
+  await p.evaluate(()=>aboClose());
   /* devis : 1 gratuit par mois */
-  const dv=await p.evaluate(()=>{const n=()=>Object.assign(newObj(),{client:'Martin',lines:[{label:'Carrelage',qty:1,unit:'m²',pu:45,tva:10}]});
+  const dv=await p.evaluate(()=>{aboClose();const n=()=>Object.assign(newObj(),{client:'Martin',lines:[{label:'Carrelage',qty:1,unit:'m²',pu:45,tva:10}]});
    const a=storeQ(n()),b=storeQ(n());const old=Object.assign(n(),{date:'2026-01-10',num:'D2026-001'});db.quotes.push(JSON.parse(JSON.stringify(old)));
    old.lines[0].pu=99;const e=storeQ(old);return{a,b,e,pu:db.quotes.find(x=>x.id===old.id).lines[0].pu,n:db.quotes.length}});
   ok('devis : le 1er du mois est gratuit, le 2e demande le module',dv.a===true&&dv.b===false,JSON.stringify(dv));
@@ -60,7 +61,7 @@ const J=864e5,TOUS=['devis','planning','pointage','paiement','3d','renovation','
 
  /* 2. abonnement Paiement + Newsletter */
  {const {c,p,errs}=await tel(Object.assign({},fin,{offre:'plan',modules:['paiement','veille']}));
-  ok('plan Paiement + Newsletter : plus de cadenas sur ces deux-là',await verrous(p)==='agenda,fou,pt',await verrous(p));
+  ok('plan Encaissements + Newsletter : plus de cadenas sur ces deux-là',await verrous(p)==='fou,pt',await verrous(p));
   ok('plan : la newsletter est chargée',await p.waitForFunction(()=>!!window.casoVeille,null,{timeout:10000}).then(()=>true,()=>false));
   await p.evaluate(()=>go('enc'));ok('plan : Encaissements sans bandeau',await p.evaluate(()=>!document.querySelector('.abo-ro')));
   ok('plan : le paiement s\'enregistre',await p.evaluate(()=>{faPayAll('f1');return db.invoices[0].pays.length===1}));

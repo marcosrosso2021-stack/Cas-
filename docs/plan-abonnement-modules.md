@@ -41,10 +41,13 @@ newsletter (qui ne sert à rien d'autre) n'est pas chargé quand le module n'est
   L'essai reste limité à une fois par SIRET. Un code par e-mail pourra être ajouté quand un service d'envoi sera branché.
 
 ### 3. Verrous dans l'appli ✅ (`modules/abonnement.js`)
-- Chaque écran est rattaché à un module ; un écran non pris affiche « Ajouter à mon abonnement » (ouvre « On construit le plan »).
+- Chaque écran est rattaché à un module ; un écran non pris garde un bandeau « Lecture seule · Ajouter ».
+- Une action d'un module non pris ouvre directement « On construit le plan », le module coché, avec un petit mot propre au module.
+- Profil : une pastille discrète (icône, « Essai · 12 j », « 3 modules · 15 € » ou « On construit le plan ») ouvre le plan.
+- Mon planning (rendez-vous simples) et Mes services restent ouverts dans le socle gratuit.
 - Lecture seule : listes et documents visibles, boutons de création et de modification masqués.
-- Le chat répond « Le module Devis n'est pas dans ton abonnement · Ajouter » au lieu d'agir.
 - Menu : un petit cadenas à côté des modules non pris.
+- Le module « Paiement » s'appelle « Encaissements », comme son écran : à encaisser en haut, encaissé sur la période dessous.
 - Sans réseau : la dernière liste connue est gardée (on ne verrouille jamais tout parce que le téléphone est hors ligne).
 - Tant que le compte n'a pas encore de session serveur : traité comme en essai.
 
@@ -59,6 +62,6 @@ newsletter (qui ne sert à rien d'autre) n'est pas chargé quand le module n'est
 ## Reste à faire
 - **Face ID seul** : sans mot de passe saisi, un compte e-mail déjà créé n'est pas rattaché au serveur, donc rien n'est verrouillé.
   Proposer une fois « Relie ton compte casô » (mot de passe demandé une seule fois).
-- **Pointage** : « Pointer » est verrouillé ; ajouter un chantier ou une personne dans l'écran Pointage ne l'est pas encore.
+- **Pointage** : « Pointer » et « GPS toujours » sont verrouillés ; ajouter un chantier ou une personne ne l'est pas encore.
 - **Le serveur ne contrôle pas encore** le devis gratuit du mois ni les modules : tout est vérifié sur le téléphone.
   À faire avec le paiement (Stripe) : le serveur refusera les actions des modules non payés (numéros de facture, signature, prix en ligne).
