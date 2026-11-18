@@ -3835,12 +3835,19 @@ async function chatFile(inp){const f=inp.files&&inp.files[0];if(!f)return;inp.va
  try{const r=pdf?await pdfRead(f):await ocrRun(await docImg(f),pc,'6');T=r.text||'';W=r.words||[]}catch(e){T=null}finally{setImpMsg=sm}
  CHAT.m.splice(CHAT.m.indexOf(b),1);
  const k=T==null?'?':chKind(T);
+ /* une image sans texte lisible : un plan ou une photo de chantier. Avec une phrase déjà écrite (« ici, faut refaire le mur chez Martin »),
+    c'est une photo de chantier, rangée avec ces mots ; sans phrase, une question. Rien n'est lu dans l'image. */
+ const dit=(($('chatIn')||{}).value||'').trim(),nu=!pdf&&T!=null&&k==='plan'&&vnNorm(T).split(/\s+/).filter(w=>/\p{L}{2,}/u.test(w)).length<8,PC=window.casoPont&&casoPont.photoChantier;
+ if(PC&&!pdf&&dit&&k!=='doc'&&k!=='contact'&&(k!=='plan'||nu)&&!/\b(plan|maquette|3d)\b/i.test(dit)){$('chatIn').value='';try{chatGrow($('chatIn'));qkUpdate()}catch(e){}CHAT.m[CHAT.m.length-1].text+=' '+dit;return casoPont.photoChantier(f,dit)}
+ if(PC&&nu&&!dit){CH_ASK={k:'type',f};
+  return chBot(`<p><span>C’est un plan ou une photo de chantier ?</span></p><!--ask--><div class="msg-act">${chB('<svg class="i"><use href="#i-plan"/></svg><span>Plan 3D</span>',"chType('plan')")}${chB('<svg class="i"><use href="#i-cam"/></svg><span>Photo de chantier</span>',"chType('photo')",1)}</div><!--/ask-->`)}
  if(k==='plan')return chPlan(f);
  if(k==='doc')return chDocAsk(f,T,W);
  if(k==='contact')return chContact(T);
  CH_ASK={k:'type',f};
- chBot(`<p><span>C’est un plan ou un document fournisseur ?</span></p><!--ask--><div class="msg-act">${chB('<svg class="i"><use href="#i-plan"/></svg><span>Plan 3D</span>',"chType('plan')")}${chB('<svg class="i"><use href="#i-truck"/></svg><span>Document fournisseur</span>',"chType('doc')",1)}</div><!--/ask-->`)}
+ chBot(`<p><span>C’est un plan ou un document fournisseur ?</span></p><!--ask--><div class="msg-act">${chB('<svg class="i"><use href="#i-plan"/></svg><span>Plan 3D</span>',"chType('plan')")}${chB('<svg class="i"><use href="#i-truck"/></svg><span>Document fournisseur</span>',"chType('doc')",1)}${!pdf&&window.casoPont&&casoPont.photoChantier?chB('<svg class="i"><use href="#i-cam"/></svg><span>Photo de chantier</span>',"chType('photo')",1):''}</div><!--/ask-->`)}
 function chType(k){const a=CH_ASK;if(!a||a.k!=='type')return;CH_ASK=null;chAsked();if(k==='plan')return chPlan(a.f);
+ if(k==='photo')return casoPont.photoChantier(a.f,'');
  $('impFour').value='';go('imp');runImport({files:[a.f],value:''})}
 /* plan → la maquette 3D le prend tout de suite (cadrage, puis les murs sont tracés) */
 function chPlan(f){chBot(`<p><svg class="i i-sm"><use href="#i-plan"/></svg> <span>Plan envoyé à la maquette 3D.</span></p>`);

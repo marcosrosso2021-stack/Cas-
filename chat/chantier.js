@@ -169,7 +169,7 @@ function lE(x,d){return ml(jour(d),[heure(x),x.title||"",x.adr||""].filter(Boole
 function lP(x){return ml(T("Plan {0}",[x.nom||""]).trim(),x.date?dFR(new Date(x.date).toISOString()):"","",typeof plOpen==="function"?"plOpen('"+e(x.id)+"','chat')":"");}
 function lM(x){var es=x.d.estimation,n=(es.lignes||[]).length,mi=+es.total_min||0,ma=+es.total_max||0;return ml(T("Rénovation 3D"),[x.at?dFR(x.at):"",T("{0} postes",[n])].filter(Boolean).join(" · "),mi||ma?E(mi)+" – "+E(ma):"","");}
 function lignesTravaux(Q){var L=[];Q.filter(function(o){return /^(accepte|signe|paye)$/.test(o.status||"");}).forEach(function(o){(o.lines||[]).forEach(function(l){if(l.label&&L.indexOf(l.label)<0)L.push(l.label);});});return L;}
-function photos(c,D){var I=[];D.PL.forEach(function(x){if(x.th)I.push({src:x.th,clic:typeof plOpen==="function"?"plOpen('"+e(x.id)+"','chat')":""});});
+function photos(c,D){var I=[];(Array.isArray(db.photosCh)?db.photosCh:[]).forEach(function(x){if(x&&x.cid===c.id&&/^data:image\//.test(x.th||""))I.push({src:x.th,clic:"casoPont.photoVoir('"+e(x.id)+"')"});});D.PL.forEach(function(x){if(x.th)I.push({src:x.th,clic:typeof plOpen==="function"?"plOpen('"+e(x.id)+"','chat')":""});});
   D.Q.forEach(function(o){var im=o.cv&&o.cv.imgs||{};Object.keys(im).forEach(function(k){if(/^data:image\//.test(im[k]||""))I.push({src:im[k],clic:"casoPont.voir('"+e(o.id)+"')"});});});
   return I.slice(0,12);}
 function derniereModif(c){var k=cle(c.nom),L=jLit();for(var i=L.length-1;i>=0;i--){var o=L[i];if(o.ch.some(function(x){return cle(x.cl)===k||cle(x.n)===k;}))return T("Dernière modification : {0}",[quand(o.at)+(o.qui?" · "+o.qui:"")]);}return "";}

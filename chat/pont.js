@@ -124,8 +124,11 @@ function bouton(act,label){return '<div class="msg-act"><button class="btn sm" t
 function lien(href,label){return '<div class="msg-act"><a class="btn sm" href="'+e(href)+'" target="_top" rel="noopener">'+e(label)+'</a></div>';}
 function msgHref(m){var t=encodeURIComponent(m.texte||""),to=String(m.to||"");if(m.canal==="mail")return "mailto:"+encodeURIComponent(to)+"?body="+t;
   if(m.canal==="whatsapp")return "https://wa.me/"+to.replace(/\D/g,"").replace(/^0/,"33")+"?text="+t;return "sms:"+to.replace(/\s/g,"")+"?&body="+t;}
+/* « Ouvrir le devis de Martin » → « Devis de Martin » : un titre, pas une phrase à l'infinitif (français ; les autres langues gardent la phrase du moteur) */
+function titre(x){if(!(typeof I18N!=="undefined"&&I18N.lang==="fr"))return x;var m=String(x).match(/^(?:Ouvrir|Afficher|Voir|Montrer|Préparer|Chercher|Retrouver|Consulter)\s+(?:(?:le|la|les|un|une|des|mon|ma|mes|ton|ta|tes)\s+|l[’'])?(\S.*)$/);
+  return m?m[1].charAt(0).toUpperCase()+m[1].slice(1):x;}
 function html(r,id){var h="";/* avec la carte du devis, pas de phrase à l'infinitif au-dessus (« Commencer un nouveau devis pour Dupont ») : la carte dit déjà tout */
-  if(r.explain&&!id)h+='<p class="mut" dir="auto">'+e(r.explain)+'</p>';
+  if(r.explain&&!id)h+='<p class="mut" dir="auto">'+e(titre(r.explain))+'</p>';
   (r.says||[]).filter(Boolean).forEach(function(s){h+='<p dir="auto">'+e(s)+'</p>';});
   if(id){h+="<!--carte-->"+carte(id)+"<!--/carte-->";if(P.verifier){var dv=devisDe(id);if(dv)h+=P.verifier(dv);}}
   if(r.ui==="message"&&r.msg)h+=lien(msgHref(r.msg),r.msg.canal==="mail"?P.tr("Ouvrir l’e-mail"):r.msg.canal==="whatsapp"?P.tr("Ouvrir WhatsApp"):P.tr("Envoyer le SMS"));
