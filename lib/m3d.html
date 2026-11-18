@@ -3454,7 +3454,13 @@ function oe3Model(ok){try{if(!S.W||!S.walls.length)return;const id=S.pid||(S.rnv
     o:X.items.slice(0,60).map(i=>[String(i.cls).slice(0,40),r2(i.w),r2(i.d),r2(i.h),r2(i.z)]),p:X.ops.slice(0,30).map(o=>[o.type,r2(o.c1-o.c0),r2(o.h)])};
   const L=oe3Get(),old=(L.mdl||[]).find(m=>m.id===id);if(ok||(old&&old.ok))e.ok=1;
   if(old&&!ok&&JSON.stringify([old.d,old.o,old.p,old.st])===JSON.stringify([e.d,e.o,e.p,e.st]))return;
-  L.mdl=(L.mdl||[]).filter(m=>m.id!==id);L.mdl.push(e);L.mdl=L.mdl.slice(-100);oe3Put(L)}catch(_){}}
+  L.mdl=(L.mdl||[]).filter(m=>m.id!==id);L.mdl.push(e);L.mdl=L.mdl.slice(-100);oe3Put(L);if(e.ok)oe3Share(L)}catch(_){}}
+/* partage avec les autres usagers (accord de Marcos, 18 novembre) : pour chaque classe, la taille médiane des maquettes validées. Ni image, ni nom, ni pièce */
+function oe3Share(L){try{const M=window.parent!==window&&window.parent.casoMemoire;if(!M)return;const by={},med=a=>{a=a.slice().sort((x,y)=>x-y);const m=a.length>>1;return a.length%2?a[m]:(a[m-1]+a[m])/2};
+  for(const m of L.mdl||[]){if(!m.ok)continue;for(const it of m.o||[])(by[it[0]]=by[it[0]]||[]).push([Math.max(it[1],it[2]),Math.min(it[1],it[2]),it[3]])}
+  const t={};for(const k in by)t[k]=[0,1,2].map(i=>+med(by[k].map(v=>v[i])).toFixed(2));M.pour3d().tailles(t)}catch(e){}}
+function oe3Shared(){try{const v=JSON.parse(localStorage.getItem('caso_ia_3dt')||'null');return v&&v.t||null}catch(e){return null}}
+try{setTimeout(()=>{try{const M=window.parent!==window&&window.parent.casoMemoire;if(M)M.pour3d().taillesLoad()}catch(e){}},4000)}catch(e){}
 function oe3Get(){try{const v=JSON.parse(localStorage.getItem('m3d_oeil3d')||'null');if(v&&v.v===1)return v}catch(e){}return{v:1,ex:[],n:{}}}
 function oe3Put(L){L.ex=L.ex.slice(-400);try{localStorage.setItem('m3d_oeil3d',JSON.stringify(L))}catch(e){L.ex=L.ex.map(x=>({...x,src:''}));try{localStorage.setItem('m3d_oeil3d',JSON.stringify(L))}catch(_){}}}
 function vidLearn(){const V=S.rnv&&S.rnv.vid;if(!V||!V.orig||!V.orig.length||!S.scale)return;const sc=S.scale,L=oe3Get(),now=Date.now();let ch=0;
@@ -3476,7 +3482,7 @@ let VIDR=0;async function vidResume(){if(VIDR)return;VIDR=1;const f=await vidPen
 function vidPrime(f){try{const v=document.createElement('video'),url=URL.createObjectURL(f);v.muted=true;v.playsInline=true;v.setAttribute('playsinline','');v.setAttribute('muted','');v.setAttribute('webkit-playsinline','');v.preload='auto';
   v.style.cssText='position:fixed;left:0;top:0;width:2px;height:2px;opacity:0.01;pointer-events:none;z-index:-1';document.body.appendChild(v);v.src=url;v.load();const p=v.play();if(p&&p.then)p.then(()=>{try{v.pause()}catch(e){}}).catch(()=>{});window.__vidPrime={file:f,v,url}}catch(e){window.__vidPrime=null}}
 let VIDP=null;function vidStart(f){if(!VIDP)VIDP=new Promise((ok,ko)=>{const e=document.createElement('script');e.src='lib/vid3d.js';e.onload=ok;e.onerror=()=>{VIDP=null;ko(new Error('vid3d'))};document.head.appendChild(e)});
-  VIDP.then(()=>window.vidRun(f,{RNV,busy,busyStep,tick,t,toast,fmt,rnvDetect,rnvRender,rnvMake,v2Sess,vidFurnish,oe3:oe3Get(),vidSfm,v2Free,owlRun,visRaw,owlOk:async()=>{/* OWLv2 seulement avec une vraie carte graphique (WebGPU) : sur le processeur, il ajoute 9 min et plus d'erreurs qu'il n'en corrige (essai du 15 novembre) */try{if(!v2OwlOk()||!navigator.gpu)return false;return !!(await navigator.gpu.requestAdapter())}catch(e){return false}}})).catch(()=>toast(t('vid_fail')+' (S1)'))}
+  VIDP.then(()=>window.vidRun(f,{RNV,busy,busyStep,tick,t,toast,fmt,rnvDetect,rnvRender,rnvMake,v2Sess,vidFurnish,oe3:{...oe3Get(),sh:oe3Shared()},vidSfm,v2Free,owlRun,visRaw,owlOk:async()=>{/* OWLv2 seulement avec une vraie carte graphique (WebGPU) : sur le processeur, il ajoute 9 min et plus d'erreurs qu'il n'en corrige (essai du 15 novembre) */try{if(!v2OwlOk()||!navigator.gpu)return false;return !!(await navigator.gpu.requestAdapter())}catch(e){return false}}})).catch(()=>toast(t('vid_fail')+' (S1)'))}
 /* couleur du sol (sous la jonction mur / sol) et du plafond, lues sur les photos */
 function rnvSample(ws,where){const A=[[],[],[]];for(const w of ws){const cv=w.cv,c=cv.getContext('2d'),fl=where==='floor',a=fl?w.q[3]:w.q[0],e=fl?w.q[2]:w.q[1],dy=(fl?1:-1)*cv.height;
     for(let i=1;i<=12;i++)for(const f of[0.02,0.04,0.07,0.1,0.13]){const tt=i/13,x=a[0]+(e[0]-a[0])*tt,y=a[1]+(e[1]-a[1])*tt+dy*f;if(x<0||y<0||x>=cv.width||y>=cv.height)continue;const p=c.getImageData(x|0,y|0,1,1).data;for(let k=0;k<3;k++)A[k].push(p[k])}}

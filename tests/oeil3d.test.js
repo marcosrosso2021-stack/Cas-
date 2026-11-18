@@ -106,7 +106,11 @@ function evaluate(name,spec){
     const s4=JSON.parse(JSON.stringify(spec));V.oeilEnrich(s4,tr,{ex:[],n:{},mdl:[mk('a',0,0.3),mk('b',0,0.3),mk('c',0,0.3)]});
     ok('apprentissage : une maquette non validée ne sert pas de repère',s4.objects.some(o=>o.type==='bed'));
     const s5=JSON.parse(JSON.stringify(spec));V.oeilEnrich(s5,tr,{ex:[],n:{},mdl:[mk('a',1,0.9),mk('b',1,0.9)]});
-    ok('apprentissage : moins de trois maquettes validées, aucun effet',s5.objects.some(o=>o.type==='bed'))}
+    ok('apprentissage : moins de trois maquettes validées, aucun effet',s5.objects.some(o=>o.type==='bed'))
+    const s6=JSON.parse(JSON.stringify(spec));V.oeilEnrich(s6,tr,{ex:[],n:{},mdl:[],sh:{[cl]:[0.4,0.3,0.6,3]}});
+    ok('partage : tailles de 3 autres usagers appliquées sans maquette locale',!s6.objects.some(o=>o.type==='bed'));
+    const s7=JSON.parse(JSON.stringify(spec));V.oeilEnrich(s7,tr,{ex:[],n:{},mdl:[],sh:{[cl]:[0.4,0.3,0.6,2]}});
+    ok('partage : moins de 3 usagers, aucun effet',s7.objects.some(o=>o.type==='bed'))}
    Q.spec=spec;
    // prises : une détection (comme D-FINE) sur une image, placée sur le mur est puis sur le poteau
    {const pi=V.PLC.findIndex(x=>/prise/i.test(x.nom));ok('bibliothèque : la prise est une plaque repérée par D-FINE',pi>=0);

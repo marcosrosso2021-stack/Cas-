@@ -5,7 +5,7 @@
      pour corriger l'IA chaque semaine ; seules celles envoyées par au moins 3 usagers sont lisibles.
    Rien n'est affiché. Chargé après chat/intel.js. */
 (function(){
-var BASE=(window.CASO_APPRIS||"https://app-e6c6e91c-8623-4524-95ef-2cefb8b67f7b.cleverapps.io"),AK="caso_ia_partage",K3="caso_ia_3d",KI="caso_ia_inc";
+var BASE=(window.CASO_APPRIS||"https://app-e6c6e91c-8623-4524-95ef-2cefb8b67f7b.cleverapps.io"),AK="caso_ia_partage",K3="caso_ia_3d",KT="caso_ia_3dt",KI="caso_ia_inc";
 function lit(k,d){try{return JSON.parse(localStorage.getItem(k)||"null")||d;}catch(x){return d;}}
 function ecrit(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(x){}}
 function id(){var o=lit(AK,{});if(!o.id){var a=new Uint8Array(16);try{crypto.getRandomValues(a);}catch(x){for(var i=0;i<16;i++)a[i]=Math.random()*256|0;}
@@ -24,6 +24,14 @@ M.pour3d=function(){return {
      .then(function(r){if(r.ok){var s=lit(K3,{});s.env=cle;ecrit(K3,s);}}).catch(function(){});}catch(x){}},
   load:function(){var st=lit(K3,{});if(!enLigne()||st.at&&Date.now()-st.at<6*36e5)return Promise.resolve(st.sh||null);
     return fetch(BASE+"/api/appris?d=3d").then(function(r){return r.ok?r.json():null;}).then(function(j){if(!j||!j.sh)return st.sh||null;var s=lit(K3,{});s.sh=j.sh;s.at=Date.now();ecrit(K3,s);return j.sh;}).catch(function(){return st.sh||null;});}
+,
+  /* œil 3D : tailles habituelles par classe, tirées des maquettes validées (une classe et trois tailles, rien d'autre) */
+  tailles:function(t){try{var o={},n=0;for(var k in t||{}){var v=t[k];if(n>=60)break;if(/^F\d\d\.[a-z0-9_]+\.[a-z0-9_]+$/.test(k)&&k.length<=48&&v&&v.length===3&&v.every(function(x){return typeof x==="number"&&x>=0.02&&x<=12;})){o[k]=v;n++;}}
+    var st=lit(KT,{}),cle=JSON.stringify(o);if(!n||cle===st.env||!enLigne())return;
+    fetch(BASE+"/api/appris",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({d:"3dt",id:id(),t:o})})
+     .then(function(r){if(r.ok){var s=lit(KT,{});s.env=cle;ecrit(KT,s);}}).catch(function(){});}catch(x){}},
+  taillesLoad:function(){var st=lit(KT,{});if(!enLigne()||st.at&&Date.now()-st.at<12*36e5)return Promise.resolve(st.t||null);
+    return fetch(BASE+"/api/appris?d=3dt").then(function(r){return r.ok?r.json():null;}).then(function(j){if(!j||!j.t)return st.t||null;var s=lit(KT,{});s.t=j.t;s.at=Date.now();ecrit(KT,s);return j.t;}).catch(function(){return st.t||null;});}
  };};
 /* ---------- phrases incomprises, masquées ---------- */
 function noms(){var s={};try{(window.db&&db.clients||[]).forEach(function(c){String(c.nom||"").split(/\s+/).forEach(function(w){w=hn(w);if(w.length>=2)s[w]=1;});});}catch(x){}return s;}
