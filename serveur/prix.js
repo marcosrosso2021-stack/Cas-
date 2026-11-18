@@ -1,8 +1,9 @@
 /* casô : prix des matériaux en ligne (Google Shopping, via SearchApi.io ou SerpApi)
    - la clé reste sur le serveur : variable SEARCHAPI_KEY (conseillée) ou SERPAPI_KEY, sur Clever Cloud
-   - PRIX_JOUR : recherches payantes au plus par jour, pour tout le serveur (défaut 100)
-   - PRIX_IP : recherches payantes au plus par jour et par adresse (défaut 30)
-   - PRIX_CACHE_H : une même recherche n'est payée qu'une fois pendant ce temps, en heures (défaut 12)
+   - PRIX_MOIS : recherches payantes au plus par mois et par compte casô (défaut 300) ; une réponse gardée en cache ne compte pas
+   - sans compte : PRIX_JOUR recherches payantes par jour pour tous les anonymes ensemble (défaut 100), PRIX_IP par adresse (défaut 30)
+   - PRIX_CACHE_H : une même recherche n'est payée qu'une fois pendant ce temps, pour tous les usagers, en heures (défaut 12)
+   - cache et compteurs gardés dans le dossier des données (prix.json) : ils survivent à un redéploiement
    Réponse : [{produit, prix (TTC), devise, magasin, url, maj, photo}] du moins cher au plus cher.
    Photos : l'appli refuse les images d'autres sites ; elles passent par ce serveur (image), seulement depuis les hôtes du service. */
 'use strict';
@@ -62,16 +63,36 @@ function garder(L,n){
  return L;
 }
 
+function mois(){return new Date().toISOString().slice(0,7)}
+
 function creer(opts={}){
  const env=opts.env||process.env,F=opts.fetch||globalThis.fetch;
  const KSA=env.SEARCHAPI_KEY||'',KSP=env.SERPAPI_KEY||'';
- const JOUR=+env.PRIX_JOUR||100,PARIP=+env.PRIX_IP||30,TTL=(+env.PRIX_CACHE_H||12)*36e5;
- const cache=new Map(),parIp=new Map();let j='',n=0;
+ const JOUR=+env.PRIX_JOUR||100,PARIP=+env.PRIX_IP||30,MOIS=+env.PRIX_MOIS||300,TTL=(+env.PRIX_CACHE_H||12)*36e5,MAXC=+env.PRIX_CACHE_N||5000;
+ const cache=new Map(),parIp=new Map();let j='',n=0,m=mois(),parCompte=Object.create(null),payees=0;
  const pret=()=>!!(KSA||KSP);
 
- const PANNE=[502,{error:'Le service de prix ne répond pas, réessaie plus tard.'}],TROP=[429,{error:'Trop de recherches aujourd\'hui, réessaie demain.'}];
- /* une recherche payante de plus pour cette adresse : false si la limite du jour est atteinte */
- function quota(ip){if(j!==jour()){j=jour();n=0;parIp.clear()}const mi=parIp.get(ip)||0;if(mi>=PARIP||n>=JOUR)return false;parIp.set(ip,mi+1);n++;return true}
+ /* cache et compteurs du mois sur disque : relus au démarrage, écrits au plus toutes les 30 s (et à l'arrêt) */
+ const FICHIER=opts.dir?require('path').join(opts.dir,'prix.json'):null,fs=require('fs');
+ if(FICHIER)try{const o=JSON.parse(fs.readFileSync(FICHIER,'utf8')),t=Date.now();
+  if(o&&o.cache&&typeof o.cache==='object')for(const k of Object.keys(o.cache)){const e=o.cache[k];if(e&&typeof e.t==='number'&&t-e.t<TTL&&Array.isArray(e.v))cache.set(k,e)}
+  if(o&&o.mois===m&&o.comptes&&typeof o.comptes==='object')for(const k of Object.keys(o.comptes))if(+o.comptes[k]>0)parCompte[k]=+o.comptes[k];
+  if(o&&o.mois===m&&+o.payees>0)payees=+o.payees}catch(e){}
+ let sale=false,minuteur=null;
+ function ecrire(){sale=false;if(!FICHIER)return;const t=Date.now(),c={};
+  /* sur disque, sans les petites images incluses (elles reviennent à la recherche suivante) */
+  for(const [k,e] of cache)if(t-e.t<TTL)c[k]={t:e.t,v:e.v.map(x=>x.photo&&x.photo.startsWith('data:')?Object.assign({},x,{photo:''}):x)};
+  try{const tmp=FICHIER+'.tmp';fs.writeFileSync(tmp,JSON.stringify({mois:m,comptes:parCompte,payees,cache:c}));fs.renameSync(tmp,FICHIER)}catch(e){(opts.log||console.error)('[casô] prix : cache non écrit',e&&e.code)}}
+ function marquer(){sale=true;if(!FICHIER||minuteur)return;minuteur=setTimeout(()=>{minuteur=null;if(sale)ecrire()},opts.ecritureMs||30000);if(minuteur.unref)minuteur.unref()}
+
+ const PANNE=[502,{error:'Le service de prix ne répond pas, réessaie plus tard.'}],TROP=[429,{error:'Trop de recherches aujourd\'hui, réessaie demain.'}],
+  MOIS_PLEIN=[429,{error:'Limite de recherches du mois atteinte.',limite:MOIS}];
+ /* une recherche payante de plus : par compte casô (au mois), sinon par adresse (au jour, avec un plafond commun aux anonymes) */
+ function quota(ip,id){
+  if(m!==mois()){m=mois();parCompte=Object.create(null);payees=0}
+  if(id){const u=parCompte[id]||0;if(u>=MOIS)return false;parCompte[id]=u+1;payees++;marquer();return true}
+  if(j!==jour()){j=jour();n=0;parIp.clear()}const mi=parIp.get(ip)||0;if(mi>=PARIP||n>=JOUR)return false;parIp.set(ip,mi+1);n++;payees++;marquer();return true}
+ const refus=id=>id?MOIS_PLEIN:TROP;
  /* un appel au service : la réponse, null en cas de panne ; « aucun résultat » (une erreur chez SerpApi) donne {} */
  async function appel(params){
   const p=new URLSearchParams(Object.assign({},params,{api_key:KSA||KSP}));
@@ -84,17 +105,18 @@ function creer(opts={}){
   }catch(e){(opts.log||console.error)('[casô] prix : service injoignable',e&&e.name);return null}
   finally{clearTimeout(to)}
  }
- function garde(cle,v){cache.set(cle,{t:Date.now(),v});if(cache.size>3000)cache.delete(cache.keys().next().value);return [200,v]}
+ function garde(cle,v){cache.delete(cle);cache.set(cle,{t:Date.now(),v});while(cache.size>MAXC)cache.delete(cache.keys().next().value);marquer();return [200,v]}
 
  /* mag = domaine d'une enseigne (ex. pointp.fr), nom = son nom : recherche limitée à cette enseigne (voir chercherMag) */
- async function chercher(q,pays,ip,mag,nom){
+ /* id : identifiant du compte casô (connexion Google / Outlook), ou rien pour un appel anonyme */
+ async function chercher(q,pays,ip,mag,nom,id){
   q=court(q,100);pays=String(pays||'FR').toUpperCase();
   if(!pret())return [503,{error:'Recherche de prix pas encore activée sur le serveur.'}];
   if(q.length<2)return [400,{error:'Recherche trop courte.'}];
-  if(mag)return chercherMag(q,pays,ip,String(mag).toLowerCase(),court(nom,40));
+  if(mag)return chercherMag(q,pays,ip,String(mag).toLowerCase(),court(nom,40),id);
   const [gl,hl,devise]=PAYS[pays]||PAYS.FR,cle=(PAYS[pays]?pays:'FR')+'|'+q.toLowerCase();
   const c=cache.get(cle);if(c&&Date.now()-c.t<TTL)return [200,c.v];
-  if(!quota(ip))return TROP;
+  if(!quota(ip,id))return refus(id);
   const js=await appel({engine:'google_shopping',q,gl,hl});if(!js)return PANNE;
   return garde(cle,convertir(js,devise));
  }
@@ -102,16 +124,16 @@ function creer(opts={}){
     1. Google Shopping avec le nom de l'enseigne, en ne gardant que ses offres ;
     2. sinon les pages de son site qui affichent un prix dans Google (« src:'site' » : prix lu sur la page, TTC ou HT selon l'enseigne).
     Chaque étape compte comme une recherche payante. */
- async function chercherMag(q,pays,ip,mag,nom){
+ async function chercherMag(q,pays,ip,mag,nom,id){
   if(!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(mag)||mag.length>60||!nom)return [400,{error:'Magasin inconnu.'}];
   const [gl,hl,devise]=PAYS[pays]||PAYS.FR,cle=(PAYS[pays]?pays:'FR')+'|'+q.toLowerCase()+'|'+mag;
   const c=cache.get(cle);if(c&&Date.now()-c.t<TTL)return [200,c.v];
   const nk=t=>String(t).normalize('NFD').toLowerCase().replace(/[^a-z0-9]/g,''),k=nk(nom),kd=nk(mag.split('.')[0]);
-  if(!quota(ip))return TROP;
+  if(!quota(ip,id))return refus(id);
   const a=await appel({engine:'google_shopping',q:q+' '+nom,gl,hl});if(!a)return PANNE;
   let v=convertir(a,devise).filter(x=>{const m=nk(x.magasin);return m.includes(k)||k.includes(m)||m.includes(kd)});
   if(!v.length){
-   if(!quota(ip))return TROP;
+   if(!quota(ip,id))return refus(id);
    const b=await appel({engine:'google',q:q+' site:'+mag,gl,hl});if(!b)return PANNE;
    v=surSite(b,devise,mag,nom);
   }
@@ -129,7 +151,10 @@ function creer(opts={}){
    const v={type,buf};imgs.set(u,v);if(imgs.size>400)imgs.delete(imgs.keys().next().value);return [200,v];
   }catch(e){return [502,{error:'Image indisponible.'}]}finally{clearTimeout(to)}
  }
- return {chercher,image,pret,etat:()=>({pret:pret(),jour:j===jour()?n:0,limite:JOUR})};
+ /* reste du mois pour un compte (affichable dans l'appli) */
+ function reste(id){if(m!==mois())return MOIS;return Math.max(0,MOIS-(parCompte[id]||0))}
+ return {chercher,image,pret,reste,ecrire,
+  etat:()=>({pret:pret(),jour:j===jour()?n:0,limite:JOUR,mois:m,payeesMois:payees,parCompte:MOIS,comptes:Object.keys(parCompte).length,cache:cache.size})};
 }
 
 module.exports={creer,convertir,surSite,garder,photoOk,PAYS};

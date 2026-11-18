@@ -3603,9 +3603,11 @@ function prxPrix(x){if(x.devise==='EUR')return eur(x.prix);try{return new Intl.N
 /* où est le serveur casô : celui qui a déjà répondu, l'adresse fixée, le site ouvert (appli servie par le serveur), le poste de l'entreprise, puis l'adresse par défaut */
 function prxBases(){const L=[],a=u=>{u=String(u||'').replace(/\/+$/,'');if(/^https?:\/\//.test(u)&&!L.includes(u))L.push(u)};
  a(PRX_B);a(window.CASO_APPRIS);a(location.origin);try{a(getSync().url)}catch(e){}a('https://app-e6c6e91c-8623-4524-95ef-2cefb8b67f7b.cleverapps.io');return L}
+/* connecté (Google / Outlook) : le serveur compte les recherches de ce compte au mois, pas de l'appareil au jour */
+function prxAuth(){try{const j=window.CasoAuth&&CasoAuth.jeton();return j?{authorization:'Bearer '+j}:{}}catch(e){return {}}}
 async function prxAsk(q,plus){let err='';
  for(const b of prxBases()){const ac=new AbortController(),to=setTimeout(()=>ac.abort(),22000);
-  try{const r=await fetch(b+'/api/prix?q='+encodeURIComponent(q)+'&pays='+prxPays()+(plus||''),{signal:ac.signal,credentials:'omit'}),v=await r.json().catch(()=>null);
+  try{const r=await fetch(b+'/api/prix?q='+encodeURIComponent(q)+'&pays='+prxPays()+(plus||''),{signal:ac.signal,credentials:'omit',headers:prxAuth()}),v=await r.json().catch(()=>null);
    if(r.ok&&Array.isArray(v)){PRX_B=b;return {v}}
    if(v&&typeof v.error==='string'&&r.status!==404&&r.status!==401){PRX_B=b;return {err:v.error}}
   }catch(e){}finally{clearTimeout(to)}}

@@ -83,6 +83,42 @@ await t('un magasin précis : ses offres Google Shopping, sinon les pages de son
  await p.chercher('marteau','FR','2','pointp.fr','Point.P');assert.strictEqual(appels.length,2);// cache
  assert.strictEqual((await p.chercher('marteau','FR','1','pas un domaine','X'))[0],400);
  assert.strictEqual((await p.chercher('marteau','FR','1','pointp.fr',''))[0],400)});
+await t('compte : 300 recherches payantes par mois, le cache ne compte pas, refus clair au-delà',async()=>{
+ const f=faux(REP),p=creer({env:{SEARCHAPI_KEY:'k',PRIX_MOIS:'3'},fetch:f});
+ for(const q of ['a1','a2','a3'])assert.strictEqual((await p.chercher(q,'FR','1','','','c1'))[0],200);
+ assert.strictEqual((await p.chercher('a1','FR','1','','','c1'))[0],200,'déjà en cache : gratuit');
+ const [c,b]=await p.chercher('a4','FR','1','','','c1');assert.strictEqual(c,429);assert.ok(/mois/.test(b.error));assert.strictEqual(b.limite,3);
+ assert.strictEqual(f.appels.length,3);assert.strictEqual(p.reste('c1'),0);
+ assert.strictEqual((await p.chercher('a4','FR','1','','','c2'))[0],200,'autre compte : son propre quota');
+ assert.strictEqual((await p.chercher('a1','FR','9','','','c3'))[0],200,'recherche d\'un autre déjà en cache : gratuite');
+ assert.strictEqual(p.reste('c3'),3)});
+await t('compte : les limites anonymes (jour, adresse) ne s\'appliquent pas',async()=>{
+ const p=creer({env:{SEARCHAPI_KEY:'k',PRIX_IP:'1',PRIX_JOUR:'1'},fetch:faux(REP)});
+ assert.strictEqual((await p.chercher('b1','FR','1'))[0],200);assert.strictEqual((await p.chercher('b2','FR','1'))[0],429);
+ assert.strictEqual((await p.chercher('b3','FR','1','','','c1'))[0],200);assert.strictEqual((await p.chercher('b4','FR','1','','','c1'))[0],200)});
+await t('enseigne : chaque étape payante compte pour le compte',async()=>{
+ const f=faux({shopping_results:[]}),p=creer({env:{SEARCHAPI_KEY:'k',PRIX_MOIS:'2'},fetch:f});
+ assert.strictEqual((await p.chercher('vis','FR','1','pointp.fr','Point.P','c1'))[0],200);
+ assert.strictEqual(f.appels.length,2);assert.strictEqual(p.reste('c1'),0);
+ assert.strictEqual((await p.chercher('clou','FR','1','pointp.fr','Point.P','c1'))[0],429)});
+await t('cache et compteurs gardés sur disque : relus après redémarrage, sans les images incluses',async()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'caso-prix-'));
+ const R2={shopping_results:[{title:'Seau',extracted_price:3,source:'Brico',thumbnail:'data:image/png;base64,AAAA'}]};
+ const f1=faux(R2),p1=creer({dir,env:{SEARCHAPI_KEY:'k',PRIX_MOIS:'5'},fetch:f1});
+ await p1.chercher('seau','FR','1','','','c1');p1.ecrire();
+ const o=JSON.parse(fs.readFileSync(path.join(dir,'prix.json'),'utf8'));assert.strictEqual(o.cache['FR|seau'].v[0].photo,'');
+ const f2=faux(R2),p2=creer({dir,env:{SEARCHAPI_KEY:'k',PRIX_MOIS:'5'},fetch:f2});
+ const [c,b]=await p2.chercher('seau','FR','1','','','c2');assert.strictEqual(c,200);assert.strictEqual(b[0].magasin,'Brico');
+ assert.strictEqual(f2.appels.length,0,'après redémarrage : réponse prise dans le cache');assert.strictEqual(p2.reste('c1'),4);
+ fs.writeFileSync(path.join(dir,'prix.json'),'{pas du json');assert.doesNotThrow(()=>creer({dir,env:{SEARCHAPI_KEY:'k'},fetch:faux(R2)}));
+ fs.rmSync(dir,{recursive:true,force:true})});
+await t('cache expiré non relu ; taille du cache bornée',async()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'caso-prix-'));
+ fs.writeFileSync(path.join(dir,'prix.json'),JSON.stringify({mois:'2000-01',comptes:{c1:299},cache:{'FR|vieux':{t:Date.now()-13*36e5,v:[]}}}));
+ const f=faux(REP),p=creer({dir,env:{SEARCHAPI_KEY:'k',PRIX_CACHE_N:'2'},fetch:f});
+ await p.chercher('vieux','FR','1');assert.strictEqual(f.appels.length,1);assert.strictEqual(p.reste('c1'),300,'autre mois : compteur remis à zéro');
+ await p.chercher('x1','FR','1');await p.chercher('x2','FR','1');assert.strictEqual(p.etat().cache,2);
+ fs.rmSync(dir,{recursive:true,force:true})});
 await t('serveur : GET /api/prix sans compte',async()=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'caso-prix-'));
  const {createServer}=require('../serveur/server.js');
@@ -93,6 +129,12 @@ await t('serveur : GET /api/prix sans compte',async()=>{
  const [c,b,h]=await get('/api/prix?q=placo%20BA13&pays=FR');
  assert.strictEqual(c,200);assert.strictEqual(b[0].magasin,'Y');assert.strictEqual(h['access-control-allow-origin'],'*');
  assert.strictEqual((await get('/api/prix?q=a'))[0],400);
+ const getA=(u,j)=>new Promise((ok,ko)=>http.get({host:'127.0.0.1',port,path:u,headers:{authorization:'Bearer '+j}},r=>{let d='';r.on('data',c=>d+=c);r.on('end',()=>ok([r.statusCode,JSON.parse(d)]))}).on('error',ko));
+ assert.strictEqual((await getA('/api/prix?q=placo%20BA14','f'.repeat(64)))[0],200,'jeton inconnu : traité comme anonyme');
+ /* jeton valide : compté pour ce compte, pas pour l'adresse */
+ const c1=s.auth._d();c1.comptes.cX={id:'cX',via:'google',mode:'artisan'};const j='a'.repeat(64);
+ c1.sessions[require('crypto').createHash('sha256').update(j).digest('hex')]={id:'cX',exp:Date.now()+864e5,vu:Date.now()};
+ assert.strictEqual((await getA('/api/prix?q=placo%20BA15',j))[0],200);assert.strictEqual(prix.reste('cX'),299);
  srv.close();fs.rmSync(dir,{recursive:true,force:true})});
 console.log(ok+' contrôles OK');
 })().catch(e=>{console.error('✗',e);process.exit(1)});

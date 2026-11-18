@@ -84,7 +84,7 @@ function createServer(opts={}){
  if(!data.signs)data.signs={};if(!data.sigreg)data.sigreg=Object.create(null);if(!data.subs)data.subs=[];if(!data.remSent)data.remSent={};if(!data.invSeq)data.invSeq={};if(!data.invShares)data.invShares={};if(!data.ics)data.ics={};
  if(!data.vapid){data.vapid=webpush.vapidKeys();try{const t=FILE+'.tmp';fs.writeFileSync(t,JSON.stringify(data));fs.renameSync(t,FILE)}catch(e){}}
  const auth=authLib.creer(Object.assign({dir:DIR,hosted:HOSTED,maintenant:opts.maintenant},opts.auth||{}));// comptes des usagers : connexion Google / Microsoft (module AUTH)
- const prix=opts.prix||prixLib.creer();// prix des matériaux en ligne (clé SEARCHAPI_KEY ou SERPAPI_KEY)
+ const prix=opts.prix||prixLib.creer({dir:DIR});// prix des matériaux en ligne (clé SEARCHAPI_KEY ou SERPAPI_KEY)
  /* veille réglementaire : un passage par jour sur les sources officielles ; rien n'est envoyé aux artisans sans validation */
  const veille=opts.veille||veilleLib.creer({dir:DIR});
  const DEMARRE=new Date().toISOString();
@@ -618,9 +618,10 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
     if(!u)return send(res,404,{error:'Ce compte n\'existe plus.'});
     {const tk=newToken(u);await flush();return send(res,200,tk)}}
 
-   /* prix des matériaux en ligne (sans compte) : la clé du service reste ici, limites par jour et par adresse */
+   /* prix des matériaux en ligne : la clé du service reste ici ; 300 recherches payantes par mois et par compte, limites par jour et par adresse sans compte */
    if(req.method==='GET'&&url==='/api/prix'){const sp=new URLSearchParams(req.url.split('?')[1]||'');
-    const [c,b]=await prix.chercher(sp.get('q')||'',sp.get('pays')||'FR',ip,sp.get('mag')||'',sp.get('nom')||'');return send(res,c,b)}
+    const cpt=auth.compte(req);/* connecté (Google / Outlook) : limite au mois par compte ; sinon limites anonymes */
+    const [c,b]=await prix.chercher(sp.get('q')||'',sp.get('pays')||'FR',ip,sp.get('mag')||'',sp.get('nom')||'',cpt&&cpt.id);return send(res,c,b)}
    if(req.method==='GET'&&url==='/api/prix/img'){const sp=new URLSearchParams(req.url.split('?')[1]||'');
     const [c,o]=await prix.image(sp.get('u')||'');if(c!==200)return send(res,c,o);
     res.writeHead(200,Object.assign({'content-type':o.type,'content-length':o.buf.length,'cache-control':'public, max-age=86400'},SEC,cors));return res.end(o.buf)}
@@ -860,7 +861,7 @@ data.invSeq[key]=n;if(iid)data.invIds[key+'|'+iid]=n;await persist();return send
    return send(res,404,{error:'introuvable'});
   }catch(e){if(!e||!e.pub)console.error('[casô]',req.method,url,e&&e.stack||e);if(!res.headersSent)send(res,400,{error:e&&e.pub?e.message:'Requête invalide.'});else try{res.destroy()}catch(_){}}});
 
- return{server,data:()=>data,remindTick,icsFor,auth,flush,persist,cede:()=>cede,sauvegarder,distant:()=>distant};
+ return{server,data:()=>data,remindTick,icsFor,auth,prix,flush:()=>{try{prix.ecrire&&prix.ecrire()}catch(e){}return flush()},persist,cede:()=>cede,sauvegarder,distant:()=>distant};
 }
 
 const lockRead=dir=>{try{return JSON.parse(fs.readFileSync(path.join(dir,'data.lock'),'utf8'))}catch(e){return null}};
