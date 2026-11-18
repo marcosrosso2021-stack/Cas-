@@ -887,7 +887,6 @@ input[aria-invalid="true"]{border-color:var(--ko)}
 .pl-lst span{flex:1}.pl-lst em{font-style:normal;color:var(--mut)}
 .pl-tot{display:flex;justify-content:space-between;align-items:baseline;margin:14px 0 2px;font-size:15px}.pl-tot b{font-size:22px}
 .pl-note{text-align:center;font-size:13px;min-height:18px;margin:0 0 10px}
-#dwPlan[role=button]{cursor:pointer;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
 
 @media (prefers-reduced-motion:reduce){.sheet,.sheet-bg{transition:none}}
 .sent{border:1.5px solid var(--acc);border-radius:14px;padding:12px;margin:12px 0;background:color-mix(in srgb,var(--acc) 10%,var(--card))}
@@ -986,7 +985,26 @@ button.it.it-main{padding:12px 14px}
 .dw-x{margin-inline-start:auto;width:40px;height:40px;border:0;border-radius:50%;background:transparent;color:var(--ink);display:grid;place-items:center;cursor:pointer}
 .dw-i{display:flex;align-items:center;gap:12px;min-height:52px;padding:0 10px;border:0;border-radius:14px;background:transparent;color:var(--ink);font:inherit;font-size:16px;font-weight:600;text-align:start;cursor:pointer;width:100%}
 .dw-i:active,.dw-i:hover{background:var(--bg)}
-.dw-out{margin-top:auto;color:#c0392b}
+.dw-out{color:#c0392b}
+/* compte en bas du menu profil, façon Claude : initiale, nom, plan en petit ; un appui ouvre un petit menu au-dessus */
+.dw-hr{justify-content:flex-end;border-bottom:0;padding-bottom:4px}
+.dw-acc{margin-top:auto;position:relative;border-top:1px solid var(--line);padding-top:8px}
+.dw-me{display:flex;align-items:center;gap:10px;width:100%;padding:8px;border:0;border-radius:14px;background:transparent;color:var(--ink);font:inherit;text-align:start;cursor:pointer}
+.dw-me:hover,.dw-me[aria-expanded=true]{background:var(--bg)}
+.dw-ini{width:34px;height:34px;flex:none;border-radius:50%;background:var(--ink);color:var(--card);display:grid;place-items:center;font-size:15px;font-weight:600}
+.dw-me .dw-who b{font-size:15px;font-weight:600;line-height:1.2}
+.dw-me .dw-who span{font-size:12.5px;color:var(--mut);line-height:1.3}
+.dw-ud{width:18px;height:18px;margin-inline-start:auto;flex:none;color:var(--mut)}
+.dw-pop{position:absolute;left:0;right:0;bottom:calc(100% + 6px);background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px;box-shadow:0 12px 32px rgba(15,34,56,.16);opacity:0;transform:translateY(6px);transition:opacity .14s,transform .14s}
+.dw-pop.on{opacity:1;transform:none}
+.dw-pop-m{padding:8px 10px 6px;font-size:13px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dw-pop-m:empty{display:none}
+.dw-pop-s{height:1px;background:var(--line);margin:4px 6px}
+.dw-pi{display:flex;align-items:center;gap:10px;width:100%;min-height:42px;padding:0 10px;border:0;border-radius:10px;background:transparent;color:var(--ink);font:inherit;font-size:15px;text-align:start;cursor:pointer}
+.dw-pi:hover,.dw-pi:focus-visible{background:var(--bg)}
+.dw-pi .i{width:18px;height:18px}.dw-pi span{flex:1}.dw-pi em{font-style:normal;font-size:13px;color:var(--mut)}
+.dw-pi.dw-out{color:#c0392b}
+@media (prefers-reduced-motion:reduce){.dw-pop{transition:none}}
 @media (prefers-reduced-motion:reduce){.dw,.dw-bg{transition:none}}
 header .ttl{cursor:pointer}
 /* chat */
@@ -2404,13 +2422,21 @@ body.tr-on{overflow:hidden}
  <button class="dw-i" onclick="drawerGo('cpt:bk')"><svg class="i"><use href="#i-shield"/></svg><span>Sauvegarde</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
 </aside>
 <aside class="dw dw-r" id="dwR" hidden aria-label="Compte">
- <div class="dw-h"><span class="dw-av"><svg class="i"><use href="#i-user"/></svg></span><div class="dw-who"><b id="dwName"></b><span id="dwMail" class="mut"></span><span id="dwPlan" class="mut" hidden></span></div><button class="dw-x" onclick="drawerClose()" aria-label="Fermer"><svg class="i"><use href="#i-x"/></svg></button></div>
+ <div class="dw-h dw-hr"><button class="dw-x" onclick="drawerClose()" aria-label="Fermer"><svg class="i"><use href="#i-x"/></svg></button></div>
  <p class="dw-g">Moi et mon entreprise</p>
  <button class="dw-i" onclick="drawerGo('cpt:ent')"><svg class="i"><use href="#i-building"/></svg><span>Mon entreprise</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
  <button class="dw-i" onclick="drawerGo('agenda')"><svg class="i"><use href="#i-cal"/></svg><span>Mon planning</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
  <button class="dw-i" onclick="drawerGo('cpt:team')"><svg class="i"><use href="#i-users"/></svg><span>Mon équipe</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
  <button class="dw-i" onclick="drawerGo('sigp')"><svg class="i"><use href="#i-pen"/></svg><span>Ma signature</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
- <button class="dw-i dw-out" onclick="logout()"><svg class="i"><use href="#i-logout"/></svg><span>Se déconnecter</span></button>
+ <div class="dw-acc">
+  <div class="dw-pop" id="dwPop" role="menu" hidden>
+   <div class="dw-pop-m" id="dwMail"></div>
+   <button class="dw-pi" id="dwPlanGo" role="menuitem" type="button" onclick="dwPopClose();planOpen()" hidden><svg class="i"><use href="#i-blocks"/></svg><span>On construit le plan</span><em id="dwPlanP"></em></button>
+   <div class="dw-pop-s"></div>
+   <button class="dw-pi dw-out" role="menuitem" type="button" onclick="dwPopClose();logout()"><svg class="i"><use href="#i-logout"/></svg><span>Se déconnecter</span></button>
+  </div>
+  <button class="dw-me" id="dwMe" type="button" aria-haspopup="menu" aria-expanded="false" onclick="dwPopToggle()"><span class="dw-ini" id="dwIni" aria-hidden="true"></span><span class="dw-who"><b id="dwName"></b><span id="dwPlan" hidden></span></span><svg class="dw-ud" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 9.5 12 5.5l4 4M8 14.5l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+ </div>
 </aside>
 <div id="print" data-noi18n lang="fr"></div>
 
@@ -3348,12 +3374,20 @@ function authLigne(){
  const A=window.CasoAuth,c=A&&A.compte(),pl=$('dwPlan');if(!pl)return;
  let t=c&&AUTH_OFFRES[c.offre]?i18nT(AUTH_OFFRES[c.offre]):'';
  if(t&&c.offre==='artisan_curieux'&&c.essaiFin){const d=new Date(c.essaiFin);t+=' · '+String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')}
- if(t&&c.offre==='plan'&&c.plan&&window.CasoPlan)t+=' · '+CasoPlan.euros(c.plan.total)+(c.plan.unite==='HT'?' HT':' TTC');
+ const prix=c&&c.plan&&c.plan.total&&window.CasoPlan?CasoPlan.euros(c.plan.total)+' '+i18nT(c.plan.unite):'';
+ if(t&&c.offre==='plan'&&prix)t+=' · '+prix;
  pl.textContent=t;pl.hidden=!t;
- /* la ligne ouvre « On construit le plan » dès que le compte a un mode */
- const ouvre=!!(t&&c&&c.mode&&window.CasoPlan);
- if(ouvre){pl.setAttribute('role','button');pl.tabIndex=0;pl.onclick=planOpen;pl.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();planOpen()}}}
- else{pl.removeAttribute('role');pl.removeAttribute('tabindex');pl.onclick=null;pl.onkeydown=null}}
+ const n=($('dwName')||{}).textContent||'',ini=$('dwIni');if(ini)ini.textContent=(n.trim()[0]||'·').toUpperCase();
+ /* « On construit le plan » dans le petit menu du compte, dès que le compte a un mode */
+ const go=$('dwPlanGo');if(go){go.hidden=!(c&&c.mode&&window.CasoPlan);$('dwPlanP').textContent=prix}}
+/* petit menu du compte (au-dessus de la ligne du bas) */
+function dwPopToggle(){const p=$('dwPop');p.hidden?dwPopOpen():dwPopClose()}
+function dwPopOpen(){const p=$('dwPop');p.hidden=false;$('dwMe').setAttribute('aria-expanded','true');requestAnimationFrame(()=>p.classList.add('on'));
+ setTimeout(()=>document.addEventListener('pointerdown',dwPopOut,true),0);document.addEventListener('keydown',dwPopEsc)}
+function dwPopClose(){const p=$('dwPop');if(!p||p.hidden)return;p.classList.remove('on');$('dwMe').setAttribute('aria-expanded','false');
+ document.removeEventListener('pointerdown',dwPopOut,true);document.removeEventListener('keydown',dwPopEsc);setTimeout(()=>{if(!p.classList.contains('on'))p.hidden=true},150)}
+function dwPopOut(e){if(!e.target.closest('.dw-acc'))dwPopClose()}
+function dwPopEsc(e){if(e.key==='Escape')dwPopClose()}
 /* « On construit le plan » (lib/plan.js) : l'usager coche ses modules, le total se met à jour en direct ; le serveur recalcule et garde le choix */
 const PLN={sel:new Set(),mode:'artisan',busy:false};
 function planOpen(){
@@ -3419,6 +3453,7 @@ function drawer(side){
  $('dwBg').hidden=false;d.hidden=false;requestAnimationFrame(()=>{$('dwBg').classList.add('on');d.classList.add('on')});
  document.body.classList.add('dw-open')}
 function drawerClose(now){
+ try{dwPopClose()}catch(e){}
  ['dwL','dwR'].forEach(id=>{const d=$(id);if(d)d.classList.remove('on')});const bg=$('dwBg');if(bg)bg.classList.remove('on');
  document.body.classList.remove('dw-open');
  const end=()=>{['dwL','dwR','dwBg'].forEach(id=>{const d=$(id);if(d)d.hidden=true})};if(now)end();else setTimeout(end,220)}
