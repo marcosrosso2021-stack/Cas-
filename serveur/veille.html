@@ -182,7 +182,7 @@ function dessiner(){
 function carte(f){
  const c=el('article','carte'),t=el('button','tete'),e=el('div','etiq');t.type='button';t.setAttribute('aria-expanded',String(ouvert===f.id));
  e.append(el('span','tag '+(f.priorite||''),f.priorite||'—'),el('span','tag',CAT[f.categorie]||f.categorie));
- if(f.bloque)e.append(el('span','tag bl','Bloqué'));else if(f.validation==='attente'&&TRI[f.tri])e.append(el('span','tag tri-'+f.tri,TRI[f.tri]));if(f.lettre&&f.validation==='valide')e.append(el('span','tag env',f.publieLe?'Envoi le '+fr(f.publieLe):'Envoi'));
+ if(f.bloque)e.append(el('span','tag bl','Bloqué'));else if(f.validation==='attente'&&TRI[f.tri])e.append(el('span','tag tri-'+f.tri,TRI[f.tri]));if(f.lettre&&f.validation==='valide')e.append(el('span','tag env',f.publieLe&&f.publieLe<=new Date().toISOString().slice(0,10)?'Dans la newsletter':f.publieLe?'Envoi le '+fr(f.publieLe):'Envoi'));
  t.append(e,el('h2',null,f.titre),el('small',null,(SRC[f.source]||f.source)+' · publié le '+fr(f.datePub)+dans(f)));t.onclick=()=>{ouvert=ouvert===f.id?'':f.id;dessiner()};c.append(t);
  if(ouvert!==f.id)return c;
  const b=el('div','corps');c.append(b);
@@ -217,6 +217,9 @@ $('entrer').onclick=()=>{cle=$('cle').value.trim();$('cle').value='';charger()};
 $('cle').onkeydown=e=>{if(e.key==='Enter')$('entrer').click()};
 $('collecte').onclick=collecter;$('modes').onclick=e=>{const b=e.target.closest('button');if(!b||b.dataset.m===mode)return;mode=b.dataset.m;ouvert='';dire('');charger()};
 if(ouvert==='saas')ouvert='';$('dom').onchange=e=>{dom=e.target.value;dessiner()};
+/* le tableau suit le serveur tout seul : au retour sur la page, et toutes les 5 minutes tant qu'elle est ouverte (pas pendant une saisie) */
+let vu=Date.now();const rafraichir=()=>{if(!cle||occupe||document.hidden||ouvert||Date.now()-vu<6e4)return;vu=Date.now();charger()};
+document.addEventListener('visibilitychange',rafraichir);setInterval(rafraichir,3e5);
 charger();
 })();
 </script>
