@@ -105,7 +105,8 @@ function createServer(opts={}){
   if(groupe&&R.length&&Date.now()-(data.veilleGroupe||0)>=V_GROUPE){data.veilleGroupe=Date.now();veille.annonce(R.map(x=>x.id));persist();
    n+=await veillePousser(R,M=>'Ta newsletter casô : '+M.length+(M.length>1?' nouveautés à lire':' nouveauté à lire'))}
   return n}
- if(!opts.noTimers&&HOSTED){const vt=setInterval(()=>{if(veille.aFaire(new Date()))veille.passer().catch(()=>{});if(new Date().getUTCHours()>=6)veilleAnnoncer(true).catch(()=>{})},9e5);if(vt.unref)vt.unref()}
+ if(!opts.noTimers&&HOSTED){const vt=setInterval(()=>{const tri=()=>{try{veille.trier()}catch(e){console.error('[casô] veille : tri automatique',e&&e.message)}};   // newsletter à jour toute seule : collecte, tri, puis annonce
+  (veille.aFaire(new Date())?veille.passer().then(tri,tri):Promise.resolve(tri())).then(()=>{if(new Date().getUTCHours()>=6)return veilleAnnoncer(true)}).catch(()=>{})},9e5);if(vt.unref)vt.unref()}
  const pushSend=opts.pushSend||((sub,payload)=>webpush.send(sub,payload,data.vapid,{subject:process.env.VAPID_SUBJECT}));
  /* --- apprentissage partagé du chat : phrases apprises par les usagers, sans rien de personnel (fichier à part) --- */
  const APF=path.join(DIR,'appris.json'),APL=['fr','en','es','pt','it','ro','pl','tr','ru','ar'];
@@ -696,7 +697,7 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
     if(POST&&url==='/api/veille/decider'){const b=await readBody(req),[c,o]=veille.decider(String(b.id||''),String(b.decision||''),b.corrections);
      if(c===200)veilleAnnoncer(false).catch(()=>{});return send(res,c,o)}
     if(POST&&url==='/api/veille/trier'){const r=veille.trier();veilleAnnoncer(false).catch(()=>{});return send(res,200,r)}
-    if(POST&&url==='/api/veille/passer')return send(res,200,await veille.passer());
+    if(POST&&url==='/api/veille/passer'){const r=await veille.passer();r.tri=veille.trier();veilleAnnoncer(false).catch(()=>{});return send(res,200,r)}
     return send(res,404,{error:'Introuvable.'})}
 
    m=null;

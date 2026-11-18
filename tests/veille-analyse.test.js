@@ -87,8 +87,8 @@ await t('appliquer le tri : un geste, et les textes bloqués restent à vérifie
  await w.passer();const r=w.trier();assert.deepStrictEqual(r,{envoyes:1,gardes:1,ecartes:1,laisses:0});
  const L=id=>w.lire('legifrance:JORFTEXT00005200'+id);
  assert.deepStrictEqual([L('5001').validation,L('5001').lettre,L('5001').aFaire,L('5001').publieLe],['valide',true,'Vérifie tes modèles de devis avant la date d\'application.','2026-11-17']);
- assert.deepStrictEqual([L('5002').validation,L('5002').lettre||false],['valide',false]);assert.strictEqual(L('5003').validation,'refuse');
- assert.deepStrictEqual([L('5004').validation,L('5004').bloque],['attente',true]);assert.deepStrictEqual(w.lettre().map(x=>x.id),['legifrance:JORFTEXT000052005001'])});
+ assert.deepStrictEqual([L('5002').validation,L('5002').lettre,L('5002').publieLe],['valide',true,'2026-11-17'],'à garder : part aussi dans la newsletter, le jour même');assert.strictEqual(L('5003').validation,'refuse');
+ assert.deepStrictEqual([L('5004').validation,L('5004').bloque],['attente',true]);assert.deepStrictEqual(w.lettre().map(x=>x.id).sort(),['legifrance:JORFTEXT000052005001','legifrance:JORFTEXT000052005002'])});
 await t('la priorité suit le délai, jour après jour',async()=>{
  const w=creer({dir:fs.mkdtempSync(path.join(os.tmpdir(),'caso-veille-')),env:{},log:()=>{},maintenant:()=>new Date(heure),
   sources:{actives:()=>['test'],collecter:async()=>({erreurs:[],bruts:[{source:'legifrance',idSource:'JORFTEXT000052000901',titre:'Décret n° 2026-1901 du 8 novembre 2026 relatif à la facturation électronique',url:'https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000052000901',datePub:'2026-11-11',resume:'',texte:'Le présent décret entre en vigueur le 1er mars 2027.',nature:'DECRET',numero:'',nor:'',dateVigueur:''}]})}});

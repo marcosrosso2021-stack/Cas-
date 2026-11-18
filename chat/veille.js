@@ -38,12 +38,12 @@ function quand(item,auj){
 /* où en est l'échéance : 0 loin ou sans date, 1 à 90 jours, 2 à 30 jours, 3 à 7 jours, 4 en vigueur */
 function palier(item,auj){if(!item.dateVigueur||item.categorie==='proposition')return 0;var d=delai(item.dateVigueur,auj);return d<=0?4:d<=7?3:d<=30?2:d<=90?1:0}
 /* les cartes à montrer : jamais vues, ou vues avant un palier franchi depuis (rappel d'échéance) ; pas celles qui ne concernent pas l'artisan */
-function aMontrer(items,vus,prof,auj){
- return (items||[]).filter(function(it){
+function aMontrer(items,vus,prof,auj,tout){
+ var L=(items||[]).filter(function(it){
   if(!it||!it.id||!it.titre||concerne(prof,it).etat==='non')return false;
   var v=vus&&Object.prototype.hasOwnProperty.call(vus,it.id)?vus[it.id]:null;
   if(v==null)return true;var p=palier(it,auj);return p>v&&p<4;
- }).slice(0,5);
+ });return tout?L:L.slice(0,5);
 }
 /* « rappel » : la carte a déjà été lue et revient parce que l'échéance approche */
 function carte(it,ouvert,prof,auj,t,rappel){
@@ -95,6 +95,7 @@ var CSS='#newsList{--nv:cubic-bezier(.2,.8,.2,1)}'
 +'.nv-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-6px 0 16px}'
 +'.nv-chip{font-size:13px;line-height:1;padding:7px 11px;border-radius:999px;background:var(--soft,#f0f0ed);color:var(--mut,#6b6b70)}'
 +'.nv-chip.on{background:var(--acc,#ffc21a);color:#18181a;font-weight:700}'
++'.nv-fil{display:flex;gap:8px;margin:-6px 0 16px;overflow-x:auto}.nv-fb{border:0;font:inherit;font-size:14px;cursor:pointer;flex:0 0 auto}.nv-fb b{font-weight:700;opacity:.6;margin-left:2px}.nv-fb.sel{background:var(--ink,#18181a);color:var(--bg,#fff)}.nv-fb.sel b{opacity:.8}'
 +'.nv-une{position:relative;overflow:hidden;border-radius:26px;padding:22px 20px 20px;margin:0 0 18px;background:var(--ink,#18181a);color:var(--bg,#f2f2ef)}'
 +'.nv-une::after{content:"";position:absolute;inset-inline-end:-70px;top:-70px;width:190px;height:190px;border-radius:50%;background:var(--acc,#ffc21a);opacity:.16;pointer-events:none}'
 +'.nv-sur{display:flex;align-items:center;gap:8px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;opacity:.72;margin:0 0 12px}'
@@ -150,18 +151,22 @@ function faits(it,p,auj,une){
  return h+(m?'<p class="nv-m">'+m+'</p>':'')+'</div>';
 }
 var dejaAnime=false,lus={};
+var filtre='';   // Tout, Règles ou Métier : le temps de la visite
 function page(){
  var z=doc.getElementById('newsList');if(!z)return;var s=lit(),auj=jour(),p=prof(),neufs={};
  if(!doc.getElementById('nvCss')&&doc.createElement&&doc.head){var st=doc.createElement('style');st.id='nvCss';st.textContent=CSS;doc.head.appendChild(st)}
- aMontrer(s.items,s.vus||{},p,auj).forEach(function(it){neufs[it.id]=1});
+ aMontrer(s.items,s.vus||{},p,auj,true).forEach(function(it){neufs[it.id]=1});
  Object.keys(lus).forEach(function(id){neufs[id]=1});   // lu pendant cette visite : il garde sa place
  var L=(s.items||[]).filter(function(it){return it&&it.id&&it.titre&&concerne(p,it).etat!=='non'});
  var PR={P0:0,P1:1,P2:2,P3:3},rang=function(it){return (neufs[it.id]?0:10)+(Object.prototype.hasOwnProperty.call(PR,it.priorite)?PR[it.priorite]:3)};
  var proche=function(it){var d=it.dateVigueur?delai(it.dateVigueur,auj):9999;return d<0?9999:d};   // à priorité égale, l'échéance la plus proche d'abord
- L.sort(function(a,b){return rang(a)-rang(b)||proche(a)-proche(b)||(a.publieLe<b.publieLe?1:a.publieLe>b.publieLe?-1:0)});L=L.slice(0,30);
+ L.sort(function(a,b){return rang(a)-rang(b)||proche(a)-proche(b)||(a.publieLe<b.publieLe?1:a.publieLe>b.publieLe?-1:0)});L=L.slice(0,80);var nR=L.filter(function(it){return it.categorie!=='nouveaute'}).length,nM=L.length-nR;if(filtre&&!(nR&&nM))filtre='';
+ if(filtre)L=L.filter(function(it){return (it.categorie==='nouveaute')===(filtre==='metier')});
  var N=L.filter(function(it){return neufs[it.id]}),V=L.filter(function(it){return !neufs[it.id]}),anime=dejaAnime?'':' class="nv-anim"';dejaAnime=true;
  var aLire=N.filter(function(it){return !lus[it.id]}).length;
- var h='<div class="nv-top"><span class="nv-chip">'+esc(tr(NOMS[p.metier]||'Artisan du bâtiment'))+'</span>'+(aLire?'<span class="nv-chip on">'+aLire+' '+esc(tr('à lire'))+'</span>':'')+'</div>';
+ var fb=function(k,t,n){return '<button type="button" class="nv-chip nv-fb'+(filtre===k?' sel':'')+'" data-nvf="'+k+'" aria-pressed="'+(filtre===k)+'">'+esc(tr(t))+' <b>'+n+'</b></button>'};
+ var h='<div class="nv-top"><span class="nv-chip">'+esc(tr(NOMS[p.metier]||'Artisan du bâtiment'))+'</span>'+(aLire?'<span class="nv-chip on">'+aLire+' '+esc(tr('à lire'))+'</span>':'')+'</div>'
+  +(nR&&nM?'<div class="nv-fil" role="group">'+fb('','Tout',nR+nM)+fb('regle','Règles',nR)+fb('metier','Métier',nM)+'</div>':'');
  if(!artisan()||!L.length){z.innerHTML='<div class="nv-vide nv-in"><span>'+ic('check')+'</span><b>'+esc(tr('Tu es à jour'))+'</b>'+esc(tr('Rien de nouveau pour ton métier.'))+'</div>';return}
  var une=N[0]||V[0];if(!N.length)V=V.slice(1);
  if(une){var d=une.dateVigueur?delai(une.dateVigueur,auj):null,tot=une.dateVigueur&&une.datePub?Math.max(1,delai(une.dateVigueur,une.datePub)):0,fait=tot&&d!=null?Math.min(100,Math.max(4,Math.round((tot-Math.max(0,d))/tot*100))):0;
@@ -196,7 +201,8 @@ function reponse(texte){
   return '<p data-noi18n lang="fr"><b>'+esc(nom(it))+'</b>'+(w?'<br>'+esc(w)+'.':'')+(c.etat==='peut'?'<br>'+esc(c.texte)+'.':'')+(it.aFaire?'<br>'+esc(tr('À faire'))+' : '+esc(it.aFaire):'')+'</p>'}).join('')
   +(L.length>3?'<p>'+esc(tr('Le reste est dans Newsletter.'))+'</p>':'');
 }
-doc.addEventListener('click',function(e){var b=e.target&&e.target.closest&&e.target.closest('[data-veille]');if(b)ouvrir(b.getAttribute('data-veille'))});
+doc.addEventListener('click',function(e){var f=e.target&&e.target.closest&&e.target.closest('[data-nvf]');if(f){filtre=f.getAttribute('data-nvf')||'';page();return}
+ var b=e.target&&e.target.closest&&e.target.closest('[data-veille]');if(b)ouvrir(b.getAttribute('data-veille'))});
 var envoi=racine.chatSend;
 if(typeof envoi==='function')racine.chatSend=function(texte){
  var inp=doc.getElementById('chatIn'),t=String(texte==null?(inp?inp.value:''):texte).trim();

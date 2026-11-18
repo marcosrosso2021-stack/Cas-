@@ -44,6 +44,12 @@ await t('serveur : lecture réservée au propriétaire',async()=>{
  const [c2,L]=await get('/api/veille/textes',{'x-caso-cle':'cle-test'});assert.strictEqual(c2,200);assert.strictEqual(L.length,b.textes);
  assert.ok((await get('/api/veille/textes?bloque=1',{'x-caso-cle':'cle-test'}))[1].every(f=>f.bloque));
  assert.ok((await get('/api/veille/textes?categorie=clarification',{'x-caso-cle':'cle-test'}))[1].every(f=>f.categorie==='clarification'));
+ const post=(u,h)=>new Promise((ok,ko)=>{const r=http.request({host:'127.0.0.1',port,path:u,method:'POST',headers:h||{}},x=>{let d='';x.on('data',c=>d+=c);x.on('end',()=>ok([x.statusCode,JSON.parse(d)]))});r.on('error',ko);r.end()});
+ const avant=(await get('/api/veille/lettre'))[1].length,[c3,r3]=await post('/api/veille/passer',{'x-caso-cle':'cle-test'});
+ assert.strictEqual(c3,200);assert.ok(r3.tri&&typeof r3.tri.envoyes==='number','la collecte trie toute seule');
+ const apres=(await get('/api/veille/lettre'))[1];assert.ok(apres.length>=avant&&apres.length===r3.tri.envoyes+r3.tri.gardes+avant,'tout ce qui est trié part dans la newsletter');
+ assert.ok(apres.every(x=>x.categorie!=='non_confirme'),'rien de non confirmé');
+ assert.ok((await get('/api/veille/textes?bloque=1',{'x-caso-cle':'cle-test'}))[1].every(f=>f.validation==='attente'&&!f.lettre),'les textes bloqués attendent le propriétaire');
  delete process.env.CASO_CLE_IA;assert.strictEqual((await get('/api/veille/etat',{'x-caso-cle':''}))[0],404);
  await new Promise(r=>srv.close(r))});
 console.log(ok+' contrôles réussis');process.exit(0);
