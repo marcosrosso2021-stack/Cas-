@@ -57,6 +57,8 @@ jobs:
 
       - name: Essai du langage de chantier (lexique, fautes, abréviations)
         run: node outils/chat/essai-langage.js
+      - name: Titres des réponses (10 langues)
+        run: node outils/chat/essai-titres.js
 
       - name: Simulation de 40 usagers (10 langues, fautes de frappe)
         run: |
