@@ -1,0 +1,2 @@
+Déposer ici les modèles .glb ou .gltf (licence commerciale vérifiée, crédit dans CREDITS.md).
+Voir src/config/modeles.ts.
