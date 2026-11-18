@@ -150,6 +150,28 @@ function req(srv,p,o){o=o||{};return new Promise((res,ko)=>{
  a=await P('profil',{mode:'artisan',nom:'Léa Déco',siret:'35600000000048'},jB);
  ok('Bricoleur → Artisan : essai démarré',a.j.compte.mode==='artisan'&&a.j.compte.offre==='artisan_curieux'&&a.j.compte.essaiFin===T+30*J);
 
+ // ---- « On construit le plan » : modules choisis, total plafonné ----
+ a=await P('moi',undefined,jB);
+ ok('essai : tous les modules Artisan ouverts',a.j.compte.modules.length===8&&a.j.compte.modules.includes('paiement'));
+ a=await P('plan',{modules:['devis','planning','pointage','nimporte-quoi','devis']},jB);
+ ok('plan : modules inconnus et doublons écartés, total 15 €',a.status===200&&JSON.stringify(a.j.compte.plan.modules)==='["devis","planning","pointage"]'&&a.j.compte.plan.total===1500&&a.j.compte.offre==='artisan_curieux');
+ const T1=T;T+=31*J;
+ a=await P('moi',undefined,jB);
+ ok('après l\'essai : seuls les modules choisis restent ouverts (mode test, rien de facturé)',a.j.compte.offre==='plan'&&JSON.stringify(a.j.compte.modules)==='["devis","planning","pointage"]');
+ a=await P('plan',{modules:['devis','planning','pointage','paiement','3d','renovation','fournisseurs','veille']},jB);
+ ok('plan : tout coché = 25 € (plafond), jamais 38 €',a.j.compte.plan.brut===3800&&a.j.compte.plan.total===2500&&a.j.compte.plan.plafonne===true);
+ a=await P('plan',{modules:[]},jB);
+ ok('plan vide : aucun module, 0 €',a.status===200&&a.j.compte.modules.length===0&&a.j.compte.plan.total===0);
+ ok('plan : corps invalide refusé (400)',(await P('plan',{modules:'devis'},jB)).status===400);
+ ok('plan : sans jeton refusé (401)',(await P('plan',{modules:['devis']})).status===401);
+ a=await connecter('google',gClaims('g-sans-mode','sansmode@gmail.com'));
+ ok('plan : refusé tant que le mode n\'est pas choisi (400)',(await P('plan',{modules:['devis']},a.jeton)).status===400);
+ a=await connecter('google',gClaims('g-bric','bric@gmail.com'));
+ await P('profil',{mode:'bricoleur'},a.jeton);
+ a=await P('plan',{modules:['3d','renovation','verification','estimation','devis']},a.jeton);
+ ok('Bricoleur : catalogue à lui (devis écarté), 17 € plafonnés à 10 € TTC',a.j.compte.plan.brut===1700&&a.j.compte.plan.total===1000&&a.j.compte.plan.unite==='TTC'&&!a.j.compte.modules.includes('devis'));
+ T=T1;
+
  // ---- fin d'essai, déconnexion, redémarrage ----
  const T0=T;T+=31*J;
  ok('après 30 jours : offre « artisan_fin_essai »',(await P('moi',undefined,jA2)).j.compte.offre==='artisan_fin_essai');T=T0;
