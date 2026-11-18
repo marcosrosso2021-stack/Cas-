@@ -881,13 +881,10 @@ input[aria-invalid="true"]{border-color:var(--ko)}
 .sheet-x{display:flex;margin:6px auto 0;justify-content:center}
 /* « On construit le plan » : tuiles à cocher, total collé en bas */
 .ab-sh{max-height:92dvh;overflow:auto;padding-bottom:0}
-.ab-h{display:flex;align-items:center;justify-content:space-between;margin:0 0 12px}
+.ab-h{display:flex;align-items:center;justify-content:space-between;margin:0 0 14px}
 .ab-h h3{margin:0;text-align:start;font-size:19px;letter-spacing:-.01em}
 .ab-x{width:36px;height:36px;border:0;border-radius:50%;background:var(--bg);color:var(--ink);display:grid;place-items:center;cursor:pointer}
 .ab-x .i{width:18px;height:18px}
-.ab-seg{display:flex;gap:4px;padding:4px;border-radius:12px;background:var(--bg);margin:0 0 14px}
-.ab-seg button{flex:1;min-height:36px;border:0;border-radius:9px;background:transparent;color:var(--mut);font:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:background .15s,color .15s,box-shadow .15s}
-.ab-seg button[aria-pressed=true]{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(15,34,56,.14)}
 .ab-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .ab-t{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:10px;min-height:96px;padding:12px;border:1.5px solid transparent;border-radius:16px;background:var(--bg);color:var(--ink);font:inherit;text-align:start;cursor:pointer;transition:border-color .15s,background .15s,transform .1s}
 .ab-t:active{transform:scale(.97)}
@@ -901,7 +898,7 @@ input[aria-invalid="true"]{border-color:var(--ko)}
 .ab-t[aria-checked=true]>.i{color:var(--ink)}
 .ab-t[aria-checked=true] .ab-ck{background:var(--ink);border-color:var(--ink);color:var(--card)}
 .ab-t[aria-checked=true] .ab-ck svg{opacity:1;transform:none}
-.ab-t:focus-visible,.ab-seg button:focus-visible,.ab-go:focus-visible{outline:2px solid var(--acc-d);outline-offset:2px}
+.ab-t:focus-visible,.ab-go:focus-visible{outline:2px solid var(--acc-d);outline-offset:2px}
 .ab-ft{position:sticky;bottom:0;display:flex;align-items:center;gap:12px;margin:14px -16px 0;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));background:var(--card);border-top:1px solid var(--line)}
 .ab-sum{display:flex;align-items:baseline;gap:6px;flex:1;min-width:0}
 .ab-sum b{font-size:26px;font-weight:700;letter-spacing:-.02em}
@@ -910,7 +907,7 @@ input[aria-invalid="true"]{border-color:var(--ko)}
 .ab-go{display:inline-flex;align-items:center;gap:8px;min-height:48px;padding:0 22px;border:0;border-radius:999px;background:var(--ink);color:var(--card);font:inherit;font-size:16px;font-weight:600;cursor:pointer}
 .ab-go .i{width:18px;height:18px}
 .ab-go:disabled{opacity:.5}
-@media (prefers-reduced-motion:reduce){.ab-t,.ab-seg button,.ab-ck,.ab-ck svg{transition:none}}
+@media (prefers-reduced-motion:reduce){.ab-t,.ab-ck,.ab-ck svg{transition:none}}
 
 @media (prefers-reduced-motion:reduce){.sheet,.sheet-bg{transition:none}}
 .sent{border:1.5px solid var(--acc);border-radius:14px;padding:12px;margin:12px 0;background:color-mix(in srgb,var(--acc) 10%,var(--card))}
@@ -2275,7 +2272,6 @@ body.tr-on{overflow:hidden}
 <div class="sheet ab-sh" id="abSh" role="dialog" aria-modal="true" aria-labelledby="abT" hidden>
  <div class="sheet-grip"></div>
  <div class="ab-h"><h3 id="abT">On construit le plan</h3><button type="button" class="ab-x" onclick="aboClose()" aria-label="Fermer"><svg class="i"><use href="#i-x"/></svg></button></div>
- <div class="ab-seg" id="abRac" role="group"></div>
  <div class="ab-grid" id="abGrid" role="group" aria-labelledby="abT"></div>
  <div class="ab-ft">
   <div class="ab-sum" aria-live="polite"><s id="abBrut" hidden></s><b id="abTot"></b><span id="abUnit"></span></div>
@@ -3393,7 +3389,8 @@ function dwLocked(){
  try{if(localStorage.getItem('caso_locked')==='1')return true}catch(e){}
  return false}
 /* module AUTH (lib/auth.js) : « Continuer avec Google / Outlook » sur les écrans Connexion et Créer mon compte ; l'offre en une ligne dans le menu profil */
-const AUTH_OFFRES={artisan_curieux:'Essai Artisan pro',artisan_fin_essai:'Essai terminé',plan:'Mon plan',artisan:'Artisan',artisan_pro:'Artisan pro',bricoleur:'Bricoleur du dimanche',bricoleur_pro:'Bricoleur du dimanche pro'};
+/* plus d'offres toutes faites : l'usager construit son abonnement ; la ligne dit seulement où il en est */
+const AUTH_OFFRES={artisan_curieux:'Essai gratuit',artisan_fin_essai:'Essai terminé',plan:'Mon abonnement',bricoleur:'Bricoleur du dimanche'};
 function authLigne(){
  const A=window.CasoAuth,c=A&&A.compte(),pl=$('dwPlan');if(!pl)return;
  let t=c&&AUTH_OFFRES[c.offre]?i18nT(AUTH_OFFRES[c.offre]):'';
@@ -3424,10 +3421,6 @@ function aboOpen(){
 function aboClose(){$('abSh').classList.remove('on');$('abBg').classList.remove('on');setTimeout(()=>{$('abSh').hidden=true;$('abBg').hidden=true},200)}
 function aboDraw(){
  const C=CasoPlan.catalogue(ABO.mode),calc=CasoPlan.calcul(ABO.mode,[...ABO.sel],!!(CasoAuth.compte()||{}).fondateur);
- const seg=$('abRac');seg.textContent='';seg.hidden=C.raccourcis.length<2;
- C.raccourcis.forEach(r=>{const b=document.createElement('button');b.type='button';b.textContent=i18nT(r.nom);
-  b.setAttribute('aria-pressed',String(r.modules.length===calc.modules.length&&r.modules.every(m=>ABO.sel.has(m))));
-  b.onclick=()=>{ABO.sel=new Set(r.modules);aboDraw()};seg.appendChild(b)});
  const g=$('abGrid');g.textContent='';
  C.modules.forEach(m=>{const t=document.createElement('button'),on=ABO.sel.has(m.id);
   t.type='button';t.className='ab-t';t.setAttribute('role','checkbox');t.setAttribute('aria-checked',String(on));t.dataset.m=m.id;
