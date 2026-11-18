@@ -1,7 +1,7 @@
 /* Veille réglementaire, la newsletter (ce que l'appli lit, « Ça me concerne ? », envoi, notifications) : node tests/veille-lettre.test.js */
 'use strict';
 const assert=require('assert'),os=require('os'),fs=require('fs'),path=require('path'),http=require('http');
-const {creer,lundi}=require('../serveur/veille/index.js'),V=require('../chat/veille.js');
+const {creer,lundi}=require('../serveur/veille/index.js'),V=require('../modules/newsletter.js');
 let ok=0;const t=async(nom,f)=>{await f();ok++;console.log('✓',nom)};
 const A='2026-11-16';
 
@@ -44,7 +44,7 @@ await t('carte : fermée = titre et bouton ; ouverte = trois lignes ; rien d\'ex
  assert.ok(/Une échéance approche/.test(V.carte({id:'a',titre:'T',dateVigueur:'2026-12-01'},false,{},A,null,true)));assert.ok(/color:inherit/.test(V.carte({...it,url:'https://www.legifrance.gouv.fr/x'},true,{},A)))});
 
 await t('dans l\'appli (faux navigateur) : page Newsletter et pastille, rien dans le chat ; le chat répond quand on demande',async()=>{
- const vm=require('vm'),src=fs.readFileSync(path.join(__dirname,'..','chat','veille.js'),'utf8');
+ const vm=require('vm'),src=fs.readFileSync(path.join(__dirname,'..','modules','newsletter.js'),'utf8');
  const monter=(mode,items,search)=>{const mem={},ecoute={},E={newsList:{innerHTML:''},newsDot:{hidden:true},chatIn:{value:''}},pousse=[],envois=[];
   const w={CASO_APPRIS:'https://serveur.test',navigator:{onLine:true},db:{prof:{forme:'SARL',metier:'peintres'}},accountGet:()=>({mode}),i18nT:x=>x,location:{search:search||''},setTimeout:f=>f(),
    localStorage:{getItem:k=>k in mem?mem[k]:null,setItem:(k,v)=>{mem[k]=v}},
@@ -69,7 +69,7 @@ await t('dans l\'appli (faux navigateur) : page Newsletter et pastille, rien dan
  e.ecoute.click({target:{closest:s=>s==='[data-nvf]'?null:({getAttribute:()=>'x:2'})}});const h2=e.E.newsList.innerHTML;assert.ok(/nv-une[\s\S]*Critique[\s\S]*nv-a/.test(h2)&&/2 à lire/.test(h2),'lu pendant la visite : garde sa place');assert.ok(!/Pour qui|Quand|Oui, toi/.test(h2),'partie dépliée courte');
  const d=monter('artisan',[]);await new Promise(r=>setTimeout(r,20));d.w.casoVeille.page();assert.ok(/Rien de nouveau pour ton métier/.test(d.E.newsList.innerHTML));d.w.chatSend('des nouveautés ?');assert.ok(/Rien de nouveau/.test(d.pousse[1].html))});
 await t('liste entière : toutes les infos du métier, filtres Tout / Règles / Métier',async()=>{
- const vm=require('vm'),src=fs.readFileSync(path.join(__dirname,'..','chat','veille.js'),'utf8'),mem={},ecoute={},E={newsList:{innerHTML:''},newsDot:{hidden:true},chatIn:{value:''}};
+ const vm=require('vm'),src=fs.readFileSync(path.join(__dirname,'..','modules','newsletter.js'),'utf8'),mem={},ecoute={},E={newsList:{innerHTML:''},newsDot:{hidden:true},chatIn:{value:''}};
  const items=[];for(let i=0;i<40;i++)items.push({id:'x:'+i,titre:(i<25?'Règle numéro ':'Nouvel outil de chantier numéro ')+i,categorie:i<25?'confirme':'nouveaute',priorite:i<25?'P2':'P3',pros:[],datePub:'2026-11-17',publieLe:'2026-11-18',url:'https://www.legifrance.gouv.fr/x'});
  const w={CASO_APPRIS:'https://serveur.test',navigator:{onLine:true},db:{prof:{metier:'peintres'}},accountGet:()=>({mode:'artisan'}),i18nT:x=>x,location:{search:''},setTimeout:f=>f(),
   localStorage:{getItem:k=>k in mem?mem[k]:null,setItem:(k,v)=>{mem[k]=v}},document:{hidden:false,getElementById:i=>E[i]||null,querySelector:()=>null,addEventListener:(n,f)=>{ecoute[n]=f}},
@@ -85,7 +85,7 @@ await t('titre officiel long : nature et date à part, sujet lisible ; titre com
  assert.deepStrictEqual(V.titreCourt(T),{nat:'Arrêté du 12 novembre 2026',t:'Exigences de performance énergétique et environnementale des constructions de bâtiments en France métropolitaine et portant diverses dispositions'});
  assert.deepStrictEqual(V.titreCourt('Décret n° 2026-1012 du 1er novembre 2026 portant modification du code de la construction'),{nat:'Décret du 1er novembre 2026',t:'Modification du code de la construction'});
  assert.deepStrictEqual(V.titreCourt('TVA des travaux : ce qui change'),{nat:'',t:'TVA des travaux : ce qui change'});
- const vm=require('vm'),src=fs.readFileSync(path.join(__dirname,'..','chat','veille.js'),'utf8'),mem={},ecoute={},E={newsList:{innerHTML:''},newsDot:{hidden:true},chatIn:{value:''}};
+ const vm=require('vm'),src=fs.readFileSync(path.join(__dirname,'..','modules','newsletter.js'),'utf8'),mem={},ecoute={},E={newsList:{innerHTML:''},newsDot:{hidden:true},chatIn:{value:''}};
  const w={CASO_APPRIS:'https://serveur.test',navigator:{onLine:true},db:{prof:{metier:'peintres'}},accountGet:()=>({mode:'artisan'}),i18nT:x=>x,location:{search:''},setTimeout:f=>f(),
   localStorage:{getItem:k=>k in mem?mem[k]:null,setItem:(k,v)=>{mem[k]=v}},document:{hidden:false,getElementById:i=>E[i]||null,querySelector:()=>null,addEventListener:(n,f)=>{ecoute[n]=f}},
   fetch:async()=>({ok:true,json:async()=>[{id:'j:1',titre:T,priorite:'P1',dateVigueur:'2026-11-13',pros:[],aFaire:'Regarde si tes chantiers sont concernés.',url:'https://www.legifrance.gouv.fr/x',publieLe:'2026-11-17'}]}),chatPush(){},chatSend(){},go(){}};
@@ -97,7 +97,7 @@ await t('titre en clair : le thème reconnu et l\'objet, sinon rien ; déjà lu,
  const A=require('../serveur/veille/analyse.js'),T='Arrêté du 13 novembre 2026 modifiant l\'arrêté du 6 novembre 2026 prévoyant des bonifications particulières pour les opérations relatives aux offres intégrées sélectionnées dans le cadre de l\'appel à candidatures « Offres intégrées pompes à chaleur » de l\'Agence de l\'environnement et de la maîtrise de l\'énergie, dans le cadre du dispositif des certificats d\'économies d\'énergie';
  assert.strictEqual(A.clair(T),'Aides à la rénovation : primes énergie (CEE), pompes à chaleur');
  assert.strictEqual(A.clair('Décret relatif au taux réduit de TVA pour les travaux'),'TVA : taux réduit');assert.strictEqual(A.clair('Arrêté relatif aux ascenseurs'),'');
- const vm=require('vm'),src=fs.readFileSync(path.join(__dirname,'..','chat','veille.js'),'utf8'),mem={},ecoute={},E={newsList:{innerHTML:''},newsDot:{hidden:true},chatIn:{value:''}};
+ const vm=require('vm'),src=fs.readFileSync(path.join(__dirname,'..','modules','newsletter.js'),'utf8'),mem={},ecoute={},E={newsList:{innerHTML:''},newsDot:{hidden:true},chatIn:{value:''}};
  const it={id:'j:2',titre:T,clair:A.clair(T),priorite:'P0',dateVigueur:'2026-11-15',pros:[],aFaire:'Vérifie les nouvelles conditions.',url:'https://www.legifrance.gouv.fr/x',publieLe:'2026-11-17'};
  mem.caso_veille=undefined;
  const w={CASO_APPRIS:'https://serveur.test',navigator:{onLine:true},db:{prof:{metier:'peintres'}},accountGet:()=>({mode:'artisan'}),i18nT:x=>x,location:{search:''},setTimeout:f=>f(),
