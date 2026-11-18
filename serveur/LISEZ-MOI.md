@@ -89,6 +89,16 @@ Réglages conseillés sur Clever Cloud (onglet **Variables d'environnement**) :
 
 **Une seule instance.** Le serveur garde les données en mémoire et les écrit dans un seul fichier : sur Clever Cloud, laisse la mise à l'échelle sur **1 instance**. Pendant un déploiement, deux serveurs tournent quelques secondes : le nouveau prend la main, l'ancien finit ses écritures puis répond « réessaie », et les téléphones renvoient tout seuls leur demande. Rien à régler.
 
+**Sauvegardes.** Le serveur fait une sauvegarde par jour dans le dossier `sauvegardes` des données : un seul fichier daté qui contient les données de chaque espace, les comptes, l'apprentissage du chat et la veille. Il garde les 14 dernières, plus la dernière de chaque mois pendant 6 mois.
+
+- Ajoute la variable `CASO_CLE_SAUVEGARDE` (une phrase longue, gardée aussi ailleurs que sur Clever Cloud) : les sauvegardes sont alors chiffrées (AES-256-GCM). Sans cette phrase, elles sont en clair et ne peuvent pas sortir du serveur. **Si la phrase est perdue, les sauvegardes chiffrées sont illisibles.**
+- Ces sauvegardes sont sur le même stockage que les données : elles protègent d'un fichier abîmé ou d'une erreur, pas de la perte du stockage. Pour en garder une copie ailleurs, télécharge une sauvegarde chiffrée avec la clé du propriétaire : `GET /api/proprio/sauvegarde/derniere`, en-tête `x-caso-cle`. La liste : `GET /api/proprio/sauvegardes`. En créer une tout de suite : `POST /api/proprio/sauvegardes`.
+- **Copie automatique hors du serveur (Cellar).** Dans Clever Cloud : crée un add-on **Cellar**, lie-le à l'application casô (les variables `CELLAR_ADDON_HOST`, `CELLAR_ADDON_KEY_ID` et `CELLAR_ADDON_KEY_SECRET` arrivent toutes seules), crée un bucket dans l'add-on (nom sans `_`), puis ajoute la variable `SAUVEGARDE_BUCKET` avec ce nom. Chaque sauvegarde chiffrée y est alors envoyée, et la rotation y est suivie. Si l'envoi échoue, il est rejoué chaque heure ; l'état se lit dans `GET /api/proprio/sauvegardes` (`distant`). Rien ne part tant que `CASO_CLE_SAUVEGARDE` n'est pas posée.
+- **Stockage du serveur perdu** : avec Cellar en place, `RESTAURER=derniere` va chercher la sauvegarde dans le dépôt si elle n'est plus sur le serveur.
+- **Restaurer** : ajoute la variable `RESTAURER=derniere` (ou le nom d'un fichier de la liste) et redémarre l'application. Le serveur remet cette sauvegarde en place une seule fois, range les fichiers d'avant dans un dossier `avant-restauration-…`, puis démarre. Retire ensuite la variable. Ce qui a été enregistré après la sauvegarde est perdu sur le serveur ; les téléphones le renvoient à leur prochaine synchronisation s'ils l'ont encore.
+- Si le fichier de données est illisible, le serveur refuse de démarrer et le met de côté sans rien écraser : c'est le moment de restaurer.
+- En ligne de commande : `node serveur/sauvegarde.js lister | creer | verifier derniere | restaurer derniere`.
+
 **Taille des données.** Le fichier `data.json` est plafonné à 200 Mo (variable `DATA_MAX_MO` pour changer). Au-delà, le serveur refuse ce qui l'agrandit ; lire, supprimer et signer restent possibles.
 
 Pas besoin de `TRUST_PROXY` ni de `PORT` sur Clever Cloud : ils sont gérés automatiquement. En local (poste du bureau), rien ne change : le serveur reste en `http` sur le réseau interne, sans HSTS ni redirection.
