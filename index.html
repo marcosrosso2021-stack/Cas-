@@ -879,6 +879,16 @@ input[aria-invalid="true"]{border-color:var(--ko)}
 .sheet .chan>button{background:var(--bg);color:var(--ink);border:1.5px solid var(--line);min-height:64px;flex-direction:column;gap:4px}
 .sheet .chan .i{width:24px;height:24px;margin:0}
 .sheet-x{display:flex;margin:6px auto 0;justify-content:center}
+.pl-rac{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:0 0 10px}
+.pl-rac button{border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.pl-rac button.on{border-color:var(--acc);background:var(--acc);color:var(--ink)}
+.pl-lst label{display:flex;align-items:center;gap:12px;min-height:48px;border-bottom:1px solid var(--line);cursor:pointer;margin:0;font:inherit;font-size:16px;text-transform:none;letter-spacing:0;color:var(--ink)}
+.pl-lst input{width:22px;height:22px;accent-color:var(--ink);flex:none;margin:0}
+.pl-lst span{flex:1}.pl-lst em{font-style:normal;color:var(--mut)}
+.pl-tot{display:flex;justify-content:space-between;align-items:baseline;margin:14px 0 2px;font-size:15px}.pl-tot b{font-size:22px}
+.pl-note{text-align:center;font-size:13px;min-height:18px;margin:0 0 10px}
+#dwPlan[role=button]{cursor:pointer;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+
 @media (prefers-reduced-motion:reduce){.sheet,.sheet-bg{transition:none}}
 .sent{border:1.5px solid var(--acc);border-radius:14px;padding:12px;margin:12px 0;background:color-mix(in srgb,var(--acc) 10%,var(--card))}
 .sent p{margin:0 0 6px;font-weight:600}
@@ -2219,6 +2229,17 @@ body.tr-on{overflow:hidden}
  <button class="btn del-go" id="delGo" type="button" onclick="delGo()">Supprimer définitivement</button>
  <button type="button" class="lnk sheet-x" onclick="delClose()">Annuler</button>
 </div>
+<div class="sheet-bg" id="plBg" hidden onclick="planClose()"></div>
+<div class="sheet" id="plSh" role="dialog" aria-modal="true" aria-labelledby="plT" hidden>
+ <div class="sheet-grip"></div>
+ <h3 id="plT">On construit le plan</h3>
+ <div id="plRac" class="pl-rac"></div>
+ <div id="plLst" class="pl-lst"></div>
+ <div class="pl-tot"><span id="plTotL"></span><b id="plTot"></b></div>
+ <div id="plNote" class="mut pl-note"></div>
+ <button class="btn" id="plGo" type="button" onclick="planSave()"><svg class="i"><use href="#i-check"/></svg>Enregistrer</button>
+ <button type="button" class="lnk sheet-x" onclick="planClose()">Annuler</button>
+</div>
 <div class="sheet-bg" id="faPayBg" hidden onclick="faPayClose()"></div>
 <div class="sheet" id="faPay" role="dialog" aria-modal="true" aria-labelledby="faPayT" hidden>
  <div class="sheet-grip"></div>
@@ -3322,12 +3343,47 @@ function dwLocked(){
  try{if(localStorage.getItem('caso_locked')==='1')return true}catch(e){}
  return false}
 /* module AUTH (lib/auth.js) : « Continuer avec Google / Outlook » sur les écrans Connexion et Créer mon compte ; l'offre en une ligne dans le menu profil */
-const AUTH_OFFRES={artisan_curieux:'Essai Artisan pro',artisan_fin_essai:'Essai terminé',artisan:'Artisan',artisan_pro:'Artisan pro',bricoleur:'Bricoleur du dimanche',bricoleur_pro:'Bricoleur du dimanche pro'};
+const AUTH_OFFRES={artisan_curieux:'Essai Artisan pro',artisan_fin_essai:'Essai terminé',plan:'Mon plan',artisan:'Artisan',artisan_pro:'Artisan pro',bricoleur:'Bricoleur du dimanche',bricoleur_pro:'Bricoleur du dimanche pro'};
 function authLigne(){
  const A=window.CasoAuth,c=A&&A.compte(),pl=$('dwPlan');if(!pl)return;
  let t=c&&AUTH_OFFRES[c.offre]?i18nT(AUTH_OFFRES[c.offre]):'';
  if(t&&c.offre==='artisan_curieux'&&c.essaiFin){const d=new Date(c.essaiFin);t+=' · '+String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')}
- pl.textContent=t;pl.hidden=!t}
+ if(t&&c.offre==='plan'&&c.plan&&window.CasoPlan)t+=' · '+CasoPlan.euros(c.plan.total)+(c.plan.unite==='HT'?' HT':' TTC');
+ pl.textContent=t;pl.hidden=!t;
+ /* la ligne ouvre « On construit le plan » dès que le compte a un mode */
+ const ouvre=!!(t&&c&&c.mode&&window.CasoPlan);
+ if(ouvre){pl.setAttribute('role','button');pl.tabIndex=0;pl.onclick=planOpen;pl.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();planOpen()}}}
+ else{pl.removeAttribute('role');pl.removeAttribute('tabindex');pl.onclick=null;pl.onkeydown=null}}
+/* « On construit le plan » (lib/plan.js) : l'usager coche ses modules, le total se met à jour en direct ; le serveur recalcule et garde le choix */
+const PLN={sel:new Set(),mode:'artisan',busy:false};
+function planOpen(){
+ const A=window.CasoAuth,c=A&&A.compte();if(!c||!c.mode||!window.CasoPlan)return;
+ PLN.mode=c.mode==='bricoleur'?'bricoleur':'artisan';
+ PLN.sel=new Set(((c.plan&&c.plan.modules)||[]).filter(Boolean));
+ drawerClose();planDraw();
+ $('plBg').hidden=false;$('plSh').hidden=false;requestAnimationFrame(()=>{$('plSh').classList.add('on');$('plBg').classList.add('on')})}
+function planClose(){$('plSh').classList.remove('on');$('plBg').classList.remove('on');setTimeout(()=>{$('plSh').hidden=true;$('plBg').hidden=true},200)}
+function planDraw(){
+ const C=CasoPlan.catalogue(PLN.mode),ids=[...PLN.sel],calc=CasoPlan.calcul(PLN.mode,ids,!!(CasoAuth.compte()||{}).fondateur);
+ const rac=$('plRac');rac.textContent='';
+ C.raccourcis.forEach(r=>{const b=document.createElement('button');b.type='button';b.textContent=i18nT(r.nom);
+  b.className=r.modules.length===calc.modules.length&&r.modules.every(m=>PLN.sel.has(m))?'on':'';
+  b.onclick=()=>{PLN.sel=new Set(r.modules);planDraw()};rac.appendChild(b)});
+ const lst=$('plLst');lst.textContent='';
+ C.modules.forEach(m=>{const l=document.createElement('label'),i=document.createElement('input'),n=document.createElement('span'),p=document.createElement('em');
+  i.type='checkbox';i.checked=PLN.sel.has(m.id);i.onchange=()=>{i.checked?PLN.sel.add(m.id):PLN.sel.delete(m.id);planDraw()};
+  n.textContent=i18nT(m.nom);p.textContent=CasoPlan.euros(m.prix);l.append(i,n,p);lst.appendChild(l)});
+ $('plTotL').textContent=i18nT('Total par mois')+' '+i18nT(C.unite);
+ $('plTot').textContent=CasoPlan.euros(calc.total);
+ $('plNote').textContent=calc.plafonne?i18nT('Plafonné à')+' '+CasoPlan.euros(C.plafond):i18nT('Sans engagement');
+ $('plGo').disabled=PLN.busy}
+async function planSave(){
+ if(PLN.busy)return;
+ if(navigator.onLine===false){toast(i18nT('Pas de connexion.'));return}
+ PLN.busy=true;$('plGo').disabled=true;
+ try{await CasoAuth.plan([...PLN.sel]);authLigne();toast(i18nT('Plan enregistré.'));planClose()}
+ catch(e){toast(i18nT(e&&e.code===0?'Pas de connexion.':'Plan non enregistré.'))}
+ PLN.busy=false;$('plGo').disabled=false}
 function authVia(k){if(navigator.onLine===false){toast(i18nT('Pas de connexion.'));return}window.CasoAuth&&CasoAuth.connecter(k)}
 window.CasoAuthProfil=()=>{const a=accountGet()||{};return{mode:a.mode==='bricoleur'?'bricoleur':'artisan',nom:db.prof.nom||'',siret:db.prof.siret||''}};
 window.addEventListener('caso-auth',e=>{const d=e.detail||{};authLigne();if(d.erreur)toast(i18nT(d.erreur));if(d.retour&&d.compte&&!accountGet())ssoBegin(d.compte)});
@@ -8144,6 +8200,7 @@ function entExtra(){const p=db.prof||{},v=$('eLogoV');if(v)v.innerHTML=rcImg(p.l
 VAULT.start(()=>{document.querySelectorAll('script[type="text/x-caso"]').forEach(t=>{const e=document.createElement('script');
  if(t.dataset.src){e.src=t.dataset.src;e.async=false}else e.textContent=t.textContent;t.replaceWith(e)})});
 </script>
+<script src="lib/plan.js" defer></script>
 <script src="lib/auth.js" defer></script>
 </body>
 </html>

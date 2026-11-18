@@ -9,6 +9,7 @@
    Usage : const auth=require('./auth.js').creer({dir,hosted}); puis auth.traiter(req,res,{url,ip,send,readBody}). */
 'use strict';
 const fs=require('fs'),path=require('path'),crypto=require('crypto');
+const PLAN=require('../lib/plan.js');
 
 const ETAT_MIN=10,TICKET_MIN=2,SESSION_JOURS=90,ESSAI_JOURS=30;
 const sha=s=>crypto.createHash('sha256').update(String(s)).digest('hex');
@@ -39,8 +40,19 @@ const normSiret=s=>String(s||'').replace(/[\s.]/g,'');
 function offre(c,now){
  now=now||Date.now();
  if(c.abo&&c.abo.offre&&(!c.abo.fin||c.abo.fin>now))return c.abo.offre;
- if(c.mode==='artisan')return c.essaiFin&&now<c.essaiFin?'artisan_curieux':'artisan_fin_essai';
+ if(c.mode==='artisan'&&c.essaiFin&&now<c.essaiFin)return 'artisan_curieux';
+ if(c.plan&&c.plan.modules&&c.plan.modules.length)return 'plan';/* « On construit le plan » : modules choisis */
+ if(c.mode==='artisan')return 'artisan_fin_essai';
  return c.mode==='bricoleur'?'bricoleur':null}
+
+/* Modules ouverts pour ce compte. Pendant l'essai : tous les modules Artisan. Ensuite : ceux de l'abonnement payé (c.abo.modules, posé par Stripe).
+   Tant que le paiement n'est pas branché (paiement=false), les modules choisis sont ouverts tels quels : mode test, rien n'est facturé. */
+function modulesDe(c,now,paiement){
+ now=now||Date.now();
+ if(c.mode==='artisan'&&c.essaiFin&&now<c.essaiFin)return PLAN.nettoyer('artisan',PLAN.catalogue('artisan').modules.map(m=>m.id));
+ if(c.abo&&c.abo.modules&&(!c.abo.fin||c.abo.fin>now))return PLAN.nettoyer(c.mode,c.abo.modules);
+ if(!paiement&&c.plan)return PLAN.nettoyer(c.mode,c.plan.modules);
+ return[]}
 
 function creer(opts){
  opts=opts||{};
@@ -83,9 +95,11 @@ function creer(opts){
   x.hash='';x.search='';return x.toString()}
  function baseServeur(req){return publicUrl()||(!HOSTED&&req.headers.host?'http://'+req.headers.host:'')}
  const dispo=k=>!!(F[k]&&F[k].id()&&F[k].secret());
+ const PAIEMENT=!!(opts.paiement!==undefined?opts.paiement:process.env.CASO_PAIEMENT==='1');
 
  function pub(c){return{id:c.id,via:c.via,email:c.email||'',prenom:c.prenom||'',mode:c.mode||null,nom:c.nom||'',siret:c.siret||'',creeLe:c.creeLe,
-  essaiFin:c.essaiFin||null,offre:offre(c,now())}}
+  essaiFin:c.essaiFin||null,offre:offre(c,now()),
+  modules:modulesDe(c,now(),PAIEMENT),plan:PLAN.calcul(c.mode,c.plan&&c.plan.modules,!!c.fondateur)}}
  function session(c){const j=crypto.randomBytes(32).toString('hex');
   d.sessions[sha(j)]={id:c.id,exp:now()+SESSION_JOURS*864e5,vu:now()};persist();
   return{jeton:j,compte:pub(c)}}
@@ -187,6 +201,14 @@ function creer(opts){
     else return send(res,400,{error:'Mode inconnu.'}),true;
     persist();return send(res,200,{compte:pub(c)}),true}
 
+   /* « On construit le plan » : l'usager choisit ses modules ; le total (plafonné) est calculé ici, jamais par l'appli */
+   if(POST&&url==='/api/auth/plan'){
+    const b=await x.readBody(req);
+    if(!c.mode)return send(res,400,{error:'Choisis d\'abord ton mode.'}),true;
+    if(!Array.isArray(b.modules)||b.modules.length>50)return send(res,400,{error:'Plan invalide.'}),true;
+    c.plan={modules:PLAN.nettoyer(c.mode,b.modules),le:now()};
+    persist();return send(res,200,{compte:pub(c)}),true}
+
    if(POST&&url==='/api/auth/sortir'){delete d.sessions[sha(jetonDe(req))];persist();return send(res,200,{ok:true}),true}
 
    if(POST&&url==='/api/auth/supprimer'){
@@ -215,4 +237,4 @@ function creer(opts){
 
  return{traiter,compte,pub,offre:c=>offre(c,now()),resume,_d:()=>d};
 }
-module.exports={creer,siretOk,offre,FOURNISSEURS,ESSAI_JOURS,SESSION_JOURS};
+module.exports={creer,siretOk,offre,modulesDe,FOURNISSEURS,ESSAI_JOURS,SESSION_JOURS};
