@@ -24,7 +24,7 @@ class Garde extends Component<{ children: ReactNode }, { erreur: boolean }> {
 /** Le canevas 3D de la vitrine. Chargé après le texte, arrêté quand il sort de l'écran. */
 export default function Hero3D() {
   const qualite = useShowcase((s) => s.qualite)
-  const visible = useShowcase((s) => s.visible)
+  const visible = useShowcase((s) => s.visible && s.mode !== 'cache')
   return (
     <Garde>
       <Canvas

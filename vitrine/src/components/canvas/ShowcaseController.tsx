@@ -7,6 +7,7 @@ import { ArchitectureViewer } from './ArchitectureViewer'
 import { CameraController } from './CameraController'
 import { RenovationScene } from './RenovationScene'
 import { RoomHotspots } from './RoomHotspots'
+import { MeasurementViewer } from './MeasurementViewer'
 
 /** Assemble la scène : lumière, maison, caméra, avant / après, repères. */
 export function ShowcaseController() {
@@ -48,6 +49,7 @@ export function ShowcaseController() {
       <ArchitectureViewer />
       <RenovationScene />
       <RoomHotspots />
+      <MeasurementViewer />
       <CameraController />
     </MatieresProvider>
   )

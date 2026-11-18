@@ -39,7 +39,10 @@ parcourir(DST)
 let n = 0
 for (const chemin of fichiers) {
   const avant = readFileSync(chemin, 'utf8')
-  let apres = avant.replaceAll('/_next/', './next/')
+  // dans une feuille de style, les chemins partent du dossier du fichier (next/static/chunks/)
+  let apres = chemin.endsWith('.css')
+    ? avant.replaceAll('url(/fonts/', 'url(../../../fonts/').replaceAll('/_next/static/', '../')
+    : avant.replaceAll('/_next/', './next/')
   for (const nom of renommes) apres = apres.replaceAll(`/${nom}`, `/${nom.slice(1)}`)
   if (apres !== avant) {
     writeFileSync(chemin, apres)

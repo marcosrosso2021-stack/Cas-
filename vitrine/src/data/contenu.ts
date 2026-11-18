@@ -1,39 +1,73 @@
-/** Textes de la vitrine. Une information n'apparaît qu'à un seul endroit du site. */
+/** Textes de la visite. Une information n'apparaît qu'à un seul endroit du site. */
 
-export const SIGNATURE = 'Construire. Visualiser. Transformer.'
-export const TITRE = 'L’intelligence au service de vos projets.'
-export const SOUS_TITRE =
-  'Visualisez, transformez et chiffrez vos projets de construction et de rénovation dans un environnement intelligent.'
-
-export interface Etape {
-  nom: string
-  phrase: string
+export interface Moment {
+  /** Nom court, pour le rail de navigation. */
+  rail: string
+  /** Repère dans la journée. */
+  heure: string
+  titre: string
+  texte: string
 }
 
-/** Le parcours dans l'appli, de la pièce filmée au devis. */
-export const ETAPES: Etape[] = [
-  { nom: 'Filmez', phrase: 'La pièce, avec votre téléphone.' },
-  { nom: 'Analyse', phrase: 'Murs, sols et ouvertures sont repérés.' },
-  { nom: '3D', phrase: 'La pièce est remontée en relief.' },
-  { nom: 'Travaux', phrase: 'Vous choisissez quoi refaire.' },
-  { nom: 'Devis', phrase: 'Il se prépare avec vos prix.' },
+export const MOMENTS: Moment[] = [
+  {
+    rail: 'Ouverture',
+    heure: 'Pour les artisans du bâtiment',
+    titre: 'Une journée de chantier, en plus simple.',
+    texte: 'Suivez un chantier, du premier appel au devis signé. Faites tourner la maison, ou commencez la visite.',
+  },
+  {
+    rail: 'L’appel',
+    heure: '8 h 10',
+    titre: 'Un client vous appelle.',
+    texte: 'Dites-le à casô comme à un collègue. La fiche client et le chantier se créent pendant que vous parlez.',
+  },
+  {
+    rail: 'Sur place',
+    heure: '9 h 30',
+    titre: 'Vous êtes sur place.',
+    texte: 'Une photo, une note, la pièce filmée. Tout se range dans le chantier, depuis votre téléphone.',
+  },
+  {
+    rail: 'La pièce',
+    heure: '9 h 45',
+    titre: 'casô lit la pièce.',
+    texte: 'La pièce filmée devient un volume. Chaque cote vous dit d’où elle vient.',
+  },
+  {
+    rail: 'Avant / après',
+    heure: '10 h 15',
+    titre: 'Votre client veut voir.',
+    texte: 'Montrez-lui la salle de bain avant et après. Changez le sol ou les murs devant lui.',
+  },
+  {
+    rail: 'Le devis',
+    heure: '14 h',
+    titre: 'Le devis se prépare.',
+    texte: 'Les surfaces du chantier deviennent des lignes. Vous ajustez une quantité, le total suit.',
+  },
+  {
+    rail: 'La semaine',
+    heure: 'Lundi',
+    titre: 'Votre semaine tient sur un écran.',
+    texte: 'Vos chantiers et vos créneaux. Un client décale ? Vous déplacez l’intervention.',
+  },
+  {
+    rail: 'Le point',
+    heure: 'Vendredi',
+    titre: 'Tout est au même endroit.',
+    texte: 'Posez la question, casô répond avec vos chiffres.',
+  },
 ]
 
-export type Icone = 'devis' | 'chat' | 'cube' | 'gps' | 'prix' | 'veille' | 'coffre' | 'hors'
+/** Explication de chaque origine de cote. */
+export const ORIGINES = {
+  saisie: { nom: 'Saisie', phrase: 'Vous l’avez entrée vous-même.' },
+  mesuree: { nom: 'Mesurée', phrase: 'Calculée à partir d’un repère connu dans la pièce.' },
+  estimee: { nom: 'Estimée', phrase: 'Proposée par casô. À vérifier sur place.' },
+} as const
 
-export interface Fonction {
-  icone: Icone
-  nom: string
-  phrase: string
-}
+/** Le reste de l'appli, en une ligne. */
+export const AUSSI = ['Prix des matériaux en ligne', 'Veille de votre métier', 'Données chiffrées', 'Sans réseau', '10 langues']
 
-export const FONCTIONS: Fonction[] = [
-  { icone: 'devis', nom: 'Devis et factures', phrase: 'Vos prix, vos modèles. Signature électronique vérifiable par QR.' },
-  { icone: 'chat', nom: 'Chat', phrase: 'Écrivez ou dictez. Il agit dans l’appli et répond métier : TVA, DTU, quantités.' },
-  { icone: 'cube', nom: '3D', phrase: 'Construction ou rénovation, à montrer au client.' },
-  { icone: 'gps', nom: 'Pointage', phrase: 'Les heures se notent par GPS, à l’arrivée sur le chantier.' },
-  { icone: 'prix', nom: 'Fournisseurs', phrase: 'Le prix des matériaux, magasin par magasin. Vos factures importées.' },
-  { icone: 'veille', nom: 'Veille', phrase: 'Les règles et les nouveautés de votre métier, déjà triées.' },
-  { icone: 'coffre', nom: 'Coffre', phrase: 'Vos données sont chiffrées. Face ID pour ouvrir.' },
-  { icone: 'hors', nom: 'Partout', phrase: 'Sans réseau, sur téléphone et ordinateur, en 10 langues.' },
-]
+export const SIGNATURE = 'Moins de complexité dans vos journées. Plus de maîtrise sur vos projets.'

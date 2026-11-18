@@ -282,7 +282,7 @@ export const PIECES: Piece[] = [
     phrase: 'Baignoire remplacée par une douche : la rénovation se voit avant les travaux.',
     mesure: `${m2(ZONES.bain)} m²`,
     toitOuvert: true,
-    vue: { cible: [0.75, 0.3, -2], az: 2.6, pol: 0.58, dist: 14, distMin: 7, distMax: 24 },
+    vue: { cible: [0.75, 0.3, -1.8], az: 3.05, pol: 0.5, dist: 12.5, distMin: 7, distMax: 24 },
     reperes: [
       { id: 'sol', pos: [1.2, 0.15, -1.2], nom: 'Sol', valeur: `${m2(ZONES.bain)} m²` },
       { id: 'douche', pos: [-0.45, 1.25, -3.0], nom: 'Douche', valeur: '1,60 × 0,90 m' },
@@ -293,3 +293,28 @@ export const PIECES: Piece[] = [
 export const piece = (id: PieceId): Piece => PIECES.find((p) => p.id === id) ?? PIECES[0]
 
 export { TERRASSE }
+
+/** Vue de la maison éclatée : toit et haut des murs soulevés. */
+export const VUE_ECLATE: Vue = { cible: [-2.4, 2.0, 1.8], az: -0.5, pol: 0.98, dist: 27, distMin: 16, distMax: 44 }
+
+export type OrigineCote = 'saisie' | 'mesuree' | 'estimee'
+
+export interface Cote {
+  id: string
+  pos: [number, number, number]
+  nom: string
+  valeur: string
+  origine: OrigineCote
+  /** Avancement du moment à partir duquel la cote apparaît. */
+  seuil: number
+}
+
+/** Cotes d'exemple du séjour, avec leur origine. */
+export const COTES: Cote[] = [
+  { id: 'long', pos: [-3, 1.3, 0.1], nom: 'Longueur', valeur: '6,00 m', origine: 'saisie', seuil: 0.3 },
+  { id: 'larg', pos: [-5.85, 1.3, 3.3], nom: 'Largeur', valeur: '4,00 m', origine: 'saisie', seuil: 0.36 },
+  { id: 'haut', pos: [-0.05, 2.0, 0.5], nom: 'Hauteur', valeur: fr(H) + ' m', origine: 'mesuree', seuil: 0.44 },
+  { id: 'sol', pos: [-2.2, 0.2, 2.4], nom: 'Sol', valeur: `${m2(ZONES.salon)} m²`, origine: 'mesuree', seuil: 0.5 },
+  { id: 'baie', pos: [-3.4, 1.35, 4.05], nom: 'Baie', valeur: `3,00 × ${fr(HP)} m`, origine: 'estimee', seuil: 0.58 },
+  { id: 'fen', pos: [-6.05, 1.5, 1.8], nom: 'Fenêtre', valeur: '1,60 × 1,25 m', origine: 'estimee', seuil: 0.64 },
+]

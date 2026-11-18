@@ -10,3 +10,7 @@ casô utilise les données et logiciels suivants, avec les mentions que leurs li
 - Crédit des données : Amazon.com
 - Crédit de la constitution du jeu de données : Matthieu Guillaumin (Amazon.com), Thomas Dideriksen (Amazon.com), Kenan Deng (Amazon.com), Himanshu Arora (Amazon.com), Jasmine Collins (UC Berkeley) et Jitendra Malik (UC Berkeley)
 - Modifications : les dimensions ont été converties en mètres et résumées par sorte d'élément (`outils/oeil3d/abo_tailles.py`).
+
+## Vitrine (dossier `vitrine/`)
+
+- Police des titres **Fraunces** (`vitrine/public/fonts/`), The Fraunces Project Authors, licence SIL Open Font License 1.1. https://github.com/undercasetype/Fraunces

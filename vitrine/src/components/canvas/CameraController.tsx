@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
-import { piece, type Vue } from '@/data/maison'
+import { piece, VUE_ECLATE, type Vue } from '@/data/maison'
 import { useShowcase } from '@/store/showcase'
 import { mouvementReduit } from '@/lib/appareil'
 
@@ -53,7 +53,9 @@ export function CameraController() {
       e.gCible.set(...vue.cible)
     }
     return useShowcase.subscribe((etat, avant) => {
-      if (etat.piece !== avant.piece) aller(piece(etat.piece).vue)
+      if (etat.mode === 'cache') return
+      if (etat.piece !== avant.piece || etat.mode !== avant.mode)
+        aller(etat.mode === 'eclate' ? VUE_ECLATE : piece(etat.piece).vue)
     })
   }, [])
 
@@ -143,7 +145,7 @@ export function CameraController() {
     const k = 1 - Math.exp(-d * 3.2)
 
     // Rotation lente tant que le visiteur n'a rien touché.
-    if (!etat.touche && !reduit) e.gAz += d * 0.05
+    if (!etat.touche && !reduit && etat.mode === 'libre') e.gAz += d * 0.05
 
     e.az += (e.gAz - e.az) * k
     e.pol += (e.gPol - e.pol) * k
@@ -164,9 +166,8 @@ export function CameraController() {
     camera.lookAt(e.cible)
 
     // La maison laisse la place au texte : à droite sur grand écran, plus bas ou plus haut sur téléphone.
-    const interieur = piece(etat.piece).toitOuvert
-    const vx = large ? -0.19 : 0
-    const vy = large ? 0.02 : interieur ? 0.13 : -0.1
+    const vx = large ? -0.2 : 0
+    const vy = large ? 0.02 : etat.mode === 'libre' ? -0.1 : -0.17
     e.decalX += (vx - e.decalX) * k
     e.decalY += (vy - e.decalY) * k
     camera.setViewOffset(size.width, size.height, e.decalX * size.width, e.decalY * size.height, size.width, size.height)
