@@ -159,7 +159,7 @@ function cptPage(pg){
  cptCur=pg;go('cpt');
  const T={ent:'Mon entreprise',team:'Mon équipe',bk:'Sauvegarde',app:'Langue et notifications'};$('cptT').textContent=T[pg]||'';
  document.querySelectorAll('#s-cpt [data-cp]').forEach(c=>{c.style.display=c.dataset.cp===pg?'':'none'});
- if(pg==='ent'||pg==='app'){renderNotif()}if(pg==='ent')entSigRender()}
+ if(pg==='ent'||pg==='app'){renderNotif()}if(pg==='ent')entSigRender();if(pg==='team'&&typeof eqRender==='function'){eqRender();const c=getSync();$('eqEsp').open=!!(c.token&&c.role!=='patron')||!!(srvInfo&&srvInfo.needsSetup&&srvInfo.local)}}
 async function logout(){
  drawerClose(true);
  if(!confirm('Se déconnecter ? Tes données restent sur ce téléphone.'))return;

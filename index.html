@@ -1451,6 +1451,19 @@ body.tr-on{overflow:hidden}
 .pt-tj{display:inline-flex;align-items:center;gap:8px;margin:0;font-family:inherit;font-size:13px;font-weight:500;text-transform:none;letter-spacing:0;color:var(--mut);cursor:pointer}.pt-tj input{width:18px;height:18px;margin:0;accent-color:var(--acc-d)}
 .ag-sh-h{display:flex;align-items:center;gap:4px;margin:0 0 12px}.ag-sh-h h3{flex:1;margin:0;text-align:start;font-size:19px;letter-spacing:-.01em}
 .ag-sh-b{width:40px;height:40px;border:0;border-radius:50%;background:transparent;color:var(--ink);display:grid;place-items:center;cursor:pointer}.ag-sh-b:hover{background:var(--bg)}.ag-sh-b.ko{color:#c0392b}
+.eq-h{display:flex;justify-content:flex-end}.eq-h .btn{width:auto;margin:0}
+.eq-l{display:flex;flex-direction:column;margin:12px 0 4px}.eq-r{display:flex;align-items:center;gap:12px;width:100%;padding:10px 4px;border:0;border-top:1px solid var(--line);background:transparent;color:var(--ink);font:inherit;text-align:start;cursor:pointer}.eq-r:first-child{border-top:0}
+.eq-av{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--bg);font-weight:700}
+.eq-t{flex:1;min-width:0;display:flex;flex-direction:column}.eq-t b{font-size:15px}.eq-t .mut{font-size:13px}
+.eq-s{flex:none;font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--bg);color:var(--mut);white-space:nowrap}.eq-s.equipe{background:color-mix(in srgb,#2e9e5b 16%,var(--card));color:#1f7a44}.eq-s.invite{background:color-mix(in srgb,var(--acc) 30%,var(--card));color:var(--ink)}
+.eq-vide{margin:12px 0 4px}.eq-esp{margin-top:10px;border-top:1px solid var(--line);padding-top:6px}.eq-esp summary{cursor:pointer;color:var(--mut);font-size:14px;font-weight:600;padding:8px 0}
+.eq-sh .ag-sh-h .eq-av{width:34px;height:34px}.eq-ct{display:flex;flex-wrap:wrap;gap:6px 14px;margin:0 0 12px}.eq-c{display:inline-flex;align-items:center;gap:6px;color:var(--ink);text-decoration:none;font-size:14px}.eq-c .i{width:16px;height:16px;color:var(--mut)}
+.eq-inv{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 14px}.eq-inv .btn{width:auto;margin:0}
+.eq-per{margin:0 0 10px}.eq-tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 12px}.eq-tiles>div{background:var(--bg);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}.eq-tiles span{font-size:12px;color:var(--mut)}.eq-tiles b{font-size:18px}.eq-tiles .lnk{font-size:14px;padding:0}.eq-du{color:#c0392b}
+.eq-pays .it{display:flex;flex-direction:row;align-items:center;gap:6px;padding:8px 6px 8px 12px}.eq-pays .it-t{flex:1;display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:start}.eq-pays:empty{display:none}.eq-doc{display:grid;place-items:center;width:36px;height:36px;color:var(--ink)}
+.eq-add{margin:4px 0 6px}.eq-add summary{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-weight:600;font-size:15px;padding:8px 0}.eq-add summary .i{width:18px;height:18px}.eq-add[open] summary{margin-bottom:6px}.eq-add .ag-cli,.eq-add input{margin-bottom:8px}.eq-file{width:auto;display:inline-flex;margin:0 0 10px}
+.eq-lien{display:flex;align-items:center;gap:12px;width:100%;border:0;font:inherit;color:var(--ink);text-align:start;cursor:pointer}.eq-lien .eq-t{flex:1}
+.row>.eq-tx{flex:0 0 108px}.eq-role{margin:0}.eq-cd{cursor:pointer;display:flex;align-items:center;gap:10px}.eq-cd .ag-ct{flex:1}
 .ag-typ{margin:0 0 10px}.row>.ag-ej{flex:0 0 84px}.ag-ej input{text-align:center}.ag-ev .ag-n{font-weight:600;color:var(--ink)}.ag-cli{display:flex;flex-direction:column;gap:8px;margin:8px 0 2px}#agEti{margin:0}
 .ag-plus{margin:6px 0 12px}.ag-plus summary{cursor:pointer;color:var(--mut);font-size:14px;font-weight:600;padding:8px 0;list-style-position:inside}
 .ag-sh-f{display:flex;justify-content:space-between;gap:12px;margin-top:8px}.ag-sh-f:not(:has(button:not([hidden]))){display:none}.lnk.ko{color:#c0392b}
@@ -2137,7 +2150,9 @@ body.tr-on{overflow:hidden}
   </div>
  </div>
  <div class="card" data-cp="team">
-  <h2><span class="hi"><svg class="i"><use href="#i-users"/></svg></span>Mon équipe</h2>
+  <div class="eq-h"><button class="btn sm" type="button" onclick="eqEdit()"><svg class="i i-sm"><use href="#i-plus"/></svg><span>Collaborateur</span></button></div>
+  <div id="eqList"></div>
+  <details class="eq-esp" id="eqEsp"><summary>Espace d'équipe</summary>
   <div id="syForm">
    <div id="syFirst" style="display:none">
     <div style="font-weight:700;margin-top:10px">Crée l'espace de ton entreprise</div>
@@ -2161,22 +2176,13 @@ body.tr-on{overflow:hidden}
    <button class="btn" onclick="syncNow()">Mettre à jour</button>
    <button class="btn sec" onclick="syncLogout()">Se déconnecter</button>
    <div id="syAdmin" style="display:none">
-    <h2 style="margin-top:16px"><span class="hi"><svg class="i"><use href="#i-plus"/></svg></span>Inviter quelqu'un</h2>
-    <label>Prénom</label><input id="nuName" autocapitalize="words" autocorrect="off">
-    <label>Rôle</label>
-    <select id="nuRole"><option value="ouvrier">Ouvrier (pointage seulement)</option><option value="chef">Chef (tout sauf les comptes)</option></select>
-    <button class="btn" onclick="invite()">Créer le QR code</button>
-    <div id="invBox" style="display:none;text-align:center;margin-top:12px">
-     <div id="invQr"></div>
-     <div id="invTxt" class="mut"></div>
-     <button class="btn sec" onclick="copyInvite()">Copier le lien</button>
-     <button class="btn sec" id="invShare" style="display:none" onclick="shareInvite()">Envoyer le lien</button>
-    </div>
-    <h2 style="margin-top:16px"><span class="hi"><svg class="i"><use href="#i-users"/></svg></span>Mon équipe</h2>
-    <div id="teamList" class="mut"></div>
+    <!-- ancien formulaire d'invitation (QR) : remplacé par la fiche de chaque collaborateur, gardé caché pour le code existant -->
+    <div hidden><input id="nuName"><select id="nuRole"><option value="ouvrier"></option></select>
+    <div id="invBox"><div id="invQr"></div><div id="invTxt"></div><button id="invShare" type="button"></button></div><div id="teamList"></div></div>
    </div>
   </div>
   <div id="syMsg" class="mut" style="margin-top:8px"></div>
+  </details>
  </div>
  <div class="card" data-cp="bk">
   <h2><span class="hi"><svg class="i"><use href="#i-shield"/></svg></span>Sauvegarde</h2>
@@ -2285,6 +2291,8 @@ body.tr-on{overflow:hidden}
  <button class="btn del-go" id="delGo" type="button" onclick="delGo()">Supprimer définitivement</button>
  <button type="button" class="lnk sheet-x" onclick="delClose()">Annuler</button>
 </div>
+<div class="sheet-bg" id="eqBg" hidden onclick="eqClose()"></div>
+<div class="sheet eq-sh ag-sh" id="eqSh" role="dialog" aria-modal="true" hidden></div>
 <div class="sheet-bg" id="relBg" hidden onclick="aboRelierFermer()"></div>
 <div class="sheet" id="relSh" role="dialog" aria-modal="true" aria-labelledby="relT" hidden>
  <div class="sheet-grip"></div>
@@ -2567,6 +2575,7 @@ draw();if(!still)requestAnimationFrame(tick);window.__splashGo=()=>{if(!still){l
 })();</script>
 <script type="text/x-caso" data-src="modules/listes.js"></script>
 <script type="text/x-caso" data-src="modules/devis-module.js"></script>
+<script type="text/x-caso" data-src="modules/equipe.js"></script>
 <script type="text/x-caso" data-src="modules/abonnement.js"></script>
 <script type="text/x-caso" data-src="chat/engine.js"></script>
 <script type="text/x-caso" data-src="chat/brain.js"></script>

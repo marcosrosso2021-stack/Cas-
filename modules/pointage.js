@@ -204,9 +204,8 @@ function renderPt(){
  let st=`<div class="card"><h2><span class="hi"><svg class="i"><use href="#i-pin"/></svg></span>Chantiers</h2>
   <div class="row"><input id="chNew" placeholder="Nouveau chantier" data-adr autocomplete="off"><button class="btn sm" style="flex:0 0 auto" onclick="addCh()">Ajouter</button></div>`+
   db.chantiers.map(c=>`<div class="line" data-sw="ch:${c.id}"><div class="t"><span data-noi18n>${esc(c.nom)}</span>${AU&&(c.adr||c.geo)?`<label class="pt-tj"><span>GPS toujours</span><input type="checkbox" role="switch" ${c.toujours?'checked':''} onchange="ptToujours('${c.id}',this.checked)"></label>`:''}</div>${AU?AU.zone(c):''}</div>`).join('')+`</div>`;
- st+=`<div class="card"><h2><span class="hi"><svg class="i"><use href="#i-user"/></svg></span>Personnes</h2>
-  <div class="row"><input id="pnNew" placeholder="Prénom"><button class="btn sm" style="flex:0 0 auto" onclick="addPerson()">Ajouter</button></div>`+
-  db.people.map(p=>`<div class="line" data-sw="pe:${p.id}"><div class="t"><span data-noi18n>${esc(p.nom)}</span></div></div>`).join('')+`</div>`;
+ /* l'équipe se gère dans Mon équipe (une seule liste) */
+ st+=`<button type="button" class="card eq-lien" onclick="cptPage('team')"><span class="hi"><svg class="i"><use href="#i-users"/></svg></span><span class="eq-t"><b>Mon équipe</b><span class="mut" data-noi18n>${esc(db.people.map(p=>p.nom.split(' ')[0]).join(', '))}</span></span><svg class="i i-flip"><use href="#i-chev"/></svg></button>`;
  $('ptBody').innerHTML=`<div data-pg="go">${go}</div><div data-pg="h">${hh}</div><div data-pg="set">${st}</div>`;
  ptBtn();ptPage(ptCur,true);
 }

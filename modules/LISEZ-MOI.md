@@ -43,6 +43,7 @@ Un fichier de `modules/` placé après `chat/` ou `pointage/` (comme `newsletter
 | `paiement-phrases.js` | factures et paiements dictés (« Osvald a payé 500 € ») | paiement |
 | `listes.js` | glisser une ligne vers la gauche pour la corbeille | commun |
 | `devis-module.js` | module Devis (`devis.html`) branché sur le bouton Devis | devis |
+| `equipe.js` | Mon équipe : collaborateurs (la liste du pointage), coordonnées, invitation par SMS ou e-mail, heures, à payer, paiements ; le chat de l'équipe dans toutes les langues | commun |
 | `abonnement.js` | verrous des modules non pris : bandeau de lecture seule, ouverture directe de « On construit le plan » avec un petit mot, cadenas du menu, devis gratuit du mois | commun |
 | `newsletter.js` | page « Newsletter », pastille du non-lu, « Ça me concerne ? » (chargé après `chat/`) | veille |
 

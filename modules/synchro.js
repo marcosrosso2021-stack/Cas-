@@ -148,6 +148,10 @@ function recClean(c,r){if(!r||typeof r!=='object'||!okId(r.id))return null;
   if(r.ex!=null)r.ex=Array.isArray(r.ex)?r.ex.filter(x=>RC_D(x)&&x):[]}
  else if(c==='pts'){if(!okId(r.c)||!okId(r.p))return null;r.ts=rcN(r.ts)||0;if(typeof r.t!=='string'||!/^\w{1,10}$/.test(r.t))return null}
  else if(c==='plans'){if(r.th&&!rcImg(r.th))delete r.th}
+ /* équipe : coordonnées en texte, prix de l'heure en nombre, paiements bornés ; un document joint n'est qu'une image ou un PDF */
+ else if(c==='people'){if(typeof r.nom!=='string')return null;['tel','email'].forEach(k=>{if(r[k]!=null)r[k]=String(r[k]).slice(0,120)});if(r.role!=='chef')r.role='ouvrier';
+  if(r.taux!=null){r.taux=rcN(r.taux);if(!(r.taux>0))delete r.taux}
+  if(r.pays!=null)r.pays=(Array.isArray(r.pays)?r.pays:[]).filter(x=>x&&typeof x==='object'&&okId(x.id)).slice(0,500).map(x=>({id:x.id,at:rcN(x.at)||0,amt:rcN(x.amt)||0,d:RC_D(x.d)&&x.d?x.d:agToday(),note:String(x.note||'').slice(0,200),doc:typeof eqDocOk==='function'&&eqDocOk(x.doc)?x.doc:undefined}))}
  /* mémoire du chat et rapports d'intervention : du texte seulement, de longueur bornée ; un mot appris n'est jamais une commande (vérifié à l'usage, dans chat/reponses.js) */
  else if(c==='memo'){if(!['fait','mot','regle'].includes(r.k))return null;const S=(k,n)=>{if(r[k]!=null)r[k]=String(r[k]).slice(0,n)};S('t',400);S('a',200);S('mot',120);S('b',300);S('de',120);
   if(r.k==='fait'&&!r.t||r.k!=='fait'&&(!r.a||!r.b))return null;return {id:r.id,k:r.k,t:r.t,a:r.a,mot:r.mot,b:r.b,de:r.de,updatedAt:r.updatedAt}}
@@ -294,7 +298,7 @@ async function apiTeam(path,body){
  if(!r.ok)throw new Error(j.error||'Erreur.');
  return j}
 async function loadTeam(){
- try{teamCache=await apiTeam('/api/users');paintTeam()}catch(e){}}
+ try{teamCache=await apiTeam('/api/users');paintTeam();if(typeof eqRender==='function')eqRender()}catch(e){}}
 function paintTeam(){
  const me=(getSync().user||'').toLowerCase(),lab={patron:'Patron',chef:'Chef',ouvrier:'Ouvrier'};
  $('teamList').innerHTML=teamCache.map((u,i)=>'<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid #ddd"><div style="flex:1"><b>'+esc(u.name)+'</b> · '+esc(lab[u.role]||u.role)+'</div>'+

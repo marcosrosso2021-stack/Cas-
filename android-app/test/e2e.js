@@ -116,7 +116,7 @@ const ptText = page => page.evaluate(() => { go('pt'); return document.getElemen
     const h = await page.evaluate(() => { ptPage('h'); return document.getElementById('ptBody').innerText; });
     assert.ok(h.includes('Journal') && h.includes('Heures'));
     const set = await page.evaluate(() => { ptPage('set'); return document.getElementById('ptBody').innerText; });
-    assert.ok(set.includes('Chantiers') && set.includes('Personnes') && !/nfc/i.test(set));
+    assert.ok(set.includes('Chantiers') && set.includes('Mon équipe') && !/nfc/i.test(set)) // l'équipe se gère dans Mon équipe;
     assert.deepStrictEqual(errors, []);
     await ctx.close();
   });

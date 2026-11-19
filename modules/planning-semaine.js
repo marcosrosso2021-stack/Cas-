@@ -62,6 +62,8 @@ function chatSend(text){
    inp.value='';chatGrow(inp);qkUpdate();chatSave();chatRender(true);return}}
  /* « non » juste après une action : comme le bouton Annuler de sa bulle */
  if(/^(non|nan|no|não|nao|nu|nie|hayır|hayir|нет|لا)[.!]*$/i.test(t0)&&chatNonUndo()){inp.value='';chatGrow(inp);qkUpdate();CHAT.m.push({who:'me',text:t0});CHAT.m.push({who:'bot',html:`<p data-noi18n>${esc(window.casoPont&&casoPont.ready?casoPont.tr('D’accord, j’ai annulé. ').trim():'D’accord, j’ai annulé.')}</p>`});try{if(!(casoPont.refuser&&casoPont.refuser())){casoPont.B.S.lastTurn=null;casoPont.B.S.pending=null}}catch(e){}chatSave();chatRender(true);return}
+ /* équipe : « Karim est dans mon équipe », son numéro, « j'ai payé Karim 300 € », « Karim 15 € de l'heure » */
+ if(!adrSeule&&typeof eqChat==='function'&&eqChat(t0)){inp.value='';chatGrow(inp);qkUpdate();return}
  if(window.casoPont&&casoPont.ready&&!adrSeule){
   /* « le client d'hier », « la dame de la rue des Lilas » : le chat met le nom du client ; la phrase tapée reste affichée */
   if(casoPont.renvoi&&!chatSend.renv){const r=casoPont.renvoi(t0);if(r===true){inp.value='';chatGrow(inp);qkUpdate();return}if(r&&r!==t0){chatSend.renv=1;try{chatSend(r)}finally{chatSend.renv=0}

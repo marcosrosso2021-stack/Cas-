@@ -69,3 +69,9 @@ newsletter (qui ne sert à rien d'autre) n'est pas chargé quand le module n'est
 - **Signature des devis et numéros de facture** : ils passent par le serveur de l'équipe, avec une clé d'équipe qui n'est pas
   liée au compte casô. Pour que le serveur les contrôle, il faudra relier l'équipe au compte casô du patron (à faire avec Stripe).
 - **Pointage** : ajouter un chantier ou une personne dans l'écran Pointage n'est pas verrouillé.
+
+## Prochaines étapes (demandées)
+- **casô collaborateur** : l'appli du collaborateur invité (rejoindre l'équipe par le lien, son pointage, ses heures, ses paiements).
+  Il faut d'abord un espace d'équipe par entreprise sur le serveur casô (aujourd'hui un seul espace, « e1 »).
+- **casô client final** : l'espace du client de l'artisan (devis à signer, factures, suivi du chantier).
+- **Envoi automatique des invitations** : brancher un service SMS / e-mail (aujourd'hui le SMS ou l'e-mail s'ouvre déjà écrit, un appui pour envoyer).
