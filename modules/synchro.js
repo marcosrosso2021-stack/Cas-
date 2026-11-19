@@ -137,7 +137,10 @@ function recClean(c,r){if(!r||typeof r!=='object'||!okId(r.id))return null;
  const D=k=>{if(!RC_D(r[k]))r[k]=''};
  if(c==='quotes'){r.lines=rcLines(r.lines);r.remise=rcN(r.remise);r.acompte=rcN(r.acompte);D('date');
   if(r.status!=null&&!(r.status in ST))r.status='brouillon';if(r.proSig&&!rcImg(r.proSig))delete r.proSig;
-  if(r.sign&&typeof r.sign==='object'){if(r.sign.url&&!/^https?:\/\/[^\s"'<>]+$/.test(r.sign.url))delete r.sign.url}else if(r.sign!=null)delete r.sign
+  if(r.sign&&typeof r.sign==='object'){if(r.sign.url&&!/^https?:\/\/[^\s"'<>]+$/.test(r.sign.url))delete r.sign.url;
+   /* réponses du client (texte venu d'un e-mail) : bornées ; affichées échappées */
+   if(r.sign.reponses!=null)r.sign.reponses=(Array.isArray(r.sign.reponses)?r.sign.reponses:[]).filter(x=>x&&typeof x==='object').slice(-20).map(x=>({at:rcN(x.at)||0,de:String(x.de||'').slice(0,160),sujet:String(x.sujet||'').slice(0,200),texte:String(x.texte||'').slice(0,4000)}));
+   if(r.sign.suivi!=null&&(typeof r.sign.suivi!=='object'||Array.isArray(r.sign.suivi)))delete r.sign.suivi}else if(r.sign!=null)delete r.sign
   if(r.dv&&typeof r.dv==='object'&&!Array.isArray(r.dv)){if(r.dv.snapshot!=null){if(typeof r.dv.snapshot==='string')r.dv.snapshot=rcHtml(r.dv.snapshot);else delete r.dv.snapshot}}else if(r.dv!=null)delete r.dv}
  else if(c==='invoices'){r.lines=rcLines(r.lines);['remise','ret','pct'].forEach(k=>{if(r[k]!=null)r[k]=rcN(r[k])});['date','done','due'].forEach(D);
   if(typeof r.kind!=='string'||!/^\w{1,12}$/.test(r.kind))r.kind='facture';
@@ -221,7 +224,8 @@ function fillProf(){
 function refreshViews(){
  renderQuick();renderPrices();fillProf();fillSup();
  const act=document.querySelector('section.on'),id=act?act.id:'';
- if(id==='s-histo')renderHisto();else if(id==='s-four')renderFour();else if(id==='s-pt')renderPt()}
+ if(id==='s-histo')renderHisto();else if(id==='s-four')renderFour();else if(id==='s-pt')renderPt();
+ try{if(typeof envNouvelles==='function')envNouvelles()}catch(e){}}
 let srvInfo=null;
 async function probeServer(){
  if(!/^https?:$/.test(location.protocol))return null;

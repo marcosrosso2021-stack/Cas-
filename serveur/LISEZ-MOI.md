@@ -384,4 +384,19 @@ L'e-mail part au nom de l'entreprise ; les réponses du client arrivent à l'adr
 | `MAIL_FROM` | adresse d'expédition validée chez Mailjet (ex. `devis@votre-domaine.fr`) |
 
 Sans ces variables, rien ne part : l'appli le sait et propose « Copier le message » et « Partager ».
+
+### Suivi et réponses des clients dans l'appli (facultatif)
+
+| Variable | Valeur |
+|---|---|
+| `MJ_WEBHOOK_KEY` | une longue clé au hasard (32 caractères ou plus), inventée par vous : elle protège les deux adresses ci-dessous |
+| `MAIL_REPONSES` | un sous-domaine réservé aux réponses, ex. `reponses.votre-domaine.fr` |
+
+- **Suivi** (délivré, ouvert, refusé) : dans Mailjet, *Compte › Notifications d'évènements (webhooks)*, mettre pour « ouvert »,
+  « envoyé », « rebond », « bloqué » et « spam » l'adresse `https://<votre-app>/api/mailjet/evenements?cle=<MJ_WEBHOOK_KEY>`.
+- **Réponses** : chez votre hébergeur de domaine, un enregistrement **MX** pour `reponses.votre-domaine.fr` vers `parse.mailjet.com`
+  (priorité 10) ; puis dans Mailjet, créer une route du *Parse API* pour ce domaine vers
+  `https://<votre-app>/api/mailjet/entrant?cle=<MJ_WEBHOOK_KEY>`.
+  Les réponses des clients arrivent alors dans casô (chat, carte du devis) et une copie part à l'e-mail de « Mon entreprise ».
+  Sans `MAIL_REPONSES`, les clients répondent directement à cet e-mail (rien dans l'appli).
 Pour que les e-mails n'arrivent pas en indésirables, valider le domaine chez Mailjet (SPF et DKIM).
