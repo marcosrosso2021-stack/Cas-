@@ -40,7 +40,7 @@ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'caso-esp-'));
  const je=await ka.evaluate(()=>{const s=document.getElementById('joinScr');return s?s.innerText.replace(/\s+/g,' '):''});
  ok('Karim voit l\'entreprise et « Rejoindre l\'équipe »',/Rosso Rénovation/.test(je)&&/Karim, rejoins l'équipe/.test(je),je);
  await ka.click('#joinScr .join-go');await ka.waitForFunction(()=>!!getSync().token,null,{timeout:10000}).catch(()=>{});
- await ka.evaluate(()=>syncNow());await ka.waitForTimeout(1200);
+ await ka.evaluate(()=>syncNow());await ka.waitForFunction(()=>db.events.some(e=>e.title==='Pose')&&db.people.some(p=>(p.pays||[]).length),null,{timeout:15000}).catch(()=>{});await ka.waitForTimeout(300);
  const kv=await ka.evaluate(()=>({sync:getSync(),ouv:document.body.classList.contains('role-ouvrier'),ev:db.events.filter(e=>e.t==='rdv').map(e=>e.title),
   devis:getComputedStyle(document.querySelector('nav [data-pat]')).display,pt:getComputedStyle(document.querySelector('nav button[onclick^="tab(\'pt\'"]')).display!=='none'}));
  ok('Karim est dans l\'espace de son patron, en ouvrier',kv.sync.url.endsWith('/e/'+esp)&&kv.sync.role==='ouvrier',JSON.stringify(kv.sync));
@@ -49,8 +49,17 @@ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'caso-esp-'));
  await ka.evaluate(()=>{go('pt');ptPage('h')});await ka.waitForTimeout(300);
  const moi=await ka.evaluate(()=>{const c=document.querySelector('.eq-moi');return c?c.innerText.replace(/\s+/g,' '):''});
  ok('« Moi » : ses heures, dû, reçu (120 €) et ses paiements',/Karim/.test(moi)&&/Reçu/.test(moi)&&/120,00/.test(moi)&&/virement/.test(moi),moi);
+ const sortie=await ka.evaluate(()=>{const b=document.querySelector('.eq-out button');if(!b)return 'absent';window.confirm=()=>true;b.click();
+  return {ouv:document.body.classList.contains('role-ouvrier'),tok:!!getSync().token,cli:getComputedStyle(document.querySelector('[data-pat]')).display!=='none'}});
+ ok('collaborateur : « Quitter l\'équipe sur ce téléphone » rend l\'appli entière',sortie.ouv===false&&sortie.tok===false&&sortie.cli===true,JSON.stringify(sortie));
  await pa.evaluate(()=>loadTeam());await pa.waitForTimeout(500);
  ok('côté patron : Karim « Dans l\'équipe »',await pa.evaluate(()=>eqStatut(db.people.find(x=>x.id==='pk'))==='equipe'));
+ /* espace client (casô client final) : depuis la fiche du client, une carte prête avec le lien personnel */
+ const ce=await pa.evaluate(async()=>{db.clients.push({id:'cli1',nom:'Martin',adr:'3 rue Victor Hugo'});save();cliEdit('cli1');await cliEspace();
+  const c=document.querySelector('#cliEsp .env');return c?{t:c.innerText.replace(/\s+/g,' '),u:(ENV['cli-cli1']||{}).url||'',m:(ENV['cli-cli1']||{}).msg||''}:{t:document.getElementById('cliEsp').innerText}});
+ ok('fiche client : « Espace client » prépare le lien et le message',new RegExp('/e/'+esp+'/c/[a-f0-9]{32}$').test(ce.u)&&/Copier le message/.test(ce.t)&&/Bonjour Martin, voici votre espace client Rosso Rénovation/.test(ce.m),JSON.stringify(ce));
+ const pc=await (await br.newContext()).newPage();await pc.goto(ce.u.replace(/^https?:\/\/[^/]+/,B));await pc.waitForSelector('#devis',{timeout:10000}).catch(()=>{});
+ ok('le client ouvre son espace',/Bonjour Martin/.test(await pc.evaluate(()=>document.body.innerText)));
  /* 3. une autre entreprise ne voit rien de la première */
  const pb=await tel(B+'/');
  await pb.evaluate(async()=>{await accountCreate({prenom:'Julie',email:'julie@autre.fr',pass:'motdepasse2',ent:'Autre',co:false,cgu:true})});

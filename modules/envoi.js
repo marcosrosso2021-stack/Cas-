@@ -25,6 +25,21 @@ function envInvitation(p,lien){const ent=((db.prof||{}).nom||'').trim(),moi=((db
  const msg=i18nT('Bonjour {1}, {2} t\'invite à rejoindre son équipe sur casô : {3}').replace('{1}',p.nom.split(' ')[0]).replace('{2}',ent||moi||'casô').replace('{3}',lien);
  return{id:'inv-'+p.id,ico:'users',titre:i18nT('Invitation')+' · '+p.nom,chip:'Prêt',lignes:[['Équipe',ent||moi],['Rôle',i18nT(p.role==='chef'?'Chef':'Ouvrier')]],url:lien,msg,sujet:i18nT('Invitation casô')}}
 
+/* ---------- espace client (casô client final) : un lien personnel par client ----------
+   Le client y voit ses devis à signer ou signés, ses factures (payé, reste), ses rendez-vous et les rapports de son chantier.
+   Il faut l'espace d'équipe sur le serveur casô (créé tout seul avec le compte casô du patron). */
+async function cliEspace(nouveau){const c0=cliCur,box=$('cliEsp');if(!c0||!box)return;
+ box.innerHTML=`<p class="mut">${esc(i18nT('Préparation du lien…'))}</p>`;
+ try{if(!getSync().token&&typeof eqEspace==='function')await eqEspace();
+  if(!getSync().token)throw new Error(i18nT('Connecte-toi avec ton compte casô pour créer l\'espace client.'));
+  await syncNow();
+  const r=await apiTeam('/api/client/lien',{cid:c0.id,nouveau:nouveau===true});
+  if(cliCur!==c0)return;box.innerHTML=envCarte(envClient(c0,r.url,r.vu))+`<button type="button" class="lnk" onclick="if(confirm(i18nT('L\\'ancien lien ne marchera plus. Continuer ?')))cliEspace(true)">${esc(i18nT('Nouveau lien'))}</button>`}
+ catch(e){box.innerHTML=`<p class="err">${esc(String(e.message||e))}</p>`}}
+function envClient(c,lien,vu){const ent=((db.prof||{}).nom||'').trim();
+ const msg=i18nT('Bonjour {1}, voici votre espace client {2} : vos devis à signer, vos factures et le suivi de votre chantier. {3}').replace('{1}',c.nom).replace('{2}',ent||'casô').replace('{3}',lien);
+ return{id:'cli-'+c.id,ico:'user',titre:i18nT('Espace client')+' · '+c.nom,chip:vu?'Ouvert':'Prêt',lignes:[['Entreprise',ent]],url:lien,msg,sujet:i18nT('Votre espace client')+(ent?' · '+ent:'')}}
+
 /* ---------- devis : e-mail professionnel rédigé tout seul ----------
    À partir du devis et de « Mon entreprise » : formule selon le client, travaux résumés, total, acompte, validité, signature.
    (rédaction sur le téléphone, sans service d'IA en ligne ; l'artisan peut relire et changer le texte avant l'envoi) */

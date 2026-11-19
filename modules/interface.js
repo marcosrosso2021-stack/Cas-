@@ -67,7 +67,9 @@ function dwLocked(){
 /* logo de l'entreprise : en haut à gauche du menu profil (un appui ouvre Mon entreprise) et à la place de l'icône du profil.
    Sans logo : une icône discrète d'entreprise, qui mène à Mon entreprise pour l'ajouter. */
 function logoProfil(){const l=(db.prof||{}).logo,ok=typeof rcImg==='function'?rcImg(l):/^data:image\//.test(l||''),e=$('dwEnt'),b=$('hdAcct');
- if(e){e.classList.toggle('logo',!!ok);e.innerHTML=ok?`<img src="${l}" alt="">`:'<svg class="i"><use href="#i-building"/></svg>'}
+ /* sans logo : les initiales de l'entreprise (« RR » pour Rosso Rénovation), sinon l'icône du profil */
+ const ini=String((db.prof||{}).nom||'').replace(/\b(sarl|sas|sasu|eurl|ei|sa|et|de|du|des|la|le|les)\b/gi,' ').trim().split(/[\s'’-]+/).filter(w=>/\p{L}/u.test(w)).slice(0,2).map(w=>w.match(/\p{L}/u)[0].toUpperCase()).join('');
+ if(e){e.classList.toggle('logo',!!ok);e.classList.toggle('ini',!ok&&!!ini);e.innerHTML=ok?`<img src="${l}" alt="">`:ini?`<span data-noi18n>${esc(ini)}</span>`:'<svg class="i"><use href="#i-user"/></svg>'}
  if(b){b.classList.toggle('logo',!!ok);b.innerHTML=ok?`<img src="${l}" alt="">`:'<svg class="i"><use href="#i-user"/></svg>'}}
 /* pastille discrète au-dessus du compte (profil) : où en est l'usager ; un appui ouvre « On construit le plan » */
 function authLigne(){
@@ -180,7 +182,7 @@ async function ssoGo(){if(SSO.busy)return;SSO.busy=true;const c=SSO.c,b=$('lgBio
 /* compte sans mot de passe : une action sensible se confirme avec Face ID */
 const sansMdp=()=>!!(window.VAULT&&VAULT.on&&!VAULT.hasPw());
 async function bioConf(){try{return await VAULT.bioCheck()}catch(e){toast(i18nT('Face ID non confirmé. Réessaie.'));return false}}
-function drawer(side){
+function drawer(side){if(side==='R')try{logoProfil()}catch(e){}
  if(dwLocked()){drawerClose(true);return}
  const d=$(side==='L'?'dwL':'dwR');if(!d)return;
  if(side==='R'){const a=accountGet()||{},c=getSync();$('dwName').textContent=a.prenom||c.user||'';$('dwMail').textContent=a.email||'';authLigne()}

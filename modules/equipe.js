@@ -172,4 +172,9 @@ function eqMoiCarte(){const p=eqMoi();if(!p)return'';const h=eqHeures(p.id,'mont
   <div class="eq-tiles"><div><span>${esc(i18nT('Heures'))}</span><b data-noi18n>${esc(fmtH(h))}</b></div><div><span>${esc(i18nT('Dû'))}</span><b data-noi18n>${est==null?'—':esc(eur(est))}</b></div>
   <div><span>${esc(i18nT('Reçu'))}</span><b data-noi18n>${esc(eur(pay))}</b></div><div><span>${esc(i18nT('Reste'))}</span><b data-noi18n>${est==null?'—':esc(eur(Math.max(0,faR2(est-pay))))}</b></div></div>
   ${P.length?`<div class="lst eq-pays">${P.map(x=>`<div class="it"><span class="it-t"><b data-noi18n>${esc(eur(+x.amt||0))}</b><span class="mut"><span data-noi18n>${esc(agFmtD(x.d,{weekday:undefined,month:'short'}))}</span>${x.note?` · <span data-noi18n>${esc(x.note)}</span>`:''}</span></span></div>`).join('')}</div>`:''}</div>`}
+/* sortie du mode collaborateur (par exemple le patron qui a ouvert son propre lien d'invitation sur son téléphone) */
+function eqSortie(){const c=getSync();if(!c.token||c.role!=='ouvrier')return'';
+ return `<p class="eq-out"><button type="button" class="lnk" onclick="eqQuitter()">${esc(i18nT('Quitter l\'équipe sur ce téléphone'))}</button></p>`}
+function eqQuitter(){if(!confirm(i18nT('Ce téléphone quitte l\'équipe. Tes données restent sur le serveur de l\'entreprise. Continuer ?')))return;
+ syncLogout();roleUI();try{go('chat')}catch(e){}}
 try{roleUI()}catch(e){}

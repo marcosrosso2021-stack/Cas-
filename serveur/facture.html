@@ -56,6 +56,7 @@ label.ck input{width:22px;height:22px;margin-top:2px;flex:none;accent-color:#e0a
 <main id="m"><div id="load" class="mut">Chargement de la facture…</div></main>
 <script>
 const $=id=>document.getElementById(id),tok=location.pathname.split('/').pop();
+ var BASE=location.pathname.replace(/\/[sf]\/[a-f0-9]{32}\/?$/,'');/* espace d'entreprise : /e/<espace> devant l'adresse */
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const eur=n=>(+n||0).toLocaleString('fr-FR',{style:'currency',currency:'EUR'});
 /* factfix-v1 */const D=s=>{if(!s)return'';const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s);const d=m?new Date(+m[1],m[2]-1,+m[3]):new Date(s);return isNaN(d)?'':d.toLocaleDateString('fr-FR')};
@@ -66,7 +67,7 @@ const ICON={ok:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strok
  dl:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/></svg>'};
 let S=null;
 async function load(){
- try{const r=await fetch('/api/f/'+tok,{cache:'no-store'}),j=await r.json();if(!r.ok)throw new Error(j.error||'Erreur');S=j;render()}
+ try{const r=await fetch(BASE+'/api/f/'+tok,{cache:'no-store'}),j=await r.json();if(!r.ok)throw new Error(j.error||'Erreur');S=j;render()}
  catch(e){$('m').innerHTML=`<div class="card"><h1>Facture introuvable</h1><p class="mut">${esc(e.message)}</p></div>`}}
 function render(){
  const f=S.doc,c=f.calc||{},P=f.seller||{},paid=c.state==='payee',avoir=f.kind==='avoir',late=!paid&&!avoir&&c.state!=='annulee'&&f.due&&f.due<today(),gone=c.state==='annulee';
@@ -101,7 +102,7 @@ function copyIban(){const t=$('iban').textContent;(navigator.clipboard?navigator
 async function certify(){
  const n=$('cn').value.trim(),a=$('ca').checked,e=$('ce');e.hidden=true;
  if(n.length<2){e.textContent='Écrivez votre nom.';e.hidden=false;return}if(!a){e.textContent='Cochez la case pour certifier.';e.hidden=false;return}
- try{const r=await fetch('/api/f/'+tok+'/certify',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({name:n,agree:true})}),j=await r.json();if(!r.ok)throw new Error(j.error);S.cert=j.cert;render()}
+ try{const r=await fetch(BASE+'/api/f/'+tok+'/certify',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({name:n,agree:true})}),j=await r.json();if(!r.ok)throw new Error(j.error);S.cert=j.cert;render()}
  catch(x){e.textContent=x.message||'Erreur';e.hidden=false}}
 load();
 </script>

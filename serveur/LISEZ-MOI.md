@@ -375,6 +375,21 @@ Un espace, c'est une entreprise : son patron, son équipe, ses données. Chaque 
 - Essais : `node tests/serveur-espaces.test.js` (15 contrôles : dossier neuf, deux espaces qui ne se voient pas, reprise de l'ancien fichier, redémarrage, retour en arrière).
 
 
+## Espace client (casô client final, 19 nov. 2026)
+
+Le client de l'artisan a son espace, sans compte ni mot de passe : un lien personnel `https://<votre-app>/c/<jeton>`
+(dans l'espace d'une entreprise : `/e/<espace>/c/<jeton>`).
+
+- **Côté artisan** : fiche du client › **Espace client**. casô prépare le lien et le message (« Copier le message », « Partager »).
+  Le lien est toujours le même pour un client ; « Nouveau lien » en donne un autre et coupe l'ancien. Patron et chef seulement.
+- **Côté client** : ses devis envoyés (à signer, signés, expirés, avec le bouton « Lire et signer »), ses factures émises
+  (total, déjà payé, reste, échéance, lien vers la facture si elle a été partagée), ses prochains rendez-vous et derniers passages,
+  les rapports d'intervention, et les coordonnées de l'entreprise (appeler, écrire).
+- **Jamais montré** : brouillons, notes de la fiche, prix d'achat, autres clients.
+- Les pages de signature (`/s/…`) et de facture (`/f/…`) marchent maintenant aussi dans l'espace d'une entreprise
+  (avant, elles interrogeaient l'espace d'origine).
+- Essais : `node tests/client-final.test.js` (19 contrôles) et `node tests/espaces.test.js` (17).
+
 ## Envoi des devis par e-mail (Mailjet)
 
 Le devis part au client par e-mail en un appui (ou sur demande au chat), avec un e-mail professionnel rédigé tout seul.

@@ -27,7 +27,7 @@ function cliEdit(id){
  cliCur=id?db.clients.find(x=>x.id===id):null;formFill('cli',cliCur,cliCur?cliCur.nom:'Nouveau client');
  CF_K='cli';$('cfPasteBox').hidden=true;cfStatus('');$('cfPick').hidden=!(navigator.contacts&&navigator.contacts.select);$('cliActs').innerHTML=cliCur?cfActs(cliCur):'';$('cfBar').hidden=!!(cliCur&&cliCur.tel&&cliCur.adr&&cliCur.email);
  const Q=cliCur?db.quotes.filter(q=>nameKey(q.client)===nameKey(cliCur.nom)):[];
- $('cliMore').innerHTML=cliCur?`<button class="btn sec" onclick="cliQuote()"><svg class="i"><use href="#i-plus"/></svg>Nouveau devis pour ce client</button>`+
+ $('cliMore').innerHTML=cliCur?`<button class="btn sec" onclick="cliQuote()"><svg class="i"><use href="#i-plus"/></svg>Nouveau devis pour ce client</button><button class="btn sec" onclick="cliEspace()"><svg class="i"><use href="#i-user"/></svg>${esc(i18nT('Espace client'))}</button><div id="cliEsp"></div>`+
   (Q.length?`<h2 class="grp"><span>Devis</span><span class="cnt">${Q.length}</span></h2><div class="lst">`+Q.map(x=>`<button class="it it-main" onclick="openQ('${x.id}')"><span class="it-t"><b data-noi18n>${esc(x.num||'')}</b><span class="tag ${x.status}">${ST[x.status]||''}</span></span><span class="mut it-s">${dFR(x.date)} · ${eur(totals(x).ttc)}</span></button>`).join('')+'</div>':''):'';
  go('clif')}
 function cliSave(){
