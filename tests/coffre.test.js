@@ -19,10 +19,9 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
  /* ===== 1. nouveau compte ===== */
  {const {p,errs}=await ctx();await p.goto(B);await appUp(p);
   ok('1.0 sans compte : l’appli démarre normalement, pas de coffre',await p.evaluate(()=>!VAULT.on&&!VAULT.has()&&typeof db!=='undefined'));
-  const sansCgu=await p.evaluate(async()=>{document.getElementById('acNom').value='Jean Dupont';document.getElementById('acMail').value='jean@test.fr';document.getElementById('acPass').value='motdepasse1';
-   document.getElementById('acCgu').checked=false;await acSubmit();return !accountGet()&&/conditions/.test(document.getElementById('acErr').textContent)});
-  ok('1.0b création sans accepter les conditions : refusée, la case est signalée',sansCgu);
-  const code=await p.evaluate(async()=>{document.getElementById('acCgu').checked=true;document.getElementById('acNom').value='Jean Dupont';document.getElementById('acMail').value='jean@test.fr';document.getElementById('acPass').value='motdepasse1';
+  const cgu=await p.evaluate(()=>!!document.querySelector('#acForm .ac-sso-ok a[href="conditions.html"]')&&!!document.querySelector('#acForm .ac-sso-ok a[href="confidentialite.html"]'));
+  ok('1.0b création : conditions et confidentialité en lien sous le bouton',cgu);
+  const code=await p.evaluate(async()=>{document.getElementById('acNom').value='Jean Dupont';document.getElementById('acMail').value='jean@test.fr';document.getElementById('acPass').value='motdepasse1';
    await acSubmit();window.__cgu=!!(accountGet()||{}).cgu;db.quotes.push({id:'qsecret',client:'Marie Dupont Secret',lines:[],date:'2026-11-08'});db.prof.iban='FR7612345678901234567890123';save();
    localStorage.setItem('devis_sync',JSON.stringify({url:'https://srv.example',token:'TOKEN-SECRET-123'}));
    await new Promise(r=>setTimeout(r,1500));return ONB.code});
@@ -102,7 +101,7 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
  {const {c,p,errs}=await ctx();const cdp=await c.newCDPSession(p);let va=null;
   try{await cdp.send('WebAuthn.enable');va=await cdp.send('WebAuthn.addVirtualAuthenticator',{options:{protocol:'ctap2',transport:'internal',hasResidentKey:true,hasUserVerification:true,isUserVerified:true,automaticPresenceSimulation:true,hasPrf:true}})}catch(e){ok('3.0 authentificateur virtuel',false,e.message)}
   if(va){await p.goto(B);await appUp(p);
-   await p.evaluate(async()=>{document.getElementById('acCgu').checked=true;document.getElementById('acNom').value='Lea';document.getElementById('acMail').value='lea@test.fr';document.getElementById('acPass').value='motdepasse2';await acSubmit();db.quotes.push({id:'qb',client:'Bio Secret',lines:[]});save();await new Promise(r=>setTimeout(r,800))});
+   await p.evaluate(async()=>{document.getElementById('acNom').value='Lea';document.getElementById('acMail').value='lea@test.fr';document.getElementById('acPass').value='motdepasse2';await acSubmit();db.quotes.push({id:'qb',client:'Bio Secret',lines:[]});save();await new Promise(r=>setTimeout(r,800))});
    const on=await p.evaluate(async()=>{try{return await VAULT.bioOn(accountGet())}catch(e){return 'ERR '+e.message}});
    ok('3.1 Face ID activé',on===true,String(on));
    await p.reload();await sleep(1500);
