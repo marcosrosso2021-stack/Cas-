@@ -180,7 +180,7 @@ function renderPt(){
   (sm.open.length?sm.open.map(s=>`<div class="tot"><span data-noi18n>${esc(pName(s.p))} · ${esc(chName(s.c))}</span><span><b>depuis ${fmtT(s.a)}</b> <span class="pt-els" data-noi18n data-since="${s.a}">${fmtH(Date.now()-s.a)}</span></span></div>`).join(''):'<div class="mut">Personne.</div>')+`</div>`;
  /* --- Heures et journal --- */
  /* collaborateur de l'équipe : ses heures et ses paiements en premier */
- let hh=(typeof eqMoiCarte==='function'?eqMoiCarte():'')+`<div class="card"><h2><span class="hi"><svg class="i"><use href="#i-clock"/></svg></span>Heures</h2><div class="chips" style="margin-bottom:8px">`+
+ let hh=(typeof eqMoiCarte==='function'?eqMoiCarte()+eqSortie():'')+`<div class="card"><h2><span class="hi"><svg class="i"><use href="#i-clock"/></svg></span>Heures</h2><div class="chips" style="margin-bottom:8px">`+
   [['week','Semaine'],['month','Mois'],['all','Tout']].map(([k,l])=>`<span class="chip" style="${ptPer===k?'background:var(--acc);color:var(--ink)':''}" onclick="setPer('${k}')">${l}</span>`).join('')+`</div>`;
  const cids=Object.keys(sm.by);
  hh+=cids.length?cids.map(c=>{

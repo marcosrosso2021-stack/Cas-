@@ -1477,7 +1477,7 @@ body.tr-on{overflow:hidden}
 .acct.logo{padding:0;overflow:hidden;background:#fff}.acct.logo img{width:100%;height:100%;object-fit:contain;border-radius:inherit}
 .ac-ck{display:flex;gap:10px;align-items:flex-start;margin:12px 0 0;font-size:14px;line-height:1.4;text-transform:none;letter-spacing:0;font-family:inherit;font-weight:400;color:var(--ink)}.ac-ck input{width:20px;height:20px;margin:1px 0 0;flex:none;accent-color:var(--ink)}.ac-ck a{color:inherit}.ac-ck.bad span{color:#c0392b}
 .ac-sso-ok{font-size:12.5px;color:var(--mut);text-align:center;margin:8px 0 0}.ac-sso-ok a{color:inherit}
-body.role-ouvrier [data-pat]{display:none!important}
+body.role-ouvrier [data-pat]{display:none!important}.eq-out{text-align:center;margin:4px 0 12px}
 .eq-moi .eq-tiles{margin:10px 0 6px}.eq-moi h2{margin:0}
 .ag-typ{margin:0 0 10px}.row>.ag-ej{flex:0 0 84px}.ag-ej input{text-align:center}.ag-ev .ag-n{font-weight:600;color:var(--ink)}.ag-cli{display:flex;flex-direction:column;gap:8px;margin:8px 0 2px}#agEti{margin:0}
 .ag-plus{margin:6px 0 12px}.ag-plus summary{cursor:pointer;color:var(--mut);font-size:14px;font-weight:600;padding:8px 0;list-style-position:inside}
@@ -2495,6 +2495,7 @@ body.role-ouvrier [data-pat]{display:none!important}
 </aside>
 <aside class="dw dw-r" id="dwR" hidden aria-label="Compte">
  <div class="dw-h dw-hr"><button type="button" class="dw-ent" id="dwEnt" onclick="drawerGo('cpt:ent')" aria-label="Mon entreprise"></button><button class="dw-x" onclick="drawerClose()" aria-label="Fermer"><svg class="i"><use href="#i-x"/></svg></button></div>
+ <button class="dw-i" onclick="drawerGo('cpt:ent')"><svg class="i"><use href="#i-building"/></svg><span>Mon entreprise</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
  <button class="dw-i" data-pat onclick="drawerGo('cpt:team')"><svg class="i"><use href="#i-users"/></svg><span>Mon équipe</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
  <button class="dw-i" data-pat onclick="drawerGo('sigp')"><svg class="i"><use href="#i-pen"/></svg><span>Ma signature</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
  <div class="dw-acc">
