@@ -66,5 +66,16 @@ const drain = async t => (await t.g.drainEvents()).events.map(e => [e.type, e.si
   assert.deepStrictEqual(await drain(t2), []);
   console.log('ok  état gardé entre deux ouvertures, zones effaçables');
 
+  /* iPhone : la permission reste « prompt » alors que la position a été donnée (bouton Autoriser) */
+  t = mk('prompt'); await t.g.setGeofences({ sites: [site] }); t.pos = at(10);
+  assert.deepStrictEqual(await drain(t), [], 'sans accord : rien n\'est lu');
+  assert.strictEqual(t.calls, 0);
+  await t.g.openSettings();
+  t.now += 1000; assert.deepStrictEqual(await drain(t), [['enter', 'c1']], 'après « Autoriser » : la position est lue malgré « prompt »');
+  t.now += 25 * 3600e3; t.fail = true; await drain(t);
+  t.fail = false; t.calls = 0; t.now += 25 * 3600e3; assert.deepStrictEqual(await drain(t), []);
+  assert.strictEqual(t.calls, 0, 'plus de 24 h sans lecture réussie : on redemande');
+  console.log('ok  iPhone : « prompt » après une position donnée compte comme un accord (24 h)');
+
   console.log('\ntous les tests passent');
 })().catch(e => { console.error('KO', e); process.exit(1); });

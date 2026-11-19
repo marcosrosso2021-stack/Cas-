@@ -143,16 +143,21 @@ await t('serveur : newsletter lisible sans clé, notification aux abonnés pour 
  const {createServer}=require('../serveur/server.js');process.env.CASO_CLE_IA='cle-test';const envois=[];
  const d2=fs.mkdtempSync(path.join(os.tmpdir(),'caso-veille-'));
  fs.writeFileSync(path.join(d2,'data.json'),JSON.stringify({users:{},subs:[{user:'a',sub:{endpoint:'https://push.example/1'}},{user:'b',sub:{endpoint:'https://push.example/2'}}]}));
- const s=createServer({dataDir:d2,veille:v,noTimers:true,appFile:path.join(__dirname,'..','index.html'),pushSend:async(sub,p)=>{envois.push([sub.endpoint,p]);return {status:sub.endpoint.endsWith('2')?410:201}}}),srv=s.server||s;
+ const s=createServer({dataDir:d2,veille:v,noTimers:true,pushAnyHost:true,appFile:path.join(__dirname,'..','index.html'),pushSend:async(sub,p)=>{envois.push([sub.endpoint,p]);return {status:sub.endpoint.endsWith('2')?410:201}}}),srv=s.server||s;
  await new Promise(r=>srv.listen(0,'127.0.0.1',r));const port=srv.address().port;
  const req=(m,u,h,b)=>new Promise((ok,ko)=>{const r=http.request({host:'127.0.0.1',port,path:u,method:m,headers:Object.assign(b?{'content-type':'application/json'}:{},h||{})},x=>{let d='';x.on('data',c=>d+=c);x.on('end',()=>ok([x.statusCode,JSON.parse(d),x.headers]))});r.on('error',ko);r.end(b?JSON.stringify(b):undefined)});
  const [c,L,h]=await req('GET','/api/veille/lettre');assert.strictEqual(c,200);assert.deepStrictEqual(L,[]);assert.strictEqual(h['access-control-allow-origin'],'*');
+ /* un usager seul (sans espace d'équipe) s'abonne à la newsletter depuis l'appli ; le même téléphone qu'un abonné d'équipe n'est prévenu qu'une fois */
+ const k=await req('GET','/api/push/cle');assert.ok(k[0]===200&&k[1].key);
+ assert.strictEqual((await req('POST','/api/push/news',{},{sub:{endpoint:'https://push.example/seul',keys:{p256dh:'p',auth:'a'}},metier:'peintres'}))[0],200);
+ assert.strictEqual((await req('POST','/api/push/news',{},{sub:{endpoint:'https://push.example/1',keys:{p256dh:'p',auth:'a'}}}))[0],200);
+ assert.strictEqual((await req('POST','/api/push/news',{},{sub:{endpoint:'javascript:alert(1)',keys:{p256dh:'p',auth:'a'}}}))[0],400);
  heure='2026-11-24T09:00:00Z';
  const [c2,f]=await req('POST','/api/veille/decider',{'x-caso-cle':'cle-test'},{id:I('2002'),decision:'valide',corrections:{lettre:true}});
  assert.strictEqual(c2,200);assert.deepStrictEqual([f.priorite,f.publieLe],['P0','2026-11-24']);await new Promise(r=>setTimeout(r,50));
- assert.strictEqual(envois.length,2);assert.ok(/Du nouveau pour ton métier : Décret n° 2026-2002/.test(envois[0][1].body));assert.strictEqual(envois[0][1].tag,'veille');assert.strictEqual(envois[0][1].url,'/?news=1');
+ assert.strictEqual(envois.length,3);assert.ok(envois.some(e=>e[0]==='https://push.example/seul'));assert.strictEqual(envois.filter(e=>e[0]==='https://push.example/1').length,1);assert.ok(/Du nouveau pour ton métier : Décret n° 2026-2002/.test(envois[0][1].body));assert.strictEqual(envois[0][1].tag,'veille');assert.strictEqual(envois[0][1].url,'/?news=1');
  await req('POST','/api/veille/decider',{'x-caso-cle':'cle-test'},{id:I('2002'),decision:'valide',corrections:{aFaire:'Vérifie tes devis.'}});await new Promise(r=>setTimeout(r,50));
- assert.strictEqual(envois.length,2);
+ assert.strictEqual(envois.length,3);
  const L2=(await req('GET','/api/veille/lettre'))[1];assert.deepStrictEqual(L2.map(x=>[x.id,x.aFaire]),[[I('2002'),'Vérifie tes devis.']]);assert.ok(!JSON.stringify(L2).includes('historique'));
  await new Promise(r=>srv.close(r))});
 await t('notifications : important tout de suite et par métier ; le reste groupé, au plus tous les 14 jours',async()=>{

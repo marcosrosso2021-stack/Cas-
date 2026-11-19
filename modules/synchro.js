@@ -215,7 +215,7 @@ async function syncNow(){
 
 /* --- interface de synchronisation --- */
 function setSyncMsg(t){const e=document.getElementById('syMsg');if(e)e.textContent=t}
-function fillProf(){
+function fillProf(){try{if(typeof logoProfil==='function')logoProfil()}catch(e){}
  const p=db.prof||{};
  $('eNom').value=p.nom||'';$('eAdr').value=p.adr||'';$('eSiret').value=p.siret||'';$('eSiren').value=p.siren||String(p.siret||'').replace(/\D/g,'').slice(0,9);
  $('eTel').value=p.tel||'';$('eAssur').value=p.assur||'';$('eValid').value=p.valid||30;

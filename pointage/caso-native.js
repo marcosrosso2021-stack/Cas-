@@ -127,15 +127,23 @@
     function T(s) { return env.T ? env.T(s) : s; }
 
     /* ---------- qui tient ce téléphone ---------- */
+    /* le téléphone d'un collaborateur (équipe d'un patron) ou celui de l'artisan lui-même */
+    function proprio() { var r = (env.sync() || {}).role; return !(r === 'ouvrier' || r === 'chef'); }
     function meId() {
       var db = env.db(), P0 = db.people || [];
       var u = String((env.sync() || {}).user || '').trim().toLowerCase();
       var a = env.account() || {};
       var n = u || String(a.prenom || '').split(' ')[0].toLowerCase() ||
         String((db.me && db.me.prenom) || '').toLowerCase();
-      var f = P0.filter(function (p) { return String(p.nom || '').toLowerCase() === n; })[0];
+      var f = P0.filter(function (p) { return p.moi || (n && String(p.nom || '').toLowerCase().split(' ')[0] === n); })[0];
       if (f) return f.id;
-      if (P0.length === 1) return P0[0].id;
+      if (P0.length === 1 && (!proprio() || !n)) return P0[0].id;
+      /* l'artisan lui-même : sa fiche « moi » est créée la première fois (elle n'apparaît pas dans Mon équipe) */
+      if (proprio() && (a.prenom || (db.me && db.me.prenom))) {
+        var me = { id: 'moi', nom: String(a.prenom || db.me.prenom).split(' ')[0], moi: true, role: 'patron', at: env.now() };
+        if (!P0.some(function (p) { return p.id === 'moi'; })) { (db.people = P0).push(me); env.save(); }
+        return 'moi';
+      }
       return null;
     }
 
@@ -146,7 +154,9 @@
       for (var k = -2; k <= 1; k++) {
         var d = env.agAdd(today, k);
         env.agDayEvents(d).forEach(function (e) {
-          if (e.t !== 'rdv' || !e.a || (e.who || []).indexOf(me) < 0) return;
+          /* rendez-vous de cette personne ; un rendez-vous sans équipe cochée est celui de l'artisan (le chat n'en coche pas) */
+          var who = e.who || [];
+          if (e.t !== 'rdv' || !e.a || (who.indexOf(me) < 0 && !(who.length === 0 && me === 'moi'))) return;
           var cl = e.cid && (db.clients || []).filter(function (c) { return c.id === e.cid; })[0];
           if (!(e.ch || e.adr || (cl && cl.adr))) return;
           var cid = env.agChFor(e);

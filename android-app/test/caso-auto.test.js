@@ -103,6 +103,28 @@ t('GPS toujours : la nuit (avant 4 h, après 21 h 30) un passage ne compte pas',
   assert.strictEqual(m.db.pts.length, 0);
 });
 
+t('téléphone de l\'artisan : sa fiche « moi » est créée, ses rendez-vous sans équipe cochée sont suivis', async () => {
+  const m = mk({ people: [{ id: 'u1', nom: 'Karim' }], account: { prenom: 'Marcos Rosso' },
+    events: [{ id: 'e1', t: 'rdv', d: today, a: '08:00', b: '12:00', adr: '12 rue des Lilas, Paris', title: 'Pose' },
+      { id: 'e2', t: 'rdv', d: today, a: '14:00', b: '16:00', who: ['u1'], adr: '3 rue Victor Hugo, Lyon', title: 'Karim seul' }] });
+  await m.A.run();
+  assert.ok(m.db.people.some(p => p.id === 'moi' && p.moi && p.nom === 'Marcos'), 'fiche « moi »');
+  assert.strictEqual(m.calls.set.length, 1);
+  assert.deepStrictEqual(m.calls.set[0].sites.map(z => z.id), ['c1'], 'seulement son rendez-vous (pas celui de Karim)');
+  m.q.push(ev('enter', '07:58'), ev('dwell', '07:59'));m.clock.t = ts('08:30');await m.A.run();
+  assert.deepStrictEqual(m.db.pts.map(x => [x.t, x.p]), [['in', 'moi']]);
+  await m.A.run();
+  assert.strictEqual(m.db.people.filter(p => p.id === 'moi').length, 1, 'une seule fiche « moi »');
+});
+
+t('téléphone d\'un collaborateur : seulement ses rendez-vous, pas ceux sans équipe', async () => {
+  const m = mk({ people: [{ id: 'u1', nom: 'Karim' }], sync: { user: 'karim', role: 'ouvrier' },
+    events: [{ id: 'e1', t: 'rdv', d: today, a: '08:00', b: '12:00', adr: '12 rue des Lilas, Paris', title: 'Patron' }] });
+  await m.A.run();
+  assert.strictEqual(m.calls.set.length, 0);
+  assert.ok(!m.db.people.some(p => p.id === 'moi'));
+});
+
 t('sur place : l\'état affiche le chantier et l\'heure d\'arrivée', async () => {
   const m = mk();
   await m.A.run();

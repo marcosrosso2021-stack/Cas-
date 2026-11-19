@@ -98,16 +98,19 @@ function createServer(opts={}){
  const VEILLE_TXT='Du nouveau pour ton métier',V_METIERS=['électriciens','plombiers-chauffagistes','maçons','couvreurs','menuisiers','peintres','diagnostiqueurs'],V_GROUPE=14*864e5;
  const vPour=(x,sb)=>{const m=(x.pros||[]).filter(p=>V_METIERS.includes(p));return !m.length||m.includes(sb.metier||'')};
  async function veillePousser(L,texte){let dead=false,n=0;
-  await Promise.all(data.subs.map(async sb=>{const M=L.filter(x=>vPour(x,sb));if(!M.length)return;n++;
+  /* équipes et usagers seuls (abonnés à la newsletter depuis l'appli), un téléphone une seule fois */
+  const vus=new Set(),tous=(data.subs||[]).concat(data.subsNews||[]).filter(sb=>{const e=sb.sub&&sb.sub.endpoint;if(!e||vus.has(e))return false;vus.add(e);return true});
+  await Promise.all(tous.map(async sb=>{const M=L.filter(x=>vPour(x,sb));if(!M.length)return;n++;
    try{const r=await pushSend(sb.sub,{title:'casô',body:texte(M),url:'/?news=1',tag:'veille'});if(r&&(r.status===404||r.status===410)){sb.dead=1;dead=true}}catch(e){}}));
-  if(dead){data.subs=data.subs.filter(x=>!x.dead);persist()}return n}
+  if(dead){data.subs=data.subs.filter(x=>!x.dead);data.subsNews=(data.subsNews||[]).filter(x=>!x.dead);persist()}return n}
  async function veilleAnnoncer(groupe){
   const L=veille.aAnnoncer(),U=L.filter(x=>x.priorite==='P0'||x.priorite==='P1'),R=L.filter(x=>!U.includes(x));let n=0;
   if(U.length){veille.annonce(U.map(x=>x.id));n+=await veillePousser(U,M=>M.length===1?VEILLE_TXT+' : '+String(M[0].titre).slice(0,90):VEILLE_TXT+' ('+M.length+')')}
   if(groupe&&R.length&&Date.now()-(data.veilleGroupe||0)>=V_GROUPE){data.veilleGroupe=Date.now();veille.annonce(R.map(x=>x.id));persist();
    n+=await veillePousser(R,M=>'Ta newsletter casô : '+M.length+(M.length>1?' nouveautés à lire':' nouveauté à lire'))}
   return n}
- if(!opts.noTimers&&HOSTED){const vt=setInterval(()=>{const tri=()=>{try{veille.trier()}catch(e){console.error('[casô] veille : tri automatique',e&&e.message)}};   // newsletter à jour toute seule : collecte, tri, puis annonce
+ /* newsletter à jour toute seule, sans que personne ne la lance : dès que le serveur tourne (VEILLE_AUTO=0 pour l'arrêter) */
+ if(!opts.noTimers&&process.env.VEILLE_AUTO!=='0'){const vt=setInterval(()=>{const tri=()=>{try{veille.trier()}catch(e){console.error('[casô] veille : tri automatique',e&&e.message)}};   // newsletter à jour toute seule : collecte, tri, puis annonce
   (veille.aFaire(new Date())?veille.passer().then(tri,tri):Promise.resolve(tri())).then(()=>{if(new Date().getUTCHours()>=6)return veilleAnnoncer(true)}).catch(()=>{})},9e5);if(vt.unref)vt.unref()}
  const pushSend=opts.pushSend||((sub,payload)=>webpush.send(sub,payload,data.vapid,{subject:process.env.VAPID_SUBJECT}));
  /* --- apprentissage partagé du chat : phrases apprises par les usagers, sans rien de personnel (fichier à part) --- */
@@ -545,6 +548,9 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
     res.writeHead(301,{location:'https://'+(req.headers.host||'')+req.url,'cache-control':'no-store'});return res.end()}
    if(req.method==='OPTIONS'){res.writeHead(204,cors);return res.end()}
    if(cede&&(req.url||'').startsWith('/api/'))return send(res,503,{error:'Mise à jour du serveur en cours, réessaie dans un instant.'},{'retry-after':'2'});
+   /* conditions d'utilisation et politique de confidentialité (pages fixes à la racine du dépôt) */
+   if(NEWL&&req.method==='GET'&&(url==='/conditions.html'||url==='/confidentialite.html')){let html;try{html=fs.readFileSync(path.join(ROOT,url.slice(1)),'utf8')}catch(e){return send(res,404,{error:'introuvable'})}
+    res.writeHead(200,Object.assign({'content-type':'text/html; charset=utf-8','cache-control':'no-cache'},SEC));return res.end(html)}
    if(NEWL&&req.method==='GET'&&url==='/devis.html'){/* module Devis, ouvert dans un cadre de l'appli */
     let html;try{html=fs.readFileSync(path.join(ROOT,'devis.html'),'utf8')}catch(e){return send(res,404,{error:'introuvable'})}
     return send(res,200,html,{'content-security-policy':CSP_APP.replace("frame-ancestors 'none'","frame-ancestors 'self'"),'x-frame-options':'SAMEORIGIN'})}
@@ -598,6 +604,19 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
    {const mv=req.method==='GET'&&url.match(/^\/api\/v\/(CS-[0-9A-Z-]{11})$/);
     if(mv){const r=SIG_RE.test(mv[1])&&own(data.sigreg,mv[1])?data.sigreg[mv[1]]:null;
      return r?send(res,200,publicSigReg(r)):send(res,404,{error:'Signature inconnue.'})}}
+   /* newsletter : tout usager peut recevoir ses notifications, sans espace d'équipe (le téléphone et le métier seulement) */
+   if(req.method==='GET'&&url==='/api/push/cle')return send(res,200,{key:data.vapid.pub});
+   if(POST&&(url==='/api/push/news'||url==='/api/push/news/stop')){
+    if(tooMany(ip,res))return send(res,429,{error:'Trop d\'essais, patiente une minute.'});
+    const b=await readBody(req),sub=b.sub||{},ep=cut(sub.endpoint||b.endpoint,1000);
+    data.subsNews=(data.subsNews||[]).filter(s=>s.sub.endpoint!==ep);
+    if(url.endsWith('/stop')){await persist();return send(res,200,{ok:true})}
+    let host='';try{const U=new URL(ep);host=U.protocol==='https:'?U.hostname:''}catch(e){}
+    const okHost=!!host&&(opts.pushAnyHost||/(^|\.)(push\.apple\.com|fcm\.googleapis\.com|android\.googleapis\.com|push\.services\.mozilla\.com|notify\.windows\.com)$/.test(host));
+    if(!okHost||!sub.keys||!sub.keys.p256dh||!sub.keys.auth)return send(res,400,{error:'Abonnement invalide.'});
+    if(data.subsNews.length>=50000)data.subsNews.shift();
+    data.subsNews.push({lang:cut(b.lang,5)||'fr',metier:V_METIERS.includes(b.metier)?b.metier:'',sub:{endpoint:ep,keys:{p256dh:cut(sub.keys.p256dh,200),auth:cut(sub.keys.auth,100)}},at:Date.now()});
+    await persist();return send(res,200,{ok:true})}
    /* invitation : avant de rejoindre, la personne voit qui l'invite (sans utiliser l'invitation) */
    {const mj=req.method==='GET'&&url.match(/^\/api\/join\/([a-f0-9]{16})$/);
     if(mj){if(tooMany(ip,res))return send(res,429,{error:'Trop d\'essais, patiente une minute.'});

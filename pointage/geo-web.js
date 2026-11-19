@@ -33,6 +33,9 @@
     async function status() {
       var p = 'prompt';
       try { p = await env.perm(); } catch (e) {}
+      /* iPhone (Safari, appli sur l'écran d'accueil) : la permission peut rester « prompt » alors que la position a déjà été donnée ;
+         une lecture réussie dans les dernières 24 h vaut accord (la position n'est jamais lue en cachette : casô ouvert seulement) */
+      if (p === 'prompt' && st.okAt && env.now() - st.okAt < 864e5) p = 'granted';
       return { location: p, background: p }; // casô ouvert suffit : pas d'autorisation « Toujours » sur le web
     }
     async function poll() {
@@ -40,7 +43,8 @@
       var s = await status();
       if (s.location !== 'granted') return;
       var f = await fix();
-      if (!f || !(f.acc <= MAX_ACC)) return;
+      if (f) { st.okAt = env.now(); }
+      if (!f || !(f.acc <= MAX_ACC)) { save(); return; }
       var now = env.now();
       sites.forEach(function (z) {
         var inside = dist(f, z) <= z.radius, t = st.in[z.id];
@@ -54,7 +58,7 @@
     return {
       status: status,
       ensurePermissions: status, // sans geste de la personne, on ne demande rien
-      openSettings: function () { return fix(); }, // le bouton « Autoriser » : la lecture de la position fait apparaître la demande
+      openSettings: function () { return fix().then(function (f) { if (f) { st.okAt = env.now(); save(); } return f; }); }, // le bouton « Autoriser » : la lecture de la position fait apparaître la demande
       setGeofences: async function (a) { sites = (a && a.sites) || []; },
       clearGeofences: async function () { sites = []; },
       drainEvents: async function () { await poll(); return { events: q.splice(0) }; }

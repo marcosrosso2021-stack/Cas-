@@ -432,7 +432,7 @@ body.cli .art{display:none!important}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 #d-acc,#d-app{display:none!important}
 .hm-x{display:none;position:absolute;top:calc(env(safe-area-inset-top,0px) + 10px);inset-inline-start:12px;z-index:3}
-.emb .hm-x{display:grid}
+.emb .hm-x{display:grid}.emb.in-sec .hm-x{display:none}body.emb.in-sec:not(.cli) .home{padding-top:calc(env(safe-area-inset-top,0px) + 16px)}
 body.cli .hm-x{display:none!important}
 .pj-a{display:none;align-items:center;gap:2px;flex:none}.pj.act .pj-a{display:flex}.pj.act .pj-m{display:none}
 .pj-rn{height:40px;padding:0 12px;border:0;border-radius:10px;background:var(--soft);color:var(--ink);font:inherit;font-size:14px;font-weight:600}
@@ -966,6 +966,7 @@ th_mer|bord de mer|seaside|praia|costero|marino|marin|nadmorski|sahil|морск
 chat_nospace|Je n'ai pas trouvé de place libre pour « {x} ». Libérez un coin (« enlève la bibliothèque ») et je l'ajoute.|I couldn't find free space for a {x}. Free up a corner and I'll add it.|Não encontrei espaço livre para {x}. Liberte um canto e eu adiciono.|No encontré sitio libre para {x}. Libere un rincón y lo añado.|Non ho trovato spazio libero per {x}. Libera un angolo e lo aggiungo.|Nu am găsit loc liber pentru {x}. Eliberați un colț și îl adaug.|Nie znalazłem miejsca na {x}. Zwolnij kąt, a dodam.|{x} için boş yer bulamadım. Bir köşe açın, eklerim.|Не нашёл свободного места для: {x}. Освободите угол — и я добавлю.|لم أجد مكانًا فارغًا لـ {x}. أفرغ زاوية وسأضيفه.
 chat_nomove|Pas de place pour déplacer « {x} » de ce côté. Vous pouvez aussi appuyer longuement dessus et le faire glisser.|No room to move « {x} » that way. You can also press and hold it, then drag it.|Sem espaço para mover {x} para esse lado. Também pode manter premido e arrastar.|No hay sitio para mover {x} hacia ese lado. También puede mantenerlo pulsado y arrastrarlo.|Non c'è spazio per spostare {x} da quel lato. Puoi anche tenerlo premuto e trascinarlo.|Nu e loc să mut {x} în partea aceea. Puteți și să-l țineți apăsat și să-l trageți.|Brak miejsca, by przesunąć {x} w tę stronę. Możesz też go przytrzymać i przeciągnąć.|{x} o tarafa taşınamıyor. Basılı tutup sürükleyebilirsiniz.|Нет места сдвинуть {x} туда. Можно также удержать и перетащить.|لا مكان لنقل {x} في هذا الاتجاه. يمكنك أيضًا الضغط عليه مطولًا وسحبه.
 tx_t|Matières|Materials|Materiais|Materiales|Materiali|Materiale|Materiały|Malzemeler|Материалы|المواد
+rc_mat|Murs et sols|Walls and floors|Paredes e chão|Paredes y suelos|Pareti e pavimenti|Pereți și pardoseli|Ściany i podłogi|Duvar ve zemin|Стены и полы|الجدران والأرضيات
 tx_floor|Sol|Floor|Chão|Suelo|Pavimento|Podea|Podłoga|Zemin|Пол|الأرضية
 tx_wall|Murs|Walls|Paredes|Paredes|Muri|Pereți|Ściany|Duvarlar|Стены|الجدران
 tc_fab|Tissus|Fabrics|Tecidos|Tejidos|Tessuti|Țesături|Tkaniny|Kumaşlar|Ткани|أقمشة
@@ -4849,7 +4850,7 @@ async function photoOpen(){if(!T3||!T3.scene)return;railClose();closeSheet();con
 /* accueil en deux : Construction (plan et maquette 3D) et Rénovation (pièces en photo). Côté bricoleur, chaque partie liste ses projets. */
 S.sec=null;
 const isReno=p=>!!(p&&p.d&&p.d.rnv);
-function setSec(k){if(k==='reno'){rnvOpen();return}S.sec=k||null;$('#h-secs').hidden=!!S.sec;$('#h-cons').hidden=S.sec!=='cons';$('#h-reno').hidden=S.sec!=='reno';homeProjs();const sc=$('#s-home');if(sc)sc.scrollTop=0}
+function setSec(k){if(k==='reno'){rnvOpen();return}S.sec=k||null;document.body.classList.toggle('in-sec',!!S.sec);/* une section ouverte a son propre retour : pas deux boutons retour */$('#h-secs').hidden=!!S.sec;$('#h-cons').hidden=S.sec!=='cons';$('#h-reno').hidden=S.sec!=='reno';homeProjs();const sc=$('#s-home');if(sc)sc.scrollTop=0}
 /* artisan : le croquis en cours est proposé sous les deux cartes de l'accueil (il n'ouvre plus le module à la place du choix) */
 function artHome(){const el=$('#hp-art');if(!el)return;const ok=!CLIENT&&S.W&&S.walls&&S.walls.length;
   el.innerHTML=ok?`<button class="hp" id="b-art">${miniPlan(S)}<span class="pj-t"><b data-t="art_cur">${t('art_cur')}</b></span><svg class="i flipx" viewBox="0 0 24 24" style="color:var(--mut)"><path d="m9 5 7 7-7 7"/></svg></button>`:'';
@@ -7560,7 +7561,7 @@ window.casoModule={load:casoLoad,loadFile:f=>loadFile(f),getData:()=>projData(),
 window.addEventListener('message',e=>{const m=e.data;if(!m||m.source!=='caso-app')return;if(m.type==='load')casoLoad(m.data);else if(m.type==='lang')window.casoModule.setLang(m.data);else if(m.type==='init'){try{setTimeout(vidResume,600)}catch(e){}const d=m.data||{};if(d.lang)window.casoModule.setLang(d.lang);lsSet('m3d_acc',{name:d.name||'casô',email:d.email||'compte@caso'})}});
 $('#b-low').addEventListener('click',()=>{if(!T3)return;if(T3.mode==='walk')setView('iso');setLow(T3.low===false)});
 $('#b-night').addEventListener('click',()=>{if(!T3)return;setNight(!T3.night)});
-const RCAT=[['rg-mat','tx_t','<path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.8 1.6-1.6 0-.9-.7-1.4-.7-2.2 0-.9.7-1.6 1.6-1.6H17a4 4 0 0 0 4-4C21 6.6 17 3 12 3z"/><circle cx="7.6" cy="11.2" r="1.1"/><circle cx="10.2" cy="7.2" r="1.1"/><circle cx="15" cy="7.6" r="1.1"/>',['r-wall','r-floor','r-tex']],
+const RCAT=[['rg-mat','rc_mat','<path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.8 1.6-1.6 0-.9-.7-1.4-.7-2.2 0-.9.7-1.6 1.6-1.6H17a4 4 0 0 0 4-4C21 6.6 17 3 12 3z"/><circle cx="7.6" cy="11.2" r="1.1"/><circle cx="10.2" cy="7.2" r="1.1"/><circle cx="15" cy="7.6" r="1.1"/>',['r-wall','r-floor','r-tex']],
  ['rg-bat','cat_bat','<path d="M5 21V8l7-4 7 4v13"/><path d="M5 14.5h14M10 21v-3.5h4V21"/>',['r-lvl','r-plans','r-ext']],
  ['rg-doc','cat_doc','<path d="M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2h8.5A1.5 1.5 0 0 1 21 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/>',['r-metre','r-photo','r-doss']],
  ['rg-aff','cat_aff','<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/>',['b-night','b-low']]];

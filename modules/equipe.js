@@ -22,7 +22,7 @@ const EQ_ST={equipe:'Dans l\'équipe',invite:'Invité',aucun:'À inviter'};
 
 /* ---------- liste ---------- */
 function eqRender(){const box=$('eqList');if(!box)return;ensurePt();
- const L=db.people.slice().sort((a,b)=>a.nom.localeCompare(b.nom));
+ const L=db.people.filter(p=>!p.moi).sort((a,b)=>a.nom.localeCompare(b.nom));/* « moi » (l'artisan, pour son propre pointage) n'est pas un collaborateur */
  box.innerHTML=L.length?`<div class="eq-l">`+L.map(p=>{const st=eqStatut(p),h=eqHeures(p.id,'month');
   return `<button type="button" class="eq-r" onclick="eqOpen('${p.id}')"><span class="eq-av" aria-hidden="true">${esc((p.nom.trim()[0]||'·').toUpperCase())}</span>
    <span class="eq-t"><b data-noi18n>${esc(p.nom)}</b><span class="mut"><span>${esc(i18nT(p.role==='chef'?'Chef':'Ouvrier'))}</span>${h?` · <span data-noi18n>${esc(fmtH(h))}</span>`:''}</span></span>

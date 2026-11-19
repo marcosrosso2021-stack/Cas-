@@ -32,7 +32,7 @@ const FAUX=()=>{
 
  /* ===== compte avec mot de passe, Face ID activé ensuite ===== */
  {const {p,errs}=await ctx();await p.goto(B);await appUp(p);
-  await p.evaluate(async()=>{document.getElementById('acNom').value='Jean';document.getElementById('acMail').value='jean@test.fr';document.getElementById('acPass').value='motdepasse1';await acSubmit();
+  await p.evaluate(async()=>{document.getElementById('acCgu').checked=true;document.getElementById('acNom').value='Jean';document.getElementById('acMail').value='jean@test.fr';document.getElementById('acPass').value='motdepasse1';await acSubmit();
    db.quotes.push({id:'qn',client:'Client Natif Secret',lines:[]});save();await new Promise(r=>setTimeout(r,800))});
   ok('appli installée : Face ID proposé par le téléphone',await p.evaluate(()=>VAULT.bioOk()));
   const on=await p.evaluate(async()=>{try{return await VAULT.bioOn(accountGet())}catch(e){return 'ERR '+e.message}});

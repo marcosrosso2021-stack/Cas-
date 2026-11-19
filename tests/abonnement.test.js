@@ -67,6 +67,20 @@ const J=864e5,TOUS=['devis','planning','pointage','paiement','3d','renovation','
   ok('plan : le paiement s\'enregistre',await p.evaluate(()=>{faPayAll('f1');return db.invoices[0].pays.length===1}));
   ok('plan : aucune erreur JavaScript',!errs.length,errs.join(' | '));await c.close()}
 
+ /* 2 bis. compte du téléphone pas (encore) relié au serveur casô : essai de 30 jours tenu par le téléphone, puis socle seulement */
+ {const {c,p,errs}=await tel(null);
+  const r=await p.evaluate(()=>{const J=864e5,o={};
+   accountPut({v:1,id:'u1',prenom:'Test',email:'test@exemple.fr',hash:'x',salt:'00',iter:1,mode:'artisan',createdAt:Date.now()});
+   o.neuf=aboOuvert('pointage')&&aboOuvert('veille')&&aboDroits().essai;authLigne();o.pastille=$('dwPlanA').textContent+' '+$('dwPlanB').textContent;
+   const a=accountGet();a.essaiLocal=Date.now()-31*J;accountPut(a);
+   o.fini=!aboOuvert('pointage')&&!aboOuvert('paiement')&&aboOuvert('chat')&&aboOuvert('clients')&&aboDroits().devisGratuits===1;
+   a.mode='bricoleur';accountPut(a);o.bri=aboOuvert('pointage');
+   a.mode='artisan';accountPut(a);setSync({url:'http://x',token:'t',user:'karim',role:'ouvrier'});o.ouvrier=aboOuvert('pointage');return o});
+  ok('compte neuf pas relié : essai de 30 jours, tout ouvert, la pastille le dit',r.neuf&&/Essai 30 j/.test(r.pastille),r.pastille);
+  ok('compte pas relié, essai fini : socle gratuit seulement (le téléphone ne donne plus tout)',r.fini);
+  ok('Bricoleur et collaborateur d\'une équipe : pas verrouillés',r.bri&&r.ouvrier);
+  ok('compte pas relié : aucune erreur JavaScript',!errs.length,errs.join(' | '));await c.close()}
+
  /* 3. pendant l'essai, et sans compte casô : rien n'est verrouillé */
  for(const [nom,cp] of [['en essai',{mode:'artisan',offre:'artisan_curieux',essaiFin:Date.now()+10*J,modules:TOUS}],['sans compte casô',null],['Bricoleur',{mode:'bricoleur',offre:'bricoleur',modules:[]}]]){
   const {c,p,errs}=await tel(cp);
