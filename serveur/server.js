@@ -13,7 +13,7 @@
 'use strict';
 const http=require('http'),fs=require('fs'),path=require('path'),crypto=require('crypto'),os=require('os');
 const webpush=require('./webpush.js'),prixLib=require('./prix.js'),authLib=require('./auth.js'),veilleLib=require('./veille/index.js');
-const sauvegarde=require('./sauvegarde.js'),s3Lib=require('./s3.js'),PLAN=require('../lib/plan.js');
+const sauvegarde=require('./sauvegarde.js'),s3Lib=require('./s3.js'),PLAN=require('../lib/plan.js'),mailLib=require('./mail.js');
 
 const PEOPLE_PATRON=['taux','pays'];
 const COLL=['prices','quotes','hist','chantiers','people','pts','prof','clients','suppliers','projects','plans','events','invoices','memo','rapports'];
@@ -84,7 +84,8 @@ function createServer(opts={}){
  if(!data.invIds)data.invIds={};
  if(!data.signs)data.signs={};if(!data.sigreg)data.sigreg=Object.create(null);if(!data.subs)data.subs=[];if(!data.remSent)data.remSent={};if(!data.invSeq)data.invSeq={};if(!data.invShares)data.invShares={};if(!data.ics)data.ics={};
  if(!data.vapid){data.vapid=webpush.vapidKeys();try{const t=FILE+'.tmp';fs.writeFileSync(t,JSON.stringify(data));fs.renameSync(t,FILE)}catch(e){}}
- const auth=authLib.creer(Object.assign({dir:DIR,hosted:HOSTED,maintenant:opts.maintenant},opts.auth||{}));// comptes des usagers : connexion Google / Microsoft (module AUTH)
+ const auth=authLib.creer(Object.assign({dir:DIR,hosted:HOSTED,maintenant:opts.maintenant},opts.auth||{}));
+ const mail=opts.mail||mailLib.creer();// e-mails (Mailjet) : devis envoyés au client// comptes des usagers : connexion Google / Microsoft (module AUTH)
  const prix=opts.prix||prixLib.creer({dir:DIR});// prix des matériaux en ligne (clé SEARCHAPI_KEY ou SERPAPI_KEY)
  /* veille réglementaire : un passage par jour sur les sources officielles ; rien n'est envoyé aux artisans sans validation */
  const veille=opts.veille||veilleLib.creer({dir:DIR});
@@ -391,7 +392,8 @@ function createServer(opts={}){
  function publicSign(sg){
   return{status:sg.status,doc:sg.doc,docHash:sg.docHash,sentAt:sg.sentAt,expires:sg.expires,
    pro:{img:sg.pro.img,name:sg.pro.name,at:sg.pro.at},
-   client:sg.client?{img:sg.client.img,name:sg.client.name,at:sg.client.at}:null,proof:sg.proof||null}}
+   client:sg.client?{img:sg.client.img,name:sg.client.name,at:sg.client.at}:null,proof:sg.proof||null,
+   modif:sg.modifs&&sg.modifs.length?{at:sg.modifs[sg.modifs.length-1].at}:null}}
  /* l'IBAN de l'entreprise change : tous les appareils du patron sont prévenus */
  async function notifyIban(){
   const who=Object.values(data.users).filter(u=>u.role==='patron').map(u=>u.name.toLowerCase());
@@ -400,6 +402,10 @@ function createServer(opts={}){
    const r=await pushSend(s.sub,{title:'casô',body:IBAN_TXT[s.lang]||IBAN_TXT.fr,url:'/',tag:'iban'});
    if(r&&(r.status===404||r.status===410)){s.dead=1;dead=true}}));
   if(dead){data.subs=data.subs.filter(s=>!s.dead);persist()}}
+ /* le client demande une modification : patron et chefs prévenus */
+ async function notifyModif(sg,msg){
+  const q=sg.doc.quote,who=Object.values(data.users).filter(u=>u.role==='patron'||u.role==='chef').map(u=>u.name.toLowerCase());
+  await Promise.all(data.subs.filter(s=>who.includes(s.user)).map(s=>pushSend(s.sub,{title:'casô',body:((q.client||'Le client')+' · '+(q.num||'')+' : '+msg).slice(0,180),url:'/?q='+encodeURIComponent(q.id||''),tag:'modif-'+sg.token}).catch(()=>{})))}
  async function notifySigned(sg){
   const q=sg.doc.quote,n=q.num||'',c=(sg.client&&sg.client.name)||q.client||'';
   const who=Object.values(data.users).filter(u=>u.role==='patron'||u.role==='chef').map(u=>u.name.toLowerCase());
@@ -555,6 +561,23 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
    {const mv=req.method==='GET'&&url.match(/^\/api\/v\/(CS-[0-9A-Z-]{11})$/);
     if(mv){const r=SIG_RE.test(mv[1])&&own(data.sigreg,mv[1])?data.sigreg[mv[1]]:null;
      return r?send(res,200,publicSigReg(r)):send(res,404,{error:'Signature inconnue.'})}}
+   /* invitation : avant de rejoindre, la personne voit qui l'invite (sans utiliser l'invitation) */
+   {const mj=req.method==='GET'&&url.match(/^\/api\/join\/([a-f0-9]{16})$/);
+    if(mj){if(tooMany(ip,res))return send(res,429,{error:'Trop d\'essais, patiente une minute.'});
+     const inv=own(data.invites,mj[1])?data.invites[mj[1]]:null,u=inv&&data.users[inv.user];
+     if(!inv||inv.exp<Date.now()||!u){fail(ip);return send(res,404,{error:'Invitation invalide ou expirée. Demande un nouveau lien.'})}
+     const pr=data.recs.prof&&data.recs.prof.prof&&data.recs.prof.prof.v||{};
+     return send(res,200,{name:u.name,role:u.role,entreprise:cut(pr.nom,120),exp:inv.exp})}}
+   /* le client demande une modification du devis : l'artisan est prévenu, le lien reste ouvert */
+   {const mm=url.match(/^\/api\/s\/([a-f0-9]{32})\/modif$/);
+    if(mm&&POST){const sg=data.signs[mm[1]];if(!sg)return send(res,404,{error:'Ce lien n\'existe pas.'});
+     if(tooMany(ip,res))return send(res,429,{error:'Trop d\'essais, patientez une minute.'});
+     if(sg.status!=='sent')return send(res,409,{error:sg.status==='signed'?'Ce devis est déjà signé.':'Ce devis a été remplacé ou annulé.'});
+     const b=await readBody(req),msg=String(b.msg||'').trim().slice(0,1500);
+     if(msg.length<3)return send(res,400,{error:'Écrivez ce que vous voulez changer.'});
+     sg.modifs=(sg.modifs||[]).slice(-19).concat({at:Date.now(),msg,name:cut(b.name,80).trim()});
+     const qid=sg.doc.quote.id;if(qid&&data.recs.quotes[qid]){const cur=data.recs.quotes[qid];data.recs.quotes[qid]=Object.assign({},cur,{sign:Object.assign({},cur.sign||{},{modif:{at:Date.now(),msg}}),updatedAt:Date.now(),rev:++data.rev})}
+     await persist();notifyModif(sg,msg).catch(()=>{});return send(res,200,publicSign(sg))}}
    let m=url.match(/^\/api\/s\/([a-f0-9]{32})(\/sign)?$/);
    if(m){
     const sg=data.signs[m[1]];
@@ -824,6 +847,19 @@ data.invSeq[key]=n;if(iid)data.invIds[key+'|'+iid]=n;await persist();return send
      if(qid&&data.recs.quotes[qid]&&data.recs.quotes[qid].status!=='accepte'){
       data.recs.quotes[qid]=Object.assign({},data.recs.quotes[qid],{status:'envoye',sign:{token,url:sg.url,st:'sent',sentAt:at},updatedAt:at,rev:++data.rev})}
      await persist();return send(res,200,{token,url:sg.url,docHash:sg.docHash})}
+    /* le devis part au client par e-mail (Mailjet) : le texte vient de l'appli, le bouton mène au lien de signature */
+    if(req.method==='GET'&&url==='/api/sign/mail')return send(res,200,{pret:mail.pret()});
+    if(POST&&url==='/api/sign/mail'){
+     const b=await readBody(req),x=data.signs[String(b.token||'')];
+     if(!x)return send(res,404,{error:'Ce devis n\'a pas de lien.'});
+     if(x.status!=='sent')return send(res,409,{error:x.status==='signed'?'Ce devis est déjà signé.':'Ce lien a été remplacé.'});
+     if((x.mails||[]).filter(e=>Date.now()-e.at<36e5).length>=5)return send(res,429,{error:'Déjà envoyé plusieurs fois cette heure.'});
+     const pr=x.doc.prof||{},text=String(b.text||'').slice(0,6000);
+     if(text.trim().length<10)return send(res,400,{error:'Le message est vide.'});
+     try{const r=await mail.envoyer({to:b.to,toName:x.doc.quote.client,fromName:pr.nom||'casô',replyTo:pr.email,subject:cut(b.subject,200)||('Devis '+(x.doc.quote.num||'')),
+       text:text+'\n\n'+x.url,html:mail.html({text,lien:x.url,bouton:'Voir et signer le devis',entreprise:pr.nom}),id:x.token});
+      x.mails=(x.mails||[]).concat({to:String(b.to).trim().toLowerCase(),at:Date.now(),id:r.id});await persist();return send(res,200,{ok:true,to:x.mails[x.mails.length-1].to})}
+     catch(e){return send(res,e.code||502,{error:e.message,off:!!e.off})}}
     if(req.method==='GET'&&url==='/api/sign/list'){
      return send(res,200,Object.values(data.signs).map(x=>({token:x.token,quoteId:x.doc.quote.id,num:x.doc.quote.num,status:x.status,url:x.url,sentAt:x.sentAt,viewedAt:x.viewedAt||null,signedAt:x.client?x.client.at:null,clientName:x.client?x.client.name:null})))}
     if(POST&&url==='/api/sign/cancel'){

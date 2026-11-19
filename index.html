@@ -1464,6 +1464,14 @@ body.tr-on{overflow:hidden}
 .eq-add{margin:4px 0 6px}.eq-add summary{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-weight:600;font-size:15px;padding:8px 0}.eq-add summary .i{width:18px;height:18px}.eq-add[open] summary{margin-bottom:6px}.eq-add .ag-cli,.eq-add input{margin-bottom:8px}.eq-file{width:auto;display:inline-flex;margin:0 0 10px}
 .eq-lien{display:flex;align-items:center;gap:12px;width:100%;border:0;font:inherit;color:var(--ink);text-align:start;cursor:pointer}.eq-lien .eq-t{flex:1}
 .row>.eq-tx{flex:0 0 108px}.eq-role{margin:0}.eq-cd{cursor:pointer;display:flex;align-items:center;gap:10px}.eq-cd .ag-ct{flex:1}
+.env{display:flex;flex-direction:column;gap:10px;margin:8px 0 12px}.env-c{background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.env-h{display:flex;align-items:center;gap:10px}.env-h .i{width:20px;height:20px;flex:none}.env-h b{flex:1;font-size:16px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.env-chip{flex:none;font-size:12.5px;font-weight:600;padding:3px 10px;border-radius:999px;background:color-mix(in srgb,#2e9e5b 16%,var(--card));color:#1f7a44}
+.env-l{font-size:15px}.env-l>span:first-child{color:var(--mut)}.env-u{display:inline-flex;align-items:center;gap:4px;color:var(--mut);font-size:13.5px;text-decoration:none;border-bottom:1px dashed var(--line);align-self:flex-start;word-break:break-all}
+.env .btn{margin:0}.env-cp{background:#2e9e5b;color:#fff}.env-m{display:flex;flex-direction:column;gap:8px}.env-m:empty{display:none}.env-to{font-weight:400;opacity:.75;font-size:13px}
+.env-ap summary{cursor:pointer;color:var(--mut);font-size:13.5px;padding:2px 0}.env-ap input,.env-ap textarea{margin:6px 0 0;font-size:14px}
+.join{position:fixed;inset:0;z-index:80;background:var(--bg);display:grid;place-items:center;padding:24px}.join-c{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;max-width:360px;width:100%}
+.join-lg{width:72px;height:72px;margin-bottom:6px}.join h1{font-size:24px;margin:0 0 12px}.join .btn{min-height:60px;font-size:18px}.join-ok{width:48px;height:48px;color:#1f7a44}body.join-on{overflow:hidden}
 .ag-typ{margin:0 0 10px}.row>.ag-ej{flex:0 0 84px}.ag-ej input{text-align:center}.ag-ev .ag-n{font-weight:600;color:var(--ink)}.ag-cli{display:flex;flex-direction:column;gap:8px;margin:8px 0 2px}#agEti{margin:0}
 .ag-plus{margin:6px 0 12px}.ag-plus summary{cursor:pointer;color:var(--mut);font-size:14px;font-weight:600;padding:8px 0;list-style-position:inside}
 .ag-sh-f{display:flex;justify-content:space-between;gap:12px;margin-top:8px}.ag-sh-f:not(:has(button:not([hidden]))){display:none}.lnk.ko{color:#c0392b}
@@ -1919,10 +1927,9 @@ body.tr-on{overflow:hidden}
   <button class="btn" id="sigGo" onclick="signSend()">Valider et envoyer</button>
  </div>
  <div class="card" id="sentBox" hidden>
-  <h2><span class="hi ok"><svg class="i"><use href="#i-check"/></svg></span>Devis validé et enregistré.</h2>
-  <div class="sent-link" data-noi18n id="sentUrl"></div>
+  <div class="sent-link" data-noi18n id="sentUrl" hidden></div>
   <a id="sentSms" hidden></a><a id="sentWa" hidden></a><a id="sentMail" hidden></a>
-  <button class="btn" onclick="sheetOpen()"><svg class="i"><use href="#i-send"/></svg>Envoyer le lien</button>
+  <div id="sentEnv"></div>
   <button class="btn sec" onclick="chatNew();go('devis')"><svg class="i"><use href="#i-plus"/></svg>Nouveau devis</button>
  </div>
  <div class="sheet-bg" id="sheetBg" hidden onclick="sheetClose()"></div>
@@ -2576,6 +2583,7 @@ draw();if(!still)requestAnimationFrame(tick);window.__splashGo=()=>{if(!still){l
 <script type="text/x-caso" data-src="modules/listes.js"></script>
 <script type="text/x-caso" data-src="modules/devis-module.js"></script>
 <script type="text/x-caso" data-src="modules/equipe.js"></script>
+<script type="text/x-caso" data-src="modules/envoi.js"></script>
 <script type="text/x-caso" data-src="modules/abonnement.js"></script>
 <script type="text/x-caso" data-src="chat/engine.js"></script>
 <script type="text/x-caso" data-src="chat/brain.js"></script>

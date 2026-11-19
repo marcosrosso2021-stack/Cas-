@@ -103,3 +103,5 @@ setTimeout(()=>{try{const a=accountGet();if(!a||!a.hash||a.sso||window.__casoMdp
  if(!document.body.classList.contains('starting'))aboRelier()}catch(e){}},4000);
 /* la pastille du profil : dessinée aussi au démarrage (la session casô a pu répondre avant que l'appli soit prête) */
 try{authLigne()}catch(e){}
+/* lib/auth.js peut arriver après les modules : la pastille est redessinée dès qu'il est prêt */
+(function attente(n){if(window.CasoAuth){try{authLigne();aboMenu()}catch(e){}return}if(n<100)setTimeout(()=>attente(n+1),100)})(0);

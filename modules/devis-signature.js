@@ -86,7 +86,6 @@ async function signSend(){
   const j=await apiTeam('/api/sign/new',{doc:quoteDoc(cur),img,name:(accountGet()||{}).prenom||c.user||''});
   cur.sign={token:j.token,url:j.url,st:'sent',sentAt:Date.now()};if(cur.status!=='accepte')cur.status='envoye';storeQ(cur);syncSoon();
   showSent(j.url);
-  sheetOpen();
   setTimeout(askNotif,1500);
  }catch(e){alert('Erreur d\'envoi : '+(e.message||e))}
  finally{b.disabled=false;b.textContent='Valider et envoyer'}}
@@ -100,6 +99,8 @@ function showSent(url){
  $('sentSms').href='sms:'+tel+(ios?'&':'?')+'body='+encodeURIComponent(sentMsg);
  $('sentWa').href='https://wa.me/'+(intl||'')+'?text='+encodeURIComponent(sentMsg);
  $('sentMail').href='mailto:?subject='+encodeURIComponent('Devis n° '+q.num+(p.nom?' – '+p.nom:''))+'&body='+encodeURIComponent(sentMsg);
+ /* la carte prête : Envoyer par e-mail (un appui), Copier le message, Partager */
+ try{const c=envDevis(q);$('sentEnv').innerHTML=envCarte(c);envMailUI(c.id)}catch(e){}
  $('sgCard').hidden=true;$('sentBox').hidden=false;window.scrollTo(0,0)}
 function sheetOpen(){$('sheetBg').hidden=false;$('sheet').hidden=false;requestAnimationFrame(()=>{$('sheet').classList.add('on');$('sheetBg').classList.add('on')})}
 function sheetClose(){$('sheet').classList.remove('on');$('sheetBg').classList.remove('on');setTimeout(()=>{$('sheet').hidden=true;$('sheetBg').hidden=true},200)}

@@ -369,3 +369,19 @@ Un espace, c'est une entreprise : son patron, son équipe, ses données. Chaque 
 - **Retour en arrière** : le code d'avant relit `donnees/data.json`, resté tel qu'au jour du passage. Si ce fichier redevient plus récent que celui de l'espace (retour au code d'avant, puis de nouveau celui-ci), il est repris, et la version de l'espace est mise de côté (`data.json.avant-…`).
 - Essais : `node tests/serveur-espaces.test.js` (15 contrôles : dossier neuf, deux espaces qui ne se voient pas, reprise de l'ancien fichier, redémarrage, retour en arrière).
 
+
+## Envoi des devis par e-mail (Mailjet)
+
+Le devis part au client par e-mail en un appui (ou sur demande au chat), avec un e-mail professionnel rédigé tout seul.
+L'e-mail part au nom de l'entreprise ; les réponses du client arrivent à l'adresse de « Mon entreprise ».
+
+À régler une fois dans les variables d'environnement de l'hébergement (jamais dans le code) :
+
+| Variable | Valeur |
+|---|---|
+| `MJ_APIKEY_PUBLIC` | clé publique de l'API Mailjet (Compte › Clés API) |
+| `MJ_APIKEY_PRIVATE` | clé secrète de l'API Mailjet |
+| `MAIL_FROM` | adresse d'expédition validée chez Mailjet (ex. `devis@votre-domaine.fr`) |
+
+Sans ces variables, rien ne part : l'appli le sait et propose « Copier le message » et « Partager ».
+Pour que les e-mails n'arrivent pas en indésirables, valider le domaine chez Mailjet (SPF et DKIM).
