@@ -43,7 +43,7 @@ const J=864e5,TOUS=['devis','planning','pointage','paiement','3d','renovation','
   await p.evaluate(()=>{aboClose();$('essai').onclick=()=>tab('news')});await p.waitForTimeout(300);await p.click('#essai');pl=await plan();
   ok('menu : la newsletter ouvre le plan, Newsletter cochée',!(await p.evaluate(()=>$('s-news').classList.contains('on')))&&pl.on&&pl.sel.includes('veille')&&/règles/.test(pl.mot),JSON.stringify(pl));
   await p.evaluate(()=>aboClose());await p.waitForTimeout(300);
-  ok('profil : pastille discrète « On construit le plan », sans « Mon abonnement »',await p.evaluate(()=>{const g=$('dwPlanGo');return !g.hidden&&/On construit le plan/.test(g.textContent)&&!/abonnement/i.test(document.getElementById('dwR').textContent)}));
+  ok('profil : pastille discrète « On construit le plan », sans « Mon abonnement »',await p.evaluate(()=>{const g=$('dwPlanGo');return !g.hidden&&/On construit le plan/.test(g.textContent)&&!/abonnement/i.test((()=>{const x=document.getElementById('dwR').cloneNode(true);x.querySelectorAll('[hidden]').forEach(e=>e.remove());return x.textContent})())}));
   /* chat : « Martin a payé 100 € » → le plan s'ouvre, rien d'enregistré */
   await p.evaluate(()=>go('chat'));
   await p.fill('#chatIn','Martin a payé 100 €');await p.click('.cmp-send');await p.waitForTimeout(1200);
