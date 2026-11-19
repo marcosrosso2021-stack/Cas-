@@ -247,6 +247,7 @@ var CVD=(function(){
 (function(){
  var $=function(id){return document.getElementById(id)};
  var token=(location.pathname.match(/[a-f0-9]{32}/)||[])[0];
+ var BASE=location.pathname.replace(/\/[sf]\/[a-f0-9]{32}\/?$/,'');/* espace d'entreprise : /e/<espace> devant l'adresse */
  var app=$('app'),S=null;
  function el(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
  function eur(n){return (Math.round(n*100)/100).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'}
@@ -319,7 +320,7 @@ var CVD=(function(){
   var bt=el('button','sb');bt.type='button';bt.appendChild(ico('send'));bt.appendChild(el('span',null,'Envoyer'));bt.disabled=true;c.appendChild(bt);
   ta.oninput=function(){bt.disabled=ta.value.trim().length<3};
   bt.onclick=function(){er.hidden=true;bt.disabled=true;
-   fetch('/api/s/'+token+'/modif',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({msg:ta.value.trim(),name:q.client||''})})
+   fetch(BASE+'/api/s/'+token+'/modif',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({msg:ta.value.trim(),name:q.client||''})})
     .then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.error||'Erreur');return j})})
     .then(function(j){S=j;render()}).catch(function(e){er.textContent=e.message||'Erreur réseau, réessayez.';er.hidden=false;bt.disabled=false})};
   return c}
@@ -338,7 +339,7 @@ var CVD=(function(){
   nm.oninput=maj;cb.onchange=maj;
   bt.onclick=function(){
    er.hidden=true;bt.disabled=true;bt.lastChild.textContent='Envoi…';
-   fetch('/api/s/'+token+'/sign',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({name:nm.value.trim(),agree:true,img:pad.png()})})
+   fetch(BASE+'/api/s/'+token+'/sign',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({name:nm.value.trim(),agree:true,img:pad.png()})})
     .then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.error||'Erreur');return j})})
     .then(function(j){S=j;PANE=null;render();window.scrollTo(0,0)})
     .catch(function(e){er.textContent=e.message||'Erreur réseau, réessayez.';er.hidden=false;bt.disabled=false;bt.lastChild.textContent='Envoyer'})};
@@ -357,7 +358,7 @@ var CVD=(function(){
    png:function(){var o=document.createElement('canvas');o.width=Math.min(cv.width,900);o.height=Math.round(cv.height*o.width/cv.width);var c=o.getContext('2d');c.fillStyle='#fff';c.fillRect(0,0,o.width,o.height);c.drawImage(cv,0,0,o.width,o.height);return o.toDataURL('image/png')}}}
 
  if(!token){fail('Lien incomplet.');return}
- fetch('/api/s/'+token).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.error||'Lien invalide.');return j})})
+ fetch(BASE+'/api/s/'+token).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.error||'Lien invalide.');return j})})
   .then(function(j){S=j;document.title='Devis '+(j.doc.quote.num||'')+' · '+(j.doc.prof.nom||'');render()})
   .catch(function(e){fail(e.message||'Impossible de charger le devis. Vérifiez votre connexion.')});
 })();

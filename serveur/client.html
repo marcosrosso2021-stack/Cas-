@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Mon espace client</title>
+<!-- casô client final : l'espace du client de l'artisan (lien personnel /c/<jeton>, sans compte).
+     Ses devis (à signer ou signés), ses factures (payé, reste), ses rendez-vous et les rapports de son chantier. -->
+<style>
+:root{--bg:#f2f2ef;--card:#fbfbfa;--ink:#18181a;--mut:#6b6b70;--line:#e2e1dc;--acc:#ffc21a;--ok:#1e7a46;--ko:#b42318;--mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121214;--card:#1b1b1e;--ink:#f1f1ee;--mut:#a3a3a8;--line:#2e2e33;--ok:#4cc38a;--ko:#ff7a6b;color-scheme:dark}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:16px max(16px,env(safe-area-inset-left)) 40px max(16px,env(safe-area-inset-right))}
+main{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px}
+h1{font-size:24px;line-height:1.2;margin:0}
+h2{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin:0 0 10px;display:flex;justify-content:space-between}
+.mut{color:var(--mut)}.sm{font-size:13px}
+.hd{display:flex;gap:14px;align-items:center}
+.hd img{width:56px;height:56px;object-fit:contain;border-radius:12px;background:#fff;border:1px solid var(--line);flex:none}
+.lg{width:56px;height:56px;border-radius:12px;background:var(--acc);display:grid;place-items:center;font-weight:800;font-size:22px;color:#18181a;flex:none}
+.it{padding:12px 0;border-bottom:1px dashed var(--line);display:flex;flex-direction:column;gap:4px}
+.it:last-child{border-bottom:0;padding-bottom:0}.it:first-of-type{padding-top:0}
+.row{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.row b{font-variant-numeric:tabular-nums}
+.num{font-family:var(--mono);font-size:13px;color:var(--mut)}
+.chip{font-size:12.5px;font-weight:600;padding:3px 10px;border-radius:999px;background:color-mix(in srgb,var(--acc) 26%,var(--card));white-space:nowrap}
+.chip.ok{background:color-mix(in srgb,var(--ok) 16%,var(--card));color:var(--ok)}
+.chip.ko{background:color-mix(in srgb,var(--ko) 14%,var(--card));color:var(--ko)}
+.chip.wait{background:var(--line);color:var(--mut)}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;margin-top:6px;border:0;border-radius:14px;background:var(--acc);color:#18181a;font:inherit;font-weight:700;text-decoration:none}
+.btn.sec{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.acts{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.rdv{display:grid;grid-template-columns:62px 1fr;gap:12px;align-items:center;padding:10px 0;border-bottom:1px dashed var(--line)}
+.rdv:last-child{border-bottom:0}
+.dt{text-align:center;border:1px solid var(--line);border-radius:12px;padding:4px 0;line-height:1.15}
+.dt b{display:block;font-size:20px}.dt span{font-size:11px;text-transform:uppercase;color:var(--mut)}
+ul{margin:4px 0 0;padding-left:20px}li{margin:2px 0}
+.lbl{font-size:13px;font-weight:600;margin-top:6px}
+.err{color:var(--ko)}
+.foot{text-align:center;font-size:12px;color:var(--mut)}
+.ic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+</style>
+</head>
+<body>
+<main id="app"><div class="card"><p class="mut">Chargement…</p></div></main>
+<script>
+(function(){
+'use strict';
+var tok=(location.pathname.match(/\/c\/([a-f0-9]{32})\/?$/)||[])[1];
+var BASE=location.pathname.replace(/\/c\/[a-f0-9]{32}\/?$/,'');/* espace d'entreprise : /e/<espace> devant l'adresse */
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function eur(n){return (Math.round((+n||0)*100)/100).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'}
+function dt(s){var d=new Date(String(s)+'T12:00:00');return isNaN(d)?'':d}
+function dFR(s){var d=dt(s);return d?d.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'}):''}
+function hh(t){return t?String(t).replace(':00',' h').replace(':',' h '):''}
+function heures(e){return e.a?(hh(e.a)+(e.b?' – '+hh(e.b):'')):''}
+var I={sign:'<svg class="ic" viewBox="0 0 24 24"><path d="M4 20h16M6 16l9.5-9.5a2.1 2.1 0 0 1 3 3L9 19H6v-3Z"/></svg>',
+ doc:'<svg class="ic" viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7zM14 3v5h5"/></svg>',
+ tel:'<svg class="ic" viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>',
+ mail:'<svg class="ic" viewBox="0 0 24 24"><path d="M3 6h18v12H3zM3 7l9 6 9-6"/></svg>'};
+var ETAT={attente:['À signer',''],modif:['Modification demandée','wait'],signe:['Signé','ok'],expire:['Expiré','ko']};
+function rdvH(e){var d=dt(e.d);return '<div class="rdv"><div class="dt"><b>'+(d?d.getDate():'')+'</b><span>'+(d?d.toLocaleDateString('fr-FR',{month:'short'}):'')+'</span></div><div><div><b>'+esc(e.titre||'Passage')+'</b></div><div class="mut sm">'+esc((d?d.toLocaleDateString('fr-FR',{weekday:'long'}):'')+(e.a?' · '+heures(e):''))+'</div></div></div>'}
+function liste(t,L){return L&&L.length?'<div class="lbl">'+esc(t)+'</div><ul>'+L.map(function(x){return '<li>'+esc(x)+'</li>'}).join('')+'</ul>':''}
+function rendre(v){
+ var E=v.entreprise||{},h=[];
+ h.push('<div class="card"><div class="hd">'+(E.logo?'<img alt="" src="'+esc(E.logo)+'">':'<div class="lg">'+esc((E.nom||'c').charAt(0).toUpperCase())+'</div>')+
+  '<div><div class="mut sm">'+esc(E.nom||'Votre artisan')+'</div><h1>Bonjour '+esc(v.client)+'</h1></div></div>'+
+  (v.adr?'<p class="mut sm" style="margin:10px 0 0">Chantier : '+esc(v.adr)+'</p>':'')+'</div>');
+ var D=v.devis||[];
+ h.push('<div class="card" id="devis"><h2><span>Mes devis</span><span>'+D.length+'</span></h2>'+(D.length?D.map(function(d){var e=ETAT[d.etat]||ETAT.attente;
+  return '<div class="it"><div class="row"><span><b>'+esc(d.titre||('Devis '+d.num))+'</b></span><span class="chip '+e[1]+'">'+e[0]+'</span></div>'+
+   '<div class="row mut sm"><span class="num">'+esc(d.num)+' · '+esc(dFR(d.date))+'</span><b>'+eur(d.ttc)+' TTC</b></div>'+
+   (d.etat==='signe'&&d.signeLe?'<div class="mut sm">Signé le '+esc(new Date(d.signeLe).toLocaleDateString('fr-FR'))+'</div>':'')+
+   '<a class="btn'+(d.etat==='attente'?'':' sec')+'" href="'+esc(d.url)+'">'+(d.etat==='attente'?I.sign+'Lire et signer':I.doc+'Voir le devis')+'</a></div>'}).join(''):'<p class="mut">Aucun devis pour l\'instant.</p>')+'</div>');
+ var F=v.factures||[];
+ if(F.length){var reste=F.reduce(function(a,f){return a+(f.reste||0)},0);
+  h.push('<div class="card" id="factures"><h2><span>Mes factures</span><span>'+(reste>0.005?'Reste à payer '+eur(reste):'Tout est payé')+'</span></h2>'+F.map(function(f){
+   var chip=f.avoir?'<span class="chip wait">Avoir</span>':f.reste>0.005?'<span class="chip'+(f.echeance&&f.echeance<new Date().toISOString().slice(0,10)?' ko':'')+'">Reste '+eur(f.reste)+'</span>':'<span class="chip ok">Payée</span>';
+   return '<div class="it"><div class="row"><span><b>Facture '+esc(f.num)+'</b></span>'+chip+'</div>'+
+    '<div class="row mut sm"><span>'+esc(dFR(f.date))+(f.reste>0.005&&f.echeance?' · à régler avant le '+esc(dFR(f.echeance)):'')+'</span><b>'+eur(f.total)+'</b></div>'+
+    (f.paye&&!f.avoir?'<div class="mut sm">Déjà payé : '+eur(f.paye)+'</div>':'')+
+    (f.url?'<a class="btn sec" href="'+esc(f.url)+'">'+I.doc+'Voir la facture</a>':'')+'</div>'}).join('')+'</div>')}
+ var R=v.rdv||{},A=R.avenir||[],P=R.passes||[];
+ if(A.length||P.length)h.push('<div class="card" id="rdv"><h2><span>Mon chantier</span></h2>'+
+  (A.length?'<div class="lbl">Prochains rendez-vous</div>'+A.map(rdvH).join(''):'<p class="mut sm">Pas de rendez-vous prévu pour l\'instant.</p>')+
+  (P.length?'<div class="lbl" style="margin-top:12px">Derniers passages</div>'+P.map(rdvH).join(''):'')+'</div>');
+ var RP=v.rapports||[];
+ if(RP.length)h.push('<div class="card" id="rapports"><h2><span>Rapports d\'intervention</span><span>'+RP.length+'</span></h2>'+RP.map(function(r){
+  return '<div class="it"><b>'+esc(dFR(r.date))+'</b>'+liste('Travaux réalisés',r.fait)+liste('Observations',r.obs)+liste('Suite prévue',r.suite)+'</div>'}).join('')+'</div>');
+ var C=[];if(E.tel)C.push('<a class="btn sec" href="tel:'+esc(String(E.tel).replace(/[^\d+]/g,''))+'">'+I.tel+'Appeler</a>');
+ if(E.email)C.push('<a class="btn sec" href="mailto:'+esc(E.email)+'">'+I.mail+'Écrire</a>');
+ if(C.length||E.adr)h.push('<div class="card"><h2><span>Contact</span></h2><div><b>'+esc(E.nom)+'</b></div>'+(E.adr?'<div class="mut sm">'+esc(E.adr)+'</div>':'')+(C.length?'<div class="acts" style="margin-top:8px">'+C.join('')+'</div>':'')+'</div>');
+ h.push('<p class="foot">Espace client · casô<br>Ce lien est personnel : ne le partagez pas.</p>');
+ $('app').innerHTML=h.join('')}
+if(!tok){$('app').innerHTML='<div class="card"><p class="err">Lien incomplet.</p></div>';return}
+fetch(BASE+'/api/c/'+tok,{cache:'no-store'}).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.error||'Erreur.');return j})})
+ .then(rendre,function(e){$('app').innerHTML='<div class="card"><h1>Espace client</h1><p class="err">'+esc(e.message||'Connexion impossible. Réessayez.')+'</p></div>'});
+})();
+</script>
+</body>
+</html>

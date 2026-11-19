@@ -71,11 +71,8 @@ newsletter (qui ne sert à rien d'autre) n'est pas chargé quand le module n'est
 - **Pointage** : ajouter un chantier ou une personne dans l'écran Pointage n'est pas verrouillé.
 
 ## Prochaines étapes (demandées)
-- **Clés Mailjet sur l'hébergement** : `MJ_APIKEY_PUBLIC`, `MJ_APIKEY_PRIVATE`, `MAIL_FROM` (voir serveur/LISEZ-MOI.md), et domaine validé (SPF, DKIM).
-  Sans elles, l'envoi par e-mail reste caché et l'appli propose Copier le message / Partager.
-- **casô collaborateur** : l'appli du collaborateur invité (son pointage, ses heures, ses paiements). Il faut d'abord un espace
-  d'équipe par entreprise sur le serveur casô (aujourd'hui un seul espace, « e1 ») pour rejoindre son patron à distance.
-- **casô client final** : l'espace du client (ses devis, factures, suivi du chantier). La page de signature refaite en est le début.
+- **Fait (19 nov. 2026)** : Mailjet en place sur casobtp.fr ; casô collaborateur (un espace d'équipe par entreprise, écran du collaborateur) ;
+  casô client final (espace du client : lien personnel depuis sa fiche, devis à signer ou signés, factures, rendez-vous, rapports).
 - **E-mail rédigé par une vraie IA** : aujourd'hui rédigé sur le téléphone à partir du devis ; une IA en ligne (Claude) demanderait une clé.
 - **Signature des devis et numéros de facture contrôlés par le serveur** selon l'abonnement (avec Stripe).
 - **Pointage** : ajouter un chantier ou une personne n'est pas verrouillé par l'abonnement.

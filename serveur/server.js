@@ -79,10 +79,10 @@ function createServer(opts={}){
   if(raw!==null){let d;try{d=JSON.parse(raw)}catch(e){const bad=FILE+'.illisible-'+Date.now();try{fs.renameSync(FILE,bad)}catch(_){}
     throw new Error('Le fichier de données est illisible. Il a été mis de côté ('+path.basename(bad)+') et rien n\'a été écrasé. Restaure une sauvegarde avant de relancer.')}
    data=Object.assign(data,d)}}
- for(const k of ['users','tokens','invites','recs','signs','sigreg','invShares','ics','invSeq','remSent'])if(data[k]&&typeof data[k]==='object')Object.setPrototypeOf(data[k],null);
+ for(const k of ['users','tokens','invites','recs','signs','sigreg','invShares','ics','invSeq','remSent','cliLiens'])if(data[k]&&typeof data[k]==='object')Object.setPrototypeOf(data[k],null);
  COLL.forEach(c=>{if(!data.recs[c])data.recs[c]=Object.create(null);else Object.setPrototypeOf(data.recs[c],null)});
  if(!data.invIds)data.invIds={};
- if(!data.signs)data.signs={};if(!data.sigreg)data.sigreg=Object.create(null);if(!data.subs)data.subs=[];if(!data.remSent)data.remSent={};if(!data.invSeq)data.invSeq={};if(!data.invShares)data.invShares={};if(!data.ics)data.ics={};
+ if(!data.signs)data.signs={};if(!data.sigreg)data.sigreg=Object.create(null);if(!data.subs)data.subs=[];if(!data.remSent)data.remSent={};if(!data.invSeq)data.invSeq={};if(!data.invShares)data.invShares={};if(!data.ics)data.ics={};if(!data.cliLiens)data.cliLiens=Object.create(null);
  if(!data.vapid){data.vapid=webpush.vapidKeys();try{const t=FILE+'.tmp';fs.writeFileSync(t,JSON.stringify(data));fs.renameSync(t,FILE)}catch(e){}}
  const auth=opts.authInst||authLib.creer(Object.assign({dir:DIR,hosted:HOSTED,maintenant:opts.maintenant},opts.auth||{}));
  const mail=opts.mail||mailLib.creer();// e-mails (Mailjet) : devis envoyés au client// comptes des usagers : connexion Google / Microsoft (module AUTH)
@@ -153,6 +153,7 @@ function createServer(opts={}){
  const SIGNER=opts.signerFile||path.join(__dirname,'signer.html');
  const VERIF=opts.verifFile||path.join(__dirname,'verif.html');
  const FACTURE=opts.factureFile||path.join(__dirname,'facture.html');
+ const CLIENT=opts.clientFile||path.join(__dirname,'client.html');
 
  function tidy(){const now=Date.now();
   for(const t in data.tokens)if(data.tokens[t].exp<now)delete data.tokens[t];
@@ -190,6 +191,42 @@ function createServer(opts={}){
    distant.erreur=null;return true}
   catch(e){distant.erreur=String(e&&e.message||e).slice(0,200);console.error('[casô] copie de la sauvegarde hors du serveur',distant.erreur);return false}}
  /* Une sauvegarde par jour, gardée 14 jours (plus la dernière de chaque mois, 6 mois). Seul le serveur qui a la main en fait. */
+ /* ---------- espace du client : ce que le client a le droit de voir ---------- */
+ const nomCle=n=>String(n||'').replace(/^(m\.|mme|mlle|monsieur|madame|mr|mrs)\s+/i,'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\u0400-\u04ff\u0600-\u06ff]+/g,' ').trim();
+ const r2=x=>Math.round((+x||0)*100)/100;
+ function totDoc(o,net){const r=(+o.remise||0)/100;let ht=0,tva=0;
+  for(const l of Array.isArray(o.lines)?o.lines:[]){const m=r2((+l.qty||0)*(+l.pu||0)*(1-r));ht+=m;tva+=o.franchise||o.autoliq?0:m*(+l.tva||0)/100}
+  const ttc=r2(r2(ht)+r2(tva));if(!net)return ttc;
+  const ded=(Array.isArray(o.ded)?o.ded:[]).reduce((a,d)=>a+(+d.ttc||0),0);return r2(ttc-ded-r2(ttc*(+o.ret||0)/100))}
+ function vueClient(L,req){
+  const c=data.recs.clients[L.cid];if(!c)return null;const k=nomCle(c.nom),aLui=(cid,nom)=>cid?cid===L.cid:!!k&&nomCle(nom)===k;
+  const pr=data.recs.prof&&data.recs.prof.prof&&data.recs.prof.prof.v||{},T=String(pr.logo||'');
+  const auj=new Date().toISOString().slice(0,10),base=baseUrl(req);
+  /* devis : ceux que l'artisan a envoyés (lien de signature), le plus récent par devis */
+  const D=new Map();
+  for(const sg of Object.values(data.signs)){const dq=sg&&sg.doc&&sg.doc.quote;if(!dq||!['sent','signed'].includes(sg.status)||!aLui(null,dq.client))continue;
+   const id=dq.id||sg.token,o=D.get(id);if(o&&o.le>sg.sentAt)continue;
+   D.set(id,{le:sg.sentAt||0,num:String(dq.num||''),date:String(dq.date||''),titre:String(dq.titre||'').slice(0,120),ttc:totDoc(dq),
+    etat:sg.status==='signed'?'signe':sg.expires&&Date.now()>sg.expires?'expire':(sg.modifs&&sg.modifs.length?'modif':'attente'),
+    signeLe:sg.client&&sg.client.at||null,url:base+'/s/'+sg.token})}
+  /* factures émises (numérotées) : total, payé, reste ; lien si l'artisan l'a partagée */
+  const parts=Object.create(null);for(const t of Object.keys(data.invShares))parts[data.invShares[t].id]=t;
+  const F=Object.values(data.recs.invoices).filter(f=>f&&f.num&&aLui(f.cid,f.client&&f.client.nom)).map(f=>{
+   const P=(Array.isArray(f.pays)?f.pays:[]).filter(p=>p&&typeof p==='object');/* une annulation est un paiement négatif (comme faPaidReal dans l'appli) */
+   const paye=r2(P.reduce((a,p)=>a+(+p.amt||0),0)),tot=totDoc(f,true);
+   return{num:String(f.num),date:String(f.date||''),avoir:f.kind==='avoir',total:tot,paye,reste:f.kind==='avoir'?0:Math.max(0,r2(tot-paye)),echeance:f.due||null,url:parts[f.id]?base+'/f/'+parts[f.id]:null}})
+   .sort((a,b)=>b.date.localeCompare(a.date)).slice(0,30);
+  /* rendez-vous du chantier : à venir et derniers passages (date, heures, objet) */
+  const R=Object.values(data.recs.events).filter(e=>e&&e.t==='rdv'&&e.d&&aLui(e.cid,e.cid?'':e.client)).map(e=>({d:e.d,a:e.a||null,b:e.b||null,titre:String(e.title||'').slice(0,120)}));
+  const avenir=R.filter(e=>e.d>=auj).sort((a,b)=>(a.d+(a.a||'')).localeCompare(b.d+(b.a||''))).slice(0,10);
+  const passes=R.filter(e=>e.d<auj).sort((a,b)=>(b.d+(b.a||'')).localeCompare(a.d+(a.a||''))).slice(0,6);
+  /* rapports d'intervention */
+  const Lst=v=>(Array.isArray(v)?v:[]).slice(0,30).map(x=>String(x).slice(0,400));
+  const rap=Object.values(data.recs.rapports).filter(r=>r&&r.date&&aLui(r.cid,r.client)).sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,10)
+   .map(r=>({date:r.date,fait:Lst(r.r&&r.r.fait),obs:Lst(r.r&&r.r.obs),suite:Lst(r.r&&r.r.suite)}));
+  return{client:String(c.nom||''),adr:String(c.adr||''),
+   entreprise:{nom:String(pr.nom||'').slice(0,120),tel:String(pr.tel||'').slice(0,40),email:String(pr.email||'').slice(0,120),adr:String(pr.adr||'').slice(0,200),logo:/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(T)&&T.length<400000?T:null},
+   devis:[...D.values()].sort((a,b)=>b.le-a.le).map(({le,...x})=>x),factures:F,rdv:{avenir,passes},rapports:rap}}
  let svEnCours=null;
  function sauvegarder(force){
   if(cede)return Promise.resolve(null);
@@ -591,6 +628,16 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
       return send(res,200,{cert:{name,at:sh.cert.at}})}
      return send(res,405,{error:'méthode'})}}
 
+   /* espace du client (casô client final) : un lien personnel par client, sans compte ni mot de passe.
+      Il voit ses devis (à signer ou signés), ses factures (payé, reste), ses prochains rendez-vous et les rapports de son chantier.
+      Rien d'autre : ni prix d'achat, ni notes, ni autres clients. */
+   if(req.method==='GET'&&/^\/c\/[a-f0-9]{32}$/.test(url)){
+    let html;try{html=fs.readFileSync(CLIENT,'utf8')}catch(e){return send(res,404,{error:'client.html introuvable'})}
+    res.writeHead(200,Object.assign({'content-type':'text/html; charset=utf-8','cache-control':'no-store','x-robots-tag':'noindex','content-security-policy':CSP_PUB},SEC));return res.end(html)}
+   {const mc=req.method==='GET'&&url.match(/^\/api\/c\/([a-f0-9]{32})$/);
+    if(mc){const L=data.cliLiens[mc[1]],v=L&&vueClient(L,req);if(!v)return send(res,404,{error:'Ce lien n\'existe plus. Demandez-en un nouveau à l\'entreprise.'});
+     if(!L.vu){L.vu=Date.now();persist().catch(()=>{})}return send(res,200,v)}}
+
    /* page de signature du client et service de notifications */
    if(req.method==='GET'&&/^\/s\/[a-f0-9]{32}$/.test(url)){
     let html;try{html=fs.readFileSync(SIGNER,'utf8')}catch(e){return send(res,404,{error:'signer.html introuvable'})}
@@ -838,7 +885,7 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
      if(!(await checkPw(user,String(b.password||'')))){return send(res,403,{error:'Mot de passe du serveur incorrect.'})}
      const keep={vapid:data.vapid,invSeq:data.invSeq};
      data={rev:(data.rev||0)+1,counter:0,users:Object.create(null),tokens:Object.create(null),invites:Object.create(null),recs:Object.create(null),tombs:[],signs:Object.create(null),sigreg:Object.create(null),subs:[],
-      invShares:Object.create(null),ics:Object.create(null),invSeq:Object.assign(Object.create(null),keep.invSeq||{}),invIds:{},remSent:Object.create(null),vapid:keep.vapid};
+      invShares:Object.create(null),cliLiens:Object.create(null),ics:Object.create(null),invSeq:Object.assign(Object.create(null),keep.invSeq||{}),invIds:{},remSent:Object.create(null),vapid:keep.vapid};
      COLL.forEach(c=>{data.recs[c]=Object.create(null)});
      await persist();return send(res,200,{ok:true,scope:'entreprise'})}
     delete data.users[me];
@@ -874,6 +921,16 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
     data.invShares[tok].doc=doc;data.invShares[tok].upd=Date.now();await persist();
     const sh=data.invShares[tok];
     return send(res,200,{url:baseUrl(req)+'/f/'+tok,token:tok,viewedAt:sh.viewedAt||null,cert:sh.cert?{name:sh.cert.name,at:sh.cert.at}:null})}
+
+   /* lien de l'espace client : toujours le même pour un client (« nouveau » en donne un autre et coupe l'ancien) */
+   if(POST&&url==='/api/client/lien'){
+    if(user.role==='ouvrier')return send(res,403,{error:'Réservé au patron et au chef.'});
+    const b=await readBody(req),cid=String(b.cid||'');if(!/^[\w-]{1,64}$/.test(cid))return send(res,400,{error:'Client inconnu.'});
+    if(!data.recs.clients[cid])return send(res,404,{error:'Synchronise d\'abord ce client.'});
+    let tok=Object.keys(data.cliLiens).find(k=>data.cliLiens[k].cid===cid);
+    if(tok&&b.nouveau===true){delete data.cliLiens[tok];tok=null}
+    if(!tok){tok=crypto.randomBytes(16).toString('hex');data.cliLiens[tok]={cid,at:Date.now(),par:user.name};await persist()}
+    return send(res,200,{url:baseUrl(req)+'/c/'+tok,token:tok,vu:data.cliLiens[tok].vu||null})}
 
    /* numéro de facture : suite continue, sans trou ni doublon, tenue par le serveur */
    if(POST&&url==='/api/inv/next'){
