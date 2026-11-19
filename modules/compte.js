@@ -83,7 +83,6 @@ function acCheck(d){
  if(d.co&&d.siren&&(!sirenOk(d.siren)||(d.siret&&d.siret.slice(0,9)!==d.siren)))return['acNom','Ce numéro ne semble pas valide : vérifie-le.'];
  if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(d.email))return['acMail','E-mail invalide.'];
  if(d.pass.length<8)return['acPass','8 caractères minimum.'];
- if(!d.cgu)return['acCgu','Accepte les conditions et la politique de confidentialité pour créer ton compte.'];
  return null}
 async function accountCreate(d){
  const salt=crypto.getRandomValues(new Uint8Array(16)),iter=ACC_ITER();
@@ -106,18 +105,18 @@ async function acSubmit(){
  if(acBusy)return;
  const v=$('acNom').value.trim(),num=v.replace(/\D/g,'').length>=9,co=!$('acCo').hidden;
  const ent=co?$('acCoNom').value.trim():v;
- const d={prenom:co?(acLook.dir||ent):v,ent,email:$('acMail').value.trim(),pass:$('acPass').value,num,co,siren:co?$('acCoSiren').value.replace(/\D/g,''):'',siret:co?$('acCoSiret').value.replace(/\D/g,''):'',cgu:$('acCgu').checked};
+ const d={prenom:co?(acLook.dir||ent):v,ent,email:$('acMail').value.trim(),pass:$('acPass').value,num,co,siren:co?$('acCoSiren').value.replace(/\D/g,''):'',siret:co?$('acCoSiret').value.replace(/\D/g,''):''};
  document.querySelectorAll('#acForm input').forEach(i=>i.removeAttribute('aria-invalid'));
  const bad=acCheck(d);
- if(bad){$('acErr').textContent=i18nT(bad[1]);$('acErr').hidden=false;const f=$(bad[0]);f.setAttribute('aria-invalid','true');if(bad[0]==='acCgu')f.closest('label').classList.add('bad');f.focus();return}
+ if(bad){$('acErr').textContent=i18nT(bad[1]);$('acErr').hidden=false;const f=$(bad[0]);f.setAttribute('aria-invalid','true');f.focus();return}
  /* notifications : la demande part tout de suite (le téléphone ne la montre que pendant l'appui), l'abonnement après la création */
- const notifP=$('acNotif').checked&&window.Notification&&Notification.permission==='default'?Notification.requestPermission().catch(()=>'default'):Promise.resolve(window.Notification?Notification.permission:'default');
+ const notifP=window.Notification&&Notification.permission==='default'?Notification.requestPermission().catch(()=>'default'):Promise.resolve(window.Notification?Notification.permission:'default');
  acBusy=true;const btn=$('acGo');btn.disabled=true;btn.textContent='…';
  try{await accountCreate(d);if(co){db.prof=Object.assign({},db.prof||{},{adr:$('acCoAdr').value.trim(),siren:d.siren||d.siret.slice(0,9),siret:$('acCoSiret').value.replace(/\s/g,''),forme:$('acCoForme').value,tvai:$('acCoTva').value.replace(/\s/g,'').toUpperCase()});db.profAt=Date.now();save()}}
  catch(e){$('acErr').textContent="Impossible d'enregistrer sur ce téléphone.";$('acErr').hidden=false;acBusy=false;btn.disabled=false;btn.textContent='Créer mon compte';return}
  $('acPass').value='';fillProf();renderAcct();bkSet('devis_welcomed',1);
- {const a=accountGet();if(a){a.cgu={v:'2026-11-19',at:Date.now()};a.notif=$('acNotif').checked;accountPut(a)}}
- notifP.then(p=>{if(p==='granted'&&$('acNotif').checked&&typeof newsNotif==='function')newsNotif()});
+ {const a=accountGet();if(a){a.cgu={v:'2026-11-19',at:Date.now()};a.notif=true;accountPut(a)}}
+ notifP.then(p=>{if(p==='granted'&&typeof newsNotif==='function')newsNotif()});
  try{ONB.code=await rcSet()}catch(e){ONB.code=null}
  acBusy=false;btn.disabled=false;btn.textContent=i18nT('Créer mon compte');modeOpen(false)}
 function renderAcct(){const a=accountGet(),c=$('acctCard');if(!c)return;c.hidden=!a;bioRender()}

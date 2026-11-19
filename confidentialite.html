@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Confidentialité · casô</title>
+<title>Politique de confidentialité · casô</title>
 <style>
 :root{--bg:#f2f2ef;--card:#fbfbfa;--ink:#18181a;--mut:#6b6b70;--line:#e2e1dc;--acc:#ffc21a}
 @media (prefers-color-scheme:dark){:root{--bg:#121214;--card:#1b1b1e;--ink:#f1f1ee;--mut:#a3a3a8;--line:#2e2e33}}
@@ -11,48 +11,222 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 ui-sans-serif,
 main{max-width:720px;margin:0 auto;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px 20px}
 h1{font-size:24px;margin:0 0 4px}h2{font-size:17px;margin:24px 0 6px}p,li{margin:0 0 8px}.mut{color:var(--mut);font-size:14px}a{color:inherit}
 .todo{background:color-mix(in srgb,var(--acc) 22%,var(--card));border-radius:10px;padding:10px 12px;font-size:14px}
+.tw{overflow-x:auto;margin:0 0 12px}table{border-collapse:collapse;width:100%;font-size:14px}th,td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}th{color:var(--mut);font-weight:600}h3{font-size:15px;margin:18px 0 4px}nav{display:flex;gap:16px;flex-wrap:wrap;margin-top:28px;font-size:14px}
 </style>
 </head>
 <body><main>
 <h1>Politique de confidentialité</h1>
 <p class="mut">Version du 19 novembre 2026</p>
-<p class="todo">Projet à faire relire par un juriste avant la mise en ligne. Les passages entre crochets sont à compléter.</p>
-
-<h2>Qui est responsable</h2>
-<p>[Raison sociale], [forme juridique], [adresse], SIREN [numéro], éditeur de casô. Contact pour vos données : [adresse e-mail].</p>
-
-<h2>Ce que casô garde, et où</h2>
+<p class="todo">Projet à faire valider par un juriste avant la mise en service payante. Les passages entre crochets sont à compléter ; les fonctions « prévues » ne s'appliquent qu'à leur mise en service.</p>
+<p>casô garde l'essentiel des données sur le téléphone de l'Utilisateur, chiffrées. Le serveur ne garde que ce qui doit être partagé ou prouvé. casô ne vend aucune donnée et n'affiche aucune publicité.</p>
+<h2>1. Qui est responsable</h2>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Données</th>
+<th>Rôle de l'Éditeur</th>
+<th>Responsable du traitement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Compte, essai, abonnement, sécurité du service</td>
+<td>Responsable du traitement</td>
+<td>L'Éditeur</td>
+</tr>
+<tr>
+<td>Clients finaux, fournisseurs, Collaborateurs de l'Artisan</td>
+<td>Sous-traitant (article 28 du RGPD)</td>
+<td>L'Artisan</td>
+</tr>
+</tbody>
+</table></div>
+<p>L'Artisan décide pourquoi il traite les données de ses clients, fournisseurs et Collaborateurs ; casô les traite pour son compte (<a href="https://www.cnil.fr/fr/rgpd-comment-bien-identifier-son-role">CNIL</a>). Un accord de sous-traitance est annexé aux conditions [annexe à rédiger].</p>
+<p>Contact pour les données : contact@casobtp.fr · [adresse postale].</p>
+<h2>2. Données traitées</h2>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Données</th>
+<th>Où</th>
+<th>Pourquoi</th>
+<th>Base légale</th>
+<th>Durée</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Compte : e-mail, prénom, mode, nom de l'entreprise, SIRET, date d'acceptation des conditions</td>
+<td>Serveur et téléphone</td>
+<td>Ouvrir et gérer le compte, l'essai, l'abonnement</td>
+<td>Contrat</td>
+<td>Jusqu'à la suppression du compte</td>
+</tr>
+<tr>
+<td>Empreintes de l'identifiant et du SIRET (SHA-256)</td>
+<td>Serveur</td>
+<td>N'accorder l'essai qu'une fois</td>
+<td>Intérêt légitime</td>
+<td>Après suppression du compte : [durée à fixer]</td>
+</tr>
+<tr>
+<td>Mot de passe</td>
+<td>Téléphone, sous forme d'empreinte (PBKDF2, 600 000 itérations)</td>
+<td>Vérifier l'accès</td>
+<td>Contrat</td>
+<td>Jusqu'à la suppression du compte</td>
+</tr>
+<tr>
+<td>Clients finaux : nom, coordonnées, adresse du chantier, devis, factures</td>
+<td>Téléphone (Coffre) ; serveur si partagé avec l'équipe</td>
+<td>Devis, factures, planning</td>
+<td>Pour l'Artisan : contrat avec son client</td>
+<td>Choisie par l'Artisan ; factures : 10 ans (obligation de l'Artisan)</td>
+</tr>
+<tr>
+<td>Signature d'un devis : nom, image de la signature, date, adresse IP, navigateur</td>
+<td>Serveur</td>
+<td>Preuve de l'accord du Client final</td>
+<td>Pour l'Artisan : contrat et obligation de preuve</td>
+<td>[Durée du devis + 5 ans, à valider]</td>
+</tr>
+<tr>
+<td>E-mail d'envoi d'un devis : destinataire, date, remise, ouverture, réponse</td>
+<td>Serveur</td>
+<td>Suivi de l'envoi</td>
+<td>Pour l'Artisan : intérêt légitime</td>
+<td>Comme la signature du devis</td>
+</tr>
+<tr>
+<td>Fournisseurs : nom, coordonnées, factures d'achat, prix</td>
+<td>Téléphone (lecture des factures sur le téléphone)</td>
+<td>Prix, achats, hausses</td>
+<td>Pour l'Artisan : intérêt légitime</td>
+<td>Choisie par l'Artisan</td>
+</tr>
+<tr>
+<td>Collaborateurs : nom, téléphone, e-mail, rôle, heures, sommes versées</td>
+<td>Téléphone ; serveur pour l'équipe</td>
+<td>Équipe, pointage, paiements</td>
+<td>Pour l'Artisan : contrat de travail ou de prestation</td>
+<td>Choisie par l'Artisan</td>
+</tr>
+<tr>
+<td>Pointage : heures d'arrivée et de départ par chantier</td>
+<td>Téléphone ; serveur pour l'équipe</td>
+<td>Heures passées</td>
+<td>Pour l'Artisan : intérêt légitime</td>
+<td>Choisie par l'Artisan</td>
+</tr>
+<tr>
+<td>Recherche de prix : mot cherché, nombre de recherches du mois</td>
+<td>Serveur</td>
+<td>Prix en ligne, limite de 300</td>
+<td>Contrat</td>
+<td>Cache 12 h ; compteur au mois</td>
+</tr>
+<tr>
+<td>Tournures apprises par le chat, identifiant d'appareil aléatoire</td>
+<td>Serveur</td>
+<td>Améliorer le chat</td>
+<td>Intérêt légitime</td>
+<td>[Durée à fixer]</td>
+</tr>
+<tr>
+<td>Abonnement aux notifications du téléphone</td>
+<td>Serveur</td>
+<td>Envoyer les notifications</td>
+<td>Consentement</td>
+<td>Jusqu'au retrait de l'accord</td>
+</tr>
+<tr>
+<td>Données de paiement</td>
+<td>Chez le prestataire de paiement [prévu]</td>
+<td>Payer l'abonnement</td>
+<td>Contrat ; obligation comptable</td>
+<td>Selon le prestataire ; factures : 10 ans</td>
+</tr>
+</tbody>
+</table></div>
+<p>Les tournures partagées par le chat sont filtrées sur le téléphone : seules partent des phrases de 2 à 14 mots courants, sans nom, nombre ni donnée personnelle.</p>
+<h2>3. Position du téléphone</h2>
 <ul>
-<li><b>Sur votre téléphone</b>, chiffré par votre mot de passe (coffre) : vos clients, devis, factures, planning, pointages, photos, notes et signature.</li>
-<li><b>Sur le serveur casô</b> (hébergé chez Clever Cloud, en France) : votre compte (e-mail, prénom, mode, nom de l'entreprise, SIRET), votre essai et votre abonnement ; et, si vous utilisez un espace d'équipe, les données partagées avec votre équipe.</li>
-<li><b>Les devis envoyés pour signature</b> : le devis, les signatures, la date et l'adresse IP de la signature, pour servir de preuve.</li>
+<li>La position n'est lue que si l'Utilisateur l'autorise, pour le pointage automatique.</li>
+<li>Sur le site, elle n'est lue que lorsque casô est ouvert. Dans l'appli installée, le téléphone signale l'entrée et la sortie des zones de 100 m autour des chantiers prévus.</li>
+<li>Les positions ne sont pas envoyées au serveur : seules les heures d'arrivée et de départ sont gardées.</li>
+<li>L'adresse d'un chantier est convertie en position par la Géoplateforme de l'IGN.</li>
 </ul>
-
-<h2>Pourquoi</h2>
+<p><strong>Obligation de l'Artisan employeur.</strong> Il informe chaque salarié individuellement et à l'avance. Le contrôle du temps de travail par géolocalisation n'est admis que s'il ne peut être fait autrement, et jamais pour un salarié libre de ses horaires (<a href="https://www.capeb.fr/actualites/utilisation-de-la-geolocalisation">CAPEB, d'après la CNIL</a>).</p>
+<h2>4. Prestataires</h2>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Prestataire</th>
+<th>Rôle</th>
+<th>Données transmises</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Clever Cloud (France)</td>
+<td>Hébergement du serveur et des sauvegardes chiffrées</td>
+<td>Toutes les données du serveur</td>
+</tr>
+<tr>
+<td>Mailjet</td>
+<td>Envoi des devis par e-mail, suivi, réponses</td>
+<td>E-mail du destinataire, texte, lien du devis</td>
+</tr>
+<tr>
+<td>Google, Microsoft</td>
+<td>Connexion au compte, au choix de l'Utilisateur</td>
+<td>Identifiant, e-mail, prénom</td>
+</tr>
+<tr>
+<td>Répertoire des entreprises (recherche-entreprises.api.gouv.fr)</td>
+<td>Contrôle du SIRET</td>
+<td>Numéro SIRET ou SIREN</td>
+</tr>
+<tr>
+<td>Géoplateforme de l'IGN</td>
+<td>Adresse vers position</td>
+<td>Adresse du chantier</td>
+</tr>
+<tr>
+<td>SearchApi.io ou SerpApi</td>
+<td>Prix des matériaux en ligne</td>
+<td>Mot cherché et pays, sans donnée personnelle</td>
+</tr>
+<tr>
+<td>Apple, Google, Mozilla</td>
+<td>Notifications du téléphone</td>
+<td>Adresse de notification de l'appareil</td>
+</tr>
+<tr>
+<td>[Stripe] (prévu)</td>
+<td>Paiement de l'abonnement</td>
+<td>Identité, e-mail, moyen de paiement</td>
+</tr>
+</tbody>
+</table></div>
+<p>Certains prestataires peuvent traiter des données hors de l'Union européenne. [Garanties à vérifier pour chacun : décision d'adéquation, Data Privacy Framework ou clauses contractuelles types.]</p>
+<h2>5. Sécurité</h2>
 <ul>
-<li>Faire fonctionner casô (devis, factures, planning, pointage, équipe) : exécution du contrat.</li>
-<li>Garder les factures et les preuves de signature : obligation légale (factures : 10 ans).</li>
-<li>Vous envoyer des notifications et la newsletter réglementaire : seulement si vous l'acceptez, et vous pouvez l'arrêter à tout moment dans les réglages du téléphone.</li>
+<li>Coffre du téléphone chiffré en AES-256-GCM, clé dérivée du mot de passe ou protégée par Face ID ou l'empreinte.</li>
+<li>Fichier de sauvegarde de l'Utilisateur chiffré par un mot de passe qu'il choisit.</li>
+<li>Sauvegarde quotidienne du serveur, compressée puis chiffrée (AES-256-GCM), copiée hors du serveur. Conservation : 14 jours, plus la dernière de chaque mois pendant 6 mois.</li>
+<li>Sessions et jetons de connexion gardés sous forme d'empreintes. Session de 90 jours, prolongée à l'usage.</li>
+<li>Une donnée supprimée du serveur peut subsister dans les sauvegardes chiffrées jusqu'à 6 mois.</li>
 </ul>
-
-<h2>Position du téléphone (pointage)</h2>
-<p>Le pointage automatique lit la position seulement si vous l'autorisez. Sur le site casô, la position n'est lue que lorsque casô est ouvert. Dans l'appli installée, le téléphone signale l'entrée et la sortie des zones de vos chantiers (100 m). Les positions elles-mêmes ne sont pas envoyées au serveur : seules les heures d'arrivée et de départ sont gardées.</p>
-
-<h2>Services utilisés</h2>
+<h2>6. Traceurs</h2>
+<p>casô n'utilise ni cookie publicitaire ni outil de mesure d'audience. Il garde sur l'appareil les seules données nécessaires à son fonctionnement (session, langue, réglages, données hors ligne), qui ne demandent pas de consentement.</p>
+<h2>7. Droits</h2>
+<p>Toute personne peut accéder à ses données, les corriger, les effacer, en obtenir une copie, s'opposer à un traitement ou en demander la limitation, à contact@casobtp.fr. Réponse sous un mois.</p>
 <ul>
-<li>Mailjet (envoi des devis par e-mail, suivi de leur réception, réponses des clients).</li>
-<li>Google et Microsoft, si vous choisissez de vous connecter avec eux (identifiant, e-mail, prénom).</li>
-<li>Géoplateforme de l'IGN (adresse d'un chantier vers sa position, pour le pointage).</li>
-<li>Service de prix en ligne (recherche de prix des matériaux : seul le mot cherché est envoyé).</li>
-<li>Services de notification d'Apple, Google ou Mozilla, pour les notifications du téléphone.</li>
+<li><strong>Utilisateur</strong> : copie par Profil › Sauvegarde ; effacement par Profil › Supprimer mon compte, sauf ce que la loi oblige à garder.</li>
+<li><strong>Client final, fournisseur ou Collaborateur</strong> : la demande s'adresse à l'Artisan, responsable de ses données. casô l'aide à y répondre.</li>
+<li><strong>Réclamation</strong> : auprès de la CNIL (cnil.fr).</li>
 </ul>
-<p>casô ne vend aucune donnée et n'affiche pas de publicité de tiers.</p>
-
-<h2>Combien de temps</h2>
-<p>Votre compte est gardé tant que vous l'utilisez. Vous pouvez le supprimer à tout moment (Profil › Supprimer mon compte) : le compte et les données du serveur sont effacés, sauf ce que la loi oblige à garder (factures, preuves de signature).</p>
-
-<h2>Vos droits</h2>
-<p>Vous pouvez accéder à vos données, les corriger, les supprimer, les télécharger (Sauvegarde), vous opposer à un traitement ou en demander la limitation, en écrivant à [adresse e-mail]. Vous pouvez aussi saisir la CNIL (cnil.fr).</p>
-
-<p class="mut"><a href="conditions.html">Conditions d'utilisation</a> · <a href="./">Retour à casô</a></p>
-</main></body></html>
+<nav><a href="conditions.html">Conditions d'utilisation et de vente</a><a href="./">Retour à casô</a></nav>
+</main></body>
+</html>
