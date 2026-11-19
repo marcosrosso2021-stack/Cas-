@@ -1753,10 +1753,12 @@ body.role-ouvrier [data-pat]{display:none!important}
   <p id="acCoSt" class="ac-cost" data-noi18n hidden role="status"></p>
   <div id="acCo" class="ac-co" hidden>
    <label for="acCoNom">Entreprise</label><input id="acCoNom" autocapitalize="words">
+   <div hidden>
    <label for="acCoAdr">Adresse</label><input id="acCoAdr" autocomplete="street-address">
    <div class="row"><div style="flex:.7"><label for="acCoSiren">SIREN</label><input id="acCoSiren" inputmode="numeric" maxlength="11" data-noi18n oninput="sirSync(this,'acCoSiret')"></div><div><label for="acCoSiret">SIRET</label><input id="acCoSiret" inputmode="numeric" data-noi18n oninput="sirSync(this,'acCoSiren')"></div></div>
    <label for="acCoForme">Forme juridique</label><select id="acCoForme"><option value="">—</option><option value="EI">Entrepreneur individuel (EI)</option><option value="micro">Micro-entrepreneur (EI)</option><option value="EURL">EURL</option><option value="SARL">SARL</option><option value="SAS">SAS</option><option value="SASU">SASU</option></select>
    <label for="acCoTva">N° TVA intracommunautaire</label><input id="acCoTva" autocapitalize="characters" data-noi18n>
+   </div>
   </div>
   <label for="acMail">E-mail</label><input id="acMail" type="email" inputmode="email" autocomplete="email" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="next">
   <label for="acPass">Mot de passe</label><div class="pw"><input id="acPass" type="password" autocomplete="new-password" placeholder="8 caractères minimum" enterkeyhint="done"><button type="button" class="pw-eye" aria-label="Afficher le mot de passe" aria-pressed="false" onclick="pwEye(this,'acPass')"><svg class="i" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></svg></button></div>

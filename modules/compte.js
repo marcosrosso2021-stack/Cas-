@@ -80,7 +80,7 @@ function acCheck(d){
  if(d.num&&!d.co)return['acNom','Recherche de ton entreprise en cours, patiente une seconde.'];
  if(!d.co&&d.prenom.length<2)return['acNom','Écris ton nom ou ton numéro SIRET.'];
  if(d.co&&d.ent.length<2)return['acCoNom',"Écris le nom de ton entreprise."];
- if(d.co&&d.siren&&(!sirenOk(d.siren)||(d.siret&&d.siret.slice(0,9)!==d.siren)))return['acCoSiren','Ce numéro ne semble pas valide : vérifie-le.'];
+ if(d.co&&d.siren&&(!sirenOk(d.siren)||(d.siret&&d.siret.slice(0,9)!==d.siren)))return['acNom','Ce numéro ne semble pas valide : vérifie-le.'];
  if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(d.email))return['acMail','E-mail invalide.'];
  if(d.pass.length<8)return['acPass','8 caractères minimum.'];
  if(!d.cgu)return['acCgu','Accepte les conditions et la politique de confidentialité pour créer ton compte.'];
