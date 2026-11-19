@@ -90,7 +90,7 @@ function authLigne(){
 function dwPlanTap(){const k=$('dwPlanGo').dataset.k;if(k==='rel')return aboRelier();if(k==='sso'){const a=accountGet();return authVia(a&&a.sso)}aboOpen()}
 /* petit menu du compte (au-dessus de la ligne du bas) */
 function dwPopToggle(){const p=$('dwPop');p.hidden?dwPopOpen():dwPopClose()}
-function dwPopOpen(){const p=$('dwPop');p.hidden=false;$('dwMe').setAttribute('aria-expanded','true');requestAnimationFrame(()=>p.classList.add('on'));
+function dwPopOpen(){const p=$('dwPop');p.hidden=false;aboMenuEtat();$('dwMe').setAttribute('aria-expanded','true');requestAnimationFrame(()=>p.classList.add('on'));
  setTimeout(()=>document.addEventListener('pointerdown',dwPopOut,true),0);document.addEventListener('keydown',dwPopEsc)}
 function dwPopClose(){const p=$('dwPop');if(!p||p.hidden)return;p.classList.remove('on');$('dwMe').setAttribute('aria-expanded','false');
  document.removeEventListener('pointerdown',dwPopOut,true);document.removeEventListener('keydown',dwPopEsc);setTimeout(()=>{if(!p.classList.contains('on'))p.hidden=true},150)}
@@ -125,9 +125,35 @@ async function aboSave(){
  if(ABO.busy)return;
  if(navigator.onLine===false){toast(i18nT('Pas de connexion.'));return}
  ABO.busy=true;$('abGo').disabled=true;
- try{await CasoAuth.plan([...ABO.sel]);authLigne();toast(i18nT('Plan enregistré.'));aboClose()}
+ try{await CasoAuth.plan([...ABO.sel]);authLigne();
+  /* paiement branché sur le serveur : page de paiement Stripe la première fois, sinon changement au prorata */
+  let st=null;try{st=CasoAuth.abo&&ABO.sel.size?await CasoAuth.abo():null}catch(e){}
+  if(st&&st.paiement){const r=await CasoAuth.payer();if(r&&r.url){location.assign(r.url);return}}
+  toast(i18nT('Plan enregistré.'));aboClose()}
  catch(e){toast(i18nT(e&&e.code===0?'Pas de connexion.':'Plan non enregistré.'))}
  ABO.busy=false;$('abGo').disabled=false}
+/* abonnement payant : menu du compte, résiliation en trois appuis (menu, récapitulatif, confirmation), reprise, portail Stripe */
+const RS={a:null,busy:false};
+async function aboMenuEtat(){const ids=['dwAboPay','dwAboRes','dwAboRep'];ids.forEach(i=>{const e=$(i);if(e)e.hidden=true});
+ let a=null;try{a=window.CasoAuth&&CasoAuth.jeton()&&navigator.onLine!==false?await CasoAuth.abo():null}catch(e){}
+ RS.a=a;if(!a||!a.abonne)return;$('dwAboPay').hidden=false;$(a.annule?'dwAboRep':'dwAboRes').hidden=false}
+const aboDate=t=>new Date(t).toLocaleDateString(I18N&&I18N.lang?I18N.lang:'fr-FR',{day:'numeric',month:'long',year:'numeric'});
+function aboResOpen(){const a=RS.a;if(!a||!a.abonne)return;
+ $('rsTxt').textContent=a.periodeFin?i18nT('Fin le')+' '+aboDate(a.periodeFin):'';
+ $('rsTot').textContent=CasoPlan.euros(a.total);$('rsUnit').textContent=i18nT(a.unite||'HT')+' / '+i18nT('mois');
+ $('rsGo').hidden=false;$('rsGo').disabled=false;drawerClose();
+ $('rsBg').hidden=false;$('rsSh').hidden=false;requestAnimationFrame(()=>{$('rsSh').classList.add('on');$('rsBg').classList.add('on')})}
+function aboResClose(){$('rsSh').classList.remove('on');$('rsBg').classList.remove('on');setTimeout(()=>{$('rsSh').hidden=true;$('rsBg').hidden=true},200)}
+async function aboResGo(){if(RS.busy)return;if(navigator.onLine===false){toast(i18nT('Pas de connexion.'));return}
+ RS.busy=true;$('rsGo').disabled=true;
+ try{const a=await CasoAuth.resilier();RS.a=a;$('rsTxt').textContent=i18nT('Résiliation enregistrée.')+' '+(a.periodeFin?i18nT('Fin le')+' '+aboDate(a.periodeFin):'');$('rsGo').hidden=true}
+ catch(e){toast(i18nT(e&&e.code===0?'Pas de connexion.':(e&&e.message)||'Erreur.'));$('rsGo').disabled=false}
+ RS.busy=false}
+async function aboReprendre(){try{RS.a=await CasoAuth.reprendre();toast(i18nT('Abonnement repris.'))}catch(e){toast(i18nT(e&&e.code===0?'Pas de connexion.':(e&&e.message)||'Erreur.'))}}
+async function aboPortail(){try{const u=await CasoAuth.portail();if(u)location.assign(u)}catch(e){toast(i18nT(e&&e.code===0?'Pas de connexion.':(e&&e.message)||'Erreur.'))}}
+/* retour de la page de paiement Stripe : #abo=ok */
+if(/^#abo=/.test(location.hash)){const okp=location.hash==='#abo=ok';try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}
+ if(okp)setTimeout(()=>{try{toast(i18nT('Abonnement activé.'));CasoAuth.rafraichir()}catch(e){}},1500)}
 function authVia(k){if(navigator.onLine===false){toast(i18nT('Pas de connexion.'));return}window.CasoAuth&&CasoAuth.connecter(k)}
 window.CasoAuthProfil=()=>{const a=accountGet()||{};return{mode:a.mode==='bricoleur'?'bricoleur':'artisan',nom:db.prof.nom||'',siret:db.prof.siret||''}};
 window.addEventListener('caso-auth',e=>{const d=e.detail||{};authLigne();if(d.erreur)toast(i18nT(d.erreur));if(d.retour&&d.compte&&!accountGet())ssoBegin(d.compte)});

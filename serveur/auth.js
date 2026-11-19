@@ -10,6 +10,7 @@
 'use strict';
 const fs=require('fs'),path=require('path'),crypto=require('crypto');
 const PLAN=require('../lib/plan.js');
+const chiffre=require('./chiffre.js'),aboLib=require('./abo.js');
 
 const ETAT_MIN=10,TICKET_MIN=2,SESSION_JOURS=90,ESSAI_JOURS=30;
 const sha=s=>crypto.createHash('sha256').update(String(s)).digest('hex');
@@ -69,12 +70,15 @@ function creer(opts){
  const appelJeton=opts.fetch||((u,o)=>fetch(u,o));
  const publicUrl=()=>String(opts.publicUrl||process.env.PUBLIC_URL||'').replace(/\/+$/,'');
  let d={n:0,comptes:{},sessions:{},essais:{}};
- {let raw=null;try{raw=fs.readFileSync(FILE,'utf8')}catch(e){if(e.code!=='ENOENT')throw e}
+ /* chiffrement au repos (serveur/chiffre.js), même phrase que les données des espaces */
+ const CH=opts.coffre||chiffre.creer(opts.cleDonnees!==undefined?opts.cleDonnees:(process.env.CASO_CLE_DONNEES||''));let enClair=false;
+ {let raw=null;const lu=CH.lire(FILE,'comptes.json');if(lu){raw=lu.texte;enClair=!lu.chiffre}
   if(raw!==null){let v;try{v=JSON.parse(raw)}catch(e){const bad=FILE+'.illisible-'+Date.now();try{fs.renameSync(FILE,bad)}catch(_){}
     throw new Error('comptes.json est illisible. Il a été mis de côté ('+path.basename(bad)+'), rien n\'a été écrasé.')}
    d=Object.assign(d,v)}}
  for(const k of ['comptes','sessions','essais'])d[k]=Object.assign(Object.create(null),d[k]||{});
- function persist(){const t=FILE+'.tmp';fs.writeFileSync(t,JSON.stringify(d));fs.renameSync(t,FILE)}
+ function persist(){CH.ecrireSync(FILE,JSON.stringify(d),'comptes.json')}
+ if(CH.actif&&enClair)persist();
 
  /* états (aller chez le fournisseur) et tickets (retour dans l'appli) : en mémoire seulement */
  const etats=new Map(),tickets=new Map(),freq=new Map();
@@ -100,6 +104,34 @@ function creer(opts){
  function baseServeur(req){return publicUrl()||(!HOSTED&&req.headers.host?'http://'+req.headers.host:'')}
  const dispo=k=>!!(F[k]&&F[k].id()&&F[k].secret());
  const PAIEMENT=!!(opts.paiement!==undefined?opts.paiement:process.env.CASO_PAIEMENT==='1');
+ /* abonnement payant (serveur/abo.js, Stripe) ; les 100 premiers abonnés artisans sont membres fondateurs */
+ const ABO=opts.abo||aboLib.creer({maintenant:now,cle:opts.stripeCle,webhook:opts.stripeWebhook,fetch:opts.stripeFetch});
+ const FONDATEURS=100,vusEv=new Set();
+ const fondateurs=()=>Object.keys(d.comptes).filter(k=>d.comptes[k].fondateur).length;
+ const fondateurPossible=c=>!!c.fondateur||(c.mode==='artisan'&&fondateurs()<FONDATEURS);
+ function parClient(id){for(const k of Object.keys(d.comptes))if(d.comptes[k].abo&&d.comptes[k].abo.client===id)return d.comptes[k];return null}
+ function aboPub(c){const a=c.abo||{},calc=PLAN.calcul(c.mode,a.modules||[],!!c.fondateur);
+  return{paiement:ABO.pret(),abonne:!!(a.sub&&(!a.fin||a.fin>now())),statut:a.statut||null,modules:a.modules||[],total:a.sub?calc.total:0,unite:calc.unite,
+   periodeFin:a.periodeFin||null,annule:!!a.annule,impaye:!!a.impayeDepuis,graceFin:a.impayeDepuis?a.fin:null}}
+ /* évènement signé de Stripe → état de l'abonnement du compte */
+ function aboEvenement(ev){
+  if(!ev||!ev.id||vusEv.has(ev.id))return false;vusEv.add(ev.id);if(vusEv.size>2000)vusEv.delete(vusEv.values().next().value);
+  const o=(ev.data&&ev.data.object)||{};
+  if(ev.type==='checkout.session.completed'){
+   const c=d.comptes[o.client_reference_id||(o.metadata&&o.metadata.compte)||''];if(!c)return false;
+   c.abo=Object.assign({},c.abo||{},{client:o.customer,sub:o.subscription||(c.abo&&c.abo.sub)});
+   if(!c.fondateur&&c.mode==='artisan'&&fondateurs()<FONDATEURS)c.fondateur=now();
+   persist();return true}
+  if(/^customer\.subscription\./.test(ev.type)){
+   const c=d.comptes[(o.metadata&&o.metadata.compte)||'']||parClient(o.customer);if(!c)return false;
+   if(c.abo&&c.abo.sub&&c.abo.sub!==o.id&&ev.type!=='customer.subscription.created'&&!['active','trialing','past_due'].includes(o.status))return false;/* ancien abonnement */
+   c.abo=ABO.etatDe(o,c.abo);persist();return true}
+  if(ev.type==='invoice.payment_failed'||ev.type==='invoice.paid'){
+   const c=parClient(o.customer);if(!c||!c.abo)return false;
+   if(ev.type==='invoice.payment_failed'){c.abo.impayeDepuis=c.abo.impayeDepuis||now();c.abo.fin=c.abo.impayeDepuis+ABO.GRACE_J*864e5}
+   else if(['active','trialing'].includes(c.abo.statut)||!c.abo.statut){c.abo.impayeDepuis=null;c.abo.fin=null}
+   persist();return true}
+  return false}
 
  function pub(c){return{id:c.id,via:c.via,email:c.email||'',prenom:c.prenom||'',mode:c.mode||null,nom:c.nom||'',siret:c.siret||'',creeLe:c.creeLe,
   essaiFin:c.essaiFin||null,offre:offre(c,now()),
@@ -206,6 +238,13 @@ function creer(opts){
     return send(res,200,session(c)),true}
 
    /* --- à partir d'ici : connecté --- */
+   /* Stripe : évènements signés (corps lu tel quel pour contrôler la signature) */
+   if(POST&&url==='/api/auth/abo/webhook'){
+    const brut=await new Promise((ok,ko)=>{let n=0;const ch=[];req.on('data',b=>{n+=b.length;if(n>1e6){ko(Object.assign(new Error('Envoi trop gros.'),{pub:true,code:413}));req.destroy()}else ch.push(b)});req.on('end',()=>ok(Buffer.concat(ch).toString('utf8')));req.on('error',ko)});
+    if(!ABO.signatureOk(brut,req.headers['stripe-signature']))return send(res,400,{error:'Signature invalide.'}),true;
+    let ev;try{ev=JSON.parse(brut)}catch(e){return send(res,400,{error:'Requête invalide.'}),true}
+    aboEvenement(ev);return send(res,200,{ok:true}),true}
+
    const c=compte(req);
    if(!c)return send(res,401,{error:'Non connecté.'}),true;
    if(GET&&url==='/api/auth/moi')return send(res,200,{compte:pub(c)}),true;
@@ -231,6 +270,42 @@ function creer(opts){
     if(!Array.isArray(b.modules)||b.modules.length>50)return send(res,400,{error:'Plan invalide.'}),true;
     c.plan={modules:PLAN.nettoyer(c.mode,b.modules),le:now()};
     persist();return send(res,200,{compte:pub(c)}),true}
+
+   /* abonnement payant : état, paiement du plan, résiliation (en fin de période, sans frais), reprise, moyen de paiement */
+   if(GET&&url==='/api/auth/abo')return send(res,200,{abo:aboPub(c)}),true;
+   if(POST&&url==='/api/auth/abo/payer'){
+    const b=await x.readBody(req);
+    if(!c.mode)return send(res,400,{error:'Choisis d\'abord ton mode.'}),true;
+    const mods=PLAN.nettoyer(c.mode,(c.plan&&c.plan.modules)||[]);
+    if(!mods.length)return send(res,400,{error:'Choisis au moins un module.'}),true;
+    if(trop('abo:'+c.id,20))return send(res,429,{error:'Trop d\'essais. Réessaie dans une heure.'}),true;
+    const calc=PLAN.calcul(c.mode,mods,fondateurPossible(c)),L=await ABO.prix(c.mode,mods),coupon=await ABO.remise(c.mode,calc);
+    const a=c.abo||{},actif=a.sub&&(!a.fin||a.fin>now())&&a.statut!=='canceled';
+    if(actif){/* abonnement en cours : on remplace les modules, au prorata */
+     const s=await ABO.stripe('GET','subscriptions/'+a.sub),items=(s.items&&s.items.data)||[],garde=new Set(),corps={proration_behavior:'create_prorations',cancel_at_period_end:false,items:{}};let i=0;
+     for(const it of items){const m=ABO.moduleDe(it),l=L.find(x=>x.module===m&&x.prix===it.price.id);if(l){garde.add(l.module)}else corps.items[i++]={id:it.id,deleted:true}}
+     for(const l of L)if(!garde.has(l.module))corps.items[i++]={price:l.prix,quantity:1};
+     corps.discounts=coupon?{0:{coupon}}:'';
+     const n=await ABO.stripe('POST','subscriptions/'+a.sub,corps);c.abo=ABO.etatDe(n,c.abo);persist();
+     return send(res,200,{abo:aboPub(c),compte:pub(c)}),true}
+    const base=baseServeur(req),retour=retourOk(String(b.retour||''),req)||base+'/';
+    const corps={mode:'subscription',client_reference_id:c.id,locale:'fr',success_url:retour+'#abo=ok',cancel_url:retour+'#abo=annule',
+     line_items:{},metadata:{compte:c.id},subscription_data:{metadata:{compte:c.id}},payment_method_types:{0:'card',1:'sepa_debit'}};
+    L.forEach((l,k)=>{corps.line_items[k]={price:l.prix,quantity:1}});
+    if(coupon)corps.discounts={0:{coupon}};
+    /* encore en essai : rien n'est prélevé avant la fin de l'essai */
+    if(c.essaiFin&&c.essaiFin-now()>2*864e5)corps.subscription_data.trial_end=Math.floor(c.essaiFin/1000);
+    if(a.client)corps.customer=a.client;else if(c.email)corps.customer_email=c.email;
+    const sc=await ABO.stripe('POST','checkout/sessions',corps);
+    return send(res,200,{url:sc.url}),true}
+   if(POST&&(url==='/api/auth/abo/resilier'||url==='/api/auth/abo/reprendre')){
+    const a=c.abo||{};if(!a.sub||(a.fin&&a.fin<=now()))return send(res,400,{error:'Aucun abonnement en cours.'}),true;
+    const n=await ABO.stripe('POST','subscriptions/'+a.sub,{cancel_at_period_end:url.endsWith('resilier')});
+    c.abo=ABO.etatDe(n,c.abo);persist();return send(res,200,{abo:aboPub(c)}),true}
+   if(POST&&url==='/api/auth/abo/portail'){
+    const a=c.abo||{};if(!a.client)return send(res,400,{error:'Aucun abonnement en cours.'}),true;
+    const r=await ABO.stripe('POST','billing_portal/sessions',{customer:a.client,return_url:baseServeur(req)+'/'});
+    return send(res,200,{url:r.url}),true}
 
    /* mot de passe changé dans l'appli (compte e-mail) : la nouvelle preuve remplace l'ancienne */
    if(POST&&url==='/api/auth/mail/mdp'){
@@ -267,6 +342,6 @@ function creer(opts){
 
  /* l'espace d'équipe de l'entreprise de ce compte (serveur/server.js, /api/espace) */
  function lierEspace(id,esp){const c=d.comptes[id];if(!c)return false;c.espace=esp;persist();return true}
- return{traiter,compte,pub,offre:c=>offre(c,now()),resume,lierEspace,_d:()=>d};
+ return{traiter,compte,pub,offre:c=>offre(c,now()),resume,lierEspace,aboEvenement,_d:()=>d};
 }
 module.exports={creer,siretOk,offre,modulesDe,FOURNISSEURS,ESSAI_JOURS,SESSION_JOURS};

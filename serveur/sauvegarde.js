@@ -16,6 +16,7 @@
      node serveur/sauvegarde.js restaurer <nom | derniere>
    Le dossier des données est celui du serveur (DATA_DIR, sinon APP_HOME/donnees, sinon serveur/donnees). */
 const fs=require('fs'),path=require('path'),crypto=require('crypto'),zlib=require('zlib');
+const chiffre=require('./chiffre.js');
 
 const FICHIERS=['data.json','comptes.json','appris.json','incompris.json','veille.json'];
 /* Les données d'une entreprise sont dans espaces/<espace>/data.json. Le data.json à la racine est l'ancien rangement :
@@ -87,7 +88,8 @@ function lire(chemin,o={}){
 function verifier(chemin,o={}){
  const s=lire(chemin,o),liste=[];
  for(const f of Object.keys(s.fichiers)){
-  try{JSON.parse(s.fichiers[f].toString('utf8'))}catch(e){throw err('abime','Dans la sauvegarde, '+f+' n\'est pas lisible.')}
+  /* un fichier chiffré au repos (serveur/chiffre.js) se contrôle à son format ; sa clé n'est pas celle des sauvegardes */
+  if(!chiffre.estChiffre(s.fichiers[f]))try{JSON.parse(s.fichiers[f].toString('utf8'))}catch(e){throw err('abime','Dans la sauvegarde, '+f+' n\'est pas lisible.')}
   liste.push({nom:f,octets:s.fichiers[f].length})}
  return{ok:true,le:s.le,chiffre:s.chiffre,fichiers:liste}}
 
