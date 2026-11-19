@@ -22,7 +22,8 @@ const PNG='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
   ok('e-mail HTML : texte échappé, bouton vers le lien',/&lt;script&gt;/.test(mailLib.html({text:'<script>',lien:'https://x/s/1',bouton:'Voir'}))&&/href="https:\/\/x\/s\/1"/.test(mailLib.html({text:'a',lien:'https://x/s/1'})))}
 
  const envois=[];
- const S=createServer({dataDir:dir,noTimers:true,pushSend:async()=>({status:201}),mail:{pret:()=>true,html:mailLib.html,envoyer:async m=>{envois.push(m);return{id:'m'+envois.length}}}});
+ const KEY='k'.repeat(32);
+ const S=createServer({dataDir:dir,noTimers:true,mailjetCle:KEY,mailReponses:'reponses.rosso.fr',pushSend:async()=>({status:201}),mail:{pret:()=>true,html:mailLib.html,envoyer:async m=>{envois.push(m);return{id:'m'+envois.length}}}});
  await new Promise(r=>S.server.listen(0,'127.0.0.1',r));const B='http://127.0.0.1:'+S.server.address().port;
  const br=await chromium.launch(),c=await br.newContext({viewport:{width:390,height:844},locale:'fr-FR'}),p=await c.newPage(),errs=[];
  p.on('pageerror',e=>errs.push(e.message));
@@ -44,7 +45,7 @@ const PNG='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
  ok('e-mail pro rédigé tout seul : formule, travaux, total, acompte, validité, signature',/^Bonjour Thomas Martin,/.test(tx.texte)&&/faïence murale/i.test(tx.texte)&&/TTC/.test(tx.texte)&&/acompte de 30 %/.test(tx.texte)&&/valable jusqu’au/.test(tx.texte)&&/Bien cordialement,\nMarcos\nRosso Rénovation/.test(tx.texte)&&/Votre devis/.test(tx.sujet),tx.texte);
  if(process.env.SHOTS)await p.screenshot({path:process.env.SHOTS+'/env-devis.png'});
  await p.click('#sentEnv .env-ml');await p.waitForFunction(()=>/Envoyé/.test(document.querySelector('#sentEnv').innerText),null,{timeout:8000}).catch(()=>{});
- ok('un appui : e-mail parti au client, au nom de l\'entreprise, réponses vers l\'artisan, lien dans le bouton',envois.length===1&&envois[0].to==='thomas@exemple.fr'&&envois[0].fromName==='Rosso Rénovation'&&envois[0].replyTo==='contact@rosso.fr'&&/\/s\/[a-f0-9]{32}/.test(envois[0].html)&&/Voir et signer le devis/.test(envois[0].html),JSON.stringify(envois[0]&&{to:envois[0].to,from:envois[0].fromName}));
+ ok('un appui : e-mail parti au client, au nom de l\'entreprise, réponses vers casô (puis copie à l\'artisan), lien dans le bouton',envois.length===1&&envois[0].to==='thomas@exemple.fr'&&envois[0].fromName==='Rosso Rénovation'&&/@reponses\.rosso\.fr$/.test(envois[0].replyTo)&&/\/s\/[a-f0-9]{32}/.test(envois[0].html)&&/Voir et signer le devis/.test(envois[0].html),JSON.stringify(envois[0]&&{to:envois[0].to,from:envois[0].fromName}));
  ok('carte : « Envoyé », bouton « Renvoyer par e-mail »',await p.evaluate(()=>/Envoyé/.test($('sentEnv').innerText)&&/Renvoyer par e-mail/.test($('sentEnv').innerText)));
  /* 2. par le chat */
  const dit=async t=>{await p.evaluate(t=>{go('chat');$('chatIn').value=t;chatSend(t)},t);await p.waitForTimeout(900);return p.evaluate(()=>{const m=CHAT.m[CHAT.m.length-1];if(!m||!m.html)return'';const d=document.createElement('div');d.innerHTML=m.html.replace(/</g,' <');return d.textContent.replace(/\s+/g,' ').trim()})};
@@ -57,6 +58,24 @@ const PNG='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
  ok('chat : l\'adresse donnée → parti, gardée dans la fiche du client',envois.length===3&&envois[2].to==='dupont@exemple.fr'&&await p.evaluate(()=>db.clients.find(c=>c.nom==='Dupont').email==='dupont@exemple.fr'),r);
  await p.evaluate(()=>{newQuote();Object.assign(q,{client:'Petit',lines:[{label:'Placo',qty:5,unit:'m²',pu:30,tva:10}]});fillForm()});
  r=await dit('envoie le devis');ok('chat : devis pas encore signé par l\'artisan → « Valider le devis »',/Valider le devis/.test(r),r);
+ /* 2 bis. suivi Mailjet et réponse du client */
+ ok('réponses : adressées à reponse+<jeton>@reponses.rosso.fr',/^reponse\+[a-f0-9]{32}@reponses\.rosso\.fr$/.test(envois[0].replyTo||''),envois[0].replyTo);
+ const tk0=envois[0].replyTo.match(/[a-f0-9]{32}/)[0];
+ const hook=(u,b,k)=>p.evaluate(async([B,u,b,k])=>{const r=await fetch(B+u+'?cle='+k,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(b)});return r.status},[B,u,b,k]);
+ ok('webhook sans la bonne clé : refusé',await hook('/api/mailjet/evenements',[{event:'open',CustomID:tk0}],'mauvaise'.repeat(4))===403);
+ ok('évènements Mailjet (liste) : délivré et ouvert enregistrés',await hook('/api/mailjet/evenements',[{event:'sent',CustomID:tk0,time:1795000000},{event:'open',CustomID:tk0,time:1795000100}],KEY)===200);
+ const n0=envois.length;
+ ok('réponse du client reçue (Parse) : texte cité retiré',await hook('/api/mailjet/entrant',{Recipient:'reponse+'+tk0+'@reponses.rosso.fr',From:'Thomas Martin <thomas@exemple.fr>',Subject:'Re: Votre devis','Text-part':'Bonjour, peut-on commencer lundi ?\n\nLe 19 nov. 2026, Rosso a écrit :\n> Suite à notre échange'},KEY)===200);
+ ok('copie de la réponse dans la boîte de l\'artisan',envois.length===n0+1&&envois[n0].to==='contact@rosso.fr'&&/commencer lundi/.test(envois[n0].text)&&envois[n0].replyTo==='thomas@exemple.fr');
+ await p.evaluate(()=>{go('chat');syncNow()});await p.waitForTimeout(1200);
+ const nv=await p.evaluate(()=>{const o=db.quotes.find(x=>x.client==='Thomas Martin');return{rep:(o.sign.reponses||[]).length,ouv:!!(o.sign.suivi&&o.sign.suivi.ouvert),chat:CHAT.m.map(m=>m.html||'').join(' ').replace(/<[^>]+>/g,' '),carte:envCarte(envDevis(o)).replace(/<[^>]+>/g,' ')}});
+ ok('l\'appli reçoit la réponse : une ligne dans le chat, la carte dit « Répondu »',nv.rep===1&&/a répondu/.test(nv.chat)&&/commencer lundi/.test(nv.chat)&&!/Suite à notre échange/.test(nv.chat)&&/Répondu/.test(nv.carte)&&/Réponse/.test(nv.carte),JSON.stringify({rep:nv.rep,c:nv.chat.slice(-160)}));
+ await p.evaluate(()=>{syncNow()});await p.waitForTimeout(800);
+ ok('la nouvelle n\'est dite qu\'une fois',await p.evaluate(()=>CHAT.m.filter(m=>/a répondu/.test(m.html||'')).length)===1);
+ await p.evaluate(()=>{const o=db.quotes.find(x=>x.client==='Thomas Martin');o.sign=Object.assign({},o.sign);delete o.sign.reponses;o.note='x';storeQ(o);save()});await p.evaluate(()=>syncNow());await p.waitForTimeout(800);
+ ok('un téléphone qui renvoie le devis sans la réponse ne l\'efface pas',await p.evaluate(async([B])=>{const c=getSync();const r=await fetch(B+'/api/sync',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+c.token},body:JSON.stringify({since:0,changes:{}})});const j=await r.json();return (j.changes.quotes||[]).some(q=>q.client==='Thomas Martin'&&q.sign&&(q.sign.reponses||[]).length===1)},[B]));
+ await hook('/api/mailjet/evenements',{event:'bounce',CustomID:tk0,email:'thomas@exemple.fr',error:'user unknown'},KEY);await p.evaluate(()=>syncNow());await p.waitForTimeout(800);
+ ok('adresse refusée : dite dans le chat',await p.evaluate(()=>CHAT.m.some(m=>/adresse refusée/.test(m.html||''))));
  /* 3. côté client : demande de modification */
  const url=await p.evaluate(()=>db.quotes.find(x=>x.client==='Thomas Martin').sign.url);const tok=url.match(/[a-f0-9]{32}/)[0];
  const mo=await p.evaluate(async([b,t])=>{const r=await fetch(b+'/api/s/'+t+'/modif',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({msg:'Pouvez-vous ajouter la peinture du plafond ?'})});return [r.status,(await r.json()).modif]},[B,tok]);

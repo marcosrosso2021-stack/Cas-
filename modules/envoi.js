@@ -7,8 +7,8 @@
 const ENV={};
 /* o : {id, ico, titre, chip, lignes:[[libellé,valeur]], url, msg, sujet, mail:{to,qid}} */
 function envCarte(o){ENV[o.id]=o;
- return `<div class="env" data-env="${esc(o.id)}"><div class="env-c"><div class="env-h"><svg class="i"><use href="#i-${o.ico||'doc'}"/></svg><b data-noi18n>${esc(o.titre)}</b>${o.chip?`<span class="env-chip">${esc(i18nT(o.chip))}</span>`:''}</div>
-  ${(o.lignes||[]).filter(x=>x[1]).map(x=>`<div class="env-l"><span>${esc(i18nT(x[0]))} :</span> <span data-noi18n>${esc(x[1])}</span></div>`).join('')}
+ return `<div class="env" data-env="${esc(o.id)}"><div class="env-c"><div class="env-h"><svg class="i"><use href="#i-${o.ico||'doc'}"/></svg><b data-noi18n>${esc(o.titre)}</b>${o.chip?`<span class="env-chip${o.ko?' ko':''}">${esc(i18nT(o.chip))}</span>`:''}</div>
+  ${(o.lignes||[]).filter(x=>x[0]&&x[1]).map(x=>`<div class="env-l"><span>${esc(i18nT(x[0]))} :</span> <span data-noi18n>${esc(x[1])}</span></div>`).join('')}
   ${o.url?`<a class="env-u" href="${esc(o.url)}" target="_blank" rel="noopener" data-noi18n>${esc(o.url.replace(/^https?:\/\//,''))} <svg class="i i-sm"><use href="#i-arrow"/></svg></a>`:''}</div>
   ${o.mail?`<div class="env-m" id="envM-${esc(o.id)}"></div>`:''}
   <button type="button" class="btn env-cp" onclick="envCopier('${esc(o.id)}')"><svg class="i"><use href="#i-clip"/></svg>${esc(i18nT('Copier le message'))}</button>
@@ -54,8 +54,19 @@ async function envMailPret(){if(ENV_MAIL!=null)return ENV_MAIL;try{ENV_MAIL=!!(a
 function dvCliMail(o){const c=findBy(db.clients,o.client||'');return c&&c.email||''}
 function envDevis(o){const t=totals(o),p=db.prof||{},m=dvMail(o);
  const msg='Bonjour'+(o.client?' '+o.client:'')+', voici votre devis n° '+o.num+(p.nom?' de '+p.nom:'')+'. Vous pouvez le lire et le signer ici : '+o.sign.url;
- return{id:'dv-'+o.id,ico:'doc',titre:i18nT('Devis')+' n°'+o.num,chip:o.sign.st==='signed'?'Signé':o.sign.mailedAt?'Envoyé':'Prêt',
-  lignes:[['Client',o.client],['Travaux',dvTravaux(o)],['Total TTC',eur(t.ttc)]],url:o.sign.url,msg,sujet:m.sujet,mail:{qid:o.id}}}
+ const su=o.sign.suivi||{},rp=(o.sign.reponses||[]).slice(-1)[0];
+ const chip=o.sign.st==='signed'?'Signé':su.refus&&!(su.ouvert>su.refus.at)?'Adresse refusée':rp?'Répondu':su.ouvert?'Ouvert':o.sign.mailedAt?'Envoyé':'Prêt';
+ return{id:'dv-'+o.id,ico:'doc',titre:i18nT('Devis')+' n°'+o.num,chip,ko:chip==='Adresse refusée',
+  lignes:[['Client',o.client],['Travaux',dvTravaux(o)],['Total TTC',eur(t.ttc)],rp?['Réponse','« '+rp.texte.slice(0,140)+(rp.texte.length>140?'…':'')+' »']:['','']],url:o.sign.url,msg,sujet:m.sujet,mail:{qid:o.id}}}
+/* nouvelles des e-mails de devis (après chaque synchronisation) : une ligne dans le chat, une seule fois par nouvelle */
+function envNouvelles(){let vu={};try{vu=JSON.parse(localStorage.getItem('caso_mail_vu'))||{}}catch(e){}let ch=false;const out=[];
+ (db.quotes||[]).forEach(o=>{const s=o.sign;if(!s||!s.mailedAt)return;const k=o.id,v=vu[k]||{},su=s.suivi||{},R=s.reponses||[];
+  if(R.length>(v.r||0)){R.slice(v.r||0).forEach(r=>out.push(`<p><svg class="i i-sm"><use href="#i-mail"/></svg> <b data-noi18n>${esc(o.client||'')}</b> <span>${esc(i18nT('a répondu'))}</span> : <span data-noi18n>« ${esc(r.texte.slice(0,300))}${r.texte.length>300?'…':''} »</span></p>`));v.r=R.length;ch=true}
+  if(su.refus&&v.f!==su.refus.at){out.push(`<p><svg class="i i-sm"><use href="#i-warn"/></svg> <span>${esc(i18nT('Le devis {1} n\'est pas arrivé chez {2} : adresse refusée.').replace('{1}',o.num||'').replace('{2}',o.client||''))}</span></p>`);v.f=su.refus.at;ch=true}
+  else if(su.ouvert&&!v.o&&!R.length){out.push(`<p><svg class="i i-sm ok-c"><use href="#i-check"/></svg> <b data-noi18n>${esc(o.client||'')}</b> <span>${esc(i18nT('a ouvert le devis'))}</span> <span data-noi18n>${esc(o.num||'')}</span></p>`);v.o=1;ch=true}
+  if(ch)vu[k]=v});
+ if(!ch)return;try{localStorage.setItem('caso_mail_vu',JSON.stringify(vu))}catch(e){}
+ if(out.length&&typeof chatPush==='function')chatPush({who:'bot',html:out.join('')})}
 /* dessine la partie e-mail de la carte : bouton « Envoyer par e-mail » (adresse à saisir si le client n'en a pas) ; aperçu modifiable */
 async function envMailUI(id){const o=ENV[id],box=$('envM-'+id);if(!o||!box||!o.mail)return;
  const q0=db.quotes.find(x=>x.id===o.mail.qid);if(!q0||!q0.sign||q0.sign.st!=='sent'){box.innerHTML='';return}

@@ -308,6 +308,11 @@ function createServer(opts={}){
     /* équipe : le prix de l'heure et les paiements d'un collaborateur, seul le patron les écrit (les autres ne les reçoivent pas) */
     if(c==='people'&&user.role!=='patron')PEOPLE_PATRON.forEach(k=>{if(cur&&own(cur,k))rec[k]=cur[k];else delete rec[k]});
     if(c==='invoices'&&cur){rec.pays=mergePays(cur.pays,rec.pays);if(cur.num)INV_KEEP.forEach(k=>{if(own(cur,k))rec[k]=cur[k];else delete rec[k]})}
+    /* suivi de l'e-mail et réponses du client : écrits par le serveur, jamais perdus quand un téléphone renvoie le devis */
+    if(c==='quotes'&&cur&&cur.sign&&typeof cur.sign==='object'){const os=cur.sign,ns=rec.sign&&typeof rec.sign==='object'?rec.sign:null;
+     if(ns&&ns.token===os.token){if(os.suivi)ns.suivi=Object.assign({},ns.suivi&&typeof ns.suivi==='object'?ns.suivi:{},os.suivi);
+      if(Array.isArray(os.reponses)&&(!Array.isArray(ns.reponses)||ns.reponses.length<os.reponses.length))ns.reponses=os.reponses;
+      if(os.modif&&(!ns.modif||(+ns.modif.at||0)<(+os.modif.at||0)))ns.modif=os.modif}}
     // un devis signé par le client garde exactement ce qui a été signé
     if(c==='quotes'&&cur&&cur.sign&&cur.sign.st==='signed'){SIGNED_KEEP.forEach(k=>{if(own(cur,k))rec[k]=cur[k];else delete rec[k]});rec.status=rec.status==='paye'?'paye':'accepte'}
     data.recs[c][r.id]=Object.assign(rec,{rev:++data.rev});dirty=true}}
@@ -402,6 +407,38 @@ function createServer(opts={}){
    const r=await pushSend(s.sub,{title:'casô',body:IBAN_TXT[s.lang]||IBAN_TXT.fr,url:'/',tag:'iban'});
    if(r&&(r.status===404||r.status===410)){s.dead=1;dead=true}}));
   if(dead){data.subs=data.subs.filter(s=>!s.dead);persist()}}
+ /* JSON reçu de Mailjet (objet ou liste), 2 Mo au plus */
+ function lireJson(req){return new Promise((ok,ko)=>{let n=0;const c=[];req.on('data',x=>{n+=x.length;if(n>2e6){ko(new Error('trop gros'));req.destroy()}else c.push(x)});
+  req.on('end',()=>{try{ok(JSON.parse(Buffer.concat(c).toString()||'{}'))}catch(e){ko(e)}});req.on('error',ko)})}
+ /* le devis de l'équipe suit l'état de son e-mail (synchronisé vers les téléphones) */
+ function majSignDevis(sg,patch){const qid=sg.doc.quote.id;if(!qid||!data.recs.quotes[qid])return;const cur=data.recs.quotes[qid];
+  data.recs.quotes[qid]=Object.assign({},cur,{sign:Object.assign({},cur.sign||{},patch),updatedAt:Date.now(),rev:++data.rev})}
+ /* un évènement Mailjet : CustomID = jeton du lien de signature (posé à l'envoi) */
+ function mailEvenement(ev){if(!ev||typeof ev!=='object')return false;const sg=data.signs[String(ev.CustomID||'')];if(!sg)return false;
+  const at=(+ev.time>0?+ev.time*1000:Date.now()),k=String(ev.event||''),s=Object.assign({},sg.suivi||{});
+  if(k==='sent')s.delivre=s.delivre||at;else if(k==='open')s.ouvert=s.ouvert||at;else if(k==='click')s.clic=s.clic||at;
+  else if(k==='bounce'||k==='blocked'||k==='spam'){s.refus={at,type:k,raison:cut(ev.error||ev.comment||ev.error_related_to||'',120),email:cut(ev.email,120)}}else return false;
+  const neuf=k==='open'&&!(sg.suivi&&sg.suivi.ouvert);sg.suivi=s;majSignDevis(sg,{suivi:s});
+  if(neuf||s.refus&&s.refus.at===at)notifySuivi(sg,k).catch(()=>{});return true}
+ /* une réponse du client : adressée à reponse+<jeton>@MAIL_REPONSES ; le texte cité de l'e-mail d'origine est retiré */
+ function mailEntrant(m){if(!m||typeof m!=='object')return null;
+  const dest=[m.Recipient,m.To].map(x=>String(x||'')).join(' '),tk=(dest.match(/reponse\+([a-f0-9]{32})@/i)||[])[1];const sg=tk&&data.signs[tk];if(!sg)return null;
+  let t=String(m['Text-part']||'').replace(/\r/g,'');
+  const coupe=t.search(/\n(?:Le .{0,120}a écrit\s*:|On .{0,120}wrote\s*:|-{2,}\s*(?:Original Message|Message d'origine)|De\s*:.*\n.*Envoyé\s*:|From:.*\n.*Sent:)/i);if(coupe>0)t=t.slice(0,coupe);
+  t=t.split('\n').filter(l=>!/^\s*>/.test(l)).join('\n').replace(/\n{3,}/g,'\n\n').trim().slice(0,4000);
+  if(!t)return null;
+  const de=String(m.From||m.Sender||''),rep={at:Date.now(),de:cut(de,160),sujet:cut(m.Subject,200),texte:t};
+  sg.reponses=(sg.reponses||[]).slice(-49).concat(rep);majSignDevis(sg,{reponses:sg.reponses.slice(-20)});return{sg,rep}}
+ const PUSH_SUIVI={open:'{c} a ouvert le devis {n}.',bounce:'Le devis {n} n\'est pas arrivé chez {c} : adresse refusée.',blocked:'Le devis {n} n\'est pas arrivé chez {c} : e-mail bloqué.',spam:'{c} a classé le devis {n} en indésirable.'};
+ async function notifySuivi(sg,k){const q=sg.doc.quote,txt=(PUSH_SUIVI[k]||'').replace('{c}',q.client||'Le client').replace('{n}',q.num||'');if(!txt)return;
+  const who=Object.values(data.users).filter(u=>u.role==='patron'||u.role==='chef').map(u=>u.name.toLowerCase());
+  await Promise.all(data.subs.filter(s=>who.includes(s.user)).map(s=>pushSend(s.sub,{title:'casô',body:txt,url:'/?q='+encodeURIComponent(q.id||''),tag:'suivi-'+sg.token}).catch(()=>{})))}
+ async function notifyReponse(sg,rep){const q=sg.doc.quote,who=Object.values(data.users).filter(u=>u.role==='patron'||u.role==='chef').map(u=>u.name.toLowerCase());
+  await Promise.all(data.subs.filter(s=>who.includes(s.user)).map(s=>pushSend(s.sub,{title:(q.client||'Le client')+' a répondu',body:rep.texte.slice(0,160),url:'/?q='+encodeURIComponent(q.id||''),tag:'rep-'+sg.token}).catch(()=>{})))}
+ /* une copie de la réponse part aussi dans la boîte de l'artisan (e-mail de « Mon entreprise ») */
+ async function copieReponse(sg,rep){const pr=sg.doc.prof||{};if(!pr.email||!mail.pret())return;
+  await mail.envoyer({to:pr.email,fromName:(sg.doc.quote.client||'Client')+' via casô',replyTo:(rep.de.match(/[^\s<>"]+@[^\s<>"]+/)||[])[0],subject:'Re : '+(rep.sujet||('Devis '+(sg.doc.quote.num||''))),
+   text:rep.texte,html:mail.html({text:rep.texte+'\n\n— '+(rep.de||'')+' · devis '+(sg.doc.quote.num||''),entreprise:'Réponse de '+(sg.doc.quote.client||'votre client')}),id:'rep-'+sg.token})}
  /* le client demande une modification : patron et chefs prévenus */
  async function notifyModif(sg,msg){
   const q=sg.doc.quote,who=Object.values(data.users).filter(u=>u.role==='patron'||u.role==='chef').map(u=>u.name.toLowerCase());
@@ -568,6 +605,15 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
      if(!inv||inv.exp<Date.now()||!u){fail(ip);return send(res,404,{error:'Invitation invalide ou expirée. Demande un nouveau lien.'})}
      const pr=data.recs.prof&&data.recs.prof.prof&&data.recs.prof.prof.v||{};
      return send(res,200,{name:u.name,role:u.role,entreprise:cut(pr.nom,120),exp:inv.exp})}}
+   /* Mailjet : suivi des e-mails de devis (délivré, ouvert, cliqué, refusé) et réponses des clients.
+      Les deux adresses sont données une fois dans Mailjet, avec la clé MJ_WEBHOOK_KEY (?cle=…) : sans elle, rien n'est accepté. */
+   if(POST&&(url==='/api/mailjet/evenements'||url==='/api/mailjet/entrant')){
+    const cle=String(new URLSearchParams(String(req.url).split('?')[1]||'').get('cle')||''),bon=String(opts.mailjetCle||process.env.MJ_WEBHOOK_KEY||'');
+    if(!bon||bon.length<16||cle.length!==bon.length||!crypto.timingSafeEqual(Buffer.from(cle),Buffer.from(bon))){fail(ip);return send(res,403,{error:'refusé'})}
+    let corps;try{corps=await lireJson(req)}catch(e){return send(res,400,{error:'Requête invalide.'})}
+    if(url==='/api/mailjet/evenements'){let n=0;for(const ev of (Array.isArray(corps)?corps:[corps]).slice(0,500)){if(mailEvenement(ev))n++}if(n)await persist();return send(res,200,{ok:true,n})}
+    const r=mailEntrant(corps);if(r){await persist();notifyReponse(r.sg,r.rep).catch(()=>{});copieReponse(r.sg,r.rep).catch(()=>{})}
+    return send(res,200,{ok:true,lu:!!r})}
    /* le client demande une modification du devis : l'artisan est prévenu, le lien reste ouvert */
    {const mm=url.match(/^\/api\/s\/([a-f0-9]{32})\/modif$/);
     if(mm&&POST){const sg=data.signs[mm[1]];if(!sg)return send(res,404,{error:'Ce lien n\'existe pas.'});
@@ -856,7 +902,8 @@ data.invSeq[key]=n;if(iid)data.invIds[key+'|'+iid]=n;await persist();return send
      if((x.mails||[]).filter(e=>Date.now()-e.at<36e5).length>=5)return send(res,429,{error:'Déjà envoyé plusieurs fois cette heure.'});
      const pr=x.doc.prof||{},text=String(b.text||'').slice(0,6000);
      if(text.trim().length<10)return send(res,400,{error:'Le message est vide.'});
-     try{const r=await mail.envoyer({to:b.to,toName:x.doc.quote.client,fromName:pr.nom||'casô',replyTo:pr.email,subject:cut(b.subject,200)||('Devis '+(x.doc.quote.num||'')),
+     const dom=String(opts.mailReponses||process.env.MAIL_REPONSES||'').trim().toLowerCase(),rto=/^[a-z0-9.-]+\.[a-z]{2,}$/.test(dom)?'reponse+'+x.token+'@'+dom:pr.email;
+     try{const r=await mail.envoyer({to:b.to,toName:x.doc.quote.client,fromName:pr.nom||'casô',replyTo:rto,subject:cut(b.subject,200)||('Devis '+(x.doc.quote.num||'')),
        text:text+'\n\n'+x.url,html:mail.html({text,lien:x.url,bouton:'Voir et signer le devis',entreprise:pr.nom}),id:x.token});
       x.mails=(x.mails||[]).concat({to:String(b.to).trim().toLowerCase(),at:Date.now(),id:r.id});await persist();return send(res,200,{ok:true,to:x.mails[x.mails.length-1].to})}
      catch(e){return send(res,e.code||502,{error:e.message,off:!!e.off})}}
