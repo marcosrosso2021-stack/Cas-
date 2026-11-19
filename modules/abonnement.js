@@ -7,7 +7,19 @@
    - sans réseau : la dernière liste connue est gardée (on ne verrouille jamais tout parce que le téléphone est hors ligne).
    Chargé après les autres modules : il entoure les fonctions des modules payants d'un contrôle, sans les modifier. */
 
-function aboCompte(){try{return window.CasoAuth?CasoAuth.compte():null}catch(e){return null}}
+/* le compte qui compte pour les droits :
+   - le compte casô du serveur quand il a choisi le mode Artisan (essai et plan tenus par le serveur) ;
+   - sinon (pas encore relié au serveur, ou SIRET pas encore donné) : un essai de 30 jours tenu par le téléphone,
+     qui démarre à la création du compte ; après, le socle gratuit seulement, jusqu'à l'abonnement.
+   Les collaborateurs (équipe d'un patron) et le mode Bricoleur ne sont pas verrouillés. */
+const ABO_ESSAI_J=30;
+function aboCompte(){let c=null;try{c=window.CasoAuth?CasoAuth.compte():null}catch(e){}
+ if(c&&c.mode)return c;
+ const sy=typeof getSync==='function'?getSync():{};if(sy&&sy.token&&sy.role&&sy.role!=='patron')return null;
+ const a=typeof accountGet==='function'?accountGet():null;if(!a||a.mode==='bricoleur')return c;
+ if(!a.essaiLocal){a.essaiLocal=a.createdAt||Date.now();try{accountPut(a)}catch(e){}}
+ const fin=a.essaiLocal+ABO_ESSAI_J*864e5,tous=window.CasoPlan?CasoPlan.catalogue('artisan').modules.map(m=>m.id):[];
+ return{mode:'artisan',local:true,essaiFin:fin,offre:Date.now()<fin?'artisan_curieux':'artisan_fin_essai',modules:Date.now()<fin?tous:[]}}
 function aboDroits(){return window.CasoPlan?CasoPlan.droits(aboCompte()):{tout:true,ouvert:()=>true,devisGratuits:Infinity}}
 function aboOuvert(m){return aboDroits().ouvert(m)}
 function aboNom(m){const x=window.CasoPlan&&CasoPlan.catalogue('artisan').modules.find(y=>y.id===m);return i18nT(x?x.nom:m)}
@@ -56,7 +68,7 @@ function aboMenu(){
 function aboGarde(nom,m,strict){const f=window[nom];if(typeof f!=='function'||f.aboG)return;
  const g=function(){if(aboVerrou(m)){if(strict){const e=new Error(ABO_STOP);e.aboStop=true;throw e}return}return f.apply(this,arguments)};g.aboG=true;window[nom]=g}
 [['faPayOpen','paiement'],['faPaySave','paiement'],['faPayAll','paiement'],['faAvoir','paiement'],['faRelance','paiement'],['faPayAdd','paiement',true],
- ['punch','pointage',true],['ptToujours','pointage'],
+ ['punch','pointage',true],['ptToujours','pointage'],['addCh','pointage'],['ptQuickCh','pointage'],['ptChCli','pointage'],['ptQuickP','pointage'],['addForgot','pointage'],['manualPunch','pointage'],
  ['agIcs','planning'],
  ['fouEdit','fournisseurs'],['fouSave','fournisseurs'],['prxGo','fournisseurs'],['impPick','fournisseurs'],['achSave','fournisseurs'],
  ['plSheet','3d'],['faNew','devis']].forEach(x=>aboGarde(x[0],x[1],x[2]));
@@ -103,5 +115,6 @@ setTimeout(()=>{try{const a=accountGet();if(!a||!a.hash||a.sso||window.__casoMdp
  if(!document.body.classList.contains('starting'))aboRelier()}catch(e){}},4000);
 /* la pastille du profil : dessinée aussi au démarrage (la session casô a pu répondre avant que l'appli soit prête) */
 try{authLigne()}catch(e){}
+try{logoProfil()}catch(e){}
 /* lib/auth.js peut arriver après les modules : la pastille est redessinée dès qu'il est prêt */
 (function attente(n){if(window.CasoAuth){try{authLigne();aboMenu()}catch(e){}return}if(n<100)setTimeout(()=>attente(n+1),100)})(0);

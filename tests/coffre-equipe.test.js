@@ -13,7 +13,7 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
  const appUp=p=>p.waitForFunction(()=>typeof db!=='undefined'&&typeof init==='function',null,{timeout:20000});
  const locked=p=>p.evaluate(()=>document.getElementById('s-start').classList.contains('on')&&typeof db==='undefined');
  const noErr=errs=>errs.filter(e=>!/Failed to load resource|net::ERR|favicon/.test(e));
- async function newAccount(p,pw){await p.evaluate(async pw=>{document.getElementById('acNom').value='Jean';document.getElementById('acMail').value='jean@test.fr';document.getElementById('acPass').value=pw;await acSubmit();await new Promise(r=>setTimeout(r,800))},pw)}
+ async function newAccount(p,pw){await p.evaluate(async pw=>{document.getElementById('acCgu').checked=true;document.getElementById('acNom').value='Jean';document.getElementById('acMail').value='jean@test.fr';document.getElementById('acPass').value=pw;await acSubmit();await new Promise(r=>setTimeout(r,800))},pw)}
  async function modal(p,pw){await p.waitForSelector('.pwask input',{timeout:5000});await p.fill('.pwask input',pw);await p.click('.pwask button[type=submit]')}
 
  /* ===== 4. membre d'équipe sans compte ===== */

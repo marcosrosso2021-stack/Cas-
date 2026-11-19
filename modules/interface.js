@@ -27,6 +27,17 @@ async function enableNotif(){
   try{localStorage.setItem('caso_notif','1')}catch(e){}
   toast(i18nT('Notifications activées'));renderNotif();return true
  }catch(e){alert('Erreur d\'envoi : '+(e.message||e));return false}}
+/* newsletter : notifications pour tout usager (sans espace d'équipe), auprès du serveur casô ; le métier seulement */
+const NEWS_SRV=()=>String(window.CASO_APPRIS||'https://app-e6c6e91c-8623-4524-95ef-2cefb8b67f7b.cleverapps.io').replace(/\/+$/,'');
+async function newsNotif(){try{
+ if(!('serviceWorker' in navigator)||!('PushManager' in window)||!window.Notification||Notification.permission!=='granted')return false;
+ const reg=await navigator.serviceWorker.register('sw.js');await navigator.serviceWorker.ready;
+ let sub=await reg.pushManager.getSubscription();
+ if(!sub){const {key}=await fetch(NEWS_SRV()+'/api/push/cle').then(r=>r.json());sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToU8(key)})}
+ const r=await fetch(NEWS_SRV()+'/api/push/news',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({sub:sub.toJSON(),lang:I18N.lang,metier:(db.prof||{}).metier||''})});
+ if(r.ok){try{localStorage.setItem('caso_news_push','1')}catch(e){}}return r.ok}catch(e){return false}}
+/* au démarrage : un téléphone qui a déjà autorisé les notifications reste abonné à la newsletter (métier à jour) */
+setTimeout(()=>{try{const a=accountGet();if(a&&a.notif!==false&&window.Notification&&Notification.permission==='granted'&&!localStorage.getItem('caso_test'))newsNotif()}catch(e){}},6000);
 /* un devis vient d'être signé : prévenir (l'appli ouverte, ou en complément de la notification) */
 function seenSigned(){try{return JSON.parse(localStorage.getItem('caso_seen_sig')||'[]')}catch(e){return[]}}
 function checkSigned(){
@@ -53,13 +64,19 @@ function dwLocked(){
  return false}
 /* module AUTH (lib/auth.js) : « Continuer avec Google / Outlook » sur les écrans Connexion et Créer mon compte ; l'offre en une ligne dans le menu profil */
 /* plus d'offres toutes faites : l'usager construit son abonnement ; la ligne dit seulement où il en est */
+/* logo de l'entreprise : en haut à gauche du menu profil (un appui ouvre Mon entreprise) et à la place de l'icône du profil.
+   Sans logo : une icône discrète d'entreprise, qui mène à Mon entreprise pour l'ajouter. */
+function logoProfil(){const l=(db.prof||{}).logo,ok=typeof rcImg==='function'?rcImg(l):/^data:image\//.test(l||''),e=$('dwEnt'),b=$('hdAcct');
+ if(e){e.classList.toggle('logo',!!ok);e.innerHTML=ok?`<img src="${l}" alt="">`:'<svg class="i"><use href="#i-building"/></svg>'}
+ if(b){b.classList.toggle('logo',!!ok);b.innerHTML=ok?`<img src="${l}" alt="">`:'<svg class="i"><use href="#i-user"/></svg>'}}
 /* pastille discrète au-dessus du compte (profil) : où en est l'usager ; un appui ouvre « On construit le plan » */
 function authLigne(){
  const A=window.CasoAuth,c=A&&A.compte(),go=$('dwPlanGo');if(!go)return;
  const n=($('dwName')||{}).textContent||'',ini=$('dwIni');if(ini)ini.textContent=(n.trim()[0]||'·').toUpperCase();
  /* pas de session casô : compte e-mail → « Relier mon compte » ; Google / Outlook expiré → « Se reconnecter » */
  if(!c){const a=accountGet();const r=!!(a&&a.email&&(a.hash||a.sso)&&window.CasoAuth);go.hidden=!r;go.dataset.k=r?(a.sso?'sso':'rel'):'';
-  if(r){$('dwPlanA').textContent=i18nT(a.sso?'Se reconnecter':'Relier mon compte');$('dwPlanB').textContent=''}return}
+  if(r){const lc=typeof aboCompte==='function'?aboCompte():null,j=lc&&lc.local?Math.ceil((lc.essaiFin-Date.now())/864e5):0;
+   $('dwPlanA').textContent=j>0?i18nT('Essai'):i18nT(a.sso?'Se reconnecter':'Relier mon compte');$('dwPlanB').textContent=j>0?j+' '+i18nT('j'):''}return}
  go.dataset.k='plan';go.hidden=!(c.mode&&window.CasoPlan);if(go.hidden)return;
  const nb=((c.plan&&c.plan.modules)||[]).length,prix=c.plan&&c.plan.total?CasoPlan.euros(c.plan.total):'';
  let a,b='';
@@ -125,7 +142,7 @@ function ssoFallback(){ssoEnd();stScreen('s-start');stShow('ac');$('acMail').val
  $('acErr').textContent=i18nT('{1} n’est pas disponible sur ce téléphone.').replace('{1}',bioNom());$('acErr').hidden=false}
 async function ssoGo(){if(SSO.busy)return;SSO.busy=true;const c=SSO.c,b=$('lgBio');b.disabled=true;$('lgErr').hidden=true;
  const mail=String(c.email||'').toLowerCase();
- const acc={v:1,id:'u'+uid(),prenom:c.prenom||mail.split('@')[0]||'casô',email:mail,sso:c.via,iter:ACC_ITER(),createdAt:Date.now()};
+ const acc={v:1,id:'u'+uid(),prenom:c.prenom||mail.split('@')[0]||'casô',email:mail,sso:c.via,iter:ACC_ITER(),createdAt:Date.now(),cgu:{v:'2026-11-19',at:Date.now(),via:'sso'}};
  try{if(!accountPut(acc))throw new Error('stockage');if(!(await VAULT.createBio(acc)))throw new Error('coffre')}
  catch(e){try{localStorage.removeItem(ACC_KEY)}catch(x){}SSO.busy=false;b.disabled=false;
   if(e&&e.name==='NotAllowedError'){$('lgErr').textContent=i18nT('Face ID non confirmé. Réessaie.');$('lgErr').hidden=false;return}/* annulé : on reste là */
