@@ -1,6 +1,8 @@
 /* casô · Noyau : outils communs, couche de données, langue de l'appli, langues de la note vocale
    (sorti de index.html ; chargé dans l'ordre par le démarrage, voir modules/LISEZ-MOI.md) */
 const $=id=>document.getElementById(id);
+/* adresse de l'espace où l'appli est ouverte : l'origine du site, plus /e/<espace> pour l'équipe d'une entreprise sur le serveur casô */
+const ICI=()=>location.origin+location.pathname.replace(/\/[^/]*$/,'');
 const EUR_F=new Intl.NumberFormat('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const FMT_DD=new Intl.DateTimeFormat('fr-FR');const dFR=t=>{const d=t instanceof Date?t:new Date(t);return isNaN(d)?'Invalid Date':FMT_DD.format(d)};
 const eur=n=>EUR_F.format(Math.round(n*100)/100)+' €';

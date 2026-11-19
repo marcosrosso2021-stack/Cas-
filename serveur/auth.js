@@ -265,6 +265,8 @@ function creer(opts){
    actifs7:C.filter(c=>vu[c.id]&&t-vu[c.id]<7*J).length,actifs30:C.filter(c=>vu[c.id]&&t-vu[c.id]<30*J).length,
    essaisFin7:C.filter(c=>c.mode==='artisan'&&!(c.abo&&c.abo.offre)&&c.essaiFin&&c.essaiFin>t&&c.essaiFin-t<7*J).length,offres,parJour}}
 
- return{traiter,compte,pub,offre:c=>offre(c,now()),resume,_d:()=>d};
+ /* l'espace d'équipe de l'entreprise de ce compte (serveur/server.js, /api/espace) */
+ function lierEspace(id,esp){const c=d.comptes[id];if(!c)return false;c.espace=esp;persist();return true}
+ return{traiter,compte,pub,offre:c=>offre(c,now()),resume,lierEspace,_d:()=>d};
 }
 module.exports={creer,siretOk,offre,modulesDe,FOURNISSEURS,ESSAI_JOURS,SESSION_JOURS};
