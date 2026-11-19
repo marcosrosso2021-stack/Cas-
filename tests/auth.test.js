@@ -222,9 +222,13 @@ function req(srv,p,o){o=o||{};return new Promise((res,ko)=>{
   a=await P('profil',{mode:'artisan',nom:'Paul Plomberie',siret:SIRET3},jM);
   ok('e-mail : même essai de 30 jours au SIRET, tout le mode Artisan ouvert',a.status===200&&a.j.compte.offre==='artisan_curieux'&&a.j.compte.essaiFin===T+30*J&&a.j.compte.modules.length===PL.catalogue('artisan').modules.length);
   ok('e-mail : droits() en essai, rien de fermé',PL.droits(a.j.compte,T).essai&&PL.droits(a.j.compte,T).ouvert('veille'));
+  a=await req(S.server,'/api/prix?q=seau',{jeton:jM});ok('prix en ligne : ouverts pendant l\'essai',a.status!==403,String(a.status));
   a=await P('plan',{modules:['devis','pointage']},jM);ok('e-mail : plan enregistré',a.status===200&&a.j.compte.plan.modules.join()==='devis,pointage');
   T+=31*J;a=await P('moi',undefined,jM);const dr=PL.droits(a.j.compte,T);
   ok('e-mail : après l\'essai, plan + socle gratuit',a.j.compte.offre==='plan'&&!dr.essai&&dr.ouvert('devis')&&dr.ouvert('pointage')&&dr.ouvert('chat')&&dr.ouvert('clients')&&dr.ouvert('rdv')&&!dr.ouvert('veille')&&!dr.ouvert('planning'));
+  a=await req(S.server,'/api/prix?q=seau',{jeton:jM});ok('prix en ligne : refusés après l\'essai sans le module Fournisseurs (403)',a.status===403&&a.j.module==='fournisseurs',String(a.status));
+  await P('plan',{modules:['devis','fournisseurs']},jM);a=await req(S.server,'/api/prix?q=seau',{jeton:jM});ok('prix en ligne : ouverts avec le module Fournisseurs',a.status!==403,String(a.status));
+  a=await req(S.server,'/api/prix?q=seau');ok('prix en ligne : sans compte, limites anonymes inchangées (pas de 403)',a.status!==403,String(a.status));
   a=await P('mail/mdp',{preuve:PR2},jM);ok('e-mail : mot de passe changé',a.status===200&&(await P('mail/entrer',{email:'paul@exemple.fr',preuve:PR2})).status===200&&(await P('mail/entrer',{email:'paul@exemple.fr',preuve:PR})).status===401);
   const jG=(await connecter('google',gClaims('g-88','g88@gmail.com'))).jeton;
   a=await P('mail/mdp',{preuve:PR},jG);ok('e-mail : changer de mot de passe refusé pour un compte Google',a.status===400);

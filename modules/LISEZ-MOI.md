@@ -31,7 +31,7 @@ Un fichier de `modules/` placé après `chat/` ou `pointage/` (comme `newsletter
 | `planning-semaine.js` | planning de la semaine : carte, tournée, temps prévu | planning |
 | `compte-securite.js` | code de secours, suppression du compte, signature enregistrée | commun |
 | `plan-photo.js` | plan à partir d'une photo, tour de la pièce | 3d / rénovation |
-| `planning.js` | moteur de langage local, écran « Mon planning », rappels, agenda, équipe | planning |
+| `planning.js` | moteur de langage local, écran « Mon planning », rappels, agenda, équipe, chantiers sur plusieurs jours (calage sur les jours et créneaux libres) | planning |
 | `facturation.js` | factures, PDF, liste des factures | devis |
 | `paiement.js` | écran Encaissements (à encaisser, encaissé sur la période), paiements reçus, relance, avoir, export pour le comptable | paiement (« Encaissements ») |
 | `devis.js` | rendu du devis, éditeur à blocs, devis, mes services, historique | devis |
@@ -43,6 +43,7 @@ Un fichier de `modules/` placé après `chat/` ou `pointage/` (comme `newsletter
 | `paiement-phrases.js` | factures et paiements dictés (« Osvald a payé 500 € ») | paiement |
 | `listes.js` | glisser une ligne vers la gauche pour la corbeille | commun |
 | `devis-module.js` | module Devis (`devis.html`) branché sur le bouton Devis | devis |
+| `equipe.js` | Mon équipe : collaborateurs (la liste du pointage), coordonnées, invitation par SMS ou e-mail, heures, à payer, paiements ; le chat de l'équipe dans toutes les langues | commun |
 | `abonnement.js` | verrous des modules non pris : bandeau de lecture seule, ouverture directe de « On construit le plan » avec un petit mot, cadenas du menu, devis gratuit du mois | commun |
 | `newsletter.js` | page « Newsletter », pastille du non-lu, « Ça me concerne ? » (chargé après `chat/`) | veille |
 

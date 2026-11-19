@@ -59,9 +59,19 @@ newsletter (qui ne sert à rien d'autre) n'est pas chargé quand le module n'est
 - Navigateur : en essai (tout ouvert), après l'essai sans plan (socle seul, 1 devis par mois), avec plan, lecture seule,
   sans compte casô, Bricoleur (`tests/abonnement.test.js`).
 
+## Fait ensuite
+- **Face ID seul** ✅ : un compte e-mail pas encore relié au serveur reçoit une fois « Relier mon compte » (mot de passe vérifié
+  sur le téléphone, puis session casô) ; ensuite la pastille du profil le propose. Google / Outlook expiré : « Se reconnecter ».
+- **Contrôle du serveur** ✅ pour les prix en ligne : refusés (403) à un compte Artisan sans le module Fournisseurs après l'essai ;
+  l'appli met alors sa liste à jour et ouvre le plan.
+
 ## Reste à faire
-- **Face ID seul** : sans mot de passe saisi, un compte e-mail déjà créé n'est pas rattaché au serveur, donc rien n'est verrouillé.
-  Proposer une fois « Relie ton compte casô » (mot de passe demandé une seule fois).
-- **Pointage** : « Pointer » et « GPS toujours » sont verrouillés ; ajouter un chantier ou une personne ne l'est pas encore.
-- **Le serveur ne contrôle pas encore** le devis gratuit du mois ni les modules : tout est vérifié sur le téléphone.
-  À faire avec le paiement (Stripe) : le serveur refusera les actions des modules non payés (numéros de facture, signature, prix en ligne).
+- **Signature des devis et numéros de facture** : ils passent par le serveur de l'équipe, avec une clé d'équipe qui n'est pas
+  liée au compte casô. Pour que le serveur les contrôle, il faudra relier l'équipe au compte casô du patron (à faire avec Stripe).
+- **Pointage** : ajouter un chantier ou une personne dans l'écran Pointage n'est pas verrouillé.
+
+## Prochaines étapes (demandées)
+- **casô collaborateur** : l'appli du collaborateur invité (rejoindre l'équipe par le lien, son pointage, ses heures, ses paiements).
+  Il faut d'abord un espace d'équipe par entreprise sur le serveur casô (aujourd'hui un seul espace, « e1 »).
+- **casô client final** : l'espace du client de l'artisan (devis à signer, factures, suivi du chantier).
+- **Envoi automatique des invitations** : brancher un service SMS / e-mail (aujourd'hui le SMS ou l'e-mail s'ouvre déjà écrit, un appui pour envoyer).

@@ -95,7 +95,7 @@ async function accountCreate(d){
  db.profAt=Date.now();save();
  return acc}
 /* compte casô sur le serveur (essai, abonnement) : ouvert à chaque mot de passe saisi, sans bloquer l'appli */
-function casoMail(email,pass,prenom){try{if(window.CasoAuth&&CasoAuth.mail)CasoAuth.mail(email,pass,prenom).catch(()=>{})}catch(e){}}
+function casoMail(email,pass,prenom){window.__casoMdpVu=1;try{if(window.CasoAuth&&CasoAuth.mail)CasoAuth.mail(email,pass,prenom).catch(()=>{})}catch(e){}}
 function casoMailMdp(pass){try{if(window.CasoAuth&&CasoAuth.mailMdp)CasoAuth.mailMdp(pass).catch(()=>{})}catch(e){}}
 async function accountCheck(email,pass){
  const a=accountGet();if(!a||a.email!==String(email).trim().toLowerCase())return false;

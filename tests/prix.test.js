@@ -132,9 +132,12 @@ await t('serveur : GET /api/prix sans compte',async()=>{
  const getA=(u,j)=>new Promise((ok,ko)=>http.get({host:'127.0.0.1',port,path:u,headers:{authorization:'Bearer '+j}},r=>{let d='';r.on('data',c=>d+=c);r.on('end',()=>ok([r.statusCode,JSON.parse(d)]))}).on('error',ko));
  assert.strictEqual((await getA('/api/prix?q=placo%20BA14','f'.repeat(64)))[0],200,'jeton inconnu : traité comme anonyme');
  /* jeton valide : compté pour ce compte, pas pour l'adresse */
- const c1=s.auth._d();c1.comptes.cX={id:'cX',via:'google',mode:'artisan'};const j='a'.repeat(64);
+ const c1=s.auth._d();c1.comptes.cX={id:'cX',via:'google',mode:'artisan',essaiFin:Date.now()+10*864e5};const j='a'.repeat(64);
  c1.sessions[require('crypto').createHash('sha256').update(j).digest('hex')]={id:'cX',exp:Date.now()+864e5,vu:Date.now()};
  assert.strictEqual((await getA('/api/prix?q=placo%20BA15',j))[0],200);assert.strictEqual(prix.reste('cX'),299);
+ /* après l'essai, sans le module Fournisseurs : refusé, rien de décompté */
+ c1.comptes.cX.essaiFin=Date.now()-864e5;const [c4,b4]=await getA('/api/prix?q=placo%20BA16',j);
+ assert.strictEqual(c4,403);assert.strictEqual(b4.module,'fournisseurs');assert.strictEqual(prix.reste('cX'),299);
  srv.close();fs.rmSync(dir,{recursive:true,force:true})});
 console.log(ok+' contrôles OK');
 })().catch(e=>{console.error('✗',e);process.exit(1)});

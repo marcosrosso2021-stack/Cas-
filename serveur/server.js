@@ -13,8 +13,9 @@
 'use strict';
 const http=require('http'),fs=require('fs'),path=require('path'),crypto=require('crypto'),os=require('os');
 const webpush=require('./webpush.js'),prixLib=require('./prix.js'),authLib=require('./auth.js'),veilleLib=require('./veille/index.js');
-const sauvegarde=require('./sauvegarde.js'),s3Lib=require('./s3.js');
+const sauvegarde=require('./sauvegarde.js'),s3Lib=require('./s3.js'),PLAN=require('../lib/plan.js');
 
+const PEOPLE_PATRON=['taux','pays'];
 const COLL=['prices','quotes','hist','chantiers','people','pts','prof','clients','suppliers','projects','plans','events','invoices','memo','rapports'];
 const ROLE_PUSH={patron:COLL,chef:COLL,ouvrier:['pts']};
 const ROLE_PULL={patron:COLL,chef:COLL,ouvrier:['chantiers','people','pts','events']};
@@ -303,6 +304,8 @@ function createServer(opts={}){
      const old=cur&&cur.v&&typeof cur.v==='object'?cur.v:{};
      if(user.role!=='patron')PROF_PATRON.forEach(k=>{if(own(old,k))rec.v[k]=old[k];else delete rec.v[k]});
      else if(cur&&String(old.iban||'').replace(/\s+/g,'')!==String(rec.v.iban||'').replace(/\s+/g,''))notifyIban().catch(()=>{})}
+    /* équipe : le prix de l'heure et les paiements d'un collaborateur, seul le patron les écrit (les autres ne les reçoivent pas) */
+    if(c==='people'&&user.role!=='patron')PEOPLE_PATRON.forEach(k=>{if(cur&&own(cur,k))rec[k]=cur[k];else delete rec[k]});
     if(c==='invoices'&&cur){rec.pays=mergePays(cur.pays,rec.pays);if(cur.num)INV_KEEP.forEach(k=>{if(own(cur,k))rec[k]=cur[k];else delete rec[k]})}
     // un devis signé par le client garde exactement ce qui a été signé
     if(c==='quotes'&&cur&&cur.sign&&cur.sign.st==='signed'){SIGNED_KEEP.forEach(k=>{if(own(cur,k))rec[k]=cur[k];else delete rec[k]});rec.status=rec.status==='paye'?'paye':'accepte'}
@@ -327,6 +330,8 @@ function createServer(opts={}){
     if(c==='pts')l=l.filter(r=>myPeople.has(r.p));
     else if(c==='events')l=l.filter(r=>Array.isArray(r.who)&&r.who.some(id=>myPeople.has(id)));
     else if(c==='people')l=l.filter(r=>myPeople.has(r.id))}
+   /* un chef voit l'équipe, pas ce que gagnent les autres ; chacun garde sa propre fiche entière */
+   if(c==='people'&&user.role!=='patron')l=l.map(r=>{if(myPeople.has(r.id))return r;const o=Object.assign({},r);PEOPLE_PATRON.forEach(k=>delete o[k]);return o});
    if(l.length)out[c]=l}
   const tout=data.tombs.filter(t=>t.rev>since&&canPull.includes(t.c));
   syncEcrit=dirty?persist():null;
@@ -617,11 +622,14 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
     delete data.invites[code];
     const u=data.users[inv.user];
     if(!u)return send(res,404,{error:'Ce compte n\'existe plus.'});
+    u.joined=Date.now();
     {const tk=newToken(u);await flush();return send(res,200,tk)}}
 
    /* prix des matériaux en ligne : la clé du service reste ici ; 300 recherches payantes par mois et par compte, limites par jour et par adresse sans compte */
    if(req.method==='GET'&&url==='/api/prix'){const sp=new URLSearchParams(req.url.split('?')[1]||'');
-    const cpt=auth.compte(req);/* connecté (Google / Outlook) : limite au mois par compte ; sinon limites anonymes */
+    const cpt=auth.compte(req);/* connecté (Google / Outlook / e-mail) : limite au mois par compte ; sinon limites anonymes */
+    /* compte Artisan après l'essai : les prix en ligne font partie du module Fournisseurs (même règle que l'appli, lib/plan.js) */
+    if(cpt&&!PLAN.droits(auth.pub(cpt),opts.maintenant?opts.maintenant():Date.now()).ouvert('fournisseurs'))return send(res,403,{error:'Le module Fournisseurs n\'est pas dans ton abonnement.',module:'fournisseurs'});
     const [c,b]=await prix.chercher(sp.get('q')||'',sp.get('pays')||'FR',ip,sp.get('mag')||'',sp.get('nom')||'',cpt&&cpt.id);return send(res,c,b)}
    if(req.method==='GET'&&url==='/api/prix/img'){const sp=new URLSearchParams(req.url.split('?')[1]||'');
     const [c,o]=await prix.image(sp.get('u')||'');if(c!==200)return send(res,c,o);
@@ -828,7 +836,9 @@ data.invSeq[key]=n;if(iid)data.invIds[key+'|'+iid]=n;await persist();return send
    /* gestion de l'équipe : patron seulement */
    if(url.startsWith('/api/users')||url==='/api/invite'){
     if(user.role!=='patron')return send(res,403,{error:'Réservé au patron.'});
-    if(req.method==='GET'&&url==='/api/users')return send(res,200,Object.values(data.users).map(u=>({name:u.name,role:u.role})));
+    /* joined : la personne a rejoint (invitation utilisée, ou déjà connectée avant ce champ) ; sinon elle est seulement invitée */
+    if(req.method==='GET'&&url==='/api/users'){const co=new Set(Object.values(data.tokens).map(t=>t.user));
+     return send(res,200,Object.values(data.users).map(u=>({name:u.name,role:u.role,joined:!!(u.joined||u.role==='patron'||co.has(u.name.toLowerCase()))})))}
     if(POST&&url==='/api/invite'){
      const b=await readBody(req),name=String(b.user||'').trim();
      if(!validName(name))return send(res,400,{error:'Prénom invalide (2 à 30 caractères).'});
