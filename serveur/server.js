@@ -13,7 +13,7 @@
 'use strict';
 const http=require('http'),fs=require('fs'),path=require('path'),crypto=require('crypto'),os=require('os');
 const webpush=require('./webpush.js'),prixLib=require('./prix.js'),authLib=require('./auth.js'),veilleLib=require('./veille/index.js');
-const sauvegarde=require('./sauvegarde.js'),s3Lib=require('./s3.js'),PLAN=require('../lib/plan.js'),mailLib=require('./mail.js');
+const sauvegarde=require('./sauvegarde.js'),chiffre=require('./chiffre.js'),s3Lib=require('./s3.js'),PLAN=require('../lib/plan.js'),mailLib=require('./mail.js');
 
 const PEOPLE_PATRON=['taux','pays'];
 const COLL=['prices','quotes','hist','chantiers','people','pts','prof','clients','suppliers','projects','plans','events','invoices','memo','rapports'];
@@ -58,6 +58,8 @@ function createServer(opts={}){
  const ESPACE=/^[a-z0-9]{1,24}$/.test(String(opts.espace||''))?String(opts.espace):'e1',ESP=path.join(DIR,'espaces',ESPACE);
  fs.mkdirSync(ESP,{recursive:true});
  const FILE=path.join(ESP,'data.json');
+ /* chiffrement au repos (serveur/chiffre.js) : phrase CASO_CLE_DONNEES ; sans elle, les fichiers restent en clair */
+ const CH=opts.coffre||chiffre.creer(opts.cleDonnees!==undefined?opts.cleDonnees:(process.env.CASO_CLE_DONNEES||'')),NOM_F='espaces/'+ESPACE+'/data.json';
  if(ESPACE==='e1'){const ANCIEN=path.join(DIR,'data.json');let a=null,n=null;try{a=fs.statSync(ANCIEN)}catch(e){if(e.code!=='ENOENT')throw e}try{n=fs.statSync(FILE)}catch(e){if(e.code!=='ENOENT')throw e}
   if(a&&!n){fs.copyFileSync(ANCIEN,FILE);console.log('[casô] données de l\'entreprise rangées dans espaces/e1 (l\'ancien data.json est gardé).')}
   else if(a&&n&&a.mtimeMs>n.mtimeMs+1000){fs.copyFileSync(FILE,FILE+'.avant-'+Date.now());fs.copyFileSync(ANCIEN,FILE);console.log('[casô] l\'ancien data.json était plus récent : il a été repris, la version de l\'espace est mise de côté.')}}
@@ -74,8 +76,8 @@ function createServer(opts={}){
  let data={rev:0,counter:0,users:{},tokens:{},invites:{},recs:{},tombs:[],signs:{},sigreg:{},subs:[],vapid:null},dataSize=0;
  /* plafond du fichier de données (200 Mo, réglable avec DATA_MAX_MO) : au-delà, le serveur refuse ce qui l'agrandit */
  const DATA_MAX=(Number(opts.dataMaxMo||process.env.DATA_MAX_MO)||200)*1e6;
- {let raw=null;try{raw=fs.readFileSync(FILE,'utf8')}catch(e){if(e.code!=='ENOENT')throw e}
-  if(raw!==null)dataSize=Buffer.byteLength(raw);
+ let enClair=false;
+ {let raw=null;const lu=CH.lire(FILE,NOM_F);if(lu){raw=lu.texte;dataSize=lu.octets;enClair=!lu.chiffre}
   if(raw!==null){let d;try{d=JSON.parse(raw)}catch(e){const bad=FILE+'.illisible-'+Date.now();try{fs.renameSync(FILE,bad)}catch(_){}
     throw new Error('Le fichier de données est illisible. Il a été mis de côté ('+path.basename(bad)+') et rien n\'a été écrasé. Restaure une sauvegarde avant de relancer.')}
    data=Object.assign(data,d)}}
@@ -83,8 +85,10 @@ function createServer(opts={}){
  COLL.forEach(c=>{if(!data.recs[c])data.recs[c]=Object.create(null);else Object.setPrototypeOf(data.recs[c],null)});
  if(!data.invIds)data.invIds={};
  if(!data.signs)data.signs={};if(!data.sigreg)data.sigreg=Object.create(null);if(!data.subs)data.subs=[];if(!data.remSent)data.remSent={};if(!data.invSeq)data.invSeq={};if(!data.invShares)data.invShares={};if(!data.ics)data.ics={};
- if(!data.vapid){data.vapid=webpush.vapidKeys();try{const t=FILE+'.tmp';fs.writeFileSync(t,JSON.stringify(data));fs.renameSync(t,FILE)}catch(e){}}
- const auth=opts.authInst||authLib.creer(Object.assign({dir:DIR,hosted:HOSTED,maintenant:opts.maintenant},opts.auth||{}));
+ if(!data.vapid||(CH.actif&&enClair)){if(!data.vapid)data.vapid=webpush.vapidKeys();try{CH.ecrireSync(FILE,JSON.stringify(data),NOM_F);enClair=false}catch(e){}}
+ /* données désormais chiffrées : l'ancien data.json de la racine (copie en clair d'avant les espaces) est retiré */
+ if(CH.actif&&!enClair&&ESPACE==='e1'){const A=path.join(DIR,'data.json');try{if(!chiffre.estChiffre(fs.readFileSync(A))){fs.unlinkSync(A);console.log('[casô] données chiffrées : l\'ancien data.json en clair est retiré.')}}catch(e){}}
+ const auth=opts.authInst||authLib.creer(Object.assign({dir:DIR,hosted:HOSTED,maintenant:opts.maintenant,cleDonnees:opts.cleDonnees},opts.auth||{}));
  const mail=opts.mail||mailLib.creer();// e-mails (Mailjet) : devis envoyés au client// comptes des usagers : connexion Google / Microsoft (module AUTH)
  const prix=opts.prix||prixLib.creer({dir:DIR});// prix des matériaux en ligne (clé SEARCHAPI_KEY ou SERPAPI_KEY)
  /* veille réglementaire : un passage par jour sur les sources officielles ; rien n'est envoyé aux artisans sans validation */
@@ -164,8 +168,7 @@ function createServer(opts={}){
     arrivées entre-temps sont regroupées dans la suivante. persist() rend une promesse tenue quand ce changement est
     sur le disque : les réponses qui confirment un enregistrement l'attendent (await persist()). */
  let wFile=Promise.resolve(),wNext=null,cede=false;
- async function ecrire(){const j=JSON.stringify(data),tmp=FILE+'.tmp';dataSize=Buffer.byteLength(j);
-  await fs.promises.writeFile(tmp,j);await fs.promises.rename(tmp,FILE)}
+ async function ecrire(){dataSize=await CH.ecrire(FILE,JSON.stringify(data),NOM_F)}
  function persist(){
   let p;
   if(cede)p=Promise.reject(pub('Mise à jour du serveur en cours, réessaie dans un instant.'));

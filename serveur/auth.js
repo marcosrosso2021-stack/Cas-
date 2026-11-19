@@ -10,6 +10,7 @@
 'use strict';
 const fs=require('fs'),path=require('path'),crypto=require('crypto');
 const PLAN=require('../lib/plan.js');
+const chiffre=require('./chiffre.js');
 
 const ETAT_MIN=10,TICKET_MIN=2,SESSION_JOURS=90,ESSAI_JOURS=30;
 const sha=s=>crypto.createHash('sha256').update(String(s)).digest('hex');
@@ -69,12 +70,15 @@ function creer(opts){
  const appelJeton=opts.fetch||((u,o)=>fetch(u,o));
  const publicUrl=()=>String(opts.publicUrl||process.env.PUBLIC_URL||'').replace(/\/+$/,'');
  let d={n:0,comptes:{},sessions:{},essais:{}};
- {let raw=null;try{raw=fs.readFileSync(FILE,'utf8')}catch(e){if(e.code!=='ENOENT')throw e}
+ /* chiffrement au repos (serveur/chiffre.js), même phrase que les données des espaces */
+ const CH=opts.coffre||chiffre.creer(opts.cleDonnees!==undefined?opts.cleDonnees:(process.env.CASO_CLE_DONNEES||''));let enClair=false;
+ {let raw=null;const lu=CH.lire(FILE,'comptes.json');if(lu){raw=lu.texte;enClair=!lu.chiffre}
   if(raw!==null){let v;try{v=JSON.parse(raw)}catch(e){const bad=FILE+'.illisible-'+Date.now();try{fs.renameSync(FILE,bad)}catch(_){}
     throw new Error('comptes.json est illisible. Il a été mis de côté ('+path.basename(bad)+'), rien n\'a été écrasé.')}
    d=Object.assign(d,v)}}
  for(const k of ['comptes','sessions','essais'])d[k]=Object.assign(Object.create(null),d[k]||{});
- function persist(){const t=FILE+'.tmp';fs.writeFileSync(t,JSON.stringify(d));fs.renameSync(t,FILE)}
+ function persist(){CH.ecrireSync(FILE,JSON.stringify(d),'comptes.json')}
+ if(CH.actif&&enClair)persist();
 
  /* états (aller chez le fournisseur) et tickets (retour dans l'appli) : en mémoire seulement */
  const etats=new Map(),tickets=new Map(),freq=new Map();
