@@ -119,6 +119,35 @@ await t('cache expiré non relu ; taille du cache bornée',async()=>{
  await p.chercher('vieux','FR','1');assert.strictEqual(f.appels.length,1);assert.strictEqual(p.reste('c1'),300,'autre mois : compteur remis à zéro');
  await p.chercher('x1','FR','1');await p.chercher('x2','FR','1');assert.strictEqual(p.etat().cache,2);
  fs.rmSync(dir,{recursive:true,force:true})});
+await t('bascule : SearchApi.io en panne → SerpApi aussitôt, puis SearchApi.io mis de côté quelques minutes',async()=>{
+ const appels=[];let saPanne=true;
+ const f=async u=>{u=String(u);appels.push(u);const sa=u.includes('searchapi.io');
+  if(sa&&saPanne)return{ok:false,status:503,json:async()=>({error:'Service Unavailable'})};
+  return{ok:true,status:200,json:async()=>REP}};
+ const logs=[],p=creer({env:{SEARCHAPI_KEY:'sa',SERPAPI_KEY:'sp'},fetch:f,log:(...a)=>logs.push(a.join(' '))});
+ const [c,b]=await p.chercher('placo','FR','1');
+ assert.strictEqual(c,200);assert.strictEqual(b[0].magasin,'Y');
+ assert.strictEqual(appels.length,2);assert.ok(appels[0].includes('searchapi.io'));assert.ok(appels[1].includes('serpapi.com'));
+ assert.ok(!appels[1].includes('api_key=sa'),'la clé SearchApi.io n\'est jamais envoyée à SerpApi');
+ assert.ok(logs.some(l=>/searchapi en erreur/.test(l)));assert.ok(!logs.some(l=>/sa\b|sp\b/.test(l.replace(/searchapi|serpapi/g,''))),'aucune clé dans le journal');
+ await p.chercher('rail','FR','1');assert.strictEqual(appels.length,3,'SearchApi.io en pause : directement SerpApi');assert.ok(appels[2].includes('serpapi.com'));
+ assert.deepStrictEqual(p.etat().enPanne,['searchapi']);assert.strictEqual(p.etat().dernier,'serpapi')});
+await t('bascule : après la pause, SearchApi.io redevient le premier',async()=>{
+ const appels=[];let saPanne=true;
+ const f=async u=>{u=String(u);appels.push(u);if(u.includes('searchapi.io')&&saPanne)throw Object.assign(new Error('x'),{name:'AbortError'});return{ok:true,status:200,json:async()=>REP}};
+ const p=creer({env:{SEARCHAPI_KEY:'sa',SERPAPI_KEY:'sp',PRIX_PAUSE_MIN:'0.0001'},fetch:f,log:()=>{}});
+ await p.chercher('a1','FR','1');saPanne=false;await new Promise(r=>setTimeout(r,20));
+ await p.chercher('a2','FR','1');assert.ok(appels[2].includes('searchapi.io'));assert.strictEqual(appels.length,3);assert.deepStrictEqual(p.etat().enPanne,[])});
+await t('les deux en panne : message clair, la recherche n\'est pas décomptée du quota',async()=>{
+ const f=faux({error:'boom'},500),p=creer({env:{SEARCHAPI_KEY:'sa',SERPAPI_KEY:'sp',PRIX_MOIS:'5',PRIX_IP:'1'},fetch:f,log:()=>{}});
+ const [c,b]=await p.chercher('placo','FR','1','','','c1');assert.strictEqual(c,502);assert.ok(/ne répond pas/.test(b.error));
+ assert.strictEqual(f.appels.length,2);assert.strictEqual(p.reste('c1'),5);
+ assert.strictEqual((await p.chercher('placo','FR','9'))[0],502);assert.strictEqual((await p.chercher('rail','FR','9'))[0],502,'anonyme : l\'échec ne mange pas la limite de l\'adresse');
+ assert.strictEqual(p.etat().payeesMois,0);
+ assert.strictEqual((await p.chercher('vis','FR','1','pointp.fr','Point.P','c1'))[0],502);assert.strictEqual(p.reste('c1'),5)});
+await t('une seule clé : pas de bascule, comportement inchangé',async()=>{
+ const f=faux({error:'boom'},500),p=creer({env:{SERPAPI_KEY:'sp'},fetch:f,log:()=>{}});
+ assert.strictEqual((await p.chercher('placo','FR','1'))[0],502);assert.strictEqual(f.appels.length,1);assert.deepStrictEqual(p.etat().services,['serpapi'])});
 await t('serveur : GET /api/prix sans compte',async()=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'caso-prix-'));
  const {createServer}=require('../serveur/server.js');
