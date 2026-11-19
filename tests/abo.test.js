@@ -62,8 +62,8 @@ const evt=(srv,type,obj,o)=>{const e={id:'evt_'+(++S.n),type,data:{object:obj}},
  await req(srv,{path:'/api/auth/plan',headers:H(jt),body:{modules:tous}});
  r=await req(srv,{path:'/api/auth/abo/payer',headers:H(jt),body:{retour:'https://casobtp.fr/'}});
  ok('payer : adresse de la page de paiement Stripe',r.json&&/^https:\/\/checkout\.stripe\.com\//.test(r.json.url),r.body);
- ok('8 prix créés (un par module), hors taxes',Object.keys(S.prix).length===8&&Object.values(S.prix).every(p=>p.tax==='exclusive'),Object.keys(S.prix).length);
- const brut=3800,plafond=2500,total=Math.round(plafond*0.7);
+ ok('7 prix créés (un par module), hors taxes',Object.keys(S.prix).length===7&&Object.values(S.prix).every(p=>p.tax==='exclusive'),Object.keys(S.prix).length);
+ const brut=3600,plafond=2500,total=Math.round(plafond*0.7);
  ok('remise unique : plafond (25 €) puis fondateur 30 % → total 17,50 €',S.coupons['caso_remise_artisan_'+(brut-total)]&&S.dernier['discounts[0][coupon]']==='caso_remise_artisan_'+(brut-total),Object.keys(S.coupons).join(','));
  ok('pendant l\'essai : premier prélèvement à la fin de l\'essai',+S.dernier['subscription_data[trial_end]']>Math.floor(T/1000)+25*86400,S.dernier['subscription_data[trial_end]']);
  ok('page de paiement : carte et prélèvement SEPA, e-mail du compte, retour vers l\'appli',S.dernier['payment_method_types[0]']==='card'&&S.dernier['payment_method_types[1]']==='sepa_debit'&&S.dernier.customer_email==='jean@exemple.fr'&&S.dernier.success_url==='https://casobtp.fr/#abo=ok',JSON.stringify(S.dernier).slice(0,200));
@@ -83,12 +83,12 @@ const evt=(srv,type,obj,o)=>{const e={id:'evt_'+(++S.n),type,data:{object:obj}},
  ok('paiement terminé : accepté',r.status===200,r.body);
  r=await evt(srv,'customer.subscription.created',sub);
  r=await req(srv,{path:'/api/auth/abo',headers:H(jt)});
- ok('abonné : 8 modules, total 17,50 € HT, membre fondateur',r.json&&r.json.abo.abonne&&r.json.abo.modules.length===8&&r.json.abo.total===total,r.body);
+ ok('abonné : 7 modules, total 17,50 € HT, membre fondateur',r.json&&r.json.abo.abonne&&r.json.abo.modules.length===7&&r.json.abo.total===total,r.body);
 
  /* 3. après l'essai : les modules viennent de l'abonnement payé */
  T+=31*J;
  r=await req(srv,{path:'/api/auth/moi',headers:H(jt)});
- ok('après l\'essai : modules de l\'abonnement ouverts',r.json&&r.json.compte.modules.length===8,r.body.slice(0,200));
+ ok('après l\'essai : modules de l\'abonnement ouverts',r.json&&r.json.compte.modules.length===7,r.body.slice(0,200));
 
  /* 4. changement de modules : au prorata, sans nouvelle page de paiement */
  await req(srv,{path:'/api/auth/plan',headers:H(jt),body:{modules:['devis','planning']}});

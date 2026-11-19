@@ -109,14 +109,10 @@ async function acSubmit(){
  document.querySelectorAll('#acForm input').forEach(i=>i.removeAttribute('aria-invalid'));
  const bad=acCheck(d);
  if(bad){$('acErr').textContent=i18nT(bad[1]);$('acErr').hidden=false;const f=$(bad[0]);f.setAttribute('aria-invalid','true');f.focus();return}
- /* notifications : la demande part tout de suite (le téléphone ne la montre que pendant l'appui), l'abonnement après la création */
- const notifP=window.Notification&&Notification.permission==='default'?Notification.requestPermission().catch(()=>'default'):Promise.resolve(window.Notification?Notification.permission:'default');
  acBusy=true;const btn=$('acGo');btn.disabled=true;btn.textContent='…';
  try{await accountCreate(d);if(co){db.prof=Object.assign({},db.prof||{},{adr:$('acCoAdr').value.trim(),siren:d.siren||d.siret.slice(0,9),siret:$('acCoSiret').value.replace(/\s/g,''),forme:$('acCoForme').value,tvai:$('acCoTva').value.replace(/\s/g,'').toUpperCase()});db.profAt=Date.now();save()}}
  catch(e){$('acErr').textContent="Impossible d'enregistrer sur ce téléphone.";$('acErr').hidden=false;acBusy=false;btn.disabled=false;btn.textContent='Créer mon compte';return}
  $('acPass').value='';fillProf();renderAcct();bkSet('devis_welcomed',1);
- {const a=accountGet();if(a){a.cgu={v:'2026-11-19',at:Date.now()};a.notif=true;accountPut(a)}}
- notifP.then(p=>{if(p==='granted'&&typeof newsNotif==='function')newsNotif()});
  try{ONB.code=await rcSet()}catch(e){ONB.code=null}
  acBusy=false;btn.disabled=false;btn.textContent=i18nT('Créer mon compte');modeOpen(false)}
 function renderAcct(){const a=accountGet(),c=$('acctCard');if(!c)return;c.hidden=!a;bioRender()}

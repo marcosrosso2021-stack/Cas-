@@ -19,12 +19,15 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
  /* ===== 1. nouveau compte ===== */
  {const {p,errs}=await ctx();await p.goto(B);await appUp(p);
   ok('1.0 sans compte : l’appli démarre normalement, pas de coffre',await p.evaluate(()=>!VAULT.on&&!VAULT.has()&&typeof db!=='undefined'));
-  const cgu=await p.evaluate(()=>!!document.querySelector('#acForm .ac-sso-ok a[href="conditions.html"]')&&!!document.querySelector('#acForm .ac-sso-ok a[href="confidentialite.html"]'));
-  ok('1.0b création : conditions et confidentialité en lien sous le bouton',cgu);
   const code=await p.evaluate(async()=>{document.getElementById('acNom').value='Jean Dupont';document.getElementById('acMail').value='jean@test.fr';document.getElementById('acPass').value='motdepasse1';
-   await acSubmit();window.__cgu=!!(accountGet()||{}).cgu;db.quotes.push({id:'qsecret',client:'Marie Dupont Secret',lines:[],date:'2026-11-08'});db.prof.iban='FR7612345678901234567890123';save();
+   await acSubmit();
+   /* fin de la création : sans la case des conditions, le choix du mode est refusé ; cochée, l'acceptation est enregistrée */
+   window.__ck=!document.getElementById('mdCk').hidden;modePick('bricoleur');window.__refus=!(accountGet()||{}).mode&&!document.getElementById('mdCkErr').hidden;
+   document.getElementById('mdCgu').checked=true;mdCkOk();window.__cgu=!!(accountGet()||{}).cgu;db.quotes.push({id:'qsecret',client:'Marie Dupont Secret',lines:[],date:'2026-11-08'});db.prof.iban='FR7612345678901234567890123';save();
    localStorage.setItem('devis_sync',JSON.stringify({url:'https://srv.example',token:'TOKEN-SECRET-123'}));
    await new Promise(r=>setTimeout(r,1500));return ONB.code});
+  const ck=await p.evaluate(()=>({ck:window.__ck,refus:window.__refus,cgu:window.__cgu}));
+  ok('1.0b fin de création : case des conditions obligatoire, puis acceptation enregistrée',ck.ck&&ck.refus&&ck.cgu,JSON.stringify(ck));
   ok('1.1 code de secours créé',/^[A-Z0-9]{5}-[A-Z0-9]{5}$/.test(code||''),code);
   const r=await raw(p),J=JSON.stringify(r);
   ok('1.2 coffre créé (mot de passe + code de secours)',(()=>{const m=JSON.parse(r.caso_vault||'null');return !!(m&&m.p&&m.r)})());
