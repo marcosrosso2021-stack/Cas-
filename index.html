@@ -904,7 +904,7 @@ input[aria-invalid="true"]{border-color:var(--ko)}
 .ab-t:focus-visible,.ab-go:focus-visible{outline:2px solid var(--acc-d);outline-offset:2px}
 .ab-ft{position:sticky;bottom:0;display:flex;align-items:center;gap:12px;margin:14px -16px 0;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));background:var(--card);border-top:1px solid var(--line)}
 .ab-sum{display:flex;align-items:baseline;gap:6px;flex:1;min-width:0}
-.ab-sum b{font-size:26px;font-weight:700;letter-spacing:-.02em}
+.ab-sum b{font-size:26px;font-weight:700;letter-spacing:-.02em}#rsSh .ab-sum{flex-direction:column;gap:0}#rsSh .ab-sum b{white-space:nowrap;font-size:22px}#rsSh .ab-go{flex:none}
 .ab-sum s{font-size:14px;color:var(--mut)}
 .ab-sum span{font-size:13px;color:var(--mut)}
 .ab-go{display:inline-flex;align-items:center;gap:8px;min-height:48px;padding:0 22px;border:0;border-radius:999px;background:var(--ink);color:var(--card);font:inherit;font-size:16px;font-weight:600;cursor:pointer}
@@ -2323,6 +2323,16 @@ body.role-ouvrier [data-pat]{display:none!important}
   <button class="ab-go" id="abGo" type="button" onclick="aboSave()"><svg class="i"><use href="#i-check"/></svg><span>Valider</span></button>
  </div>
 </div>
+<div class="sheet-bg" id="rsBg" hidden onclick="aboResClose()"></div>
+<div class="sheet ab-sh" id="rsSh" role="dialog" aria-modal="true" aria-labelledby="rsT" hidden>
+ <div class="sheet-grip"></div>
+ <div class="ab-h"><h3 id="rsT">Résilier mon abonnement</h3><button type="button" class="ab-x" onclick="aboResClose()" aria-label="Fermer"><svg class="i"><use href="#i-x"/></svg></button></div>
+ <p class="ab-mot" id="rsTxt" data-noi18n></p>
+ <div class="ab-ft">
+  <div class="ab-sum"><b id="rsTot"></b><span id="rsUnit"></span></div>
+  <button class="ab-go" id="rsGo" type="button" onclick="aboResGo()"><span>Confirmer la résiliation</span></button>
+ </div>
+</div>
 <div class="sheet-bg" id="faPayBg" hidden onclick="faPayClose()"></div>
 <div class="sheet" id="faPay" role="dialog" aria-modal="true" aria-labelledby="faPayT" hidden>
  <div class="sheet-grip"></div>
@@ -2494,6 +2504,9 @@ body.role-ouvrier [data-pat]{display:none!important}
   <div class="dw-pop" id="dwPop" role="menu" hidden>
    <div class="dw-pop-m" id="dwMail"></div>
    <div class="dw-pop-s"></div>
+   <button class="dw-pi" id="dwAboPay" role="menuitem" type="button" hidden onclick="dwPopClose();aboPortail()"><svg class="i"><use href="#i-doc"/></svg><span>Moyen de paiement et factures</span></button>
+   <button class="dw-pi" id="dwAboRes" role="menuitem" type="button" hidden onclick="dwPopClose();aboResOpen()"><svg class="i"><use href="#i-x"/></svg><span>Résilier mon abonnement</span></button>
+   <button class="dw-pi" id="dwAboRep" role="menuitem" type="button" hidden onclick="dwPopClose();aboReprendre()"><svg class="i"><use href="#i-undo"/></svg><span>Reprendre mon abonnement</span></button>
    <button class="dw-pi dw-out" role="menuitem" type="button" onclick="dwPopClose();logout()"><svg class="i"><use href="#i-logout"/></svg><span>Se déconnecter</span></button>
   </div>
   <button class="dw-plan" id="dwPlanGo" data-pat type="button" hidden onclick="drawerClose(true);dwPlanTap()" aria-label="On construit le plan"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 7.5l8 4.5 8-4.5L12 3Z M4 12l8 4.5 8-4.5 M4 16.5 12 21l8-4.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg><b id="dwPlanA"></b><span id="dwPlanB"></span></button>

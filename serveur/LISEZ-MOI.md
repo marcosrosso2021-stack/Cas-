@@ -405,3 +405,12 @@ Sans ces variables, rien ne part : l'appli le sait et propose « Copier le messa
   Les réponses des clients arrivent alors dans casô (chat, carte du devis) et une copie part à l'e-mail de « Mon entreprise ».
   Sans `MAIL_REPONSES`, les clients répondent directement à cet e-mail (rien dans l'appli).
 Pour que les e-mails n'arrivent pas en indésirables, valider le domaine chez Mailjet (SPF et DKIM).
+
+## Abonnement payant (Stripe)
+
+1. Dans Stripe (mode test d'abord) : Développeurs › Clés API › copier la **clé secrète** (`sk_test_…`). Sur Clever Cloud : variable `STRIPE_SECRET_KEY`.
+2. Développeurs › Webhooks › Ajouter un endpoint : adresse `https://casobtp.fr/api/auth/abo/webhook`, évènements `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.paid`, `invoice.payment_failed`. Copier le **secret de signature** (`whsec_…`) dans la variable `STRIPE_WEBHOOK_SECRET`.
+3. Paramètres › Facturation › Portail client : l'enregistrer une fois (carte, factures, résiliation).
+4. `CASO_PAIEMENT=1` : après l'essai, les modules ne s'ouvrent qu'avec un abonnement payé. Sans cette variable, le plan choisi reste ouvert sans paiement (mode essai).
+
+Les prix des modules et la remise (plafond, membres fondateurs) sont créés tout seuls dans Stripe au premier paiement (`serveur/abo.js`). Pendant l'essai, le premier prélèvement a lieu à la fin de l'essai. Impayé : 7 jours de grâce, puis lecture seule. Résiliation : en fin de période payée, depuis le menu du compte (« Résilier mon abonnement »). Passage en réel : remplacer les deux clés par celles du mode réel.
