@@ -42,6 +42,21 @@ canvas{display:block;width:100%;height:180px;background:#fff;border:2px dashed #
 .ok h1{color:var(--ok)}
 .proof{font-size:12px;color:var(--mut);word-break:break-all}
 .foot{text-align:center;font-size:12px;color:var(--mut)}
+.sm{font-size:13px}
+.cb{display:flex;align-items:center;justify-content:space-between;gap:10px}.cb-l{display:inline-flex;align-items:center;gap:8px;font-size:17px}.cb-l svg{width:28px;height:28px}
+.chip{font-size:12.5px;font-weight:600;padding:4px 11px;border-radius:999px;background:color-mix(in srgb,var(--acc) 26%,var(--card));color:var(--ink)}.chip.ok{background:color-mix(in srgb,var(--ok) 16%,var(--card));color:var(--ok)}.chip.wait{background:var(--line);color:var(--mut)}
+.hd h1{margin:2px 0 8px}.hdr{display:flex;justify-content:space-between;gap:12px;align-items:baseline}.hdr b{font-size:20px;font-variant-numeric:tabular-nums}
+.tb{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tbb{display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 6px;border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.tbb .ic{width:22px;height:22px}.tbb.on{border-color:var(--ink);background:color-mix(in srgb,var(--acc) 18%,var(--card))}
+.ic{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.ic.big{width:28px;height:28px;color:var(--ok)}.ic.okc{width:22px;height:22px;color:var(--ok)}
+.pane{display:flex;flex-direction:column;gap:10px}.pt{display:flex;align-items:center;gap:8px}
+.pane input[type=text]{margin:0}.pane .chk{margin:4px 0}
+textarea{width:100%;font:inherit;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);resize:vertical}
+.sb{align-self:flex-end;display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border:0;border-radius:999px;background:var(--ink);color:var(--card);font:inherit;font-size:15px;font-weight:600;cursor:pointer}.sb .ic{width:18px;height:18px}.sb:disabled{opacity:.4;cursor:default}
+.ok{display:flex;align-items:center;gap:12px}
+.pubc{display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center;font-size:13px;color:var(--ink);text-decoration:none;padding:14px;border-radius:14px;border:1px dashed var(--line)}
+@media print{.cb,.tb,.pubc{display:none!important}}
 button:focus-visible,input:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 @media print{body{background:#fff;color:#000;padding:0}.card{border:0;padding:8px 0}.noprint{display:none!important}.sig img{border:0}}
 .cv-paper{background:#fff;color:#141414;border-radius:18px;padding:22px 16px;border:1px solid var(--line);overflow-x:auto}
@@ -239,93 +254,104 @@ var CVD=(function(){
  function d(t){return new Date(t).toLocaleDateString('fr-FR')}
  function totals(o){var r=(o.remise||0)/100,ht=0,tv={};o.lines.forEach(function(l){var m=l.qty*l.pu*(1-r);ht+=m;var t=o.franchise?0:l.tva;tv[t]=(tv[t]||0)+m*t/100});
   var tva=0;Object.keys(tv).forEach(function(k){tva+=tv[k]});return{ht:ht,tv:tv,ttc:ht+tva,acompte:(ht+tva)*(o.acompte||0)/100}}
- function fail(msg){app.innerHTML='';var c=el('div','card');c.appendChild(el('h1',null,'Devis indisponible'));c.appendChild(el('p','mut',msg));app.appendChild(c)}
-
+ var ICO={
+  ok:'<path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.4 7.5 9.5 4.3-1.1 7.5-4.9 7.5-9.5V6L12 3Z"/><path d="m8.8 12.2 2.2 2.2 4.4-4.6"/>',
+  pen:'<path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17v3Z"/><path d="m14.5 7.5 3 3"/>',
+  edit:'<path d="M4 6h10M4 11h7M4 16h5"/><path d="m14 19 1-3.5 5.5-5.5a1.5 1.5 0 0 1 2 2L17 17.5 14 19Z"/>',
+  send:'<path d="M4 12 20 4l-4.5 16-3.5-6.5L4 12Z"/><path d="M12 13.5 20 4"/>',
+  check:'<path d="m5 12.5 4.5 4.5L19 7.5"/>',x:'<path d="M6 6l12 12M18 6 6 18"/>'};
+ function ico(k,c){var s=document.createElementNS('http://www.w3.org/2000/svg','svg');s.setAttribute('viewBox','0 0 24 24');s.setAttribute('class','ic'+(c?' '+c:''));s.setAttribute('aria-hidden','true');s.innerHTML=ICO[k];return s}
+ function fail(msg){app.innerHTML='';app.appendChild(bar());var c=el('div','card');c.appendChild(el('h1',null,'Devis indisponible'));c.appendChild(el('p','mut',msg));app.appendChild(c);app.appendChild(pub())}
+ /* barre casô : l'écran de validation du client est aussi la vitrine de l'appli */
+ function bar(chip,cls){var b=el('div','cb');b.innerHTML='<span class="cb-l"><svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#ffc21a"/><path d="M32 13 13 27v4h4v18h30V31h4v-4L32 13Z" fill="#18181a"/><rect x="25" y="34" width="14" height="9" rx="3" fill="#ffc21a"/></svg><b>casô</b></span>';
+  if(chip){var c=el('span','chip '+(cls||''),chip);b.appendChild(c)}return b}
+ function pub(){var f=el('a','pubc');f.href='/';f.target='_blank';f.rel='noopener';f.innerHTML='<span>Devis envoyé avec <b>casô</b></span><span class="mut">L’appli qui fait les devis des artisans · Découvrir</span>';return f}
+ var PANE=null;
  function render(){
   var q=S.doc.quote,p=S.doc.prof,t=totals(q);app.innerHTML='';
-  if(S.status==='signed'){var ok=el('div','card ok');var h=el('h1',null,'Devis signé');h.insertAdjacentHTML('beforeend',' <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-4px" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>');ok.appendChild(h);
-   ok.appendChild(el('p',null,'Signé par '+S.client.name+' le '+dt(S.client.at)+'. Merci !'));app.appendChild(ok)}
-  else if(S.status!=='sent'){fail('Ce devis a été remplacé ou annulé. Contactez '+(p.nom||'l\'entreprise')+'.');return}
-  else if(S.expires&&Date.now()>S.expires){fail('Ce devis a expiré le '+d(S.expires-864e5)+'. Contactez '+(p.nom||'l\'entreprise')+'.');return}
-
+  if(S.status!=='sent'&&S.status!=='signed'){fail('Ce devis a été remplacé ou annulé. Contactez '+(p.nom||'l\'entreprise')+'.');return}
+  if(S.status==='sent'&&S.expires&&Date.now()>S.expires){fail('Ce devis a expiré le '+d(S.expires-864e5)+'. Contactez '+(p.nom||'l\'entreprise')+'.');return}
+  var signed=S.status==='signed';
+  app.appendChild(bar(signed?'Signé':S.modif?'Modification demandée':'À signer',signed?'ok':S.modif?'wait':''));
+  /* en-tête : qui, quoi, combien */
+  var hd=el('div','card hd');hd.appendChild(el('div','mut',p.nom||''));hd.appendChild(el('h1',null,'Devis '+(q.num||'')));
+  var rw=el('div','hdr');rw.appendChild(el('span',null,q.client||''));rw.appendChild(el('b',null,eur(t.ttc)+' TTC'));hd.appendChild(rw);
+  if(!signed&&S.expires)hd.appendChild(el('div','mut sm','Valable jusqu’au '+d(S.expires-864e5)));
+  app.appendChild(hd);
+  if(signed){var ok=el('div','card ok');ok.appendChild(ico('check','big'));ok.appendChild(el('div',null,'Signé par '+S.client.name+' le '+dt(S.client.at)+'. Merci !'));app.appendChild(ok)}
+  /* trois actions discrètes */
+  else{var tb=el('div','tb');[['ok','Vérifier'],['pen','Signer'],['edit','Modifier']].forEach(function(x){var k=x[0]==='ok'?'verif':x[0]==='pen'?'sign':'modif';
+    var bt=el('button','tbb'+(PANE===k?' on':''));bt.type='button';bt.appendChild(ico(x[0]));bt.appendChild(el('span',null,x[1]));bt.setAttribute('aria-expanded',PANE===k?'true':'false');
+    bt.onclick=function(){PANE=PANE===k?null:k;render();var pn=document.getElementById('pane');if(pn)pn.scrollIntoView({behavior:'smooth',block:'nearest'})};tb.appendChild(bt)});
+   app.appendChild(tb);
+   if(PANE==='verif')app.appendChild(verifPane());if(PANE==='sign')app.appendChild(signForm(q));if(PANE==='modif')app.appendChild(modifPane(q))}
+  /* le devis */
   if(q.cv&&q.cv.blocks){var pa=el('div','cv-paper');pa.appendChild(CVD.dom(q,{prof:p,noSign:true}));app.appendChild(pa)}
-  else{
-  var head=el('div','card'),top=el('div','top'),a=el('div'),b=el('div');
-  a.appendChild(el('h1',null,p.nom||'Devis'));
-  [p.adr,p.siret&&('SIRET : '+p.siret),p.tel&&('Tél : '+p.tel),p.email].forEach(function(x){if(x)a.appendChild(el('div','mut',x))});
-  b.appendChild(el('div','num','DEVIS '+(q.num||'')));b.appendChild(el('div','mut','Date : '+(q.date?d(q.date):'')));
-  if(S.expires)b.appendChild(el('div','mut','Valable jusqu\'au '+d(S.expires-864e5)));
-  top.appendChild(a);top.appendChild(b);head.appendChild(top);app.appendChild(head);
-
-  var cl=el('div','card');cl.appendChild(el('h2',null,'Client'));cl.appendChild(el('div',null,q.client||''));
-  if(q.adr){cl.appendChild(el('h2',null,'Chantier'));cl.lastChild.style.marginTop='12px';cl.appendChild(el('div',null,q.adr))}
-  app.appendChild(cl);
-
-  var li=el('div','card');li.appendChild(el('h2',null,'Détail'));
-  q.lines.forEach(function(l){var r=el('div','ln');r.appendChild(el('div',null,l.label));r.appendChild(el('b',null,eur(l.qty*l.pu)));
-   r.appendChild(el('div','d',String(l.qty).replace('.',',')+' '+l.unit+' × '+eur(l.pu)+' HT'+(q.franchise?'':' · TVA '+l.tva+' %')));li.appendChild(r)});
-  app.appendChild(li);
-
-  var to=el('div','card');
-  if(q.remise)to.appendChild(row('Remise',q.remise+' %'));
-  to.appendChild(row('Total HT',eur(t.ht)));
-  if(q.franchise)to.appendChild(el('div','mut','TVA non applicable, art. 293 B du CGI'));
-  else Object.keys(t.tv).forEach(function(k){to.appendChild(row('TVA '+k+' %',eur(t.tv[k])))});
-  var big=row('Total TTC',eur(t.ttc));big.className='tot big';to.appendChild(big);
-  if(q.acompte)to.appendChild(row('Acompte à la signature ('+q.acompte+' %)',eur(t.acompte)));
-  if(p.assur)to.appendChild(el('p','mut','Assurance décennale : '+p.assur));
-  app.appendChild(to);
-
-  }
-  var sg=el('div','card');sg.appendChild(el('h2',null,'Signatures'));var g=el('div','sigs');
-  g.appendChild(sigBox('Pour l\'entreprise',S.pro));
-  if(S.client)g.appendChild(sigBox('Bon pour accord, le client',S.client));
-  sg.appendChild(g);app.appendChild(sg);
-
-  if(S.status==='sent')app.appendChild(signForm(q));
-  else{
-   var pr=el('div','card');pr.appendChild(el('h2',null,'Preuve de signature'));
-   pr.appendChild(el('p','proof','Signature électronique du client le '+dt(S.client.at)+(S.client.ip?' depuis l\'adresse '+S.client.ip:'')+'. Empreinte du devis (SHA-256) : '+S.docHash+'. Empreinte de la signature : '+(S.proof||'')));
-   var bp=el('button','btn sec noprint','Imprimer ou enregistrer en PDF');bp.onclick=function(){window.print()};pr.appendChild(bp);
-   app.appendChild(pr)}
-  app.appendChild(el('p','foot','Devis envoyé avec casô'));
- }
+  else{var li=el('div','card');
+   if(q.adr){li.appendChild(el('div','mut sm','Chantier · '+q.adr))}
+   q.lines.forEach(function(l){var r=el('div','ln');r.appendChild(el('div',null,l.label));r.appendChild(el('b',null,eur(l.qty*l.pu)));
+    r.appendChild(el('div','d',String(l.qty).replace('.',',')+' '+l.unit+' × '+eur(l.pu)+' HT'+(q.franchise?'':' · TVA '+l.tva+' %')));li.appendChild(r)});
+   if(q.remise)li.appendChild(row('Remise',q.remise+' %'));
+   li.appendChild(row('Total HT',eur(t.ht)));
+   if(q.franchise)li.appendChild(el('div','mut sm','TVA non applicable, art. 293 B du CGI'));
+   else Object.keys(t.tv).forEach(function(k){li.appendChild(row('TVA '+k+' %',eur(t.tv[k])))});
+   var big=row('Total TTC',eur(t.ttc));big.className='tot big';li.appendChild(big);
+   if(q.acompte)li.appendChild(row('Acompte à la signature ('+q.acompte+' %)',eur(t.acompte)));
+   if(p.assur)li.appendChild(el('p','mut sm','Assurance décennale : '+p.assur));
+   app.appendChild(li)}
+  var sg=el('div','card');var g=el('div','sigs');g.appendChild(sigBox('Pour l\'entreprise',S.pro));if(S.client)g.appendChild(sigBox('Bon pour accord, le client',S.client));sg.appendChild(g);app.appendChild(sg);
+  if(signed){var pr=el('div','card');pr.appendChild(el('p','proof','Signature électronique du client le '+dt(S.client.at)+'. Empreinte du devis (SHA-256) : '+S.docHash+'. Empreinte de la signature : '+(S.proof||'')));
+   var bp=el('button','btn sec noprint','Imprimer ou enregistrer en PDF');bp.onclick=function(){window.print()};pr.appendChild(bp);app.appendChild(pr)}
+  app.appendChild(pub())}
  function row(k,v){var r=el('div','tot');r.appendChild(el('span',null,k));r.appendChild(el('b',null,v));return r}
  function sigBox(title,s){var b=el('div','sig');b.appendChild(el('div','mut',title));var i=new Image();i.alt='Signature de '+s.name;i.src=s.img;b.appendChild(i);
   b.appendChild(el('div',null,s.name));b.appendChild(el('div','mut',dt(s.at)));return b}
-
- function signForm(q){
-  var c=el('div','card noprint');c.appendChild(el('h2',null,'Bon pour accord'));
-  var lb=el('label',null,'Votre nom');lb.htmlFor='nm';c.appendChild(lb);
-  var nm=el('input');nm.type='text';nm.id='nm';nm.autocomplete='name';nm.value=q.client||'';c.appendChild(nm);
-  var ck=el('label','chk');var cb=el('input');cb.type='checkbox';cb.id='ok';ck.appendChild(cb);
-  ck.appendChild(el('span',null,'J\'ai lu ce devis et je l\'accepte : bon pour accord.'));c.appendChild(ck);
-  c.appendChild(el('label',null,'Votre signature (avec le doigt)'));
-  var cv=el('canvas');cv.setAttribute('aria-label','Zone de signature');c.appendChild(cv);
-  var rw=el('div','row'),cl=el('button','lnk','Effacer');cl.type='button';rw.appendChild(el('span','mut',''));rw.appendChild(cl);c.appendChild(rw);
+ /* Vérifier : d'où vient ce devis */
+ function verifPane(){var p=S.doc.prof,c=el('div','card pane');c.id='pane';
+  var h=el('div','pt');h.appendChild(ico('ok','okc'));h.appendChild(el('b',null,'Devis authentique'));c.appendChild(h);
+  [['Entreprise',p.nom],['SIRET',p.siret],['Téléphone',p.tel],['E-mail',p.email],['Envoyé le',dt(S.sentAt)],['Empreinte',String(S.docHash||'').slice(0,16)+'…']].forEach(function(x){if(x[1])c.appendChild(row(x[0],x[1]))});
+  c.appendChild(el('p','mut sm','Ce devis ne peut plus être changé : son empreinte est gardée par casô.'));return c}
+ /* Modifier : le client dit ce qu'il veut changer, l'entreprise est prévenue */
+ function modifPane(q){var c=el('div','card pane');c.id='pane';
+  if(S.modif){var h=el('div','pt');h.appendChild(ico('check','okc'));h.appendChild(el('b',null,'Demande envoyée à '+(S.doc.prof.nom||'l\'entreprise')));c.appendChild(h);c.appendChild(el('p','mut sm','Vous recevrez un devis corrigé.'))}
+  var ta=el('textarea');ta.rows=3;ta.placeholder='Que voulez-vous changer ?';ta.setAttribute('aria-label','Que voulez-vous changer ?');c.appendChild(ta);
   var er=el('div','err');er.hidden=true;c.appendChild(er);
-  var bt=el('button','btn','Signer le devis');c.appendChild(bt);
-  var pad=Pad(cv);cl.onclick=pad.clear;
+  var bt=el('button','sb');bt.type='button';bt.appendChild(ico('send'));bt.appendChild(el('span',null,'Envoyer'));bt.disabled=true;c.appendChild(bt);
+  ta.oninput=function(){bt.disabled=ta.value.trim().length<3};
+  bt.onclick=function(){er.hidden=true;bt.disabled=true;
+   fetch('/api/s/'+token+'/modif',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({msg:ta.value.trim(),name:q.client||''})})
+    .then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.error||'Erreur');return j})})
+    .then(function(j){S=j;render()}).catch(function(e){er.textContent=e.message||'Erreur réseau, réessayez.';er.hidden=false;bt.disabled=false})};
+  return c}
+ /* Signer : nom, signature, case des conditions ; le petit bouton Envoyer n'apparaît que quand tout est prêt */
+ function signForm(q){
+  var c=el('div','card pane noprint');c.id='pane';
+  var nm=el('input');nm.type='text';nm.id='nm';nm.autocomplete='name';nm.value=q.client||'';nm.placeholder='Votre nom';nm.setAttribute('aria-label','Votre nom');c.appendChild(nm);
+  var cv=el('canvas');cv.setAttribute('aria-label','Zone de signature');c.appendChild(cv);
+  var rw=el('div','row'),cl=el('button','lnk','Effacer');cl.type='button';rw.appendChild(el('span','mut sm','Signez avec le doigt'));rw.appendChild(cl);c.appendChild(rw);
+  var ck=el('label','chk');var cb=el('input');cb.type='checkbox';cb.id='ok';ck.appendChild(cb);
+  var tx=el('span',null,'J’accepte ce devis et ses conditions (prix, validité'+(q.acompte?', acompte de '+q.acompte+' %':'')+') : bon pour accord.');ck.appendChild(tx);c.appendChild(ck);
+  var er=el('div','err');er.hidden=true;c.appendChild(er);
+  var bt=el('button','sb');bt.type='button';bt.appendChild(ico('send'));bt.appendChild(el('span',null,'Envoyer'));bt.hidden=true;c.appendChild(bt);
+  var pad=Pad(cv,maj);cl.onclick=function(){pad.clear();maj()};
+  function maj(){bt.hidden=!(nm.value.trim().length>=2&&cb.checked&&!pad.empty())}
+  nm.oninput=maj;cb.onchange=maj;
   bt.onclick=function(){
-   er.hidden=true;
-   if(nm.value.trim().length<2){er.textContent='Écrivez votre nom.';er.hidden=false;nm.focus();return}
-   if(!cb.checked){er.textContent='Cochez « bon pour accord ».';er.hidden=false;return}
-   if(pad.empty()){er.textContent='Signez dans le cadre blanc.';er.hidden=false;return}
-   bt.disabled=true;bt.textContent='Envoi…';
+   er.hidden=true;bt.disabled=true;bt.lastChild.textContent='Envoi…';
    fetch('/api/s/'+token+'/sign',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({name:nm.value.trim(),agree:true,img:pad.png()})})
     .then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.error||'Erreur');return j})})
-    .then(function(j){S=j;render();window.scrollTo(0,0)})
-    .catch(function(e){er.textContent=e.message||'Erreur réseau, réessayez.';er.hidden=false;bt.disabled=false;bt.textContent='Signer le devis'})};
+    .then(function(j){S=j;PANE=null;render();window.scrollTo(0,0)})
+    .catch(function(e){er.textContent=e.message||'Erreur réseau, réessayez.';er.hidden=false;bt.disabled=false;bt.lastChild.textContent='Envoyer'})};
   return c}
 
  /* zone de signature au doigt */
- function Pad(cv){
+ function Pad(cv,onDraw){
   var ctx=cv.getContext('2d'),drawing=false,last=null,n=0;
   function size(){var r=cv.getBoundingClientRect(),k=window.devicePixelRatio||1;cv.width=Math.round(r.width*k);cv.height=Math.round(r.height*k);ctx.setTransform(k,0,0,k,0,0);ctx.lineWidth=2.4;ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='#111';n=0}
   function pt(e){var r=cv.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
   cv.addEventListener('pointerdown',function(e){drawing=true;last=pt(e);cv.setPointerCapture(e.pointerId);ctx.beginPath();ctx.arc(last.x,last.y,1.1,0,7);ctx.fillStyle='#111';ctx.fill();n++});
   cv.addEventListener('pointermove',function(e){if(!drawing)return;var p=pt(e);ctx.beginPath();ctx.moveTo(last.x,last.y);ctx.lineTo(p.x,p.y);ctx.stroke();last=p;n++});
-  ['pointerup','pointercancel','pointerleave'].forEach(function(t){cv.addEventListener(t,function(){drawing=false})});
+  ['pointerup','pointercancel','pointerleave'].forEach(function(t){cv.addEventListener(t,function(){if(drawing&&onDraw)onDraw();drawing=false})});
   setTimeout(size,0);
   return{clear:function(){ctx.clearRect(0,0,cv.width,cv.height);n=0},empty:function(){return n<4},
    png:function(){var o=document.createElement('canvas');o.width=Math.min(cv.width,900);o.height=Math.round(cv.height*o.width/cv.width);var c=o.getContext('2d');c.fillStyle='#fff';c.fillRect(0,0,o.width,o.height);c.drawImage(cv,0,0,o.width,o.height);return o.toDataURL('image/png')}}}

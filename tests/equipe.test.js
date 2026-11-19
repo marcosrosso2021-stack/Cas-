@@ -24,10 +24,11 @@ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'caso-eq-'));
  let r=await dit('Karim est dans mon équipe');
  ok('« Karim est dans mon équipe » : ajouté, coordonnées demandées',/Karim ajouté à ton équipe/.test(r)&&/numéro ou son e-mail/.test(r),r);
  r=await dit('06 12 34 56 78');let k=await P('Karim');
- ok('le numéro donné au chat : enregistré, invitation prête (SMS déjà écrit)',k.tel==='06 12 34 56 78'&&k.inv&&/Envoyer/.test(r)&&await p.evaluate(()=>/^sms:0612345678\?&body=/.test(EQ.last.url)&&/Karim/.test(EQ.last.txt)),r);
+ await p.waitForTimeout(400);r=await p.evaluate(()=>{const m=CHAT.m[CHAT.m.length-1];return m.html.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ')});
+ ok('le numéro donné au chat : enregistré, carte d\'invitation (Copier le message, Partager)',k.tel==='06 12 34 56 78'&&k.inv&&/Invitation · Karim/.test(r)&&/Copier le message/.test(r)&&/Partager/.test(r)&&await p.evaluate(()=>/Karim/.test(EQ.last.txt)),r);
  const L={'add Ali to my team, ali@test.com':'Ali','Añade a Pedro a mi equipo':'Pedro','Aggiungi Luca alla mia squadra':'Luca','Yeni çalışan Mehmet':'Mehmet','أضف علي إلى فريقي':'علي','Добавь Олега в мою команду':'Олега'};
  for(const [t,n] of Object.entries(L)){r=await dit(t);ok('chat ('+n+') : « '+t+' »',!!(await P(n))&&/ajouté à ton équipe/.test(r),r.slice(0,80))}
- ok('e-mail dans la même phrase : invitation par e-mail',await p.evaluate(()=>/^mailto:ali%40test\.com\?subject=/.test(EQ.last.url)||/^mailto:ali@test\.com\?subject=/.test(EQ.last.url)));
+ ok('e-mail dans la même phrase : gardé, carte d\'invitation prête',(await P('Ali')).email==='ali@test.com'&&await p.evaluate(()=>/Ali/.test(EQ.last.txt)));
  r=await dit('Karim 15 € de l\'heure');ok('« Karim 15 € de l\'heure »',(await P('Karim')).taux===15,r);
  r=await dit('j\'ai payé Karim 300 €');ok('« j\'ai payé Karim 300 € » : paiement enregistré',(await P('Karim')).pays.length===1&&(await P('Karim')).pays[0].amt===300,r);
  r=await dit('Martin a payé 500 €');ok('« Martin a payé 500 € » (un client) : pas pour l\'équipe',(await P('Martin'))===null);
@@ -52,7 +53,7 @@ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'caso-eq-'));
  /* saisie à la main */
  await p.evaluate(()=>eqEdit());await p.fill('#eqNom','Sami Benali');await p.fill('#eqTel','07 11 22 33 44');await p.fill('#eqTaux','18');
  await p.evaluate(()=>segOn('eqRole','chef'));await p.evaluate(()=>eqSave());const s=await P('Sami Benali');
- ok('saisie à la main : chef, 18 €/h, invitation préparée',s&&s.role==='chef'&&s.taux===18&&s.inv&&await p.evaluate(()=>/^sms:0711223344/.test(EQ.last.url)));
+ await p.waitForTimeout(400);ok('saisie à la main : chef, 18 €/h, carte d\'invitation dans la fiche',s&&s.role==='chef'&&s.taux===18&&s.inv&&await p.evaluate(()=>/Invitation · Sami Benali/.test($('eqSh').innerText)));
  ok('Pointage : plus de liste « Personnes » en double, un lien vers Mon équipe',await p.evaluate(()=>{ptPage&&go('pt');ptPage('set');return !document.querySelector('#pnNew')&&!!document.querySelector('.eq-lien')}));
 
  /* 3. avec l'espace d'équipe du patron : un lien personnel pour rejoindre */

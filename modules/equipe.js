@@ -49,7 +49,8 @@ function eqSheet(){const p=EQ.cur?eqP(EQ.cur):null,S=$('eqSh');
  S.innerHTML=`<div class="sheet-grip"></div><div class="ag-sh-h"><span class="eq-av" aria-hidden="true">${esc((p.nom.trim()[0]||'·').toUpperCase())}</span><h3 data-noi18n>${esc(p.nom)}</h3><button type="button" class="ag-sh-b" onclick="eqEdit('${p.id}')" aria-label="${esc(i18nT('Modifier'))}"><svg class="i"><use href="#i-edit"/></svg></button><button type="button" class="ag-sh-b" onclick="eqClose()" aria-label="Fermer"><svg class="i"><use href="#i-x"/></svg></button></div>
   <div class="eq-ct">${ct||`<button type="button" class="lnk" onclick="eqEdit('${p.id}')">${esc(i18nT('Ajouter un numéro ou un e-mail'))}</button>`}</div>
   <div class="eq-inv"><span class="eq-s ${st}">${esc(i18nT(EQ_ST[st]))}${p.inv&&st==='invite'?` · <span data-noi18n>${esc(agFmtD(ymdL(new Date(p.inv.at)),{weekday:undefined,month:'short'}))}</span>`:''}</span>
-   ${st!=='equipe'&&(p.tel||p.email)?`<button type="button" class="btn sm${p.inv?' sec':''}" onclick="eqInviter('${p.id}')"><svg class="i"><use href="#i-send"/></svg>${esc(i18nT(p.inv?'Renvoyer':'Inviter'))}</button>`:''}</div>
+   ${st!=='equipe'?`<button type="button" class="btn sm${p.inv?' sec':''}" onclick="eqInviter('${p.id}')"><svg class="i"><use href="#i-send"/></svg>${esc(i18nT(p.inv?'Renvoyer':'Inviter'))}</button>`:''}</div>
+  ${EQ.carte&&EQ.carte.id==='inv-'+p.id&&st!=='equipe'?envCarte(EQ.carte):''}
   <div class="seg eq-per" id="eqPer">${Object.keys(EQ_PER).map(k=>`<button type="button" data-p="${k}" onclick="EQ.per='${k}';eqSheet()">${esc(i18nT(EQ_PER[k]))}</button>`).join('')}</div>
   <div class="eq-tiles">
    <div><span>${esc(i18nT('Heures'))}</span><b data-noi18n>${esc(fmtH(h))}</b></div>
@@ -93,14 +94,15 @@ function eqPayDel(id,xid){const p=eqP(id);if(!p||!confirm(i18nT('Supprimer ce pa
 async function eqLien(p){const c=getSync();
  if(c.token&&c.role==='patron'){try{const j=await apiTeam('/api/invite',{user:p.nom,role:p.role==='chef'?'chef':'ouvrier'});const b=await inviteBase();if(b){loadTeam();return{lien:b+'/?join='+j.code,equipe:true}}}catch(e){}}
  return{lien:location.origin+location.pathname,equipe:false}}
-async function eqInviter(id){const p=eqP(id);if(!p)return false;if(!p.tel&&!p.email){eqEdit(id);return false}
- p.inv={at:Date.now(),via:p.tel?'sms':'mail'};p.at=Date.now();save();
- const {lien,equipe}=await eqLien(p),ent=((db.prof||{}).nom||'').trim(),moi=((db.me||{}).prenom||'').trim();
- const txt=i18nT('Bonjour {1}, {2} t\'invite à rejoindre son équipe sur casô : {3}').replace('{1}',p.nom.split(' ')[0]).replace('{2}',ent||moi||'casô').replace('{3}',lien);
- p.inv.equipe=equipe;save();
- const url=p.tel?'sms:'+eqTel(p.tel)+'?&body='+encodeURIComponent(txt):'mailto:'+encodeURIComponent(p.email)+'?subject='+encodeURIComponent(i18nT('Invitation casô'))+'&body='+encodeURIComponent(txt);
- EQ.last={url,txt};try{const a=document.createElement('a');a.href=url;a.rel='noopener';document.body.appendChild(a);a.click();a.remove()}catch(e){}
- if(!$('eqSh').hidden&&EQ.cur===id)eqSheet();eqRender();return true}
+/* l'invitation : une carte prête (lien), « Copier le message » et « Partager » (e-mail, WhatsApp, SMS… au choix du téléphone) */
+async function eqInviter(id){const p=eqP(id);if(!p)return null;
+ p.inv={at:Date.now(),via:'partage'};p.at=Date.now();save();
+ const {lien,equipe}=await eqLien(p);p.inv.equipe=equipe;save();
+ const c=envInvitation(p,lien);EQ.carte=c;EQ.last={url:lien,txt:c.msg};
+ if(!$('eqSh').hidden&&EQ.cur===id)eqSheet();eqRender();return c}
+/* chat : la bulle s'affiche tout de suite, la carte d'invitation la complète */
+function eqBulleInv(t,tete,p){eqBulle(t,tete+`<p class="mut">…</p>`);const m=CHAT.m[CHAT.m.length-1];
+ eqInviter(p.id).then(c=>{m.html=tete+(c?envCarte(c):'');chatSave();chatRender(true)});return true}
 
 /* ---------- le chat : « Karim est dans mon équipe », « 06 12 34 56 78 », « Karim 15 € de l'heure », « j'ai payé Karim 300 € » (toutes les langues de casô) ---------- */
 const eqFold=s=>String(s||'').normalize('NFD').replace(/\p{M}/gu,'').toLowerCase().replace(/ı/g,'i');/* accents, hamza et ı turc retirés : « أضف » → « اضف » */
@@ -129,8 +131,8 @@ function eqCarte(p){const st=eqStatut(p);return `<div class="ag-card eq-cd" oncl
 function eqChat(t){if(typeof db==='undefined')return false;const f=eqFold(t),c=eqCoord(t);
  /* réponse à « son numéro ou son e-mail ? » */
  if(EQ_ATT&&Date.now()-EQ_ATT.at<15*60e3){const p=eqP(EQ_ATT.id);
-  if(p&&(c.tel||c.email)&&!EQ_TEAM.test(f)&&!EQ_PAY.test(f)){EQ_ATT=null;if(c.tel)p.tel=c.tel;if(c.email)p.email=c.email;p.at=Date.now();save();eqInviter(p.id);
-   return eqBulle(t,`<p><svg class="i i-sm"><use href="#i-send"/></svg> <span>Invitation prête : appuie sur Envoyer.</span></p>`+eqCarte(p))}
+  if(p&&(c.tel||c.email)&&!EQ_TEAM.test(f)&&!EQ_PAY.test(f)){EQ_ATT=null;if(c.tel)p.tel=c.tel;if(c.email)p.email=c.email;p.at=Date.now();save();
+   return eqBulleInv(t,'',p)}
   if(/^(non|no|nao|nu|nie|hayir|нет|لا|plus tard|later|apres)\b/.test(f.trim())){EQ_ATT=null;return eqBulle(t,`<p>${esc(i18nT('D\'accord. Tu pourras l\'inviter depuis Mon équipe.'))}</p>`)}
   EQ_ATT=null}
  /* « j'ai payé Karim 300 € » */
@@ -149,6 +151,6 @@ function eqChat(t){if(typeof db==='undefined')return false;const f=eqFold(t),c=e
  if(c.tel)p.tel=c.tel;if(c.email)p.email=c.email;if(EQ_HEURE.test(f)){const a=eqMontant(f);if(a>0)p.taux=faR2(a)}p.at=Date.now();save();eqRender();
  const tete=`<p><svg class="i i-sm"><use href="#i-users"/></svg> <b data-noi18n>${esc(p.nom)}</b> <span>${neuf?'ajouté à ton équipe':'est déjà dans ton équipe'}</span></p>`;
  if(eqStatut(p)==='equipe')return eqBulle(t,tete+eqCarte(p));
- if(p.tel||p.email){eqInviter(p.id);return eqBulle(t,tete+eqCarte(p)+`<p class="mut"><svg class="i i-sm"><use href="#i-send"/></svg> <span>Invitation prête : appuie sur Envoyer.</span></p>`)}
+ if(p.tel||p.email)return eqBulleInv(t,tete,p);
  EQ_ATT={id:p.id,at:Date.now()};
  return eqBulle(t,tete+`<p><span>Son numéro ou son e-mail ? Je lui envoie l'invitation pour rejoindre l'équipe.</span></p>`)}

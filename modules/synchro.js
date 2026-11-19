@@ -344,6 +344,8 @@ async function handleJoin(){
  const q=new URLSearchParams(location.search),code=q.get('join');
  if(!code)return;
  try{history.replaceState(null,'',location.pathname)}catch(e){}
+ /* écran « Rejoindre l'équipe » (modules/envoi.js, chargé après ce fichier) : montré quand tous les modules sont là */
+ if(/^[a-f0-9]{16}$/.test(code)){setTimeout(()=>{if(typeof joinEcran==='function')joinEcran(code)},0);return}
  try{
   const r=await fetch(location.origin+'/api/join',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({code})});
   const j=await r.json().catch(()=>({}));
