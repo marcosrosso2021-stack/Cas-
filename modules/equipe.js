@@ -91,7 +91,12 @@ function eqPayDel(id,xid){const p=eqP(id);if(!p||!confirm(i18nT('Supprimer ce pa
    Avec l'espace d'équipe du patron (serveur de l'entreprise) : lien personnel, une seule fois.
    Sans espace d'équipe : lien vers casô (le collaborateur installe l'appli ; il rejoindra l'équipe quand l'espace existera).
    Le SMS ou l'e-mail s'ouvre déjà écrit : il reste à appuyer sur Envoyer. */
-async function eqLien(p){const c=getSync();
+/* le patron n'a pas encore d'espace d'équipe : le serveur casô lui en donne un (lié à son compte casô), sans rien régler */
+async function eqEspace(){const c=getSync();if(c.token)return true;const A=window.CasoAuth;if(!A||!A.connecte())return false;
+ try{const r=await fetch(A.serveur()+'/api/espace',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+A.jeton()},body:JSON.stringify({nom:((db.me||{}).prenom||(accountGet()||{}).prenom||'').split(' ')[0]})});
+  const j=await r.json().catch(()=>({}));if(!r.ok||!j.token)return false;
+  setSync({url:j.url,token:j.token,user:j.name,role:j.role,rev:0,lastPush:0});try{renderSync()}catch(e){}syncNow();return true}catch(e){return false}}
+async function eqLien(p){await eqEspace();const c=getSync();
  if(c.token&&c.role==='patron'){try{const j=await apiTeam('/api/invite',{user:p.nom,role:p.role==='chef'?'chef':'ouvrier'});const b=await inviteBase();if(b){loadTeam();return{lien:b+'/?join='+j.code,equipe:true}}}catch(e){}}
  return{lien:location.origin+location.pathname,equipe:false}}
 /* l'invitation : une carte prête (lien), « Copier le message » et « Partager » (e-mail, WhatsApp, SMS… au choix du téléphone) */
@@ -154,3 +159,17 @@ function eqChat(t){if(typeof db==='undefined')return false;const f=eqFold(t),c=e
  if(p.tel||p.email)return eqBulleInv(t,tete,p);
  EQ_ATT={id:p.id,at:Date.now()};
  return eqBulle(t,tete+`<p><span>Son numéro ou son e-mail ? Je lui envoie l'invitation pour rejoindre l'équipe.</span></p>`)}
+
+/* ---------- casô collaborateur : ce que voit un ouvrier de l'équipe ----------
+   Pointage, son planning, et « Moi » : ses heures, ce qui lui est dû (heures × son prix de l'heure) et ce qu'il a reçu.
+   Les écrans du patron (devis, clients, factures, fournisseurs, équipe, abonnement) lui sont cachés. */
+function roleUI(){const c=getSync(),ouv=!!(c.token&&c.role==='ouvrier');document.body.classList.toggle('role-ouvrier',ouv);
+ if(ouv){const s=document.querySelector('section.on');if(s&&/^s-(chat|devis|histo|cli|prix|fou|enc|fact|cpt)$/.test(s.id)&&s.id!=='s-cpt')go('pt')}}
+function eqMoi(){const c=getSync();if(!c.token||c.role==='patron')return null;ensurePt();
+ const u=String(c.user||'').toLowerCase();return db.people.find(p=>String(p.nom||'').toLowerCase().split(' ')[0]===u.split(' ')[0])||(db.people.length===1?db.people[0]:null)}
+function eqMoiCarte(){const p=eqMoi();if(!p)return'';const h=eqHeures(p.id,'month'),est=eqEstime(p,'month'),pay=eqPaye(p,'month'),P=(p.pays||[]).slice().sort((a,b)=>b.d.localeCompare(a.d)).slice(0,6);
+ return `<div class="card eq-moi"><h2><span class="hi"><svg class="i"><use href="#i-user"/></svg></span><span data-noi18n>${esc(p.nom)}</span> · <span>${esc(i18nT('ce mois-ci'))}</span></h2>
+  <div class="eq-tiles"><div><span>${esc(i18nT('Heures'))}</span><b data-noi18n>${esc(fmtH(h))}</b></div><div><span>${esc(i18nT('Dû'))}</span><b data-noi18n>${est==null?'—':esc(eur(est))}</b></div>
+  <div><span>${esc(i18nT('Reçu'))}</span><b data-noi18n>${esc(eur(pay))}</b></div><div><span>${esc(i18nT('Reste'))}</span><b data-noi18n>${est==null?'—':esc(eur(Math.max(0,faR2(est-pay))))}</b></div></div>
+  ${P.length?`<div class="lst eq-pays">${P.map(x=>`<div class="it"><span class="it-t"><b data-noi18n>${esc(eur(+x.amt||0))}</b><span class="mut"><span data-noi18n>${esc(agFmtD(x.d,{weekday:undefined,month:'short'}))}</span>${x.note?` · <span data-noi18n>${esc(x.note)}</span>`:''}</span></span></div>`).join('')}</div>`:''}</div>`}
+try{roleUI()}catch(e){}

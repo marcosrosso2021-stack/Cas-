@@ -44,7 +44,7 @@ function createServer(opts={}){
     RESTAURER=<nom du fichier> ou « derniere » : au démarrage, cette sauvegarde est remise en place une seule fois
     (les fichiers d'avant sont rangés à côté), puis le serveur démarre dessus. */
  const SV_CLE=opts.cleSauvegarde!==undefined?opts.cleSauvegarde:(process.env.CASO_CLE_SAUVEGARDE||'');
- {const veut=opts.restaurer||process.env.RESTAURER;
+ {const veut=opts._inner?null:(opts.restaurer||process.env.RESTAURER);
   if(veut){const x=sauvegarde.trouver(DIR,veut),marque=path.join(sauvegarde.dossier(DIR),'.restauree');let deja='';try{deja=fs.readFileSync(marque,'utf8')}catch(e){}
    if(!x)throw new Error('RESTAURER : sauvegarde « '+veut+' » introuvable.');
    if(deja!==String(veut)+' '+x.nom){const r=sauvegarde.restaurer(x.chemin,DIR,{cle:SV_CLE});fs.writeFileSync(marque,String(veut)+' '+x.nom);
@@ -84,7 +84,7 @@ function createServer(opts={}){
  if(!data.invIds)data.invIds={};
  if(!data.signs)data.signs={};if(!data.sigreg)data.sigreg=Object.create(null);if(!data.subs)data.subs=[];if(!data.remSent)data.remSent={};if(!data.invSeq)data.invSeq={};if(!data.invShares)data.invShares={};if(!data.ics)data.ics={};
  if(!data.vapid){data.vapid=webpush.vapidKeys();try{const t=FILE+'.tmp';fs.writeFileSync(t,JSON.stringify(data));fs.renameSync(t,FILE)}catch(e){}}
- const auth=authLib.creer(Object.assign({dir:DIR,hosted:HOSTED,maintenant:opts.maintenant},opts.auth||{}));
+ const auth=opts.authInst||authLib.creer(Object.assign({dir:DIR,hosted:HOSTED,maintenant:opts.maintenant},opts.auth||{}));
  const mail=opts.mail||mailLib.creer();// e-mails (Mailjet) : devis envoyés au client// comptes des usagers : connexion Google / Microsoft (module AUTH)
  const prix=opts.prix||prixLib.creer({dir:DIR});// prix des matériaux en ligne (clé SEARCHAPI_KEY ou SERPAPI_KEY)
  /* veille réglementaire : un passage par jour sur les sources officielles ; rien n'est envoyé aux artisans sans validation */
@@ -110,13 +110,13 @@ function createServer(opts={}){
    n+=await veillePousser(R,M=>'Ta newsletter casô : '+M.length+(M.length>1?' nouveautés à lire':' nouveauté à lire'))}
   return n}
  /* newsletter à jour toute seule, sans que personne ne la lance : dès que le serveur tourne (VEILLE_AUTO=0 pour l'arrêter) */
- if(!opts.noTimers&&process.env.VEILLE_AUTO!=='0'){const vt=setInterval(()=>{const tri=()=>{try{veille.trier()}catch(e){console.error('[casô] veille : tri automatique',e&&e.message)}};   // newsletter à jour toute seule : collecte, tri, puis annonce
+ if(!opts.noTimers&&!opts._inner&&process.env.VEILLE_AUTO!=='0'){const vt=setInterval(()=>{const tri=()=>{try{veille.trier()}catch(e){console.error('[casô] veille : tri automatique',e&&e.message)}};   // newsletter à jour toute seule : collecte, tri, puis annonce
   (veille.aFaire(new Date())?veille.passer().then(tri,tri):Promise.resolve(tri())).then(()=>{if(new Date().getUTCHours()>=6)return veilleAnnoncer(true)}).catch(()=>{})},9e5);if(vt.unref)vt.unref()}
  const pushSend=opts.pushSend||((sub,payload)=>webpush.send(sub,payload,data.vapid,{subject:process.env.VAPID_SUBJECT}));
  /* --- apprentissage partagé du chat : phrases apprises par les usagers, sans rien de personnel (fichier à part) --- */
  const APF=path.join(DIR,'appris.json'),APL=['fr','en','es','pt','it','ro','pl','tr','ru','ar'];
  let appris=Object.create(null);
- let apT=null;const apSave=()=>{if(apT)return;apT=setTimeout(()=>{const t=APF+'.tmp';fs.writeFile(t,JSON.stringify(appris),e=>{apT=null;if(!e)fs.rename(t,APF,()=>{})})},60000);if(apT.unref)apT.unref()};
+ let apT=null;const apSave=()=>{if(apT||opts._inner)return;apT=setTimeout(()=>{const t=APF+'.tmp';fs.writeFile(t,JSON.stringify(appris),e=>{apT=null;if(!e)fs.rename(t,APF,()=>{})})},60000);if(apT.unref)apT.unref()};
  const apHits=new Map();
  function apTrop(ip){const now=Date.now();if(apHits.size>5000){for(const [k,v] of apHits)if(now-v.at>36e5)apHits.delete(k);if(apHits.size>5000)return true}const h=apHits.get(ip)||{n:0,at:now};if(now-h.at>36e5){h.n=0;h.at=now}h.n++;apHits.set(ip,h);return h.n>10}
  /* une phrase masquée : mots en minuscules, « @c » (client), « @d » (jour), « # » (nombre) ; jamais de chiffres ni d'adresse */
@@ -146,7 +146,7 @@ function createServer(opts={}){
  /* --- phrases que l'IA n'a pas comprises (chat et module 3D), masquées sur l'appareil : chiffres → #, mots en majuscule → @ ;
     lisibles seulement avec la clé CASO_CLE_IA, et seulement celles envoyées par au moins 3 usagers --- */
  const INF=path.join(DIR,'incompris.json');let incompris=Object.create(null);
- let inT=null;const inSave=()=>{if(inT)return;inT=setTimeout(()=>{const t=INF+'.tmp';fs.writeFile(t,JSON.stringify(incompris),e=>{inT=null;if(!e)fs.rename(t,INF,()=>{})})},60000);if(inT.unref)inT.unref()};
+ let inT=null;const inSave=()=>{if(inT||opts._inner)return;inT=setTimeout(()=>{const t=INF+'.tmp';fs.writeFile(t,JSON.stringify(incompris),e=>{inT=null;if(!e)fs.rename(t,INF,()=>{})})},60000);if(inT.unref)inT.unref()};
  const inMot=m=>typeof m==='string'&&m.length>=2&&m.length<=160&&/^[\p{Ll}\p{Lo}\p{Mn}@#²³%€' -]+$/u.test(m)&&m.trim().split(/\s+/).length<=14;
  try{const a=JSON.parse(fs.readFileSync(INF,'utf8'));if(a&&typeof a==='object')for(const l of APL)if(a[l]&&typeof a[l]==='object'){const L=incompris[l]=Object.create(null);
   for(const k of Object.keys(a[l]).slice(0,2000)){const x=a[l][k];if(x&&inMot(k)&&Array.isArray(x.u)&&x.u.every(v=>typeof v==='string'))L[k]={u:x.u.slice(0,50),s:x.s==='3d'?'3d':'chat',at:+x.at||0}}}}catch(e){}
@@ -197,11 +197,11 @@ function createServer(opts={}){
   svEnCours=(async()=>{
    const l=sauvegarde.lister(DIR),der=l[0]&&l[0].le?Date.parse(l[0].le):0;
    if(!force&&Date.now()-der<20*3600e3){await pousser();return null}
-   await flush();const r=await sauvegarde.creer(DIR,{cle:SV_CLE});
+   await flush();for(const x of ESPACES.values()){try{await x.flush()}catch(e){}}const r=await sauvegarde.creer(DIR,{cle:SV_CLE});
    if(r)await pousser(sauvegarde.elaguer(DIR,{jours:Number(process.env.SAUVEGARDES_JOURS)||14}));return r})()
    .catch(e=>{console.error('[casô] sauvegarde',e&&e.message||e);return null}).finally(()=>{svEnCours=null});
   return svEnCours}
- if(!opts.noTimers){const t1=setTimeout(()=>sauvegarder(),30e3),t2=setInterval(()=>sauvegarder(),3600e3);if(t1.unref)t1.unref();if(t2.unref)t2.unref()}
+ if(!opts.noTimers&&!opts._inner){const t1=setTimeout(()=>sauvegarder(),30e3),t2=setInterval(()=>sauvegarder(),3600e3);if(t1.unref)t1.unref();if(t2.unref)t2.unref()}
  /* Un seul serveur écrit à la fois. Pendant un déploiement, deux serveurs tournent quelques secondes : le nouveau prend la main
     (fichier data.lock, voir prendreLaMain) ; l'ancien le voit, finit ses écritures, le signale (data.lock.ack), puis n'écrit plus
     rien et répond « réessaie » : le téléphone renvoie alors sa demande au nouveau serveur. */
@@ -209,7 +209,7 @@ function createServer(opts={}){
  if(INST){const pas=opts.verrouPas||1000;let n=0;
   const vivant=()=>{try{fs.writeFileSync(path.join(DIR,'data.vivant'),JSON.stringify({id:INST,at:Date.now()}))}catch(e){}};vivant();
   const vt=setInterval(()=>{const l=lockRead(DIR);
-   if(l&&l.id&&l.id!==INST){cede=true;clearInterval(vt);
+   if(l&&l.id&&l.id!==INST){cede=true;clearInterval(vt);try{ESPACES.forEach(x=>x.ceder())}catch(e){}
     flush().then(()=>{try{fs.writeFileSync(path.join(DIR,'data.lock.ack'),JSON.stringify({de:INST,pour:l.id,at:Date.now()}))}catch(e){}
      console.log('[casô] un nouveau serveur a pris la main : celui-ci n\'écrit plus.')});return}
    if(++n%5===0)vivant()},pas);if(vt.unref)vt.unref()}
@@ -362,9 +362,10 @@ function createServer(opts={}){
    if(TRUST_CF&&req.headers['cf-connecting-ip']&&estCF(L.length?L[L.length-1]:sock))return String(req.headers['cf-connecting-ip']).slice(0,64);
    for(let i=L.length-1;i>=0;i--)if(!privIp(L[i]))return L[i];if(L.length)return L[0];return sock};
  function baseUrl(req){
-  const pub=opts.publicUrl||process.env.PUBLIC_URL;if(pub)return pub.replace(/\/+$/,'');
+  const BP=opts.basePath||'';/* espace d'une entreprise : /e/<espace> */
+  const pub=opts.publicUrl||process.env.PUBLIC_URL;if(pub)return pub.replace(/\/+$/,'')+BP;
   const proto=HOSTED?'https':'http';   // hébergé : liens de signature et de facture toujours en https
-  return proto+'://'+(req.headers.host||'localhost')}
+  return proto+'://'+(req.headers.host||'localhost')+BP}
  const okPng=v=>typeof v==='string'&&v.length<400000&&/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(v);
  const cut=(v,n)=>String(v==null?'':v).slice(0,n);
  const CV_T=new Set(['head','title','client','lines','totals','text','image','qty','legal','sign','sep','space']);
@@ -417,7 +418,7 @@ function createServer(opts={}){
  function majSignDevis(sg,patch){const qid=sg.doc.quote.id;if(!qid||!data.recs.quotes[qid])return;const cur=data.recs.quotes[qid];
   data.recs.quotes[qid]=Object.assign({},cur,{sign:Object.assign({},cur.sign||{},patch),updatedAt:Date.now(),rev:++data.rev})}
  /* un évènement Mailjet : CustomID = jeton du lien de signature (posé à l'envoi) */
- function mailEvenement(ev){if(!ev||typeof ev!=='object')return false;const sg=data.signs[String(ev.CustomID||'')];if(!sg)return false;
+ function mailEvenement(ev){if(!ev||typeof ev!=='object')return false;const sg=data.signs[String(ev.CustomID||'').replace(/^[a-f0-9]{12}:/,'')];if(!sg)return false;
   const at=(+ev.time>0?+ev.time*1000:Date.now()),k=String(ev.event||''),s=Object.assign({},sg.suivi||{});
   if(k==='sent')s.delivre=s.delivre||at;else if(k==='open')s.ouvert=s.ouvert||at;else if(k==='click')s.clic=s.clic||at;
   else if(k==='bounce'||k==='blocked'||k==='spam'){s.refus={at,type:k,raison:cut(ev.error||ev.comment||ev.error_related_to||'',120),email:cut(ev.email,120)}}else return false;
@@ -425,7 +426,7 @@ function createServer(opts={}){
   if(neuf||s.refus&&s.refus.at===at)notifySuivi(sg,k).catch(()=>{});return true}
  /* une réponse du client : adressée à reponse+<jeton>@MAIL_REPONSES ; le texte cité de l'e-mail d'origine est retiré */
  function mailEntrant(m){if(!m||typeof m!=='object')return null;
-  const dest=[m.Recipient,m.To].map(x=>String(x||'')).join(' '),tk=(dest.match(/reponse\+([a-f0-9]{32})@/i)||[])[1];const sg=tk&&data.signs[tk];if(!sg)return null;
+  const dest=[m.Recipient,m.To].map(x=>String(x||'')).join(' '),tk=(dest.match(/reponse\+(?:[a-f0-9]{12}-)?([a-f0-9]{32})@/i)||[])[1];const sg=tk&&data.signs[tk];if(!sg)return null;
   let t=String(m['Text-part']||'').replace(/\r/g,'');
   const coupe=t.search(/\n(?:Le .{0,120}a écrit\s*:|On .{0,120}wrote\s*:|-{2,}\s*(?:Original Message|Message d'origine)|De\s*:.*\n.*Envoyé\s*:|From:.*\n.*Sent:)/i);if(coupe>0)t=t.slice(0,coupe);
   t=t.split('\n').filter(l=>!/^\s*>/.test(l)).join('\n').replace(/\n{3,}/g,'\n\n').trim().slice(0,4000);
@@ -540,7 +541,7 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
   req.on('end',()=>{try{const v=JSON.parse(Buffer.concat(chunks).toString()||'{}');if(!v||typeof v!=='object'||Array.isArray(v))return ko(pub('Requête invalide.'));ok(v)}catch(e){ko(pub('JSON invalide.'))}});
   req.on('error',ko)})}
 
- const server=http.createServer(async(req,res)=>{
+ const handle=async(req,res)=>{
   const url=req.url.split('?')[0],ip=clientIp(req),POST=req.method==='POST';
   try{
    // hébergé : toute requête arrivée en clair est renvoyée vers https (jamais de données en http)
@@ -630,7 +631,11 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
     const cle=String(new URLSearchParams(String(req.url).split('?')[1]||'').get('cle')||''),bon=String(opts.mailjetCle||process.env.MJ_WEBHOOK_KEY||'');
     if(!bon||bon.length<16||cle.length!==bon.length||!crypto.timingSafeEqual(Buffer.from(cle),Buffer.from(bon))){fail(ip);return send(res,403,{error:'refusé'})}
     let corps;try{corps=await lireJson(req)}catch(e){return send(res,400,{error:'Requête invalide.'})}
-    if(url==='/api/mailjet/evenements'){let n=0;for(const ev of (Array.isArray(corps)?corps:[corps]).slice(0,500)){if(mailEvenement(ev))n++}if(n)await persist();return send(res,200,{ok:true,n})}
+    /* un e-mail d'un espace d'entreprise porte son espace : « <espace>:<jeton> » (suivi), « reponse+<espace>-<jeton>@ » (réponse) */
+    if(url==='/api/mailjet/evenements'){let n=0,ici=0;for(const ev of (Array.isArray(corps)?corps:[corps]).slice(0,500)){const me=ev&&/^([a-f0-9]{12}):/.exec(String(ev.CustomID||''));
+      if(me){const x=espaceDe(me[1]);if(x&&x.mailEvt(ev))n++}else if(mailEvenement(ev)){n++;ici++}}if(ici)await persist();return send(res,200,{ok:true,n})}
+    {const ms=corps&&/reponse\+([a-f0-9]{12})-[a-f0-9]{32}@/i.exec([corps.Recipient,corps.To].map(x=>String(x||'')).join(' '));
+     if(ms){const x=espaceDe(ms[1]);return send(res,200,{ok:true,lu:!!(x&&x.mailIn(corps))})}}
     const r=mailEntrant(corps);if(r){await persist();notifyReponse(r.sg,r.rep).catch(()=>{});copieReponse(r.sg,r.rep).catch(()=>{})}
     return send(res,200,{ok:true,lu:!!r})}
    /* le client demande une modification du devis : l'artisan est prévenu, le lien reste ouvert */
@@ -671,6 +676,15 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
      return send(res,200,publicSign(sg))}
     return send(res,405,{error:'méthode'})}
 
+   /* espace d'équipe d'une entreprise : le compte casô du patron (Google, Microsoft ou e-mail) reçoit son espace et sa clé de patron.
+      Le même compte retrouve toujours le même espace. Ses collaborateurs le rejoignent par le lien d'invitation, de n'importe où. */
+   if(POST&&url==='/api/espace'&&!opts._inner){
+    const c=auth.compte(req);if(!c)return send(res,401,{error:'Connecte-toi à ton compte casô.'});
+    if(tooMany(ip,res))return send(res,429,{error:'Trop d\'essais, patiente une minute.'});
+    let id=c.espace&&ESP_ID.test(c.espace)?c.espace:null;
+    if(!id){id=crypto.randomBytes(6).toString('hex');auth.lierEspace(c.id,id)}
+    const b=await readBody(req),x=espaceDe(id,true),tk=await x.patronJeton(cut(b.nom||c.prenom||'Patron',30).trim());
+    return send(res,200,Object.assign({url:baseUrl(req)+'/e/'+id,espace:id},tk))}
    /* module AUTH : connexion directe avec Google ou Microsoft */
    if(url.startsWith('/api/auth/'))return void await auth.traiter(req,res,{url,ip,send,readBody});
 
@@ -921,9 +935,9 @@ data.invSeq[key]=n;if(iid)data.invIds[key+'|'+iid]=n;await persist();return send
      if((x.mails||[]).filter(e=>Date.now()-e.at<36e5).length>=5)return send(res,429,{error:'Déjà envoyé plusieurs fois cette heure.'});
      const pr=x.doc.prof||{},text=String(b.text||'').slice(0,6000);
      if(text.trim().length<10)return send(res,400,{error:'Le message est vide.'});
-     const dom=String(opts.mailReponses||process.env.MAIL_REPONSES||'').trim().toLowerCase(),rto=/^[a-z0-9.-]+\.[a-z]{2,}$/.test(dom)?'reponse+'+x.token+'@'+dom:pr.email;
+     const dom=String(opts.mailReponses||process.env.MAIL_REPONSES||'').trim().toLowerCase(),rto=/^[a-z0-9.-]+\.[a-z]{2,}$/.test(dom)?'reponse+'+(opts._inner?ESPACE+'-':'')+x.token+'@'+dom:pr.email;
      try{const r=await mail.envoyer({to:b.to,toName:x.doc.quote.client,fromName:pr.nom||'casô',replyTo:rto,subject:cut(b.subject,200)||('Devis '+(x.doc.quote.num||'')),
-       text:text+'\n\n'+x.url,html:mail.html({text,lien:x.url,bouton:'Voir et signer le devis',entreprise:pr.nom}),id:x.token});
+       text:text+'\n\n'+x.url,html:mail.html({text,lien:x.url,bouton:'Voir et signer le devis',entreprise:pr.nom}),id:(opts._inner?ESPACE+':':'')+x.token});
       x.mails=(x.mails||[]).concat({to:String(b.to).trim().toLowerCase(),at:Date.now(),id:r.id});await persist();return send(res,200,{ok:true,to:x.mails[x.mails.length-1].to})}
      catch(e){return send(res,e.code||502,{error:e.message,off:!!e.off})}}
     if(req.method==='GET'&&url==='/api/sign/list'){
@@ -972,9 +986,31 @@ data.invSeq[key]=n;if(iid)data.invIds[key+'|'+iid]=n;await persist();return send
      if(!(await makeUser(name,b.password,b.role,()=>!data.users[name.toLowerCase()])))return send(res,409,{error:'Cet identifiant existe déjà.'});
      await persist();return send(res,200,{ok:true})}}
    return send(res,404,{error:'introuvable'});
-  }catch(e){if(!e||!e.pub)console.error('[casô]',req.method,url,e&&e.stack||e);if(!res.headersSent)send(res,400,{error:e&&e.pub?e.message:'Requête invalide.'});else try{res.destroy()}catch(_){}}});
+  }catch(e){if(!e||!e.pub)console.error('[casô]',req.method,url,e&&e.stack||e);if(!res.headersSent)send(res,400,{error:e&&e.pub?e.message:'Requête invalide.'});else try{res.destroy()}catch(_){}}};
 
- return{server,data:()=>data,remindTick,icsFor,auth,prix,flush:()=>{try{prix.ecrire&&prix.ecrire()}catch(e){}return flush()},persist,cede:()=>cede,sauvegarder,distant:()=>distant};
+ /* ---------- plusieurs entreprises sur le même serveur ----------
+    Chaque entreprise a son espace (son patron, son équipe, ses données) : donnees/espaces/<espace>/, servi sous /e/<espace>/.
+    L'espace « e1 » reste servi à la racine, comme avant. Les comptes casô, la newsletter, les prix et l'envoi d'e-mails sont communs.
+    Un espace n'est chargé qu'à la première demande (et au démarrage du serveur principal, pour ses rappels). */
+ const ESPACES=new Map(),ESP_ID=/^[a-f0-9]{12}$/;
+ function espaceDe(id,creer){if(opts._inner||!ESP_ID.test(id))return null;let x=ESPACES.get(id);if(x)return x;
+  if(!creer&&!fs.existsSync(path.join(DIR,'espaces',id)))return null;
+  x=createServer(Object.assign({},opts,{_inner:true,espace:id,basePath:'/e/'+id,authInst:auth,veille,prix,mail,verrou:null,restaurer:null}));
+  if(cede)x.ceder();ESPACES.set(id,x);return x}
+ if(!opts._inner&&!opts.noTimers){try{for(const id of fs.readdirSync(path.join(DIR,'espaces')))if(ESP_ID.test(id))espaceDe(id)}catch(e){}}
+ function aiguiller(req,res){
+  const m=!opts._inner&&String(req.url||'').match(/^\/e\/([a-f0-9]{12})(\/[^]*)?$/);
+  if(!m)return handle(req,res);
+  const x=espaceDe(m[1]);if(!x){res.writeHead(404,{'content-type':'application/json; charset=utf-8'});return res.end('{"error":"Espace introuvable."}')}
+  if(!m[2]){res.writeHead(301,{location:'/e/'+m[1]+'/'});return res.end()}
+  req.url=m[2];return x.handle(req,res)}
+ const server=http.createServer((req,res)=>aiguiller(req,res));
+
+ /* espace d'une entreprise : le patron (compte casô) reçoit sa clé d'équipe ; le compte est créé au premier appel */
+ async function patronJeton(nom){let u=Object.values(data.users).find(x=>x.role==='patron');
+  if(!u){const n=validName(nom)?nom:'Patron';await makeUser(n,crypto.randomBytes(16).toString('hex'),'patron',()=>!data.users[n.toLowerCase()]);u=data.users[n.toLowerCase()]}
+  const tk=newToken(u);await flush();return tk}
+ return{server,handle,ceder:()=>{cede=true},espaceDe,patronJeton,mailEvt:ev=>{const r=mailEvenement(ev);if(r)persist();return r},mailIn:m=>{const r=mailEntrant(m);if(r){persist();notifyReponse(r.sg,r.rep).catch(()=>{});copieReponse(r.sg,r.rep).catch(()=>{})}return !!r},data:()=>data,remindTick,icsFor,auth,prix,flush:()=>{try{prix.ecrire&&prix.ecrire()}catch(e){}return flush()},persist,cede:()=>cede,sauvegarder,distant:()=>distant};
 }
 
 const lockRead=dir=>{try{return JSON.parse(fs.readFileSync(path.join(dir,'data.lock'),'utf8'))}catch(e){return null}};

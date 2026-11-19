@@ -363,7 +363,11 @@ Vitesse (mesurée sur un processeur ralenti comme un téléphone) : ouverture en
 
 Un espace, c'est une entreprise : son patron, son équipe, ses données. Chaque espace a son dossier : `donnees/espaces/<espace>/data.json`.
 
-- Pour l'instant il n'y a qu'un espace, `e1`. C'est la première étape du plan « un espace par abonné » ; la création d'un espace par compte Google ou Outlook vient ensuite.
+- L'espace d'origine est `e1` (adresse racine du serveur), inchangé.
+- **Un espace par entreprise (casô collaborateur, 19 nov. 2026)** : quand un patron connecté avec son compte casô (Google, Outlook ou e-mail) invite son premier collaborateur, le serveur lui crée son espace (`POST /api/espace`) : 12 caractères au hasard, adresse `https://<votre-app>/e/<espace>/`, lié au compte (toujours le même ensuite). Le lien d'invitation mène à cette adresse ; le collaborateur rejoint d'où il veut.
+- Chaque espace a ses données, ses clés d'équipe et ses abonnements aux notifications ; la clé d'une entreprise n'ouvre pas l'espace d'une autre. Comptes, veille, prix et Mailjet sont communs ; les e-mails d'un espace portent son nom pour que suivi et réponses reviennent au bon endroit. Les sauvegardes quotidiennes prennent tous les espaces.
+- Côté collaborateur, l'appli n'affiche que ce qui le concerne : Pointage, Mon planning (ses rendez-vous), et « Moi » (heures du mois, dû, reçu, reste, ses paiements). Devis, clients, prix, encaissements et réglages sont cachés.
+- Essais : `node tests/espaces.test.js` (15 contrôles).
 - Ce qui est commun à tous reste dans `donnees` : comptes Google / Outlook, newsletter, apprentissage partagé, phrases incomprises, verrou de déploiement.
 - **Passage depuis l'ancien rangement** : au premier démarrage, `donnees/data.json` est copié dans `donnees/espaces/e1/`. L'ancien fichier n'est ni modifié ni supprimé.
 - **Retour en arrière** : le code d'avant relit `donnees/data.json`, resté tel qu'au jour du passage. Si ce fichier redevient plus récent que celui de l'espace (retour au code d'avant, puis de nouveau celui-ci), il est repris, et la version de l'espace est mise de côté (`data.json.avant-…`).

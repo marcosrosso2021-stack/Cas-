@@ -229,10 +229,11 @@ function refreshViews(){
 let srvInfo=null;
 async function probeServer(){
  if(!/^https?:$/.test(location.protocol))return null;
- try{const r=await fetch('/api/state');const j=await r.json().catch(()=>({}));if(typeof j.needsSetup==='boolean')return j}catch(e){}
+ try{const r=await fetch(ICI()+'/api/state');const j=await r.json().catch(()=>({}));if(typeof j.needsSetup==='boolean')return j}catch(e){}
  return null}
 let SY_MAN=0;
 function renderSync(){
+ try{if(typeof roleUI==='function')roleUI()}catch(e){}
  const c=getSync(),on=!!(c.url&&c.token);
  $('syForm').style.display=on?'none':'block';
  $('syOn').style.display=on?'block':'none';
@@ -247,7 +248,7 @@ function renderSync(){
  $('syUrlBox').style.display=srvInfo?'none':'block';
  if(first&&!$('fsName').value){const ac=accountGet();if(ac)$('fsName').value=ac.prenom}
  $('syJoinHint').style.display='block';{const m=!!srvInfo||SY_MAN;$('syMan').style.display=m?'block':'none';$('syManB').style.display=m?'none':''}
- if(!$('syUrl').value)$('syUrl').value=c.url||(srvInfo?location.origin:'')}
+ if(!$('syUrl').value)$('syUrl').value=c.url||(srvInfo?ICI():'')}
 async function initServer(){
  srvInfo=await probeServer();
  renderSync();
@@ -258,12 +259,12 @@ async function firstSetup(){
  if(password.length<8){setSyncMsg('Mot de passe : 8 caractères minimum.');return}
  try{
   setSyncMsg('Création…');
-  let r=await fetch('/api/setup',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({user,password})});
+  let r=await fetch(ICI()+'/api/setup',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({user,password})});
   if(r.status===403){const code=prompt('Code de configuration (donné par l\'hébergeur) :');if(!code){setSyncMsg('');return}
-   r=await fetch('/api/setup',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({user,password,code:code.trim()})})}
+   r=await fetch(ICI()+'/api/setup',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({user,password,code:code.trim()})})}
   const j=await r.json().catch(()=>({}));
   if(!r.ok)throw new Error(j.error||'Erreur.');
-  setSync({url:location.origin,token:j.token,user:j.name,role:j.role,rev:0,lastPush:0});
+  setSync({url:ICI(),token:j.token,user:j.name,role:j.role,rev:0,lastPush:0});
   srvInfo.needsSetup=false;$('fsPass').value='';renderSync();syncNow();vaultSetup();
   setSyncMsg('C\'est prêt. Invite ton équipe ci-dessous.');
  }catch(e){setSyncMsg(e instanceof TypeError?'Entreprise introuvable. Vérifie que le poste est allumé et le Wi-Fi.':String(e.message||e))}}
@@ -314,7 +315,7 @@ async function inviteBase(){
  if(!/^(localhost|127\.|\[?::1)/.test(u.hostname))return c.url;
  try{
   const j=await fetch(c.url+'/api/info').then(r=>r.json());
-  if(j.ips&&j.ips.length)return u.protocol+'//'+j.ips[0]+':'+(j.port||u.port||80)}catch(e){}
+  if(j.ips&&j.ips.length)return u.protocol+'//'+j.ips[0]+':'+(j.port||u.port||80)+u.pathname.replace(/\/+$/,'')}catch(e){}/* le chemin de l'espace (/e/<espace>) est gardé */
  return null}
 async function showInvite(name,role){
  try{
@@ -351,10 +352,10 @@ async function handleJoin(){
  /* écran « Rejoindre l'équipe » (modules/envoi.js, chargé après ce fichier) : montré quand tous les modules sont là */
  if(/^[a-f0-9]{16}$/.test(code)){setTimeout(()=>{if(typeof joinEcran==='function')joinEcran(code)},0);return}
  try{
-  const r=await fetch(location.origin+'/api/join',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({code})});
+  const r=await fetch(ICI()+'/api/join',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({code})});
   const j=await r.json().catch(()=>({}));
   if(!r.ok)throw new Error(j.error||'Invitation refusée.');
-  setSync({url:location.origin,token:j.token,user:j.name,role:j.role,rev:0,lastPush:0});
+  setSync({url:ICI(),token:j.token,user:j.name,role:j.role,rev:0,lastPush:0});
   renderSync();go(j.role==='ouvrier'?'pt':'cpt');
   setSyncMsg('Bienvenue '+j.name+' ! Ce téléphone est connecté.');
   alert('Bienvenue '+j.name+' ! Ce téléphone est connecté à l\'entreprise.');

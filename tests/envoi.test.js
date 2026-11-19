@@ -57,7 +57,7 @@ const PNG='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
  r=await dit('dupont@exemple.fr');
  ok('chat : l\'adresse donnée → parti, gardée dans la fiche du client',envois.length===3&&envois[2].to==='dupont@exemple.fr'&&await p.evaluate(()=>db.clients.find(c=>c.nom==='Dupont').email==='dupont@exemple.fr'),r);
  await p.evaluate(()=>{newQuote();Object.assign(q,{client:'Petit',lines:[{label:'Placo',qty:5,unit:'m²',pu:30,tva:10}]});fillForm()});
- r=await dit('envoie le devis');ok('chat : devis pas encore signé par l\'artisan → « Valider le devis »',/Valider le devis/.test(r),r);
+ r=await dit('envoie le devis');ok('chat : devis pas encore signé par l\'artisan → « Valider le devis »',/Valider le devis|Envoyer le devis au client/.test(r),r);
  /* 2 bis. suivi Mailjet et réponse du client */
  ok('réponses : adressées à reponse+<jeton>@reponses.rosso.fr',/^reponse\+[a-f0-9]{32}@reponses\.rosso\.fr$/.test(envois[0].replyTo||''),envois[0].replyTo);
  const tk0=envois[0].replyTo.match(/[a-f0-9]{32}/)[0];

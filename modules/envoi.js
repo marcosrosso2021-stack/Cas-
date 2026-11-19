@@ -93,13 +93,13 @@ function envChat(t){if(typeof db==='undefined')return false;const f=String(t).no
  /* réponse à « son e-mail ? » */
  if(ENV_ATT&&mail&&Date.now()-ENV_ATT.at<15*60e3){const o=db.quotes.find(x=>x.id===ENV_ATT.qid);ENV_ATT=null;if(o)return envChatEnvoi(t,o,mail.toLowerCase())}
  if(!ENV_V.test(f)||!ENV_D.test(f))return false;
+ /* phrase à plusieurs actions (« nouveau devis…, ajoute…, puis envoie-le ») : c'est le chat qui la découpe */
+ if(/(^|[^\p{L}])(nouveau|nouvelle|cree|ajoute|ajouter|puis|ensuite|new|add|then|nuevo|anade|nuovo|aggiungi|novo|adiciona)(?=[^\p{L}]|$)/u.test(f))return false;
  const kc=knownClient(t),c=kc?findBy(db.clients,kc.nom):null;
  let o=c?db.quotes.filter(x=>nameKey(x.client)===nameKey(c.nom)).sort((a,b)=>(b.sign?1:0)-(a.sign?1:0)||String(b.date||'').localeCompare(String(a.date||'')))[0]:null;
- if(!o)o=db.quotes.find(x=>x.id===q.id)||(q&&q.lines&&q.lines.length?q:null);
- if(!o)return envBulle(t,`<p>${esc(i18nT('Quel devis ? Dis-moi le nom du client.'))}</p>`);
- if(o.sign&&o.sign.st==='signed')return envBulle(t,`<p>${esc(i18nT('Ce devis est déjà signé par le client.'))}</p>`);
- if(!o.sign||o.sign.st!=='sent'){if(o.id!==q.id){q=JSON.parse(JSON.stringify(o));try{fillForm()}catch(e){}}
-  return envBulle(t,`<p>${esc(i18nT('Signe-le d\'abord, puis il part tout seul.'))}</p><div class="msg-act"><button class="btn sm" onclick="goSign()"><svg class="i"><use href="#i-pen"/></svg>${esc(i18nT('Valider le devis'))}</button></div>`)}
+ if(!o&&!kc)o=db.quotes.find(x=>x.id===q.id)||null;
+ /* seulement un devis déjà prêt à signer (lien créé) : sinon le chat garde la main (prix ou quantités manquants, aucun devis, signature) */
+ if(!o||!o.sign||o.sign.st!=='sent')return false;
  const to=(mail||dvCliMail(o)).toLowerCase();
  if(!to){ENV_ATT={qid:o.id,at:Date.now()};return envBulle(t,`<p>${esc(i18nT('L\'e-mail de {1} ?').replace('{1}',o.client||i18nT('ton client')))}</p>`)}
  return envChatEnvoi(t,o,to)}
@@ -117,7 +117,7 @@ function envBulle(t,html){if(CHAT.qid!==q.id)CHAT={qid:q.id,m:[]};CHAT.m.push({w
 /* ---------- l'invité ouvre le lien : un écran, un bouton « Rejoindre l'équipe » ---------- */
 async function joinEcran(code){
  let info=null,err='';
- try{const r=await fetch(location.origin+'/api/join/'+code);const j=await r.json().catch(()=>({}));if(r.ok)info=j;else err=j.error||'Invitation invalide ou expirée.'}
+ try{const r=await fetch(ICI()+'/api/join/'+code);const j=await r.json().catch(()=>({}));if(r.ok)info=j;else err=j.error||'Invitation invalide ou expirée.'}
  catch(e){err='Entreprise introuvable. Vérifie ta connexion.'}
  let s=$('joinScr');if(!s){s=document.createElement('section');s.id='joinScr';s.className='join';document.body.appendChild(s)}
  s.innerHTML=`<div class="join-c"><svg class="join-lg" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#ffc21a"/><path d="M32 13 13 27v4h4v18h30V31h4v-4L32 13Z" fill="#18181a"/><rect x="25" y="34" width="14" height="9" rx="3" fill="#ffc21a"/></svg>
@@ -126,9 +126,9 @@ async function joinEcran(code){
    :`<h1>${esc(i18nT('Invitation'))}</h1><p class="mut">${esc(i18nT(err))}</p><button type="button" class="btn sec" onclick="$('joinScr').remove()">${esc(i18nT('Continuer'))}</button>`}</div>`;
  document.body.classList.add('join-on')}
 async function joinGo(code,b){if(b)b.disabled=true;
- try{const r=await fetch(location.origin+'/api/join',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({code})});
+ try{const r=await fetch(ICI()+'/api/join',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({code})});
   const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'Invitation refusée.');
-  setSync({url:location.origin,token:j.token,user:j.name,role:j.role,rev:0,lastPush:0});
+  setSync({url:ICI(),token:j.token,user:j.name,role:j.role,rev:0,lastPush:0});
   const s=$('joinScr');if(s){s.querySelector('.join-c').innerHTML=`<svg class="i join-ok"><use href="#i-check"/></svg><h1 data-noi18n>${esc(i18nT('Bienvenue {1} !').replace('{1}',j.name))}</h1>`;setTimeout(()=>{s.remove();document.body.classList.remove('join-on')},1400)}
   renderSync();go(j.role==='ouvrier'?'pt':'chat');syncNow();vaultSetup()}
  catch(e){toast(String(e.message||e));if(b)b.disabled=false}}
