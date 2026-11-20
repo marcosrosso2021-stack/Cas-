@@ -12,7 +12,7 @@ const fs=require('fs'),path=require('path'),crypto=require('crypto');
 const PLAN=require('../lib/plan.js');
 const chiffre=require('./chiffre.js'),aboLib=require('./abo.js');
 
-const ETAT_MIN=10,TICKET_MIN=2,SESSION_JOURS=90,ESSAI_JOURS=30;
+const ETAT_MIN=10,TICKET_MIN=2,SESSION_JOURS=90,ESSAI_JOURS=30,ESSAI_PRIX=5;
 const sha=s=>crypto.createHash('sha256').update(String(s)).digest('hex');
 const b64u=b=>Buffer.from(b).toString('base64url');
 const cut=(v,n)=>String(v==null?'':v).slice(0,n);
@@ -341,9 +341,11 @@ function creer(opts){
    essaisFin7:C.filter(c=>c.mode==='artisan'&&!(c.abo&&c.abo.offre)&&c.essaiFin&&c.essaiFin>t&&c.essaiFin-t<7*J).length,offres,parJour}}
 
  /* l'espace d'équipe de l'entreprise de ce compte (serveur/server.js, /api/espace) */
+ /* prix en ligne pendant l'essai : 5 recherches en tout, puis l'abonnement (module Fournisseurs) */
+ function prixEssai(c,compter){const n=+c.prixEssai||0;if(!compter)return n<ESSAI_PRIX;c.prixEssai=n+1;persist();return true}
  function lierEspace(id,esp){const c=d.comptes[id];if(!c)return false;c.espace=esp;persist();return true}
  /* le compte casô (patron) à qui appartient l'espace d'entreprise <esp> */
  function proprioEspace(esp){for(const k of Object.keys(d.comptes))if(d.comptes[k].espace===esp)return pub(d.comptes[k]);return null}
- return{traiter,compte,pub,offre:c=>offre(c,now()),resume,lierEspace,proprioEspace,aboEvenement,_d:()=>d};
+ return{traiter,compte,pub,offre:c=>offre(c,now()),resume,lierEspace,proprioEspace,aboEvenement,prixEssai,_d:()=>d};
 }
 module.exports={creer,siretOk,offre,modulesDe,FOURNISSEURS,ESSAI_JOURS,SESSION_JOURS};

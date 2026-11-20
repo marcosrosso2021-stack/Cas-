@@ -3,8 +3,12 @@
 /* ---------- Premier lancement ---------- */
 document.addEventListener('click',e=>{const sp=document.getElementById('splash');if(sp&&!sp.hidden&&sp.contains(e.target))splashEnd()});
 function splashEnd(){const e=$('splash');if(!e||e.hidden)return;e.classList.add('gone');setTimeout(()=>{e.hidden=true;e.remove()},460)}
+/* écran de démarrage : le logo seul ; environ 5 s la toute première fois, ensuite le temps de charger */
+function splashShow(){const sp=$('splash');if(!sp||sp.dataset.done)return;sp.dataset.done=1;sp.hidden=false;window.__splashGo&&__splashGo();
+ let neuf=false;try{neuf=!localStorage.getItem('caso_vu');localStorage.setItem('caso_vu','1')}catch(e){}
+ setTimeout(splashEnd,matchMedia('(prefers-reduced-motion: reduce)').matches?400:neuf?5000:500)}
 function startOpen(){
- const sp=$('splash');if(sp&&!sp.dataset.done){sp.dataset.done=1;sp.hidden=false;window.__splashGo&&__splashGo();setTimeout(splashEnd,matchMedia('(prefers-reduced-motion: reduce)').matches?900:3800)}
+ splashShow();
  document.body.classList.add('starting');
  document.querySelectorAll('section').forEach(x=>x.classList.remove('on'));
  $('s-start').classList.add('on');stShow('lg')}
