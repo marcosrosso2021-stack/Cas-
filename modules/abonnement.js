@@ -34,8 +34,7 @@ const ABO_MOTS={
  paiement:"L'argent qui rentre, ça se suit de près. On garde l'œil dessus ?",
  '3d':"Montrer le chantier avant de le faire, ça aide le client à dire oui.",
  renovation:"L'avant-après, les clients adorent. Toi aussi, tu verras.",
- fournisseurs:"Le bon prix est quelque part. On va le trouver pour toi.",
- veille:"Les règles changent sans prévenir. Nous, on te prévient."};
+ fournisseurs:"Le bon prix est quelque part. On va le trouver pour toi."};
 function aboVerrou(m,mot){
  if(aboOuvert(m))return false;
  const ua=navigator.userActivation;if(ua&&!ua.isActive)return true;
@@ -44,8 +43,8 @@ function aboVerrou(m,mot){
 function aboAjouter(m,mot){if(typeof aboOpen!=='function')return;
  aboOpen(i18nT(mot||ABO_MOTS[m]||''));if(m&&ABO.sel&&!ABO.sel.has(m)){ABO.sel.add(m);aboDraw()}}
 
-/* écrans rattachés à un module : lisibles sans le module (bandeau), sauf la newsletter, qui n'a rien de l'usager à montrer */
-const ABO_ECRANS={pt:'pointage',enc:'paiement',fou:'fournisseurs',fouf:'fournisseurs',four:'fournisseurs',imp:'fournisseurs',news:'veille',plan:'3d',fact:'devis'};
+/* écrans rattachés à un module : lisibles sans le module (bandeau) */
+const ABO_ECRANS={pt:'pointage',enc:'paiement',fou:'fournisseurs',fouf:'fournisseurs',four:'fournisseurs',imp:'fournisseurs',plan:'3d',fact:'devis'};
 /* ouverts dans le socle gratuit : Mon planning (rendez-vous simples) et Mes services (le devis gratuit du mois s'en sert) */
 function aboBandeau(n){
  document.querySelectorAll('.abo-ro').forEach(x=>x.remove());
@@ -55,7 +54,7 @@ function aboBandeau(n){
  s.before(d)}/* à côté de l'écran, pas dedans : l'écran peut se redessiner */
 
 /* menu et barre du bas : un petit cadenas à côté des modules non pris */
-const ABO_MENU={enc:'paiement',fou:'fournisseurs',news:'veille',pt:'pointage'};
+const ABO_MENU={enc:'paiement',fou:'fournisseurs',pt:'pointage'};
 function aboMenu(){
  document.querySelectorAll('[onclick^="drawerGo(\'"],nav button[onclick^="tab(\'"]').forEach(b=>{
   const k=(/^(?:drawerGo|tab)\('([^']+)'/.exec(b.getAttribute('onclick'))||[])[1],m=ABO_MENU[k];if(!m)return;
@@ -93,8 +92,8 @@ const aboMois=x=>{const t=x.creeLe?new Date(x.creeLe):null;return t&&!isNaN(t)?y
  if(CasoPlan.devisRestants(d,faits)>0){o.creeLe=Date.now();return true}
  aboVerrou('devis',"Ton devis gratuit du mois est fait. Pour les suivants, on ajoute le module Devis ?");return false}}
 
-/* navigation : bandeau de lecture seule ; la newsletter demande le module */
-{const f=window.tab;window.tab=function(n,b){if(n==='news'&&aboVerrou('veille'))return;f.apply(this,arguments);aboBandeau(n)}}
+/* navigation : bandeau de lecture seule */
+{const f=window.tab;window.tab=function(n,b){f.apply(this,arguments);aboBandeau(n)}}
 
 window.addEventListener('caso-auth',()=>{aboMenu();const s=document.querySelector('section.on');if(s)aboBandeau(s.id.slice(2))});
 aboMenu();

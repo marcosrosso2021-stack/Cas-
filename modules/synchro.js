@@ -190,7 +190,8 @@ function syncSoon(){
 async function syncNow(){
  if(typeof qAutoT!=='undefined'&&qAutoT)qFlush();
  const cfg=getSync();
- if(!cfg.url||!cfg.token||syncBusy)return;
+ if(!cfg.url||!cfg.token)return;
+ if(syncBusy){syncEncore=true;return}/* demandée pendant une autre : refaite juste après (rien n'attend la suivante) */
  syncBusy=true;setSyncMsg('Synchronisation…');
  const started=Date.now();
  try{
@@ -211,7 +212,8 @@ async function syncNow(){
   setSyncMsg('Synchronisé à '+fmtT(Date.now())+(n?' · '+n+' changement(s) reçu(s)':''));
  }catch(e){
   setSyncMsg(e instanceof TypeError?'Entreprise injoignable. Tes données restent sur ce téléphone et seront envoyées plus tard.':String(e.message||e))}
- finally{syncBusy=false}}
+ finally{syncBusy=false;if(syncEncore){syncEncore=false;setTimeout(()=>syncNow(),0)}}}
+let syncEncore=false;
 
 /* --- interface de synchronisation --- */
 function setSyncMsg(t){const e=document.getElementById('syMsg');if(e)e.textContent=t}
