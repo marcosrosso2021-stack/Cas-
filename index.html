@@ -1476,7 +1476,7 @@ body.tr-on{overflow:hidden}
 .acct.logo{padding:0;overflow:hidden;background:#fff}.acct.logo img{width:100%;height:100%;object-fit:contain;border-radius:inherit}
 .ac-ck{display:flex;gap:10px;align-items:flex-start;margin:12px 0 0;font-size:14px;line-height:1.4;text-transform:none;letter-spacing:0;font-family:inherit;font-weight:400;color:var(--ink)}.ac-ck input{width:20px;height:20px;margin:1px 0 0;flex:none;accent-color:var(--ink)}.ac-ck a{color:inherit}.ac-ck.bad span{color:#c0392b}
 
-body.role-ouvrier [data-pat]{display:none!important}body:not(.role-ouvrier) .dw-ouv{display:none!important}.dw-pro{margin-top:10px;border:1px solid var(--line)}.dw-i[hidden]{display:none}.ag-voir{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;padding:12px}.ag-voir[hidden]{display:none}.ag-voir .card{width:100%;max-width:560px;margin:0 auto}
+body.role-ouvrier [data-pat]{display:none!important}body:not(.role-ouvrier) .dw-ouv{display:none!important}.dw-id{display:flex;flex-direction:column;align-items:flex-start;gap:1px;width:100%;margin:0 0 6px;padding:2px 10px 10px;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--ink);font:inherit;text-align:start;cursor:pointer}.dw-id b{font-size:17px}.dw-id span{font-size:13px;color:var(--mut)}.dw-id span:empty{display:none}.dw-ouv-acc .dw-plan .i{color:var(--acc)}.dw-i[hidden]{display:none}.ag-voir{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;padding:12px}.ag-voir[hidden]{display:none}.ag-voir .card{width:100%;max-width:560px;margin:0 auto}
 .eq-pf{display:flex;align-items:center;gap:12px;margin-bottom:12px}.eq-pf b{font-size:19px}.eq-ini{width:46px;height:46px;border-radius:50%;background:var(--ink);color:var(--card);display:grid;place-items:center;font-weight:700;font-size:19px;flex:none}.eq-out{text-align:center;margin:4px 0 12px}
 .eq-moi .eq-tiles{margin:10px 0 6px}.eq-moi h2{margin:0}
 .ag-typ{margin:0 0 10px}.row>.ag-ej{flex:0 0 84px}.ag-ej input{text-align:center}.ag-ev .ag-n{font-weight:600;color:var(--ink)}.ag-cli{display:flex;flex-direction:column;gap:8px;margin:8px 0 2px}#agEti{margin:0}
@@ -1720,7 +1720,7 @@ body.role-ouvrier [data-pat]{display:none!important}body:not(.role-ouvrier) .dw-
 <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
 <symbol id="i-swap" viewBox="0 0 24 24"><path d="M7 4v13m0 0-3-3m3 3 3-3M17 20V7m0 0-3 3m3-3 3 3"/></symbol>
 <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6z"/><path d="m9 12 2 2 4-4"/></symbol>
-<symbol id="i-building" viewBox="0 0 24 24"><path d="M4 21V9l8-5 8 5v12M2 21h20M9 21v-6h6v6"/></symbol>
+<symbol id="i-briefcase" viewBox="0 0 24 24"><path d="M3 8h18v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8ZM8 8V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18M11 12h2v2h-2z"/></symbol><symbol id="i-building" viewBox="0 0 24 24"><path d="M4 21V9l8-5 8 5v12M2 21h20M9 21v-6h6v6"/></symbol>
 <symbol id="i-truck" viewBox="0 0 24 24"><path d="M2 6h11v10H2zM13 9h4l4 4v3h-8"/><circle cx="6.5" cy="18" r="1.8"/><circle cx="17.5" cy="18" r="1.8"/></symbol>
 <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
 <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" stroke-width="2.2"/></symbol>
@@ -2209,7 +2209,8 @@ body.role-ouvrier [data-pat]{display:none!important}body:not(.role-ouvrier) .dw-
   <button class="btn sec" type="button" onclick="$('fJson').click()">Restaurer une sauvegarde</button>
   <input type="file" id="fJson" accept=".json,application/json" hidden onchange="importAll(this)">
  </div>
- <div class="sec-d" id="acctCard" data-cp="bk" hidden>
+ <div id="cpAcc" data-cp="acc"></div>
+ <div class="sec-d" id="acctCard" data-cp="acc" hidden>
   <button class="lnk" type="button" onclick="rcNew()">Nouveau code de secours</button>
   <button class="lnk" id="bioBtn" type="button" hidden onclick="bioToggle()"><span></span></button>
   <button class="lnk ac-del" type="button" onclick="delOpen()">Supprimer mon compte</button>
@@ -2500,22 +2501,27 @@ body.role-ouvrier [data-pat]{display:none!important}body:not(.role-ouvrier) .dw-
  <button class="dw-i" data-pat onclick="drawerGo('fou')"><svg class="i"><use href="#i-truck"/></svg><span>Fournisseurs</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
  <button class="dw-i" data-pat onclick="drawerGo('enc')"><svg class="i"><use href="#i-chart"/></svg><span>Encaissements</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
  <button class="dw-i" data-pat onclick="drawerGo('news')"><svg class="i"><use href="#i-doc"/></svg><span>Newsletter</span><i id="newsDot" hidden aria-hidden="true" style="width:9px;height:9px;border-radius:50%;background:#e5484d;margin-inline-start:8px;flex:none"></i><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
- <p class="dw-g">L'appli</p>
- <button class="dw-i" onclick="drawerGo('cpt:app')"><svg class="i"><use href="#i-globe"/></svg><span>Langue et notifications</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
- <button class="dw-i" onclick="drawerGo('cpt:bk')"><svg class="i"><use href="#i-shield"/></svg><span>Sauvegarde</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
 </aside>
 <aside class="dw dw-r" id="dwR" hidden aria-label="Compte">
  <div class="dw-h dw-hr"><button type="button" class="dw-ent" id="dwEnt" onclick="drawerGo(ptOuvrier()?'cpt:moi':'cpt:ent')" aria-label="Mon entreprise"></button><button class="dw-x" onclick="drawerClose()" aria-label="Fermer"><svg class="i"><use href="#i-x"/></svg></button></div>
+ <button type="button" class="dw-id" id="dwId" onclick="drawerGo(ptOuvrier()?'cpt:moi':'cpt:ent')"><b id="dwIdN" data-noi18n></b><span id="dwIdS" data-noi18n></span></button>
  <button class="dw-i dw-ouv" onclick="drawerGo('cpt:moi')"><svg class="i"><use href="#i-user"/></svg><span>Mon profil</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
  <button class="dw-i dw-ouv" onclick="drawerClose(true);go('pt');ptPage('set')"><svg class="i"><use href="#i-pin"/></svg><span>Mes chantiers</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
  <button class="dw-i dw-ouv" onclick="drawerGo('cpt:rent')"><svg class="i"><use href="#i-chart"/></svg><span>Ma rentabilité</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
  <button class="dw-i dw-ouv" onclick="drawerGo('cpt:app')"><svg class="i"><use href="#i-globe"/></svg><span>Paramètres</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
- <button class="dw-i dw-ouv dw-pro" onclick="drawerClose(true);eqPro()"><svg class="i"><use href="#i-helmet"/></svg><span>Passer à mon compte pro</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
- <button class="dw-i dw-ouv" onclick="drawerClose(true);eqQuitter()"><svg class="i"><use href="#i-logout"/></svg><span>Se déconnecter</span></button>
+ <div class="dw-acc dw-ouv dw-ouv-acc">
+  <button class="dw-plan" type="button" onclick="drawerClose(true);eqPro()"><svg class="i"><use href="#i-briefcase"/></svg><b>Se mettre à son compte</b><span>casô pro</span></button>
+  <button class="dw-i" onclick="drawerClose(true);eqQuitter()"><svg class="i"><use href="#i-logout"/></svg><span>Se déconnecter</span></button>
+ </div>
+ <p class="dw-g" data-pat>Mon entreprise</p>
  <button class="dw-i" id="dwExt" hidden onclick="drawerGo('cpt:ext')"><svg class="i"><use href="#i-users"/></svg><span data-noi18n>Chantiers chez mon équipe</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
  <button class="dw-i" data-pat onclick="drawerGo('cpt:ent')"><svg class="i"><use href="#i-building"/></svg><span>Mon entreprise</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
  <button class="dw-i" data-pat onclick="drawerGo('cpt:team')"><svg class="i"><use href="#i-users"/></svg><span>Mon équipe</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
  <button class="dw-i" data-pat onclick="drawerGo('sigp')"><svg class="i"><use href="#i-pen"/></svg><span>Ma signature</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
+ <p class="dw-g" data-pat>Mon compte</p>
+ <button class="dw-i" data-pat onclick="drawerGo('cpt:acc')"><svg class="i"><use href="#i-user"/></svg><span>Mon compte</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
+ <button class="dw-i" data-pat onclick="drawerGo('cpt:app')"><svg class="i"><use href="#i-globe"/></svg><span>Paramètres</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
+ <button class="dw-i" data-pat onclick="drawerGo('cpt:bk')"><svg class="i"><use href="#i-shield"/></svg><span>Sauvegarde</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
  <div class="dw-acc" data-pat>
   <div class="dw-pop" id="dwPop" role="menu" hidden>
    <div class="dw-pop-m" id="dwMail"></div>
