@@ -22,7 +22,7 @@ const EQ_ST={equipe:'Dans l\'équipe',invite:'Invité',aucun:'À inviter'};
 
 /* ---------- liste ---------- */
 function eqRender(){const box=$('eqList');if(!box)return;ensurePt();
- const L=db.people.filter(p=>!p.moi).sort((a,b)=>a.nom.localeCompare(b.nom));/* « moi » (l'artisan, pour son propre pointage) n'est pas un collaborateur */
+ const L=db.people.filter(p=>!p.moi&&!p.parti).sort((a,b)=>a.nom.localeCompare(b.nom));/* « moi » (l'artisan, pour son propre pointage) n'est pas un collaborateur */
  box.innerHTML=L.length?`<div class="eq-l">`+L.map(p=>{const st=eqStatut(p),h=eqHeures(p.id,'month');
   return `<button type="button" class="eq-r" onclick="eqOpen('${p.id}')"><span class="eq-av" aria-hidden="true">${esc((p.nom.trim()[0]||'·').toUpperCase())}</span>
    <span class="eq-t"><b data-noi18n>${esc(p.nom)}</b><span class="mut"><span>${esc(i18nT(p.role==='chef'?'Chef':'Ouvrier'))}</span>${h?` · <span data-noi18n>${esc(fmtH(h))}</span>`:''}</span></span>
@@ -182,7 +182,14 @@ function eqProfilRender(){const p=eqMoi(),c=getSync(),ent=((db.prof||{}).nom||''
  const L=[['Prénom et nom',p?p.nom:c.user],['Rôle',i18nT(c.role==='chef'?'Chef':'Ouvrier')],['Entreprise',ent],['Téléphone',p&&p.tel],['E-mail',p&&p.email]].filter(x=>x[1]);
  box.innerHTML=`<div class="card"><div class="eq-pf"><span class="eq-ini" data-noi18n>${esc(String((p&&p.nom)||c.user||'·').trim()[0]||'·').toUpperCase()}</span><b data-noi18n>${esc((p&&p.nom)||c.user||'')}</b></div>
   ${L.map(x=>`<div class="tot"><span>${esc(i18nT(x[0]))}</span><b data-noi18n>${esc(x[1])}</b></div>`).join('')}
-  <p class="mut">${esc(i18nT('Pour changer ces informations, demande à ton entreprise.'))}</p></div>`}
+  <p class="mut">${esc(i18nT('Pour changer ces informations, demande à ton entreprise.'))}</p></div>
+  <div class="sec-d"><button class="lnk ac-del" type="button" onclick="eqSupprimer()">${esc(i18nT('Supprimer mon compte'))}</button></div>`}
+/* le collaborateur supprime son compte : il quitte l'équipe, l'entreprise est prévenue ; ses heures restent chez elle */
+async function eqSupprimer(){const ent=((db.prof||{}).nom||'').trim()||i18nT('ton entreprise');
+ if(!confirm(i18nT('Supprimer ton compte ? Tu quittes l\'équipe de {1}, qui est prévenue. Tes heures déjà pointées restent chez elle.').replace('{1}',ent)))return;
+ try{await apiTeam('/api/account/delete',{confirm:'SUPPRIMER'})}catch(e){toast(String(e.message||e));return}
+ setSync({});['events','chantiers','pts','people'].forEach(k=>db[k]=[]);db.prof={};db.profAt=0;save();roleUI();toast(i18nT('Compte supprimé.'));
+ try{drawerClose(true)}catch(e){}if(typeof accountGet==='function'&&!accountGet()&&typeof startOpen==='function')startOpen();else go('chat')}
 /* ---------- collaborateur : Ma rentabilité (ses heures, ce qui lui est dû, ce qu'il a reçu, par chantier) ---------- */
 let EQ_RPER='month';
 function eqRentRender(per){if(per)EQ_RPER=per;const p=eqMoi(),box=$('cpRent');if(!box)return;
@@ -200,7 +207,7 @@ function eqRentRender(per){if(per)EQ_RPER=per;const p=eqMoi(),box=$('cpRent');if
    Le lien avec l'équipe est mis de côté (caso_equipe_ext) : « Chantiers chez <entreprise> » montre ses rendez-vous et ses chantiers là-bas. */
 const EQ_EXT='caso_equipe_ext';
 function eqExt(){try{const x=JSON.parse(localStorage.getItem(EQ_EXT)||'null');return x&&x.url&&x.token?x:null}catch(e){return null}}
-function eqPro(){const c=getSync(),ent=((db.prof||{}).nom||'').trim();if(!c.token)return;
+function eqPro(){const c=getSync(),ent=((db.prof||{}).nom||'').trim();if(!c.token)return;syncEncore=false;
  if(!confirm(i18nT('Tu crées ton compte pro, comme tout artisan. Tu restes dans l\'équipe de {1} : tes chantiers chez eux restent visibles. Continuer ?').replace('{1}',ent||i18nT('ton entreprise'))))return;
  try{localStorage.setItem(EQ_EXT,JSON.stringify({url:c.url,token:c.token,user:c.user,role:c.role,entreprise:ent,logo:(db.prof||{}).logo||''}))}catch(e){}
  setSync({});/* le jeton de l'équipe n'est pas annulé : il sert à « Chantiers chez … » */

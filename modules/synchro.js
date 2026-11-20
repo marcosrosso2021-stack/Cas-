@@ -199,11 +199,13 @@ async function syncNow(){
   const r=await fetch(cfg.url+'/api/sync',{method:'POST',
    headers:{'content-type':'application/json',authorization:'Bearer '+cfg.token},
    body:JSON.stringify({since:cfg.rev||0,changes,tomb,counter:db.counter||0})});
-  if(r.status===401){cfg.token='';setSync(cfg);renderSync();throw new Error('Session expirée : reconnecte-toi.')}
+  if(r.status===401){if(getSync().token!==cfg.token)return;cfg.token='';setSync(cfg);renderSync();throw new Error('Session expirée : reconnecte-toi.')}
   if(r.status===503){clearTimeout(syncTimer);syncTimer=setTimeout(syncNow,3000);throw new Error('Synchronisation…')}   // serveur en cours de mise à jour : nouvel essai tout seul
   if(r.status===507)throw new Error('L\'espace de l\'entreprise sur le serveur est plein.');
   if(!r.ok)throw new Error('Le serveur a répondu par une erreur ('+r.status+').');
   const resp=await r.json().catch(()=>({}));
+  /* le téléphone a quitté l'équipe (ou changé d'entreprise) pendant l'échange : la réponse n'est plus pour lui */
+  if(getSync().token!==cfg.token||getSync().url!==cfg.url)return;
   const n=applyRemote(db,resp);
   stamp();Store.persist(db);                 // enregistre ce qui vient du serveur, sans le renvoyer
   cfg.rev=resp.rev;cfg.lastPush=started-1;cfg.last=Date.now();setSync(cfg);

@@ -140,7 +140,7 @@ function agParse(t,lang){
   const ex=/(?<![\p{L}])sauf (?:le |les )?(lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)/u.exec(agFold(F));
   let days=o.days||(o.wkend?[6,0]:[1,2,3,4,5]);if(ex)days=days.filter(d=>d!==AG_DAYS.indexOf(ex[1]));
   const R=o.ranges.length?o.ranges:[o.period];return{intent,days,ranges:R}}
- const team=[];(db.people||[]).forEach(pp=>{const k=agFold(pp.nom).trim();if(k.length<2)return;const re=new RegExp('(?<![\\p{L}])'+k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'(?![\\p{L}])','gu');agEach(o,re,()=>{if(!team.includes(pp.id))team.push(pp.id)})});
+ const team=[];(db.people||[]).filter(pp=>!pp.parti).forEach(pp=>{const k=agFold(pp.nom).trim();if(k.length<2)return;const re=new RegExp('(?<![\\p{L}])'+k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'(?![\\p{L}])','gu');agEach(o,re,()=>{if(!team.includes(pp.id))team.push(pp.id)})});
  o.W=o.W.replace(/(?<![\p{L}])avec(\s+(?:et\s+)?)+(?=\s*$|\s+(?:demain|a|chez|pour|le|la))/gu,m=>' '.repeat(m.length));
  const who=agName(o);
  // titre : ce qui reste une fois les dates, heures et noms retirés
