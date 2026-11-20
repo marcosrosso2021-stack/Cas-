@@ -10,7 +10,7 @@ const FA_MODE={vir:'Virement',chq:'Chèque',esp:'Espèces',cb:'Carte bancaire'};
 /* anti-fraude : à l'émission, la facture reçoit une empreinte SHA-256 de ce qui ne doit plus jamais changer ;
    chaque paiement aussi. Le contrôle d'intégrité recalcule tout et signale la moindre modification ou un trou de numérotation. */
 const sealH=t=>hex(sha256(new TextEncoder().encode(t)));
-function faSealStr(f){const c=f.client||{},v=f.seller||{};return JSON.stringify([1,f.id,f.kind,f.qid||'',f.qnum||'',f.num,f.date,f.done||'',f.due||'',c.nom||'',c.adr||'',!!c.pro,c.siren||'',c.tvai||'',f.chantier||'',+f.remise||0,!!f.franchise,!!f.autoliq,+f.ret||0,f.pct==null?null:+f.pct,JSON.stringify(f.ded==null?null:f.ded),(f.lines||[]).map(l=>[l.label||'',+l.qty||0,l.unit||'',+l.pu||0,+l.tva||0]),f.ref||'',v.nom||'',v.siret||'',f.issuedAt||0])}
+function faSealStr(f){const c=f.client||{},v=f.seller||{};return JSON.stringify([1,f.id,f.kind,f.qid||'',f.qnum||'',f.num,f.date,f.done||'',f.due||'',c.nom||'',c.adr||'',!!c.pro,c.siren||'',c.tvai||'',f.chantier||'',+f.remise||0,!!f.franchise,!!f.autoliq,+f.ret||0,f.pct==null?null:+f.pct,JSON.stringify(f.ded==null?null:f.ded),(f.lines||[]).map(l=>[l.label||'',+l.qty||0,l.unit||'',+l.pu||0,+l.tva||0]),f.ref||'',v.nom||'',v.siret||'',f.issuedAt||0].concat(f.cat?[f.cat,!!f.debits]:[]))}
 const paySealStr=(f,p)=>JSON.stringify([1,f.num,p.id||'',p.d,+p.amt,p.mode,p.cancels||'']);
 function faAudit(){const out={inv:0,pays:0,old:0,bad:[],gaps:[]},ser={};
  (db.invoices||[]).forEach(f=>{if(!f.num)return;out.inv++;
@@ -148,7 +148,7 @@ async function faIssue(){
  if(!confirm('Émettre la facture ? Elle recevra un numéro et ne pourra plus être modifiée.'))return;
  f._iss=1;const b=$('faGo');if(b)b.disabled=true;
  try{f.num=await faNum(f.kind,f.date,f.id)}catch(e){if(e.module&&typeof aboAjouter==='function'){aboAjouter(e.module);return}toast(i18nT('Connexion au serveur nécessaire pour numéroter la facture.'));return}finally{delete f._iss;if(b&&!f.num)b.disabled=false}
- f.seller=faProf();f.issuedAt=Date.now();f.red=!f.franchise&&!f.autoliq&&!f.client.pro&&f.lines.some(l=>l.tva===10||l.tva===5.5);f.red55=f.lines.some(l=>l.tva===5.5);f.seal=sealH(faSealStr(f));
+ f.seller=faProf();f.issuedAt=Date.now();{const p=db.prof||{};f.cat=p.cat||'PS';f.debits=!!p.debits&&!f.franchise}f.red=!f.franchise&&!f.autoliq&&!f.client.pro&&f.lines.some(l=>l.tva===10||l.tva===5.5);f.red55=f.lines.some(l=>l.tva===5.5);f.seal=sealH(faSealStr(f));
  // le client garde ses infos (adresse, SIREN…)
  try{const {x}=upsert('clients',{nom:f.client.nom,adr:f.client.adr,tel:f.client.tel});Object.assign(x,{pro:f.client.pro||undefined,siren:f.client.siren||x.siren,tvai:f.client.tvai||x.tvai});if(!x.adr)x.adr=f.client.adr}catch(e){}
  db.invoices.push(f);save();toast(i18nT('Facture émise.'));faRender();
@@ -167,6 +167,7 @@ function faPdf(noPrint){
   <div style="text-align:right">${f.kind!=='avoir'?`<div style="display:inline-block;border:3px solid #1e7a46;color:#1e7a46;font-weight:800;padding:3px 10px;border-radius:6px;transform:rotate(-3deg);margin-bottom:6px">ACQUITTÉE le ${D(faCalc(f).paidAt)}</div><br>`:''}<b style="font-size:22px">${ttl} ${esc(f.num)}</b><br>Date : ${D(f.date)}${f.qnum?`<br>Devis n° ${esc(f.qnum)}`:''}${refInv?`<br>Sur la facture n° ${esc(refInv.num)} du ${D(refInv.date)}`:''}${f.done?`<br>${f.kind==='acompte'?'Début des travaux':'Travaux réalisés le'} : ${D(f.done)}`:''}</div>
  </div>
  <p><b>Client :</b> ${esc(f.client.nom)}<br>${esc(f.client.adr)}${f.client.pro&&f.client.siren?`<br>SIREN : ${esc(f.client.siren)}`:''}${f.client.tvai?`<br>N° TVA : ${esc(f.client.tvai)}`:''}${f.chantier&&f.chantier!==f.client.adr?`<br><b>Chantier :</b> ${esc(f.chantier)}`:''}</p>
+ ${f.cat?`<p>Opérations : ${({PS:'prestations de services',LB:'livraisons de biens',LBPS:'livraisons de biens et prestations de services'})[f.cat]||''}${f.debits?'<br>Option pour le paiement de la taxe d\'après les débits':''}</p>`:''}
  <table><tr><th>Désignation</th><th class="r">Qté</th><th>Unité</th><th class="r">PU HT</th><th class="r">TVA</th><th class="r">Total HT</th></tr>
  ${f.lines.map(l=>`<tr><td>${esc(l.label)}</td><td class="r">${fmtN(l.qty)}</td><td>${esc(l.unit)}</td><td class="r">${eur(l.pu)}</td><td class="r">${f.franchise||f.autoliq?'-':l.tva+' %'}</td><td class="r">${eur(faR2(l.qty*l.pu))}</td></tr>`).join('')}
  </table>
