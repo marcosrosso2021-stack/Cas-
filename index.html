@@ -2133,6 +2133,8 @@ body.role-ouvrier [data-pat]{display:none!important}body:not(.role-ouvrier) .dw-
    <label for="eRm">N° RM / RNE / RCS</label><input id="eRm" oninput="saveProfSoon()" onchange="saveProf()" placeholder="RM 123 456 789 – Marseille" data-noi18n>
    <div id="eTvaW"><label for="eTvai">N° TVA intracommunautaire</label><input id="eTvai" oninput="saveProfSoon()" onchange="saveProf()" placeholder="FR12345678901" autocapitalize="characters" data-noi18n></div>
    <label class="en-sw" for="eFranch"><span>Franchise de TVA</span><input type="checkbox" role="switch" id="eFranch" onchange="saveProf()"></label>
+   <label class="en-sw" for="eDebit"><span>TVA sur les débits</span><input type="checkbox" role="switch" id="eDebit" onchange="saveProf()"></label>
+   <label for="eCat">Opérations facturées</label><select id="eCat" onchange="saveProf()"><option value="PS">Prestations de services</option><option value="LBPS">Biens et services</option><option value="LB">Livraisons de biens</option></select>
   </div>
 
   <h3 class="en-h">Contact</h3>
