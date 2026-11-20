@@ -498,7 +498,7 @@ function agEdit(id,day,heure){if(typeof ptOuvrier==='function'&&ptOuvrier()){if(
  $('agEtyp').value=e.t;segOn('agTyp',e.t);$('agEti').value=e.title||'';$('agEd').value=e.d;$('agEd2').value=e.d2||'';
  $('agEa').value=e.a||'';$('agEb').value=e.b||'';$('agEall').checked=!e.a;$('agEcl').value=e.cid?((db.clients.find(c=>c.id===e.cid)||{}).nom||''):'';$('agEadr').value=e.adr||'';$('agEno').value=e.note||'';
  $('agErr').value=e.rr?(e.rr.f==='w'&&e.rr.days&&e.rr.days.length>1?'w5':e.rr.f):'';$('agErr').dataset.v0=$('agErr').value;$('agEru').value=e.rr&&e.rr.u||'';
- ensurePt();$('agEwho').innerHTML=db.people.map(p=>`<label class="ag-who"><input type="checkbox" value="${p.id}" ${(e.who||[]).includes(p.id)?'checked':''}> <span data-noi18n>${esc(p.nom)}</span></label>`).join('');$('agEwhoW').hidden=!db.people.length;$('agEchW').hidden=!db.chantiers.length;
+ ensurePt();$('agEwho').innerHTML=db.people.filter(p=>!p.parti||(e.who||[]).includes(p.id)).map(p=>`<label class="ag-who"><input type="checkbox" value="${p.id}" ${(e.who||[]).includes(p.id)?'checked':''}> <span data-noi18n>${esc(p.nom)}</span></label>`).join('');$('agEwhoW').hidden=!db.people.length;$('agEchW').hidden=!db.chantiers.length;
  $('agEch').innerHTML=`<option value="" data-noi18n>${esc(i18nT('Automatique (client ou adresse)'))}</option>`+db.chantiers.map(c=>`<option value="${c.id}" ${e.ch===c.id?'selected':''} data-noi18n>${esc(c.nom)}</option>`).join('');
  $('agEdel1').hidden=!(agEd&&(agEd.rr||agEd.g));$('agEj').value=agEd&&agEd.g?agSerie(agEd).length:1;
  $('agEclDl').innerHTML=db.clients.map(c=>`<option value="${esc(c.nom)}">`).join('');agEdAll();

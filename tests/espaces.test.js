@@ -55,21 +55,21 @@ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'caso-esp-'));
  const moi=await ka.evaluate(()=>{const c=document.querySelector('.eq-moi');return c?c.innerText.replace(/\s+/g,' '):''});
  ok('« Moi » : ses heures, dû, reçu (120 €) et ses paiements',/Karim/.test(moi)&&/Reçu/.test(moi)&&/120,00/.test(moi)&&/virement/.test(moi),moi);
  /* l'environnement du collaborateur : son menu, ses pages ; rien de l'entreprise */
- const env=await ka.evaluate(async()=>{drawer('L');await new Promise(r=>setTimeout(r,400));const vis=[...document.querySelectorAll('#dwR .dw-i')].filter(x=>x.offsetParent).map(x=>x.innerText.trim());const pro=[...document.querySelectorAll('#dwR .dw-plan')].some(x=>x.offsetParent&&/Se mettre à son compte/.test(x.innerText));const idn=document.getElementById('dwIdS').textContent;
+ const env=await ka.evaluate(async()=>{drawer('L');await new Promise(r=>setTimeout(r,400));const vis=[...document.querySelectorAll('#dwR .dw-i')].filter(x=>x.offsetParent).map(x=>x.innerText.trim());const pro=[...document.querySelectorAll('#dwR .dw-ouv-acc')].some(x=>x.offsetParent&&/Ta propre boîte \?/.test(x.innerText)&&/Créer mon compte entreprise/.test(x.innerText));const pop=[...document.querySelectorAll('#dwPopO .dw-pi')].map(x=>x.innerText.trim());const idh=document.getElementById('dwIdN').innerText+' | '+document.getElementById('dwIdS').innerText;const idn=document.getElementById('dwIdS').textContent;
   const gauche=document.getElementById('dwL').classList.contains('on');drawerClose(true);cptPage('ent');const ent=cptCur;cptPage('rent');await new Promise(r=>setTimeout(r,200));
   const rent=document.getElementById('cpRent').innerText.replace(/\s+/g,' ');cptPage('moi');const pf=document.getElementById('cpMoi').innerText.replace(/\s+/g,' ');
   go('pt');ptPage('set');const add=!!document.getElementById('chNew')&&document.getElementById('chNew').offsetParent!==null;
   agEdit(null,ymdL(),'10:00');const edit=!document.getElementById('agSh').hidden;
   logoProfil();const logo=!!document.querySelector('#dwEnt img');
-  return{vis,pro,idn,gauche,ent,rent,pf,add,edit,logo,prof:db.prof&&db.prof.nom,siret:db.prof&&db.prof.siret}});
- ok('menu du collaborateur : Mon profil, Mes chantiers, Ma rentabilité, Paramètres, Se déconnecter, et la pastille « Se mettre à son compte »',
-  ['Mon profil','Mes chantiers','Ma rentabilité','Paramètres','Se déconnecter'].every(t=>env.vis.includes(t))&&env.pro&&!env.vis.some(t=>/Mon entreprise|Mon équipe|Ma signature|Newsletter|Mon compte|Sauvegarde/.test(t)),JSON.stringify(env)); 
+  return{vis,pro,pop,idh,idn,gauche,ent,rent,pf,add,edit,logo,prof:db.prof&&db.prof.nom,siret:db.prof&&db.prof.siret}});
+ ok('menu du collaborateur : nom · fonction, entreprise ; Mon travail ; « Ta propre boîte ? » + Créer mon compte entreprise ; compte : Mon compte, Paramètres, Se déconnecter',
+  ['Mes chantiers','Ma rentabilité'].every(t=>env.vis.includes(t))&&env.pro&&['Mon compte','Paramètres','Se déconnecter'].every(t=>env.pop.includes(t))&&/Karim · Ouvrier \| Rosso Rénovation/.test(env.idh)&&!env.vis.some(t=>/Mon entreprise|Mon équipe|Ma signature|Newsletter|Mon compte|Sauvegarde/.test(t)),JSON.stringify(env)); 
  ok('collaborateur : pas de menu « Mon travail », pas de « Mon entreprise »',env.gauche===false&&env.ent==='moi');
  ok('collaborateur : le nom et le logo de l\'entreprise, rien d\'autre (ni SIRET)',env.prof==='Rosso Rénovation'&&env.logo&&!env.siret,JSON.stringify({p:env.prof,s:env.siret,l:env.logo}));
  ok('Ma rentabilité : reçu 120 €, ses paiements ; Mon profil : téléphone et e-mail',/120,00/.test(env.rent)&&/virement/.test(env.rent)&&/0699887766/.test(env.pf),env.rent+' | '+env.pf);
  ok('collaborateur : ni ajout de chantier, ni rendez-vous créé dans le planning',!env.add&&!env.edit,JSON.stringify({a:env.add,e:env.edit}));
  const sortie=await ka.evaluate(()=>{const b=document.querySelector('.eq-out button');if(!b)return 'absent';window.confirm=()=>true;b.click();
-  return {ouv:document.body.classList.contains('role-ouvrier'),tok:!!getSync().token,cli:getComputedStyle(document.querySelector('[data-pat]')).display!=='none'}});
+  return {ouv:document.body.classList.contains('role-ouvrier'),tok:!!getSync().token,cli:getComputedStyle(document.querySelector('nav [data-pat]')).display!=='none'}});
  ok('collaborateur : « Quitter l\'équipe sur ce téléphone » rend l\'appli entière',sortie.ouv===false&&sortie.tok===false&&sortie.cli===true,JSON.stringify(sortie));
  /* « Passer à mon compte pro » : invité de nouveau, il crée son compte et garde les chantiers de l'équipe */
  const c3=await pa.evaluate(async()=>{const c=await eqInviter('pk');return c&&c.url});
@@ -88,6 +88,15 @@ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'caso-esp-'));
  ok('menu profil du patron : entreprise et SIRET en tête ; Mon entreprise, Mon équipe, Ma signature, Mon compte, Paramètres, Sauvegarde',
   ['Mon entreprise','Mon équipe','Ma signature','Mon compte','Paramètres','Sauvegarde'].every(t=>mp.v.includes(t))&&/Rosso Rénovation \| SIRET 123 456 789 00011/.test(mp.id)&&!mp.g.some(t=>/Langue|Sauvegarde/.test(t)),JSON.stringify(mp));
  ok('Mon compte : prénom, e-mail, connexion',/Marcos/.test(mp.acc)&&/marcos@rosso\.fr/.test(mp.acc)&&/E-mail et mot de passe/.test(mp.acc),mp.acc);
+ /* le collaborateur supprime son compte : l'entreprise le voit quitter l'équipe, ses heures restent */
+ const c4=await pa.evaluate(async()=>{const c=await eqInviter('pk');return c&&c.url});
+ const kd=await tel(c4.replace(/^https?:\/\/[^/]+/,B));await kd.waitForSelector('#joinScr .join-go',{timeout:15000}).catch(()=>{});
+ await kd.click('#joinScr .join-go');await kd.waitForFunction(()=>!!getSync().token,null,{timeout:10000}).catch(()=>{});
+ const sup=await kd.evaluate(async()=>{await syncNow();cptPage('moi');const del=!!document.querySelector('#cpMoi .ac-del');window.confirm=()=>true;await eqSupprimer();return{del,tok:!!getSync().token}});
+ await syncFini(pa);
+ const vp=await pa.evaluate(()=>{const k=db.people.find(x=>x.id==='pk');eqRender&&eqRender();return{parti:!!(k&&k.parti),liste:[...document.querySelectorAll('#eqList .eq-r')].some(x=>x.textContent.includes('Karim')),gens:db.people.map(p=>p.nom+(p.parti?'(parti)':''))}});
+ ok('« Supprimer mon compte » (en bas de Mon compte) : le collaborateur quitte l\'équipe, son nom sort de Mon équipe chez le patron',sup.del&&!sup.tok&&vp.parti&&!vp.liste,JSON.stringify({sup,vp}));
+ const relog=await kd.evaluate(async([b,e])=>(await fetch(b+'/e/'+e+'/api/state')).status,[B,esp]);
  /* espace client (casô client final) : depuis la fiche du client, une carte prête avec le lien personnel */
  const ce=await pa.evaluate(async()=>{db.clients.push({id:'cli1',nom:'Martin',adr:'3 rue Victor Hugo'});save();cliEdit('cli1');await cliEspace();
   const c=document.querySelector('#cliEsp .env');return c?{t:c.innerText.replace(/\s+/g,' '),u:(ENV['cli-cli1']||{}).url||'',m:(ENV['cli-cli1']||{}).msg||''}:{t:document.getElementById('cliEsp').innerText}});

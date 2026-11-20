@@ -905,6 +905,13 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
     data.subs=data.subs.filter(x=>x.user!==me);
     Object.keys(data.sigreg).forEach(k=>{if(data.sigreg[k].user===me)delete data.sigreg[k]});
     Object.keys(data.ics).forEach(k=>{if(k!=='tz'&&data.ics[k]&&data.ics[k].user===me)delete data.ics[k]});
+    /* collaborateur parti : sa fiche quitte l'équipe (ses heures et ses paiements restent pour la paie et la comptabilité),
+       ses rendez-vous à venir sont libérés, et le patron est prévenu */
+    {const at=Date.now(),auj=new Date(at).toISOString().slice(0,10),ids=new Set();
+     for(const p of Object.values(data.recs.people))if(p&&String(p.nom||'').trim().toLowerCase().split(' ')[0]===me.split(' ')[0]){ids.add(p.id);data.recs.people[p.id]=Object.assign({},p,{parti:at,updatedAt:at,rev:++data.rev})}
+     if(ids.size)for(const e of Object.values(data.recs.events))if(e&&Array.isArray(e.who)&&e.who.some(i=>ids.has(i))&&String(e.d||'')>=auj)data.recs.events[e.id]=Object.assign({},e,{who:e.who.filter(i=>!ids.has(i)),updatedAt:at,rev:++data.rev});
+     const pat=Object.values(data.users).filter(u=>u.role==='patron'||u.role==='chef').map(u=>u.name.toLowerCase());
+     Promise.all(data.subs.filter(x=>pat.includes(x.user)).map(x=>pushSend(x.sub,{title:'casô',body:(user.name+' a supprimé son compte et quitté l\'équipe.').slice(0,180),url:(opts.basePath||'')+'/',tag:'parti-'+me}).catch(()=>{}))).catch(()=>{})}
     await persist();return send(res,200,{ok:true,scope:'compte'})}
 
    /* notifications */

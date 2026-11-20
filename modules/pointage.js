@@ -8,6 +8,8 @@ const fmtD=ts=>FMT_D.format(new Date(ts));
 const fmtH=ms=>{const m=Math.round(ms/60000);return Math.floor(m/60)+' h '+String(m%60).padStart(2,'0')};
 const chName=id=>(db.chantiers.find(c=>c.id===id)||{}).nom||'?';
 const pName=id=>(db.people.find(p=>p.id===id)||{}).nom||'?';
+/* l'équipe en activité : sans ceux qui ont supprimé leur compte (leurs heures restent dans les totaux et l'export) */
+const ptActifs=()=>db.people.filter(p=>!p.parti);
 let ptPer='week',lastIds=[];
 
 function lastEv(pid){
@@ -182,12 +184,12 @@ function renderPt(){
  const opt=(arr,sel)=>arr.map(x=>`<option value="${x.id}" ${x.id===sel?'selected':''}>${esc(x.nom)}</option>`).join('');
  const sm=summarize(ptPer);
  const keepC=($('ptC')&&$('ptC').value)||'',keepP=($('ptP')&&$('ptP').value)||'';
- const ready=db.chantiers.length&&db.people.length;
+ const ready=db.chantiers.length&&ptActifs().length;
  const one=a=>a.length===1?' hidden':'';
  /* --- Pointer : le GPS d'abord ; à la main seulement si besoin (petit dépliant quand le GPS existe sur ce téléphone) --- */
  const man=ready?`<div id="ptCtx" class="pt-ctx"></div>
    <select id="ptC" aria-label="Chantier"${one(db.chantiers)} onchange="ptBtn()">${opt(db.chantiers,keepC)}</select>
-   <select id="ptP" aria-label="Personne"${one(db.people)} onchange="ptBtn(1)">${opt(db.people,keepP)}</select>
+   <select id="ptP" aria-label="Personne"${one(ptActifs())} onchange="ptBtn(1)">${opt(ptActifs(),keepP)}</select>
    <button id="ptGo" class="btn pt-go" onclick="manualPunch()">Entrée</button>`:'';
  let go='';
  if(!ready)go+=`<div class="card pt-now">${ptSetupHtml()}</div>`;
@@ -214,7 +216,7 @@ function renderPt(){
    <button class="btn sm ko" data-pat onclick="delEv('${e.id}')">Supprimer</button></div>`).join(''):'<div class="mut">Aucun pointage.</div>')+
   `<details class="pt-adv"><summary>Ajouter un oubli</summary>
   <label>Chantier</label><select id="fgC">${opt(db.chantiers,'')}</select>
-  <label>Personne</label><select id="fgP">${opt(db.people,'')}</select>
+  <label>Personne</label><select id="fgP">${opt(ptActifs(),'')}</select>
   <div class="row"><div><label>Type</label><select id="fgT"><option value="in">Entrée</option><option value="out">Sortie</option></select></div>
   <div><label>Date et heure</label><input id="fgD" type="datetime-local"></div></div>
   <label>Raison (obligatoire)</label><input id="fgN" placeholder="oubli de sortie, pas de réseau…">
@@ -227,7 +229,7 @@ function renderPt(){
   (ouv?'':`<div class="row"><input id="chNew" placeholder="Nouveau chantier" data-adr autocomplete="off"><button class="btn sm" style="flex:0 0 auto" onclick="addCh()">Ajouter</button></div>`)+
   (L.length?L.map(x=>ptChLigne(x,AU,ouv)).join(''):`<p class="mut">${esc(i18nT('Aucun chantier. Ils arrivent tout seuls depuis le planning (rendez-vous avec une adresse).'))}</p>`)+`</div>`;
  /* l'équipe se gère dans Mon équipe (une seule liste) ; pas pour le collaborateur */
- if(!ouv)st+=`<button type="button" class="card eq-lien" onclick="cptPage('team')"><span class="hi"><svg class="i"><use href="#i-users"/></svg></span><span class="eq-t"><b>Mon équipe</b><span class="mut" data-noi18n>${esc(db.people.filter(p=>!p.moi).map(p=>p.nom.split(' ')[0]).join(', '))}</span></span><svg class="i i-flip"><use href="#i-chev"/></svg></button>`;
+ if(!ouv)st+=`<button type="button" class="card eq-lien" onclick="cptPage('team')"><span class="hi"><svg class="i"><use href="#i-users"/></svg></span><span class="eq-t"><b>Mon équipe</b><span class="mut" data-noi18n>${esc(db.people.filter(p=>!p.moi&&!p.parti).map(p=>p.nom.split(' ')[0]).join(', '))}</span></span><svg class="i i-flip"><use href="#i-chev"/></svg></button>`;
  $('ptBody').innerHTML=`<div data-pg="go">${go}</div><div data-pg="h">${hh}</div><div data-pg="set">${st}</div>`;
  ptBtn();ptPage(ptCur,true);
 }
