@@ -790,7 +790,12 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
     const cpt=auth.compte(req);/* connecté (Google / Outlook / e-mail) : limite au mois par compte ; sinon limites anonymes */
     /* compte Artisan après l'essai : les prix en ligne font partie du module Fournisseurs (même règle que l'appli, lib/plan.js) */
     if(cpt&&!PLAN.droits(auth.pub(cpt),opts.maintenant?opts.maintenant():Date.now()).ouvert('fournisseurs'))return send(res,403,{error:'Le module Fournisseurs n\'est pas dans ton abonnement.',module:'fournisseurs'});
-    const [c,b]=await prix.chercher(sp.get('q')||'',sp.get('pays')||'FR',ip,sp.get('mag')||'',sp.get('nom')||'',cpt&&cpt.id);return send(res,c,b)}
+    /* pendant l'essai (sans abonnement payé) : 5 recherches en tout, puis le plan s'ouvre sur le module Fournisseurs */
+    const tE=opts.maintenant?opts.maintenant():Date.now(),essai=!!(cpt&&cpt.mode==='artisan'&&cpt.essaiFin&&tE<cpt.essaiFin&&!(cpt.abo&&cpt.abo.sub&&(!cpt.abo.fin||cpt.abo.fin>tE)));
+    if(essai&&!auth.prixEssai(cpt,false))return send(res,403,{error:'Pendant l\'essai, 5 recherches de prix en ligne. Abonne-toi au module Fournisseurs pour continuer.',module:'fournisseurs',essai:true});
+    const [c,b]=await prix.chercher(sp.get('q')||'',sp.get('pays')||'FR',ip,sp.get('mag')||'',sp.get('nom')||'',cpt&&cpt.id);
+    if(essai&&c===200)auth.prixEssai(cpt,true);
+    return send(res,c,b)}
    if(req.method==='GET'&&url==='/api/prix/img'){const sp=new URLSearchParams(req.url.split('?')[1]||'');
     const [c,o]=await prix.image(sp.get('u')||'');if(c!==200)return send(res,c,o);
     res.writeHead(200,Object.assign({'content-type':o.type,'content-length':o.buf.length,'cache-control':'public, max-age=86400'},SEC,cors));return res.end(o.buf)}
