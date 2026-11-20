@@ -95,6 +95,7 @@ function manualPunch(){
 
 /* pointage : créer le chantier et la personne sans quitter l'écran */
 function ptSetupHtml(){let h='';
+ if(ptOuvrier())return `<p class="mut">${esc(i18nT('Tes chantiers arrivent tout seuls depuis le planning de ton entreprise.'))}</p>`;
  if(!db.chantiers.length){const C=(db.clients||[]).filter(c=>c.adr).slice(-4).reverse();
   h+=`<label for="ptQC">Chantier</label><div class="row"><input id="ptQC" placeholder="Nom ou adresse du chantier" data-adr autocomplete="off"><button class="btn sm" style="flex:0 0 auto" onclick="ptQuickCh()">Ajouter</button></div>`+
    (C.length?`<div class="chips pt-sug">${C.map(c=>`<button type="button" class="chip" onclick="ptChCli('${esc(c.id)}')"><svg class="i i-sm"><use href="#i-pin"/></svg><span data-noi18n>${esc(c.nom)}</span></button>`).join('')}</div>`:'')}
@@ -158,6 +159,23 @@ setInterval(()=>{if(document.getElementById('s-pt')&&document.getElementById('s-
 /* « GPS toujours » : le chantier est surveillé tous les jours, même sans rendez-vous au planning */
 function ptToujours(id,on){const c=db.chantiers.find(x=>x.id===id);if(!c)return;c.toujours=!!on;c.at=Date.now();save();
  try{if(window.CasoAuto)CasoAuto.run()}catch(e){}toast(i18nT(on?'Ce chantier est surveillé tous les jours.':'Surveillé seulement les jours de rendez-vous.'))}
+/* collaborateur de l'équipe (rôle ouvrier sur le serveur de l'entreprise) */
+function ptOuvrier(){try{const c=getSync();return !!(c.token&&c.role==='ouvrier')}catch(e){return false}}
+/* chantiers des rendez-vous à venir (30 jours) : créés tout seuls, avec l'adresse, pour les voir et pour le GPS */
+function ptPlanCh(){if(typeof agDayEvents!=='function'||typeof agChFor!=='function'||!db.events)return;const t=agToday();
+ for(let k=0;k<=30;k++)agDayEvents(agAdd(t,k)).forEach(e=>{if(e.t!=='rdv'||(e.ch&&db.chantiers.some(c=>c.id===e.ch)))return;
+  const cl=e.cid&&(db.clients||[]).find(c=>c.id===e.cid);if(e.adr||(cl&&cl.adr))try{agChFor(e)}catch(x){}})}
+/* les chantiers avec leur prochain passage ; le collaborateur ne voit que ceux de ses rendez-vous et de ses pointages */
+function ptChListe(ouv){const t=agToday(),nx={};
+ if(typeof agDayEvents==='function')for(let k=0;k<=60;k++){const d=agAdd(t,k);agDayEvents(d).forEach(e=>{if(e.t==='rdv'&&e.ch&&!nx[e.ch])nx[e.ch]={d,a:e.a}})}
+ const vu=new Set(db.pts.map(x=>x.c));
+ return db.chantiers.filter(c=>!ouv||nx[c.id]||vu.has(c.id)).map(c=>({c,nx:nx[c.id]||null}))
+  .sort((a,b)=>(a.nx?0:1)-(b.nx?0:1)||(a.nx&&b.nx?(a.nx.d+(a.nx.a||'')).localeCompare(b.nx.d+(b.nx.a||'')):String(a.c.nom).localeCompare(String(b.c.nom))))}
+function ptChLigne(x,AU,ouv){const c=x.c,gz=c.geo?['ok',i18nT('Zone GPS')+' '+(c.rayon||100)+' m']:c.adr?['wait',i18nT('Localisation de l\'adresse…')]:['no',i18nT('Sans adresse : pas de pointage GPS')];
+ return `<div class="line pt-chl"${ouv?'':` data-sw="ch:${c.id}"`}><div class="t"><b data-noi18n>${esc(c.nom)}</b>${AU&&!ouv&&(c.adr||c.geo)?`<label class="pt-tj"><span>GPS toujours</span><input type="checkbox" role="switch" ${c.toujours?'checked':''} onchange="ptToujours('${c.id}',this.checked)"></label>`:''}</div>
+  ${c.adr&&c.adr!==c.nom&&!String(c.nom).includes(c.adr)?`<div class="mut" data-noi18n>${esc(c.adr)}</div>`:''}
+  ${x.nx?`<div class="mut"><span>${esc(i18nT('Prochain passage'))}</span> : <span data-noi18n>${esc(agFmtD(x.nx.d,{weekday:'short',day:'numeric',month:'short'})+(x.nx.a?' · '+(+x.nx.a.slice(0,2))+' h'+(x.nx.a.slice(3)!=='00'?' '+x.nx.a.slice(3):''):''))}</span></div>`:''}
+  <div class="pt-gz ${gz[0]}"><svg class="i i-sm"><use href="#i-pin"/></svg><span>${esc(gz[1])}</span></div></div>`}
 function renderPt(){
  ensurePt();
  const AU=window.CasoAuto,auto=!!(AU&&AU.active());
@@ -187,13 +205,13 @@ function renderPt(){
    const tot=Object.values(sm.by[c]).reduce((a,b)=>a+b,0);
    return `<div class="line"><div class="t"><span data-noi18n>${esc(chName(c))}</span><span>${fmtH(tot)}</span></div>`+
     Object.keys(sm.by[c]).map(p=>`<div class="tot mut"><span data-noi18n>${esc(pName(p))}</span><span>${fmtH(sm.by[c][p])}</span></div>`).join('')+
-    `<button class="btn sm sec" data-c="${esc(c)}" onclick="ptToQuote(this.dataset.c)">Ajouter au devis (main d'œuvre)</button></div>`}).join(''):'<div class="mut">Aucune heure.</div>';
+    `<button class="btn sm sec" data-pat data-c="${esc(c)}" onclick="ptToQuote(this.dataset.c)">Ajouter au devis (main d'œuvre)</button></div>`}).join(''):'<div class="mut">Aucune heure.</div>';
  if(sm.flags)hh+=`<div class="mut" style="color:#b06000;margin-top:8px"><svg class="i i-sm"><use href="#i-warn"/></svg> ${sm.flags} période(s) incomplète(s), non comptées.</div>`;
  hh+=`<button class="btn sec" onclick="exportPt()">Exporter en CSV (Excel)</button></div>`;
  const ev=db.pts.slice().sort((a,b)=>b.ts-a.ts).slice(0,30);
  hh+=`<div class="card"><h2><span class="hi"><svg class="i"><use href="#i-list"/></svg></span>Journal</h2>`+(ev.length?ev.map(e=>`<div class="line"><div class="t"><span>${e.t==='in'?'Entrée':'Sortie'} · <span data-noi18n>${esc(pName(e.p))}</span></span><span data-noi18n>${fmtD(e.ts)} ${fmtT(e.ts)}</span></div>
    <div class="mut" data-noi18n>${esc(chName(e.c))}${e.note?' · '+esc(e.note):''}</div>
-   <button class="btn sm ko" onclick="delEv('${e.id}')">Supprimer</button></div>`).join(''):'<div class="mut">Aucun pointage.</div>')+
+   <button class="btn sm ko" data-pat onclick="delEv('${e.id}')">Supprimer</button></div>`).join(''):'<div class="mut">Aucun pointage.</div>')+
   `<details class="pt-adv"><summary>Ajouter un oubli</summary>
   <label>Chantier</label><select id="fgC">${opt(db.chantiers,'')}</select>
   <label>Personne</label><select id="fgP">${opt(db.people,'')}</select>
@@ -201,12 +219,15 @@ function renderPt(){
   <div><label>Date et heure</label><input id="fgD" type="datetime-local"></div></div>
   <label>Raison (obligatoire)</label><input id="fgN" placeholder="oubli de sortie, pas de réseau…">
   <button class="btn sec" onclick="addForgot()">Ajouter</button></details></div>`;
- /* --- Chantiers et personnes --- */
- let st=`<div class="card"><h2><span class="hi"><svg class="i"><use href="#i-pin"/></svg></span>Chantiers</h2>
-  <div class="row"><input id="chNew" placeholder="Nouveau chantier" data-adr autocomplete="off"><button class="btn sm" style="flex:0 0 auto" onclick="addCh()">Ajouter</button></div>`+
-  db.chantiers.map(c=>`<div class="line" data-sw="ch:${c.id}"><div class="t"><span data-noi18n>${esc(c.nom)}</span>${AU&&(c.adr||c.geo)?`<label class="pt-tj"><span>GPS toujours</span><input type="checkbox" role="switch" ${c.toujours?'checked':''} onchange="ptToujours('${c.id}',this.checked)"></label>`:''}</div>${AU?AU.zone(c):''}</div>`).join('')+`</div>`;
- /* l'équipe se gère dans Mon équipe (une seule liste) */
- st+=`<button type="button" class="card eq-lien" onclick="cptPage('team')"><span class="hi"><svg class="i"><use href="#i-users"/></svg></span><span class="eq-t"><b>Mon équipe</b><span class="mut" data-noi18n>${esc(db.people.map(p=>p.nom.split(' ')[0]).join(', '))}</span></span><svg class="i i-flip"><use href="#i-chev"/></svg></button>`;
+ /* --- Chantiers : ceux du planning (rendez-vous avec une adresse, 30 jours) et ceux ajoutés ; le GPS de ce téléphone en tête --- */
+ ptPlanCh();const ouv=ptOuvrier();
+ let st=`<div class="card au pt-gps"><div class="au-cap">${esc(i18nT('GPS de ce téléphone'))}</div>`+(AU&&AU.gpsLine?AU.gpsLine():`<div class="au-sub">${esc(i18nT('Le GPS se lance seulement sur un téléphone.'))}</div>`)+`</div>`;
+ const L=ptChListe(ouv);
+ st+=`<div class="card"><h2><span class="hi"><svg class="i"><use href="#i-pin"/></svg></span>${esc(i18nT(ouv?'Mes chantiers':'Chantiers'))}</h2>`+
+  (ouv?'':`<div class="row"><input id="chNew" placeholder="Nouveau chantier" data-adr autocomplete="off"><button class="btn sm" style="flex:0 0 auto" onclick="addCh()">Ajouter</button></div>`)+
+  (L.length?L.map(x=>ptChLigne(x,AU,ouv)).join(''):`<p class="mut">${esc(i18nT('Aucun chantier. Ils arrivent tout seuls depuis le planning (rendez-vous avec une adresse).'))}</p>`)+`</div>`;
+ /* l'équipe se gère dans Mon équipe (une seule liste) ; pas pour le collaborateur */
+ if(!ouv)st+=`<button type="button" class="card eq-lien" onclick="cptPage('team')"><span class="hi"><svg class="i"><use href="#i-users"/></svg></span><span class="eq-t"><b>Mon équipe</b><span class="mut" data-noi18n>${esc(db.people.filter(p=>!p.moi).map(p=>p.nom.split(' ')[0]).join(', '))}</span></span><svg class="i i-flip"><use href="#i-chev"/></svg></button>`;
  $('ptBody').innerHTML=`<div data-pg="go">${go}</div><div data-pg="h">${hh}</div><div data-pg="set">${st}</div>`;
  ptBtn();ptPage(ptCur,true);
 }

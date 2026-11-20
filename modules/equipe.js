@@ -177,4 +177,47 @@ function eqSortie(){const c=getSync();if(!c.token||c.role!=='ouvrier')return'';
  return `<p class="eq-out"><button type="button" class="lnk" onclick="eqQuitter()">${esc(i18nT('Quitter l\'équipe sur ce téléphone'))}</button></p>`}
 function eqQuitter(){if(!confirm(i18nT('Ce téléphone quitte l\'équipe. Tes données restent sur le serveur de l\'entreprise. Continuer ?')))return;
  syncLogout();roleUI();try{go('chat')}catch(e){}}
+/* ---------- collaborateur : Mon profil (ce que l'entreprise a noté ; modifiable par le patron) ---------- */
+function eqProfilRender(){const p=eqMoi(),c=getSync(),ent=((db.prof||{}).nom||'').trim(),box=$('cpMoi');if(!box)return;
+ const L=[['Prénom et nom',p?p.nom:c.user],['Rôle',i18nT(c.role==='chef'?'Chef':'Ouvrier')],['Entreprise',ent],['Téléphone',p&&p.tel],['E-mail',p&&p.email]].filter(x=>x[1]);
+ box.innerHTML=`<div class="card"><div class="eq-pf"><span class="eq-ini" data-noi18n>${esc(String((p&&p.nom)||c.user||'·').trim()[0]||'·').toUpperCase()}</span><b data-noi18n>${esc((p&&p.nom)||c.user||'')}</b></div>
+  ${L.map(x=>`<div class="tot"><span>${esc(i18nT(x[0]))}</span><b data-noi18n>${esc(x[1])}</b></div>`).join('')}
+  <p class="mut">${esc(i18nT('Pour changer ces informations, demande à ton entreprise.'))}</p></div>`}
+/* ---------- collaborateur : Ma rentabilité (ses heures, ce qui lui est dû, ce qu'il a reçu, par chantier) ---------- */
+let EQ_RPER='month';
+function eqRentRender(per){if(per)EQ_RPER=per;const p=eqMoi(),box=$('cpRent');if(!box)return;
+ if(!p){box.innerHTML=`<div class="card"><p class="mut">${esc(i18nT('Ta fiche n\'est pas encore arrivée. Ouvre casô avec du réseau.'))}</p></div>`;return}
+ const per0=EQ_RPER,h=eqHeures(p.id,per0),est=eqEstime(p,per0),pay=eqPaye(p,per0),st=periodStart(per0),par={};
+ sessions().filter(s=>s.p===p.id&&!s.open&&!s.warn&&(s.a||s.b)>=st).forEach(s=>{par[s.c]=(par[s.c]||0)+(s.b-s.a)});
+ const P=(p.pays||[]).filter(x=>agDate(x.d).getTime()>=st).sort((a,b)=>b.d.localeCompare(a.d));
+ box.innerHTML=`<div class="card eq-moi"><div class="chips" style="margin-bottom:10px">${[['week','Semaine'],['month','Mois'],['all','Tout']].map(([k,l])=>`<span class="chip${per0===k?' on':''}" style="${per0===k?'background:var(--acc);color:var(--ink)':''}" onclick="eqRentRender('${k}')">${esc(i18nT(l))}</span>`).join('')}</div>
+  <div class="eq-tiles"><div><span>${esc(i18nT('Heures'))}</span><b data-noi18n>${esc(fmtH(h))}</b></div><div><span>${esc(i18nT('Dû'))}</span><b data-noi18n>${est==null?'—':esc(eur(est))}</b></div>
+  <div><span>${esc(i18nT('Reçu'))}</span><b data-noi18n>${esc(eur(pay))}</b></div><div><span>${esc(i18nT('Reste'))}</span><b data-noi18n>${est==null?'—':esc(eur(Math.max(0,faR2(est-pay))))}</b></div></div>
+  ${p.taux?`<p class="mut"><span>${esc(i18nT('Prix de l\'heure'))}</span> : <span data-noi18n>${esc(eur(p.taux))}</span></p>`:`<p class="mut">${esc(i18nT('Ton prix de l\'heure n\'est pas encore noté par ton entreprise.'))}</p>`}</div>
+  <div class="card"><h2><span class="hi"><svg class="i"><use href="#i-pin"/></svg></span>${esc(i18nT('Par chantier'))}</h2>${Object.keys(par).length?Object.keys(par).map(cid=>`<div class="tot"><span data-noi18n>${esc(chName(cid))}</span><b data-noi18n>${esc(fmtH(par[cid]))}</b></div>`).join(''):`<p class="mut">${esc(i18nT('Aucune heure.'))}</p>`}</div>
+  <div class="card"><h2><span class="hi"><svg class="i"><use href="#i-chart"/></svg></span>${esc(i18nT('Paiements reçus'))}</h2>${P.length?P.map(x=>`<div class="tot"><span data-noi18n>${esc(agFmtD(x.d,{weekday:undefined,month:'short'}))}${x.note?' · '+esc(x.note):''}</span><b data-noi18n>${esc(eur(+x.amt||0))}</b></div>`).join(''):`<p class="mut">${esc(i18nT('Aucun paiement.'))}</p>`}</div>`}
+/* ---------- « Passer à mon compte pro » : il crée son compte comme tout artisan, et garde l'équipe de son patron ----------
+   Le lien avec l'équipe est mis de côté (caso_equipe_ext) : « Chantiers chez <entreprise> » montre ses rendez-vous et ses chantiers là-bas. */
+const EQ_EXT='caso_equipe_ext';
+function eqExt(){try{const x=JSON.parse(localStorage.getItem(EQ_EXT)||'null');return x&&x.url&&x.token?x:null}catch(e){return null}}
+function eqPro(){const c=getSync(),ent=((db.prof||{}).nom||'').trim();if(!c.token)return;
+ if(!confirm(i18nT('Tu crées ton compte pro, comme tout artisan. Tu restes dans l\'équipe de {1} : tes chantiers chez eux restent visibles. Continuer ?').replace('{1}',ent||i18nT('ton entreprise'))))return;
+ try{localStorage.setItem(EQ_EXT,JSON.stringify({url:c.url,token:c.token,user:c.user,role:c.role,entreprise:ent,logo:(db.prof||{}).logo||''}))}catch(e){}
+ setSync({});/* le jeton de l'équipe n'est pas annulé : il sert à « Chantiers chez … » */
+ ['events','chantiers','pts','people'].forEach(k=>db[k]=[]);db.prof={};db.profAt=0;save();roleUI();
+ if(typeof accountGet==='function'&&accountGet()){if(typeof modeOpen==='function')modeOpen()}else if(typeof startOpen==='function')startOpen()}
+/* « Chantiers chez <entreprise> » : lecture seule, depuis le serveur de l'équipe */
+async function eqExtRender(){const x=eqExt(),box=$('cpExt');if(!box)return;if(!x){box.innerHTML='';return}
+ box.innerHTML=`<div class="card"><p class="mut">${esc(i18nT('Chargement…'))}</p></div>`;
+ try{const r=await fetch(x.url+'/api/sync',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+x.token},body:'{"since":0,"changes":{}}'});
+  if(r.status===401){box.innerHTML=`<div class="card"><p>${esc(i18nT('Tu ne fais plus partie de cette équipe.'))}</p><button class="btn sec" onclick="eqExtOubli()">${esc(i18nT('Retirer'))}</button></div>`;return}
+  const j=await r.json(),C=j.changes||{},auj=agToday();
+  const E=(C.events||[]).filter(e=>e.t==='rdv'&&e.d>=auj).sort((a,b)=>(a.d+(a.a||'')).localeCompare(b.d+(b.a||''))).slice(0,30),CH=C.chantiers||[];
+  const nomCh=id=>{const c=CH.find(y=>y.id===id);return c?c.nom:''};
+  box.innerHTML=`<div class="card"><div class="eq-pf">${x.logo?`<img class="eq-ini" style="object-fit:contain;background:#fff" src="${esc(x.logo)}" alt="">`:`<span class="eq-ini"><svg class="i"><use href="#i-users"/></svg></span>`}<b data-noi18n>${esc(x.entreprise||'')}</b></div>
+   <h2><span class="hi"><svg class="i"><use href="#i-cal"/></svg></span>${esc(i18nT('Mes prochains rendez-vous'))}</h2>
+   ${E.length?E.map(e=>`<div class="tot"><span data-noi18n>${esc(agFmtD(e.d,{weekday:'short',day:'numeric',month:'short'}))}${e.a?' · '+esc(e.a):''} · ${esc(e.title||nomCh(e.ch)||'')}</span><span class="mut" data-noi18n>${esc(e.adr||nomCh(e.ch)||'')}</span></div>`).join(''):`<p class="mut">${esc(i18nT('Aucun rendez-vous prévu.'))}</p>`}</div>
+   <div class="card"><h2><span class="hi"><svg class="i"><use href="#i-pin"/></svg></span>${esc(i18nT('Chantiers'))}</h2>${CH.length?CH.map(c=>`<div class="tot"><span data-noi18n>${esc(c.nom)}</span><span class="mut" data-noi18n>${esc(c.adr&&!String(c.nom).includes(c.adr)?c.adr:'')}</span></div>`).join(''):`<p class="mut">${esc(i18nT('Aucun chantier.'))}</p>`}</div>`}
+ catch(e){box.innerHTML=`<div class="card"><p class="mut">${esc(i18nT('Pas de connexion. Réessaie plus tard.'))}</p></div>`}}
+function eqExtOubli(){try{localStorage.removeItem(EQ_EXT)}catch(e){}drawerClose&&drawerClose(true);go('chat')}
 try{roleUI()}catch(e){}

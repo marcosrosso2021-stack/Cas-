@@ -182,7 +182,8 @@ async function ssoGo(){if(SSO.busy)return;SSO.busy=true;const c=SSO.c,b=$('lgBio
 /* compte sans mot de passe : une action sensible se confirme avec Face ID */
 const sansMdp=()=>!!(window.VAULT&&VAULT.on&&!VAULT.hasPw());
 async function bioConf(){try{return await VAULT.bioCheck()}catch(e){toast(i18nT('Face ID non confirmé. Réessaie.'));return false}}
-function drawer(side){if(side==='R')try{logoProfil()}catch(e){}
+function drawer(side){if(side==='L'&&typeof ptOuvrier==='function'&&ptOuvrier())side='R';/* collaborateur : pas de menu « Mon travail » */
+ if(side==='R')try{logoProfil();const x=typeof eqExt==='function'&&eqExt(),b=$('dwExt');if(b){b.hidden=!x||ptOuvrier();if(x)b.querySelector('span').textContent=i18nT('Chantiers chez {1}').replace('{1}',x.entreprise||i18nT('mon équipe'))}}catch(e){}
  if(dwLocked()){drawerClose(true);return}
  const d=$(side==='L'?'dwL':'dwR');if(!d)return;
  if(side==='R'){const a=accountGet()||{},c=getSync();$('dwName').textContent=a.prenom||c.user||'';$('dwMail').textContent=a.email||'';authLigne()}
@@ -201,8 +202,10 @@ function drawerGo(t){
  go(t)}
 let cptCur='ent';
 function cptPage(pg){
+ if(typeof ptOuvrier==='function'&&ptOuvrier()&&!['moi','rent','app'].includes(pg))pg='moi';/* collaborateur : son profil, sa rentabilité, ses paramètres */
  cptCur=pg;go('cpt');
- const T={ent:'Mon entreprise',team:'Mon équipe',bk:'Sauvegarde',app:'Langue et notifications'};$('cptT').textContent=T[pg]||'';
+ const T={ent:'Mon entreprise',team:'Mon équipe',bk:'Sauvegarde',app:'Langue et notifications',moi:'Mon profil',rent:'Ma rentabilité'};$('cptT').textContent=T[pg]==='Langue et notifications'&&ptOuvrier()?i18nT('Paramètres'):i18nT(T[pg]||'');
+ if(pg==='moi')eqProfilRender();if(pg==='rent')eqRentRender();if(pg==='ext'){const x=eqExt();$('cptT').textContent=i18nT('Chantiers chez {1}').replace('{1}',(x&&x.entreprise)||i18nT('mon équipe'));eqExtRender()}
  document.querySelectorAll('#s-cpt [data-cp]').forEach(c=>{c.style.display=c.dataset.cp===pg?'':'none'});
  if(pg==='ent'||pg==='app'){renderNotif()}if(pg==='ent')entSigRender();if(pg==='team'&&typeof eqRender==='function'){eqRender();const c=getSync();$('eqEsp').open=!!(c.token&&c.role!=='patron')||!!(srvInfo&&srvInfo.needsSetup&&srvInfo.local)}}
 async function logout(){

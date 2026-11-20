@@ -18,7 +18,7 @@ const sauvegarde=require('./sauvegarde.js'),chiffre=require('./chiffre.js'),s3Li
 const PEOPLE_PATRON=['taux','pays'];
 const COLL=['prices','quotes','hist','chantiers','people','pts','prof','clients','suppliers','projects','plans','events','invoices','memo','rapports'];
 const ROLE_PUSH={patron:COLL,chef:COLL,ouvrier:['pts']};
-const ROLE_PULL={patron:COLL,chef:COLL,ouvrier:['chantiers','people','pts','events']};
+const ROLE_PULL={patron:COLL,chef:COLL,ouvrier:['chantiers','people','pts','events','prof']};
 const ROLES=Object.keys(ROLE_PUSH);
 // profil d'entreprise : ces champs ne se changent que depuis le compte du patron (un IBAN modifié détourne les virements)
 const PROF_PATRON=['iban','bic','siret','siren'];
@@ -382,7 +382,8 @@ function createServer(opts={}){
    if(user.role==='ouvrier'){
     if(c==='pts')l=l.filter(r=>myPeople.has(r.p));
     else if(c==='events')l=l.filter(r=>Array.isArray(r.who)&&r.who.some(id=>myPeople.has(id)));
-    else if(c==='people')l=l.filter(r=>myPeople.has(r.id))}
+    else if(c==='people')l=l.filter(r=>myPeople.has(r.id));
+    else if(c==='prof')l=l.map(r=>Object.assign({},r,{v:{nom:cut(r.v&&r.v.nom,120),logo:logoOk(r.v&&r.v.logo)||undefined}}))}/* l'entreprise : son nom et son logo, rien d'autre */
    /* un chef voit l'équipe, pas ce que gagnent les autres ; chacun garde sa propre fiche entière */
    if(c==='people'&&user.role!=='patron')l=l.map(r=>{if(myPeople.has(r.id))return r;const o=Object.assign({},r);PEOPLE_PATRON.forEach(k=>delete o[k]);return o});
    if(l.length)out[c]=l}
@@ -410,6 +411,7 @@ function createServer(opts={}){
   const pub=opts.publicUrl||process.env.PUBLIC_URL;if(pub)return pub.replace(/\/+$/,'')+BP;
   const proto=HOSTED?'https':'http';   // hébergé : liens de signature et de facture toujours en https
   return proto+'://'+(req.headers.host||'localhost')+BP}
+ const logoOk=v=>typeof v==='string'&&v.length<400000&&/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(v)?v:null;
  const okPng=v=>typeof v==='string'&&v.length<400000&&/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(v);
  const cut=(v,n)=>String(v==null?'':v).slice(0,n);
  const CV_T=new Set(['head','title','client','lines','totals','text','image','qty','legal','sign','sep','space']);
@@ -678,7 +680,9 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
      const inv=own(data.invites,mj[1])?data.invites[mj[1]]:null,u=inv&&data.users[inv.user];
      if(!inv||inv.exp<Date.now()||!u){fail(ip);return send(res,404,{error:'Invitation invalide ou expirée. Demande un nouveau lien.'})}
      const pr=data.recs.prof&&data.recs.prof.prof&&data.recs.prof.prof.v||{};
-     return send(res,200,{name:u.name,role:u.role,entreprise:cut(pr.nom,120),exp:inv.exp})}}
+     /* le logo de l'entreprise, et le téléphone et l'e-mail que le patron a déjà notés pour cette personne (écran « Rejoindre l'équipe ») */
+     const fiche=Object.values(data.recs.people).find(p=>p&&String(p.nom||'').trim().toLowerCase().split(' ')[0]===String(u.name).toLowerCase().split(' ')[0])||{};
+     return send(res,200,{name:u.name,role:u.role,entreprise:cut(pr.nom,120),logo:logoOk(pr.logo),tel:cut(fiche.tel,40),email:cut(fiche.email,120),exp:inv.exp})}}
    /* Mailjet : suivi des e-mails de devis (délivré, ouvert, cliqué, refusé) et réponses des clients.
       Les deux adresses sont données une fois dans Mailjet, avec la clé MJ_WEBHOOK_KEY (?cle=…) : sans elle, rien n'est accepté. */
    if(POST&&(url==='/api/mailjet/evenements'||url==='/api/mailjet/entrant')){
