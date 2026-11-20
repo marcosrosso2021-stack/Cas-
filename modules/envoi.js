@@ -135,8 +135,11 @@ async function joinEcran(code){
  try{const r=await fetch(ICI()+'/api/join/'+code);const j=await r.json().catch(()=>({}));if(r.ok)info=j;else err=j.error||'Invitation invalide ou expirée.'}
  catch(e){err='Entreprise introuvable. Vérifie ta connexion.'}
  let s=$('joinScr');if(!s){s=document.createElement('section');s.id='joinScr';s.className='join';document.body.appendChild(s)}
- s.innerHTML=`<div class="join-c"><svg class="join-lg" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#ffc21a"/><path d="M32 13 13 27v4h4v18h30V31h4v-4L32 13Z" fill="#18181a"/><rect x="25" y="34" width="14" height="9" rx="3" fill="#ffc21a"/></svg>
+ /* le logo de l'entreprise ; sans logo, une icône d'équipe */
+ const logo=info&&typeof info.logo==='string'&&/^data:image\/(png|jpeg|webp);base64,/.test(info.logo)?info.logo:'';
+ s.innerHTML=`<div class="join-c">${logo?`<img class="join-lg join-img" src="${logo}" alt="">`:`<span class="join-lg join-eq" aria-hidden="true"><svg class="i"><use href="#i-users"/></svg></span>`}
   ${info?`<p class="mut" data-noi18n>${esc(info.entreprise||'casô')}</p><h1 data-noi18n>${esc(i18nT('{1}, rejoins l\'équipe').replace('{1}',info.name))}</h1>
+   ${info.tel||info.email?`<p class="mut join-id" data-noi18n>${esc([info.tel,info.email].filter(Boolean).join(' · '))}</p>`:''}
    <button type="button" class="btn join-go" onclick="joinGo('${esc(code)}',this)"><svg class="i"><use href="#i-users"/></svg>${esc(i18nT('Rejoindre l\'équipe'))}</button>`
    :`<h1>${esc(i18nT('Invitation'))}</h1><p class="mut">${esc(i18nT(err))}</p><button type="button" class="btn sec" onclick="$('joinScr').remove()">${esc(i18nT('Continuer'))}</button>`}</div>`;
  document.body.classList.add('join-on')}

@@ -485,7 +485,15 @@ function agSetDel(k,i){const {dp,M}=agSetGet();M[k].splice(i,1);agSetPut(dp,M)}
 // feuille d'édition
 let agEdDay=null;
 /* nouveau rendez-vous : appui sur une heure du planning (heure = « 14:30 »), sinon 8 h – 10 h */
-function agEdit(id,day,heure){agEd=id?db.events.find(e=>e.id===id):null;agEdDay=day||null;
+/* collaborateur : son planning se lit, il ne se modifie pas (c'est l'entreprise qui le tient) */
+function agVoir(id){const e=db.events.find(x=>x.id===id);if(!e)return;const cl=e.cid&&(db.clients||[]).find(c=>c.id===e.cid),adr=e.adr||(cl&&cl.adr)||'';
+ let b=$('agVoir');if(!b){b=document.createElement('div');b.id='agVoir';b.className='ag-voir';b.onclick=ev=>{if(ev.target===b)b.hidden=true};document.body.appendChild(b)}
+ b.innerHTML=`<div class="card"><h2><span class="hi"><svg class="i"><use href="#i-cal"/></svg></span><span data-noi18n>${esc(e.title||i18nT('Rendez-vous'))}</span></h2>
+  <p data-noi18n>${esc(agFmtD(agSel||e.d))}${e.a?' · '+esc(agFmtR(e)):''}</p>${cl?`<p class="mut" data-noi18n>${esc(cl.nom)}</p>`:''}
+  ${adr?`<a class="btn sec" href="https://maps.apple.com/?q=${encodeURIComponent(adr)}" target="_blank" rel="noopener"><svg class="i"><use href="#i-pin"/></svg><span data-noi18n>${esc(adr)}</span></a>`:''}
+  ${e.note?`<p class="mut" data-noi18n>${esc(e.note)}</p>`:''}<button class="btn" onclick="$('agVoir').hidden=true">${esc(i18nT('Fermer'))}</button></div>`;b.hidden=false}
+function agEdit(id,day,heure){if(typeof ptOuvrier==='function'&&ptOuvrier()){if(id)agVoir(id);return}
+ agEd=id?db.events.find(e=>e.id===id):null;agEdDay=day||null;
  const e=agEd||{t:'rdv',d:day||agSel,a:heure||'08:00',b:heure?agHm(Math.min(1439,agMin(heure)+60)):'10:00',title:''};
  $('agEtyp').value=e.t;segOn('agTyp',e.t);$('agEti').value=e.title||'';$('agEd').value=e.d;$('agEd2').value=e.d2||'';
  $('agEa').value=e.a||'';$('agEb').value=e.b||'';$('agEall').checked=!e.a;$('agEcl').value=e.cid?((db.clients.find(c=>c.id===e.cid)||{}).nom||''):'';$('agEadr').value=e.adr||'';$('agEno').value=e.note||'';
@@ -635,7 +643,9 @@ function agChFor(e){
  ensurePt();if(e.ch&&db.chantiers.find(c=>c.id===e.ch))return e.ch;
  const cl=e.cid&&db.clients.find(c=>c.id===e.cid),nm=[cl&&cl.nom,e.adr].filter(Boolean).join(' – ')||e.title||i18nT('Rendez-vous');
  let c=db.chantiers.find(x=>nameKey(x.nom)===nameKey(nm))||(cl&&db.chantiers.find(x=>nameKey(x.nom).includes(nameKey(cl.nom))));
- if(!c){c={id:uid().slice(-6),nom:nm};db.chantiers.push(c)}e.ch=c.id;save();return c.id}
+ const adr=e.adr||(cl&&cl.adr)||'';/* l'adresse et le client restent sur le chantier : GPS, liste des chantiers */
+ if(!c){c={id:uid().slice(-6),nom:nm,adr,cid:e.cid||undefined,at:Date.now()};db.chantiers.push(c)}else if(adr&&!c.adr){c.adr=adr;c.at=Date.now()}
+ e.ch=c.id;save();return c.id}
 function agPtGo(id){
  const e=db.events.find(x=>x.id===id);if(!e)return;const cid=agChFor(e);renderPt();
  const C=$('ptC'),P=$('ptP');if(C)C.value=cid;if(P&&e.who&&e.who.length)P.value=e.who[0];ptBtn();

@@ -16,67 +16,17 @@
 
   /* Traductions des textes de ce fichier, dans les 9 langues de casô.
      La clé est le texte français tel qu'il est écrit dans le code. */
-  var K = ['Pointage automatique', 'Sur place', 'depuis', 'Départ en cours', 'Prochain chantier', 'Attendu sur place',
-    'Demain', 'Terminé', 'Absent', 'Adresse introuvable', 'Autorisation requise',
-    'Autorise la position « Toujours » pour pointer tout seul.', 'Autoriser',
-    'Ce téléphone n’est lié à aucune personne. Ajoute ton prénom dans Personnes.',
-    'Aucun chantier prévu avec une adresse.', 'Zone',
-    'Autorise la position pour pointer tout seul quand casô est ouvert.', 'GPS actif'];
+  var K = ["Pointage automatique", "Sur place", "depuis", "Départ en cours", "Prochain chantier", "Attendu sur place", "Demain", "Terminé", "Absent", "Adresse introuvable", "Autorisation requise", "Autorise la position « Toujours » pour pointer tout seul.", "Autoriser", "Ce téléphone n’est lié à aucune personne. Ajoute ton prénom dans Personnes.", "Zone", "Autorise la position pour pointer tout seul quand casô est ouvert.", "GPS actif", "Aucun chantier prévu aujourd’hui ou demain avec une adresse.", "GPS activé", "GPS refusé", "GPS pas encore activé", "Activer le GPS"];
   var TR = {
-    en: ['Automatic clocking', 'On site', 'since', 'Leaving', 'Next job site', 'Expected on site',
-      'Tomorrow', 'Done', 'Absent', 'Address not found', 'Permission needed',
-      'Allow location “Always” to clock in automatically.', 'Allow',
-      'This phone isn’t linked to anyone. Add your first name under People.',
-      'No job site planned with an address.', 'Zone',
-      'Allow location to clock in automatically while casô is open.', 'GPS on'],
-    pt: ['Ponto automático', 'No local', 'desde', 'A sair', 'Próxima obra', 'Esperado no local',
-      'Amanhã', 'Concluído', 'Ausente', 'Morada não encontrada', 'Autorização necessária',
-      'Autoriza a posição «Sempre» para picar o ponto automaticamente.', 'Autorizar',
-      'Este telemóvel não está associado a nenhuma pessoa. Adiciona o teu nome próprio em Pessoas.',
-      'Nenhuma obra prevista com morada.', 'Zona',
-      'Autoriza a posição para picar o ponto automaticamente com o casô aberto.', 'GPS ativo'],
-    es: ['Fichaje automático', 'En la obra', 'desde', 'Saliendo', 'Próxima obra', 'Esperado en la obra',
-      'Mañana', 'Terminado', 'Ausente', 'Dirección no encontrada', 'Permiso necesario',
-      'Permite la ubicación «Siempre» para fichar automáticamente.', 'Permitir',
-      'Este teléfono no está vinculado a ninguna persona. Añade tu nombre en Personas.',
-      'Ninguna obra prevista con dirección.', 'Zona',
-      'Permite la ubicación para fichar automáticamente con casô abierto.', 'GPS activo'],
-    it: ['Timbratura automatica', 'In cantiere', 'dalle', 'In uscita', 'Prossimo cantiere', 'Atteso in cantiere',
-      'Domani', 'Terminato', 'Assente', 'Indirizzo non trovato', 'Autorizzazione necessaria',
-      'Consenti la posizione «Sempre» per timbrare automaticamente.', 'Consenti',
-      'Questo telefono non è collegato a nessuna persona. Aggiungi il tuo nome in Persone.',
-      'Nessun cantiere previsto con un indirizzo.', 'Zona',
-      'Consenti la posizione per timbrare automaticamente con casô aperto.', 'GPS attivo'],
-    ro: ['Pontaj automat', 'Pe șantier', 'de la', 'Pleacă', 'Următorul șantier', 'Așteptat pe șantier',
-      'Mâine', 'Terminat', 'Absent', 'Adresa nu a fost găsită', 'Permisiune necesară',
-      'Permite locația „Întotdeauna” pentru pontaj automat.', 'Permite',
-      'Acest telefon nu este asociat niciunei persoane. Adaugă-ți prenumele în Persoane.',
-      'Niciun șantier programat cu adresă.', 'Zonă',
-      'Permite locația pentru pontaj automat cât timp casô este deschis.', 'GPS activ'],
-    tr: ['Otomatik puantaj', 'Şantiyede', 'giriş:', 'Çıkıyor', 'Sıradaki şantiye', 'Şantiyede bekleniyor',
-      'Yarın', 'Bitti', 'Yok', 'Adres bulunamadı', 'İzin gerekli',
-      'Otomatik puantaj için konuma «Her zaman» izni ver.', 'İzin ver',
-      'Bu telefon hiçbir kişiyle eşleşmedi. Adını Kişiler bölümüne ekle.',
-      'Adresi olan planlı şantiye yok.', 'Bölge',
-      'casô açıkken otomatik giriş için konuma izin ver.', 'GPS açık'],
-    pl: ['Automatyczny czas pracy', 'Na budowie', 'od', 'Wychodzi', 'Następna budowa', 'Oczekiwany na budowie',
-      'Jutro', 'Zakończone', 'Nieobecny', 'Nie znaleziono adresu', 'Wymagane zezwolenie',
-      'Zezwól na lokalizację „Zawsze”, aby rejestrować czas pracy automatycznie.', 'Zezwól',
-      'Ten telefon nie jest przypisany do żadnej osoby. Dodaj swoje imię w sekcji Osoby.',
-      'Brak zaplanowanych budów z adresem.', 'Strefa',
-      'Zezwól na lokalizację, aby rejestrować czas automatycznie, gdy casô jest otwarte.', 'GPS włączony'],
-    ar: ['الحضور التلقائي', 'في الورشة', 'منذ', 'يغادر', 'الورشة التالية', 'في انتظاره بالورشة',
-      'غدًا', 'انتهى', 'غائب', 'لم يتم العثور على العنوان', 'الإذن مطلوب',
-      'اسمح بالموقع «دائمًا» لتسجيل الحضور تلقائيًا.', 'السماح',
-      'هذا الهاتف غير مرتبط بأي شخص. أضف اسمك الشخصي في الأشخاص.',
-      'لا توجد ورشة مخطط لها بعنوان.', 'منطقة',
-      'اسمح بالموقع للتسجيل التلقائي أثناء فتح casô.', 'GPS مفعّل'],
-    ru: ['Автоматический учёт времени', 'На объекте', 'с', 'Уходит', 'Следующий объект', 'Ожидается на объекте',
-      'Завтра', 'Завершено', 'Отсутствует', 'Адрес не найден', 'Нужно разрешение',
-      'Разреши геопозицию «Всегда», чтобы время учитывалось автоматически.', 'Разрешить',
-      'Этот телефон не привязан ни к одному человеку. Добавь своё имя в разделе «Люди».',
-      'Нет запланированных объектов с адресом.', 'Зона',
-      'Разрешите геолокацию для автоматического учёта, пока casô открыт.', 'GPS включён']
+    en: ["Automatic clocking", "On site", "since", "Leaving", "Next job site", "Expected on site", "Tomorrow", "Done", "Absent", "Address not found", "Permission needed", "Allow location “Always” to clock in automatically.", "Allow", "This phone isn’t linked to anyone. Add your first name under People.", "Zone", "Allow location to clock in automatically while casô is open.", "GPS on", "No job site with an address planned today or tomorrow.", "GPS on", "GPS refused", "GPS not turned on yet", "Turn on GPS"],
+    pt: ["Ponto automático", "No local", "desde", "A sair", "Próxima obra", "Esperado no local", "Amanhã", "Concluído", "Ausente", "Morada não encontrada", "Autorização necessária", "Autoriza a posição «Sempre» para picar o ponto automaticamente.", "Autorizar", "Este telemóvel não está associado a nenhuma pessoa. Adiciona o teu nome próprio em Pessoas.", "Zona", "Autoriza a posição para picar o ponto automaticamente com o casô aberto.", "GPS ativo", "Nenhuma obra com morada prevista hoje ou amanhã.", "GPS ativado", "GPS recusado", "GPS ainda não ativado", "Ativar o GPS"],
+    es: ["Fichaje automático", "En la obra", "desde", "Saliendo", "Próxima obra", "Esperado en la obra", "Mañana", "Terminado", "Ausente", "Dirección no encontrada", "Permiso necesario", "Permite la ubicación «Siempre» para fichar automáticamente.", "Permitir", "Este teléfono no está vinculado a ninguna persona. Añade tu nombre en Personas.", "Zona", "Permite la ubicación para fichar automáticamente con casô abierto.", "GPS activo", "Ninguna obra con dirección prevista hoy o mañana.", "GPS activado", "GPS rechazado", "GPS aún no activado", "Activar el GPS"],
+    it: ["Timbratura automatica", "In cantiere", "dalle", "In uscita", "Prossimo cantiere", "Atteso in cantiere", "Domani", "Terminato", "Assente", "Indirizzo non trovato", "Autorizzazione necessaria", "Consenti la posizione «Sempre» per timbrare automaticamente.", "Consenti", "Questo telefono non è collegato a nessuna persona. Aggiungi il tuo nome in Persone.", "Zona", "Consenti la posizione per timbrare automaticamente con casô aperto.", "GPS attivo", "Nessun cantiere con indirizzo previsto oggi o domani.", "GPS attivo", "GPS rifiutato", "GPS non ancora attivo", "Attiva il GPS"],
+    ro: ["Pontaj automat", "Pe șantier", "de la", "Pleacă", "Următorul șantier", "Așteptat pe șantier", "Mâine", "Terminat", "Absent", "Adresa nu a fost găsită", "Permisiune necesară", "Permite locația „Întotdeauna” pentru pontaj automat.", "Permite", "Acest telefon nu este asociat niciunei persoane. Adaugă-ți prenumele în Persoane.", "Zonă", "Permite locația pentru pontaj automat cât timp casô este deschis.", "GPS activ", "Niciun șantier cu adresă planificat azi sau mâine.", "GPS activat", "GPS refuzat", "GPS încă neactivat", "Activează GPS-ul"],
+    tr: ["Otomatik puantaj", "Şantiyede", "giriş:", "Çıkıyor", "Sıradaki şantiye", "Şantiyede bekleniyor", "Yarın", "Bitti", "Yok", "Adres bulunamadı", "İzin gerekli", "Otomatik puantaj için konuma «Her zaman» izni ver.", "İzin ver", "Bu telefon hiçbir kişiyle eşleşmedi. Adını Kişiler bölümüne ekle.", "Bölge", "casô açıkken otomatik giriş için konuma izin ver.", "GPS açık", "Bugün veya yarın adresli şantiye yok.", "GPS açık", "GPS reddedildi", "GPS henüz açılmadı", "GPS'i aç"],
+    pl: ["Automatyczny czas pracy", "Na budowie", "od", "Wychodzi", "Następna budowa", "Oczekiwany na budowie", "Jutro", "Zakończone", "Nieobecny", "Nie znaleziono adresu", "Wymagane zezwolenie", "Zezwól na lokalizację „Zawsze”, aby rejestrować czas pracy automatycznie.", "Zezwól", "Ten telefon nie jest przypisany do żadnej osoby. Dodaj swoje imię w sekcji Osoby.", "Strefa", "Zezwól na lokalizację, aby rejestrować czas automatycznie, gdy casô jest otwarte.", "GPS włączony", "Brak budowy z adresem na dziś lub jutro.", "GPS włączony", "GPS odrzucony", "GPS jeszcze nie włączony", "Włącz GPS"],
+    ar: ["الحضور التلقائي", "في الورشة", "منذ", "يغادر", "الورشة التالية", "في انتظاره بالورشة", "غدًا", "انتهى", "غائب", "لم يتم العثور على العنوان", "الإذن مطلوب", "اسمح بالموقع «دائمًا» لتسجيل الحضور تلقائيًا.", "السماح", "هذا الهاتف غير مرتبط بأي شخص. أضف اسمك الشخصي في الأشخاص.", "منطقة", "اسمح بالموقع للتسجيل التلقائي أثناء فتح casô.", "GPS مفعّل", "لا ورشة بعنوان مقررة اليوم أو غداً.", "GPS مفعّل", "GPS مرفوض", "GPS غير مفعّل بعد", "تفعيل GPS"],
+    ru: ["Автоматический учёт времени", "На объекте", "с", "Уходит", "Следующий объект", "Ожидается на объекте", "Завтра", "Завершено", "Отсутствует", "Адрес не найден", "Нужно разрешение", "Разреши геопозицию «Всегда», чтобы время учитывалось автоматически.", "Разрешить", "Этот телефон не привязан ни к одному человеку. Добавь своё имя в разделе «Люди».", "Зона", "Разрешите геолокацию для автоматического учёта, пока casô открыт.", "GPS включён", "На сегодня или завтра нет объектов с адресом.", "GPS включён", "GPS запрещён", "GPS ещё не включён", "Включить GPS"]
   };
 
   /* Ajoute ces textes au dictionnaire de casô, sans écraser une traduction qui existe déjà. */
@@ -260,6 +210,8 @@
         view.me = me;
         if (!me) return;
 
+        /* état de l'autorisation, affiché même sans chantier prévu (sans rien demander à l'usager) */
+        try { var gs = await G.status(); st.gps = granted(gs) ? 'on' : (gs && gs.location === 'denied' ? 'denied' : 'off'); } catch (e) {}
         var built = buildPlan(me), sites = {}, list = [], addr = {};
         built.plan.forEach(function (p) { addr[p.siteId] = p.addr; });
         for (var cid in addr) {
@@ -268,6 +220,8 @@
           await geocode(c, addr[cid]);
           if (c.geo) sites[cid] = { lat: c.geo.lat, lng: c.geo.lng, radius: c.rayon || 100 };
         }
+        var n3 = 0;
+        (db.chantiers || []).forEach(function (c) { if (!c.geo && c.adr && n3 < 3) { n3++; geocode(c, c.adr); } });
         view.plan = built.plan; view.sites = sites;
         view.missing = built.upcoming.filter(function (cid) { return !sites[cid]; });
         built.upcoming.forEach(function (cid) {
@@ -361,10 +315,16 @@
         case 'noone':
           return '<div class="au-sub">' + T('Ce téléphone n’est lié à aucune personne. Ajoute ton prénom dans Personnes.') + '</div>';
         default:
-          return '<div class="au-sub">' + T('Aucun chantier prévu avec une adresse.') + '</div>';
+          return gpsLine() + '<div class="au-sub">' + T('Aucun chantier prévu aujourd’hui ou demain avec une adresse.') + '</div>';
       }
     }
 
+    /* état du GPS de ce téléphone, et le bouton pour l'activer */
+    function gpsLine() {
+      if (st.gps === 'on') return pill('on', T('GPS activé'));
+      return pill('bad', st.gps === 'denied' ? T('GPS refusé') : T('GPS pas encore activé')) +
+        '<button class="btn au-btn" onclick="CasoAuto.fix()">' + T('Activer le GPS') + '</button>';
+    }
     function rowRight(r) {
       if (r.k === 'done') return env.fmtT(r.in) + ' – ' + env.fmtT(r.out);
       if (r.k === 'now') return T('Sur place');
@@ -390,7 +350,8 @@
     }
 
     return {
-      run: run, fix: fix, status: status, active: active, card: card, line: line, zone: zone,
+      run: run, fix: fix, status: status, active: active, card: card, line: line, zone: zone, gpsLine: gpsLine,
+      gps: function () { return st.gps || null; },
       rows: todayRows, state: function () { return st; }
     };
   }
