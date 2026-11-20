@@ -67,7 +67,7 @@ function aboMenu(){
 function aboGarde(nom,m,strict){const f=window[nom];if(typeof f!=='function'||f.aboG)return;
  const g=function(){if(aboVerrou(m)){if(strict){const e=new Error(ABO_STOP);e.aboStop=true;throw e}return}return f.apply(this,arguments)};g.aboG=true;window[nom]=g}
 [['faPayOpen','paiement'],['faPaySave','paiement'],['faPayAll','paiement'],['faAvoir','paiement'],['faRelance','paiement'],['faPayAdd','paiement',true],
- ['punch','pointage',true],['ptToujours','pointage'],['addCh','pointage'],['ptQuickCh','pointage'],['ptChCli','pointage'],['ptQuickP','pointage'],['addForgot','pointage'],['manualPunch','pointage'],
+ ['punch','pointage',true],['ptToujours','pointage'],['addCh','pointage'],['ptQuickCh','pointage'],['ptChCli','pointage'],['ptQuickP','pointage'],['addPerson','pointage'],['addForgot','pointage'],['manualPunch','pointage'],
  ['agIcs','planning'],
  ['fouEdit','fournisseurs'],['fouSave','fournisseurs'],['prxGo','fournisseurs'],['impPick','fournisseurs'],['achSave','fournisseurs'],
  ['plSheet','3d'],['faNew','devis']].forEach(x=>aboGarde(x[0],x[1],x[2]));

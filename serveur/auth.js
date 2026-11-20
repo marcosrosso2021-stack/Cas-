@@ -342,6 +342,8 @@ function creer(opts){
 
  /* l'espace d'équipe de l'entreprise de ce compte (serveur/server.js, /api/espace) */
  function lierEspace(id,esp){const c=d.comptes[id];if(!c)return false;c.espace=esp;persist();return true}
- return{traiter,compte,pub,offre:c=>offre(c,now()),resume,lierEspace,aboEvenement,_d:()=>d};
+ /* le compte casô (patron) à qui appartient l'espace d'entreprise <esp> */
+ function proprioEspace(esp){for(const k of Object.keys(d.comptes))if(d.comptes[k].espace===esp)return pub(d.comptes[k]);return null}
+ return{traiter,compte,pub,offre:c=>offre(c,now()),resume,lierEspace,proprioEspace,aboEvenement,_d:()=>d};
 }
 module.exports={creer,siretOk,offre,modulesDe,FOURNISSEURS,ESSAI_JOURS,SESSION_JOURS};

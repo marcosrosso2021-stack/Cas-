@@ -302,7 +302,7 @@ async function apiTeam(path,body){
  const c=getSync();
  const r=await fetch(c.url+path,{method:body===undefined?'GET':'POST',headers:authHdr(c),body:body===undefined?undefined:JSON.stringify(body)});
  const j=await r.json().catch(()=>({}));
- if(!r.ok)throw new Error(j.error||'Erreur.');
+ if(!r.ok){const e=new Error(j.error||'Erreur.');e.code=r.status;if(j.module)e.module=j.module;throw e}
  return j}
 async function loadTeam(){
  try{teamCache=await apiTeam('/api/users');paintTeam();if(typeof eqRender==='function')eqRender()}catch(e){}}

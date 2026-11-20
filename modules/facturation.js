@@ -147,7 +147,7 @@ async function faIssue(){
  const f=FA;if(!f||f.num||f._iss)return;if(faMissing(f).length){faCheck();return}
  if(!confirm('Émettre la facture ? Elle recevra un numéro et ne pourra plus être modifiée.'))return;
  f._iss=1;const b=$('faGo');if(b)b.disabled=true;
- try{f.num=await faNum(f.kind,f.date,f.id)}catch(e){toast(i18nT('Connexion au serveur nécessaire pour numéroter la facture.'));return}finally{delete f._iss;if(b&&!f.num)b.disabled=false}
+ try{f.num=await faNum(f.kind,f.date,f.id)}catch(e){if(e.module&&typeof aboAjouter==='function'){aboAjouter(e.module);return}toast(i18nT('Connexion au serveur nécessaire pour numéroter la facture.'));return}finally{delete f._iss;if(b&&!f.num)b.disabled=false}
  f.seller=faProf();f.issuedAt=Date.now();f.red=!f.franchise&&!f.autoliq&&!f.client.pro&&f.lines.some(l=>l.tva===10||l.tva===5.5);f.red55=f.lines.some(l=>l.tva===5.5);f.seal=sealH(faSealStr(f));
  // le client garde ses infos (adresse, SIREN…)
  try{const {x}=upsert('clients',{nom:f.client.nom,adr:f.client.adr,tel:f.client.tel});Object.assign(x,{pro:f.client.pro||undefined,siren:f.client.siren||x.siren,tvai:f.client.tvai||x.tvai});if(!x.adr)x.adr=f.client.adr}catch(e){}

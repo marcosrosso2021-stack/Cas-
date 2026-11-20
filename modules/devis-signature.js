@@ -87,7 +87,8 @@ async function signSend(){
   cur.sign={token:j.token,url:j.url,st:'sent',sentAt:Date.now()};if(cur.status!=='accepte')cur.status='envoye';storeQ(cur);syncSoon();
   showSent(j.url);
   setTimeout(askNotif,1500);
- }catch(e){alert('Erreur d\'envoi : '+(e.message||e))}
+ }catch(e){if(e.module&&typeof aboAjouter==='function'){aboAjouter(e.module);return}/* le serveur dit que l'abonnement ne le permet pas */
+  alert('Erreur d\'envoi : '+(e.message||e))}
  finally{b.disabled=false;b.textContent='Valider et envoyer'}}
 let sentMsg='',sentUrl='';
 function showSent(url){

@@ -66,13 +66,12 @@ newsletter (qui ne sert à rien d'autre) n'est pas chargé quand le module n'est
   l'appli met alors sa liste à jour et ouvre le plan.
 
 ## Reste à faire
-- **Signature des devis et numéros de facture** : ils passent par le serveur de l'équipe, avec une clé d'équipe qui n'est pas
-  liée au compte casô. Pour que le serveur les contrôle, il faudra relier l'équipe au compte casô du patron (à faire avec Stripe).
-- **Pointage** : ajouter un chantier ou une personne dans l'écran Pointage n'est pas verrouillé.
+- **Signature des devis et numéros de facture** : contrôlés par le serveur dans l'espace d'une entreprise relié au compte casô
+  du patron (20 nov. 2026) : sans le module Devis, 1 devis envoyé à signer par mois et pas de numéro de facture ; l'appli ouvre
+  alors « On construit le plan ». L'espace d'origine (sans compte relié) n'est pas contrôlé. Essais : tests/espace-abonnement.test.js.
+- **Pointage** : ajouter un chantier ou une personne dans l'écran Pointage demande le module (verrou de l'appli, 20 nov. 2026).
 
 ## Prochaines étapes (demandées)
 - **Fait (19 nov. 2026)** : Mailjet en place sur casobtp.fr ; casô collaborateur (un espace d'équipe par entreprise, écran du collaborateur) ;
   casô client final (espace du client : lien personnel depuis sa fiche, devis à signer ou signés, factures, rendez-vous, rapports).
 - **E-mail rédigé par une vraie IA** : aujourd'hui rédigé sur le téléphone à partir du devis ; une IA en ligne (Claude) demanderait une clé.
-- **Signature des devis et numéros de facture contrôlés par le serveur** selon l'abonnement (avec Stripe).
-- **Pointage** : ajouter un chantier ou une personne n'est pas verrouillé par l'abonnement.
