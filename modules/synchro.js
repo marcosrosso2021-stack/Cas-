@@ -386,6 +386,7 @@ try{if(localStorage.getItem('caso_locked')==='1'&&accountGet())setTimeout(showLo
 setTimeout(()=>{if($('s-chat').classList.contains('on'))chatRender(false)},0);
 if(/[?&]q=/.test(location.search))setTimeout(()=>{syncNow();go('histo')},300);{let T=null;try{T=localStorage.getItem('caso_test')}catch(e){}
  if(!T&&!/[?&]q=/.test(location.search)){
-  if(!accountGet()&&!getSync().token)startOpen();
-  else{const sp=$('splash');if(sp&&!sp.dataset.done){sp.dataset.done=1;sp.hidden=false;window.__splashGo&&__splashGo();setTimeout(splashEnd,matchMedia('(prefers-reduced-motion: reduce)').matches?500:1200)}}}}
+  /* sans compte ni équipe : le mode découverte (modules/decouverte.js, chargé en dernier) ouvre le chat ; sinon l'écran Connexion */
+  if(!accountGet()&&!getSync().token){splashShow();window.DEC_ATTENTE=1;setTimeout(()=>{if(typeof DEC==='undefined'||!DEC.on){if(!accountGet()&&!$('s-start').classList.contains('on'))startOpen()}},9000)}
+  else splashShow()}}
 handleJoin().then(initServer);
