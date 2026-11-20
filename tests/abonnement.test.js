@@ -28,9 +28,9 @@ const J=864e5,TOUS=['devis','planning','pointage','paiement','3d','renovation','
 
  /* 1. après l'essai, sans abonnement : socle gratuit seulement */
  {const {c,p,errs}=await tel(fin);
-  ok('sans abonnement : cadenas sur Encaissements, Fournisseurs, Newsletter et Pointage (Planning et Mes services ouverts)',await verrous(p)==='enc,fou,news,pt',await verrous(p));
+  ok('sans abonnement : cadenas sur Encaissements, Fournisseurs et Pointage (Planning, Newsletter et Mes services ouverts)',await verrous(p)==='enc,fou,pt',await verrous(p));
   await p.waitForFunction(()=>typeof casoPont!=='undefined'||window.casoPont,null,{timeout:10000}).catch(()=>{});await p.waitForTimeout(500);
-  ok('sans abonnement : la newsletter n\'est pas chargée',await p.evaluate(()=>!window.casoVeille&&!document.querySelector('script[src="modules/newsletter.js"]')));
+  ok('sans abonnement : la newsletter est chargée (gratuite)',await p.evaluate(()=>!!window.casoVeille));
   ok('socle gratuit : chat, clients et rendez-vous ouverts',await p.evaluate(()=>aboOuvert('chat')&&aboOuvert('clients')&&aboOuvert('rdv')));
   await p.evaluate(()=>go('pt'));
   ok('écran Pointage : lisible, bandeau « lecture seule » avec « Ajouter »',await p.evaluate(()=>{const b=$('s-pt').previousElementSibling;if(!b||!b.classList.contains('abo-ro'))return false;return !!b&&$('s-pt').classList.contains('on')&&/Pointage/.test(b.textContent)&&!!b.querySelector('button')}));
@@ -41,7 +41,7 @@ const J=864e5,TOUS=['devis','planning','pointage','paiement','3d','renovation','
   await p.click('#essai');let pl=await plan();
   ok('encaissement depuis un écran : le plan s\'ouvre, Encaissements coché, petit mot',pl.on&&pl.sel.includes('paiement')&&/argent/.test(pl.mot)&&await p.evaluate(()=>$('faPay').hidden),JSON.stringify(pl));
   await p.evaluate(()=>{aboClose();$('essai').onclick=()=>tab('news')});await p.waitForTimeout(300);await p.click('#essai');pl=await plan();
-  ok('menu : la newsletter ouvre le plan, Newsletter cochée',!(await p.evaluate(()=>$('s-news').classList.contains('on')))&&pl.on&&pl.sel.includes('veille')&&/règles/.test(pl.mot),JSON.stringify(pl));
+  ok('menu : la newsletter est gratuite, elle s\'ouvre sans le plan',(await p.evaluate(()=>$('s-news').classList.contains('on')))&&!pl.on,JSON.stringify(pl));
   await p.evaluate(()=>aboClose());await p.waitForTimeout(300);
   ok('profil : pastille discrète « On construit le plan », sans « Mon abonnement »',await p.evaluate(()=>{const g=$('dwPlanGo');return !g.hidden&&/On construit le plan/.test(g.textContent)&&!/abonnement/i.test((()=>{const x=document.getElementById('dwR').cloneNode(true);x.querySelectorAll('[hidden]').forEach(e=>e.remove());return x.textContent})())}));
   /* chat : « Martin a payé 100 € » → le plan s'ouvre, rien d'enregistré */

@@ -152,14 +152,14 @@ function req(srv,p,o){o=o||{};return new Promise((res,ko)=>{
 
  // ---- « On construit le plan » : modules choisis, total plafonné ----
  a=await P('moi',undefined,jB);
- ok('essai : tous les modules Artisan ouverts',a.j.compte.modules.length===8&&a.j.compte.modules.includes('paiement'));
+ ok('essai : tous les modules Artisan ouverts',a.j.compte.modules.length===7&&a.j.compte.modules.includes('paiement'));
  a=await P('plan',{modules:['devis','planning','pointage','nimporte-quoi','devis']},jB);
  ok('plan : modules inconnus et doublons écartés, total 15 €',a.status===200&&JSON.stringify(a.j.compte.plan.modules)==='["devis","planning","pointage"]'&&a.j.compte.plan.total===1500&&a.j.compte.offre==='artisan_curieux');
  const T1=T;T+=31*J;
  a=await P('moi',undefined,jB);
  ok('après l\'essai : seuls les modules choisis restent ouverts (mode test, rien de facturé)',a.j.compte.offre==='plan'&&JSON.stringify(a.j.compte.modules)==='["devis","planning","pointage"]');
  a=await P('plan',{modules:['devis','planning','pointage','paiement','3d','renovation','fournisseurs','veille']},jB);
- ok('plan : tout coché = 25 € (plafond), jamais 38 €',a.j.compte.plan.brut===3800&&a.j.compte.plan.total===2500&&a.j.compte.plan.plafonne===true);
+ ok('plan : tout coché = 25 € (plafond), jamais 36 €',a.j.compte.plan.brut===3600&&a.j.compte.plan.total===2500&&a.j.compte.plan.plafonne===true);
  a=await P('plan',{modules:[]},jB);
  ok('plan vide : aucun module, 0 €',a.status===200&&a.j.compte.modules.length===0&&a.j.compte.plan.total===0);
  ok('plan : corps invalide refusé (400)',(await P('plan',{modules:'devis'},jB)).status===400);
@@ -225,7 +225,7 @@ function req(srv,p,o){o=o||{};return new Promise((res,ko)=>{
   a=await req(S.server,'/api/prix?q=seau',{jeton:jM});ok('prix en ligne : ouverts pendant l\'essai',a.status!==403,String(a.status));
   a=await P('plan',{modules:['devis','pointage']},jM);ok('e-mail : plan enregistré',a.status===200&&a.j.compte.plan.modules.join()==='devis,pointage');
   T+=31*J;a=await P('moi',undefined,jM);const dr=PL.droits(a.j.compte,T);
-  ok('e-mail : après l\'essai, plan + socle gratuit',a.j.compte.offre==='plan'&&!dr.essai&&dr.ouvert('devis')&&dr.ouvert('pointage')&&dr.ouvert('chat')&&dr.ouvert('clients')&&dr.ouvert('rdv')&&!dr.ouvert('veille')&&!dr.ouvert('planning'));
+  ok('e-mail : après l\'essai, plan + socle gratuit',a.j.compte.offre==='plan'&&!dr.essai&&dr.ouvert('devis')&&dr.ouvert('pointage')&&dr.ouvert('chat')&&dr.ouvert('clients')&&dr.ouvert('rdv')&&dr.ouvert('veille')&&!dr.ouvert('planning'));
   a=await req(S.server,'/api/prix?q=seau',{jeton:jM});ok('prix en ligne : refusés après l\'essai sans le module Fournisseurs (403)',a.status===403&&a.j.module==='fournisseurs',String(a.status));
   await P('plan',{modules:['devis','fournisseurs']},jM);a=await req(S.server,'/api/prix?q=seau',{jeton:jM});ok('prix en ligne : ouverts avec le module Fournisseurs',a.status!==403,String(a.status));
   a=await req(S.server,'/api/prix?q=seau');ok('prix en ligne : sans compte, limites anonymes inchangées (pas de 403)',a.status!==403,String(a.status));

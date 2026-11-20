@@ -3,7 +3,7 @@ const R=[],ok=(n,c,x)=>R.push((c?'OK   ':'FAIL ')+n+(x?'  ['+x+']':''));
 let c=P.calcul('artisan',['devis','planning','pointage']);
 ok('Artisan = devis + planning + pointage = 15 €',c.total===1500&&!c.plafonne);
 c=P.calcul('artisan',P.catalogue('artisan').modules.map(m=>m.id));
-ok('tout coché : brut 38 €, total plafonné à 25 €',c.brut===3800&&c.total===2500&&c.plafonne);
+ok('tout coché : brut 36 €, total plafonné à 25 €',c.brut===3600&&c.total===2500&&c.plafonne);
 ok('aucune offre toute faite : pas de raccourcis dans le catalogue',!('raccourcis' in P.CATALOGUE.artisan)&&!('raccourcis' in P.CATALOGUE.bricoleur));
 c=P.calcul('artisan',['devis','planning','pointage'],true);
 ok('fondateur : -30 % à vie sur 15 € = 10,50 €',c.total===1050&&c.remise===450);
@@ -23,7 +23,7 @@ ok('peut() : lit la liste du compte',P.peut({modules:['devis']},'devis')&&!P.peu
  d=P.droits({mode:null},T);ok('droits : mode pas encore choisi, rien verrouillé',d.tout);
  d=P.droits({mode:'artisan',essaiFin:T+10*J,modules:tous},T);ok('droits : en essai, tout le mode Artisan est ouvert',!d.tout&&d.essai&&tous.every(m=>d.ouvert(m))&&d.devisGratuits===Infinity);
  d=P.droits({mode:'artisan',essaiFin:T-J,modules:[]},T);
- ok('droits : après l\'essai sans plan, socle gratuit seulement',!d.essai&&d.ouvert('chat')&&d.ouvert('clients')&&d.ouvert('rdv')&&!d.ouvert('devis')&&!d.ouvert('planning')&&!d.ouvert('veille'));
+ ok('droits : après l\'essai sans plan, socle gratuit seulement',!d.essai&&d.ouvert('chat')&&d.ouvert('clients')&&d.ouvert('rdv')&&!d.ouvert('devis')&&!d.ouvert('planning')&&d.ouvert('veille'));
  ok('droits : 1 devis gratuit par mois',d.devisGratuits===1&&P.devisRestants(d,0)===1&&P.devisRestants(d,1)===0&&P.devisRestants(d,5)===0);
  d=P.droits({mode:'artisan',essaiFin:T-J,modules:['devis','pointage','__proto__']},T);
  ok('droits : plan devis + pointage, le reste fermé, devis illimités',d.ouvert('devis')&&d.ouvert('pointage')&&!d.ouvert('paiement')&&!d.ouvert('__proto__')&&P.devisRestants(d,40)===Infinity);

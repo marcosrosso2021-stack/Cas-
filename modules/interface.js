@@ -231,9 +231,25 @@ function lkOk(){try{localStorage.removeItem('caso_lk')}catch(e){}}
 function lkMsg(w){return i18nT("Trop d'essais. Réessaie dans {1}.").replace('{1}',w>=60?Math.ceil(w/60)+' min':w+' s')}
 async function accUpgrade(pass){const a=accountGet(),it=ACC_ITER();if(!a||!(a.iter<it))return;
  if(a.rhash&&!a.riter)a.riter=a.iter;const salt=crypto.getRandomValues(new Uint8Array(16));a.salt=hex(salt);a.iter=it;a.hash=await pwHash(pass,salt,it);accountPut(a)}
+/* aucun compte sur ce téléphone (nouvel appareil, nouvelle adresse comme casobtp.fr) : le compte casô du serveur est retrouvé
+   avec le même e-mail et le même mot de passe, puis recréé ici. Les données restent sur l'ancien appareil : sauvegarde à restaurer. */
+async function loginRetrouver(){
+ const email=$('lgMail').value.trim(),pass=$('lgPass').value;
+ if(!email||!pass||navigator.onLine===false||!window.CasoAuth||!CasoAuth.entrer)return false;
+ let c=null;try{c=await CasoAuth.entrer(email,pass)}catch(e){if(e&&e.code===401){$('lgErr').textContent=i18nT('E-mail ou mot de passe incorrect.');$('lgErr').hidden=false;return true}return false}
+ if(!c)return false;
+ try{await accountCreate({prenom:c.prenom||email.split('@')[0],ent:c.nom||'',email,pass})}catch(e){return false}
+ {const a=accountGet();if(a){a.cgu={v:'2026-11-19',at:Date.now(),retrouve:1};if(c.mode)a.mode=c.mode;accountPut(a)}
+  if(c.siret){db.prof=Object.assign({},db.prof||{},{siret:c.siret,siren:c.siret.slice(0,9)});db.profAt=Date.now();save()}}
+ $('lgPass').value='';fillProf();renderAcct();
+ try{ONB.code=await rcSet()}catch(e){ONB.code=null}
+ if(!c.mode){modeOpen();return true}
+ if(ONB.code){$('rc2Code').textContent=ONB.code;stScreen('s-rc')}else modeEnter();
+ setTimeout(()=>toast(i18nT('Compte retrouvé. Pour retrouver tes devis, restaure ta sauvegarde (Profil).')),800);
+ return true}
 async function loginSubmit(){
  {const w=lkWait();if(w){$('lgErr').textContent=lkMsg(w);$('lgErr').hidden=false;return}}
- if(!accountGet()){$('lgErr').textContent='Aucun compte sur ce téléphone. Crée ton compte, ou utilise ton invitation.';$('lgErr').hidden=false;return}
+ if(!accountGet()){if(await loginRetrouver())return;$('lgErr').textContent=i18nT('Aucun compte sur ce téléphone. Crée ton compte, ou utilise ton invitation.');$('lgErr').hidden=false;return}
  const ok=await accountCheck($('lgMail').value,$('lgPass').value);
  if(!ok){lkFail();const w=lkWait();$('lgErr').textContent=w?lkMsg(w):'E-mail ou mot de passe incorrect.';$('lgErr').hidden=false;return}
  lkOk();try{await accUpgrade($('lgPass').value)}catch(e){}
@@ -249,7 +265,15 @@ async function loginSubmit(){
 const ONB={code:null,change:false};
 function stScreen(id){document.body.classList.add('starting');drawerClose&&drawerClose(true);document.querySelectorAll('section').forEach(x=>x.classList.remove('on'));$(id).classList.add('on');window.scrollTo(0,0)}
 function modeOpen(){ONB.change=false;['mdArt','mdBri'].forEach(k=>$(k).classList.remove('on'));$('mdSir').hidden=true;{const p=db.prof||{};$('mdSiret').value=p.siret||'';$('mdSiren').value=p.siren||(p.siret||'').slice(0,9)}$('mdErr').hidden=true;
+ /* fin de la création du compte : conditions (obligatoire) et notifications, une seule fois */
+ {const a=accountGet();$('mdCk').hidden=!!(a&&a.cgu);$('mdCkErr').hidden=true}
  stScreen('s-mode')}
+function mdCkOk(){const a=accountGet();if(!a||a.cgu)return true;
+ if(!$('mdCgu').checked){$('mdCgu').closest('label').classList.add('bad');$('mdCkErr').hidden=false;$('mdCgu').focus();return false}
+ a.cgu={v:'2026-11-19',at:Date.now()};a.notif=$('mdNotif').checked;accountPut(a);
+ /* la demande du téléphone part pendant l'appui (sinon l'iPhone ne la montre pas) */
+ if(a.notif&&window.Notification&&Notification.permission!=='denied')Promise.resolve(Notification.permission==='granted'?'granted':Notification.requestPermission()).then(r=>{if(r==='granted'&&typeof newsNotif==='function')newsNotif()}).catch(()=>{});
+ return true}
 function sirenOk(n){n=String(n||'').replace(/\D/g,'');return /^\d{9}$/.test(n)&&(n==='356000000'||luhnOk(n))}
 /* SIREN = 9 premiers chiffres du SIRET : on tient les deux champs d'accord */
 function sirSync(e,o){const d=e.value.replace(/\D/g,''),t=$(o),td=t.value.replace(/\D/g,'');
@@ -271,7 +295,7 @@ async function mdSirOk(){const n=$('mdSiret').value.replace(/\D/g,''),sr=$('mdSi
   if(!P.adr)P.adr=acCap(et.adresse||'');if(!P.forme)P.forme=acForme(co.nature_juridique);if(!P.tvai)P.tvai=(co.tva&&co.tva[0])||acTva(n.slice(0,9))}
  db.profAt=Date.now();save();try{fillProf()}catch(x){}
  modePick('artisan')}
-function modePick(m){if(m==='artisan'&&!sirOk((db.prof||{}).siret)){$('mdArt').classList.add('on');$('mdSir').hidden=false;$('mdSiret').focus();return}
+function modePick(m){if(!mdCkOk())return;if(m==='artisan'&&!sirOk((db.prof||{}).siret)){$('mdArt').classList.add('on');$('mdSir').hidden=false;$('mdSiret').focus();return}
  const a=accountGet();if(a){a.mode=m;delete a.wait;accountPut(a)}
  if(ONB.code){$('rc2Code').textContent=ONB.code;stScreen('s-rc');return}
  modeEnter()}

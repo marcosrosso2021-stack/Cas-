@@ -191,7 +191,7 @@ window.VAULT=(()=>{
   if(!st||!$('lgForm')){go();return}
   const on0=[...document.querySelectorAll('section.on')];on0.forEach(s=>s.classList.remove('on'));
   B.classList.add('starting');st.classList.add('on');
-  const hideEls=[...st.querySelectorAll('.st-alt,.st-lang,.st-sso,.st-sso-n,#acForm')],hid0=hideEls.map(e=>e.hidden);hideEls.forEach(e=>e.hidden=true);
+  const hideEls=[...st.querySelectorAll('.st-alt,.st-lang,.st-sso,#acForm')],hid0=hideEls.map(e=>e.hidden);hideEls.forEach(e=>e.hidden=true);
   $('lgForm').hidden=false;$('fgForm').hidden=true;
   if(acc&&acc.email)$('lgMail').value=acc.email;
   const mailEls=[$('lgMail'),st.querySelector('label[for="lgMail"]')].filter(Boolean),mail0=mailEls.map(e=>e.hidden);
@@ -721,7 +721,7 @@ body:not(.starting) .pg-h{justify-content:flex-end}body:not(.starting) .pg-h:not
 .st-f .st-sso{display:flex;justify-content:center;gap:14px;margin-top:16px}
 .st-f .st-sso[hidden]{display:none}
 .st-f .st-sso .btn{flex:none;width:56px;height:56px;min-height:0;padding:0;margin:0;display:grid;place-items:center;border-radius:50%}
-#lgForm.nopw>label,#lgForm.nopw>input,#lgForm.nopw>.pw,#lgForm.nopw>#lgGo,#lgForm.sso>label,#lgForm.sso>input,#lgForm.sso>.pw,#lgForm.sso>#lgGo,#lgForm.sso>.lnk,#lgForm.sso>.lang-sel,#lgForm.sso>.st-sso,#lgForm.sso>.st-sso-n{display:none!important}
+#lgForm.nopw>label,#lgForm.nopw>input,#lgForm.nopw>.pw,#lgForm.nopw>#lgGo,#lgForm.sso>label,#lgForm.sso>input,#lgForm.sso>.pw,#lgForm.sso>#lgGo,#lgForm.sso>.lnk,#lgForm.sso>.lang-sel,#lgForm.sso>.st-sso{display:none!important}
 body.starting #hd{display:none}
 #m3d{position:fixed;inset:0;z-index:9000;background:var(--bg)}
 /* travail du module 3D poursuivi en arrière-plan : pastille de suivi, touchée pour y revenir */
@@ -1474,7 +1474,7 @@ body.tr-on{overflow:hidden}
 .dw-ent.logo{border:0;background:#fff}.dw-ent.ini{border:0;background:var(--ink);color:var(--card);font-weight:700;font-size:19px;letter-spacing:.02em}.dw-ent img{width:100%;height:100%;object-fit:contain}.dw-ent .i{width:24px;height:24px}
 .acct.logo{padding:0;overflow:hidden;background:#fff}.acct.logo img{width:100%;height:100%;object-fit:contain;border-radius:inherit}
 .ac-ck{display:flex;gap:10px;align-items:flex-start;margin:12px 0 0;font-size:14px;line-height:1.4;text-transform:none;letter-spacing:0;font-family:inherit;font-weight:400;color:var(--ink)}.ac-ck input{width:20px;height:20px;margin:1px 0 0;flex:none;accent-color:var(--ink)}.ac-ck a{color:inherit}.ac-ck.bad span{color:#c0392b}
-.ac-sso-ok{font-size:12.5px;color:var(--mut);text-align:center;margin:8px 0 0}.ac-sso-ok a{color:inherit}
+
 body.role-ouvrier [data-pat]{display:none!important}.eq-out{text-align:center;margin:4px 0 12px}
 .eq-moi .eq-tiles{margin:10px 0 6px}.eq-moi h2{margin:0}
 .ag-typ{margin:0 0 10px}.row>.ag-ej{flex:0 0 84px}.ag-ej input{text-align:center}.ag-ev .ag-n{font-weight:600;color:var(--ink)}.ag-cli{display:flex;flex-direction:column;gap:8px;margin:8px 0 2px}#agEti{margin:0}
@@ -1740,7 +1740,6 @@ body.role-ouvrier [data-pat]{display:none!important}.eq-out{text-align:center;ma
    <button class="btn sec" type="button" aria-label="Continuer avec Google" title="Google" onclick="authVia('google')"><svg viewBox="0 0 48 48" width="24" height="24" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg></button>
    <button class="btn sec" type="button" aria-label="Continuer avec Outlook" title="Outlook" onclick="authVia('microsoft')"><svg viewBox="0 0 23 23" width="24" height="24" aria-hidden="true"><path fill="#F25022" d="M1 1h10v10H1z"/><path fill="#7FBA00" d="M12 1h10v10H12z"/><path fill="#00A4EF" d="M1 12h10v10H1z"/><path fill="#FFB900" d="M12 12h10v10H12z"/></svg></button>
   </div>
-  <p class="ac-sso-ok st-sso-n">En continuant avec Google ou Outlook, tu acceptes les <a href="conditions.html" target="_blank" rel="noopener">conditions</a> et la <a href="confidentialite.html" target="_blank" rel="noopener">confidentialité</a>.</p>
   <button class="lnk lg-forgot" type="button" id="lgForgot" onclick="forgotOpen()">Mot de passe oublié ?</button>
   <button class="lnk st-alt" type="button" onclick="stShow('ac')">Pas encore de compte ? <span>Créer ton compte</span></button>
   <select class="lang-sel st-lang" aria-label="Langue" onchange="vnSetLang(this.value)"></select>
@@ -1763,7 +1762,6 @@ body.role-ouvrier [data-pat]{display:none!important}.eq-out{text-align:center;ma
   <label for="acPass">Mot de passe</label><div class="pw"><input id="acPass" type="password" autocomplete="new-password" placeholder="8 caractères minimum" enterkeyhint="done"><button type="button" class="pw-eye" aria-label="Afficher le mot de passe" aria-pressed="false" onclick="pwEye(this,'acPass')"><svg class="i" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
   <div id="acErr" class="err" hidden role="alert"></div>
   <button class="btn" type="submit" id="acGo">Créer mon compte</button>
-  <p class="ac-sso-ok">En créant ton compte, tu acceptes les <a href="conditions.html" target="_blank" rel="noopener">conditions</a> et la <a href="confidentialite.html" target="_blank" rel="noopener">confidentialité</a>.</p>
  </form>
  <form id="fgForm" novalidate hidden onsubmit="forgotSubmit();return false">
   <button class="rnd st-back" type="button" onclick="forgotBack()" aria-label="Retour à la connexion"><svg class="i"><use href="#i-back"/></svg></button>
@@ -1783,6 +1781,11 @@ body.role-ouvrier [data-pat]{display:none!important}.eq-out{text-align:center;ma
   <button class="md-c" id="mdArt" type="button" onclick="modePick('artisan')"><span class="md-ic"><svg class="i"><use href="#i-helmet"/></svg></span><span class="md-t"><b>Artisan</b><span>Devis, factures, chantiers</span></span></button>
   <div id="mdSir" class="md-sir" hidden><div class="row"><div style="flex:.7"><label for="mdSiren">SIREN</label><input id="mdSiren" inputmode="numeric" autocomplete="off" maxlength="11" data-noi18n oninput="sirSync(this,'mdSiret')"></div><div><label for="mdSiret">SIRET</label><input id="mdSiret" inputmode="numeric" autocomplete="off" enterkeyhint="go" data-noi18n oninput="sirSync(this,'mdSiren')" onkeydown="if(event.key==='Enter')mdSirOk()"></div></div><div id="mdErr" class="err" hidden role="alert"></div><button class="btn" type="button" id="mdSirGo" onclick="mdSirOk()">Continuer</button></div>
   <button class="md-c" id="mdBri" type="button" onclick="modePick('bricoleur')"><span class="md-ic"><svg class="i"><use href="#i-home"/></svg></span><span class="md-t"><b>Bricoleur du dimanche</b><span>Mes travaux à la maison</span></span></button>
+  <div id="mdCk" hidden>
+   <label class="ac-ck"><input type="checkbox" id="mdCgu" onchange="this.closest('label').classList.remove('bad');$('mdCkErr').hidden=true"> <span>J'accepte les <a href="conditions.html" target="_blank" rel="noopener">conditions d'utilisation</a> et la <a href="confidentialite.html" target="_blank" rel="noopener">politique de confidentialité</a></span></label>
+   <label class="ac-ck"><input type="checkbox" id="mdNotif"> <span>Recevoir les notifications : newsletter de mon métier, rendez-vous, devis signés</span></label>
+   <div id="mdCkErr" class="err" hidden role="alert">Accepte les conditions et la politique de confidentialité pour créer ton compte.</div>
+  </div>
  </div>
 </section>
 <section id="s-rc">
@@ -2618,13 +2621,11 @@ draw();if(!still)requestAnimationFrame(tick);window.__splashGo=()=>{if(!still){l
 <script>/* démarrage : le coffre s'ouvre (ou il n'y en a pas), puis les scripts de l'appli s'exécutent dans l'ordre.
    Les modules de l'appli (modules/*.js) sont lus tout de suite, pendant que le coffre s'ouvre, puis exécutés d'un seul tenant
    et dans l'ordre, comme quand ils étaient écrits dans cette page. Si un fichier ne se lit pas, il est chargé normalement.
-   Dès qu'un fichier est chargé normalement (chat/, pointage/…), tous ceux qui suivent le sont aussi, pour garder l'ordre.
-   La newsletter n'est pas chargée quand le compte Artisan ne l'a pas dans son abonnement (elle ne fait pas partie du socle gratuit). */
+   Dès qu'un fichier est chargé normalement (chat/, pointage/…), tous ceux qui suivent le sont aussi, pour garder l'ordre. */
 (function(){const T=[...document.querySelectorAll('script[type="text/x-caso"]')];
- const sansVeille=()=>{try{const c=(JSON.parse(localStorage.getItem('caso_auth'))||{}).compte;return !!(c&&c.mode==='artisan'&&Array.isArray(c.modules)&&c.modules.indexOf('veille')<0)}catch(e){return false}};
  let n=0;while(n<T.length&&/^modules\/[\w.-]+\.js$/.test(T[n].dataset.src||''))n++;
  const lu=T.map((t,i)=>i<n?fetch(t.dataset.src).then(r=>r.ok?r.text():null).catch(()=>null):Promise.resolve(null));
- VAULT.start(()=>Promise.all(lu).then(X=>{let src=false;const sv=sansVeille();T.forEach((t,i)=>{if(sv&&t.dataset.src==='modules/newsletter.js'){t.remove();return}const e=document.createElement('script');
+ VAULT.start(()=>Promise.all(lu).then(X=>{let src=false;T.forEach((t,i)=>{const e=document.createElement('script');
   if(X[i]!=null&&!src)e.textContent=X[i]+'\n//# sourceURL='+t.dataset.src;
   else if(t.dataset.src){src=true;e.src=t.dataset.src;e.async=false}else e.textContent=t.textContent;t.replaceWith(e)})}))})();
 </script>

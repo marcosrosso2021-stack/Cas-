@@ -33,14 +33,16 @@ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'caso-esp-'));
  /* rendez-vous de Karim et paiement */
  await pa.evaluate(()=>{const d=ymdL();db.events.push({id:'ev1',t:'rdv',d,a:'08:00',b:'12:00',title:'Pose',who:['pk'],adr:'3 rue des Lilas'},{id:'ev2',t:'rdv',d,a:'14:00',b:'15:00',title:'Patron seul'});
   const k=db.people.find(x=>x.id==='pk');k.taux=15;k.pays=[{id:'x1',amt:120,d:ymdL(),note:'virement'}];k.at=Date.now();save()});
- await pa.evaluate(()=>syncNow());await pa.waitForTimeout(800);
+ /* synchronisation complète : syncNow() ne fait rien si une synchronisation est déjà en cours */
+ const syncFini=pg=>pg.evaluate(async()=>{for(let i=0;i<50&&syncBusy;i++)await new Promise(r=>setTimeout(r,100));await syncNow();for(let i=0;i<50&&syncBusy;i++)await new Promise(r=>setTimeout(r,100))});
+ await syncFini(pa);
  /* 2. Karim ouvre le lien sur son téléphone : un bouton, il rejoint */
  const ka=await tel(c1.lien.replace(/^https?:\/\/[^/]+/,B));
  await ka.waitForSelector('#joinScr .join-go',{timeout:15000}).catch(()=>{});
  const je=await ka.evaluate(()=>{const s=document.getElementById('joinScr');return s?s.innerText.replace(/\s+/g,' '):''});
  ok('Karim voit l\'entreprise et « Rejoindre l\'équipe »',/Rosso Rénovation/.test(je)&&/Karim, rejoins l'équipe/.test(je),je);
  await ka.click('#joinScr .join-go');await ka.waitForFunction(()=>!!getSync().token,null,{timeout:10000}).catch(()=>{});
- await ka.evaluate(()=>syncNow());await ka.waitForFunction(()=>db.events.some(e=>e.title==='Pose')&&db.people.some(p=>(p.pays||[]).length),null,{timeout:15000}).catch(()=>{});await ka.waitForTimeout(300);
+ await syncFini(ka);await ka.waitForFunction(()=>db.events.some(e=>e.title==='Pose')&&db.people.some(p=>(p.pays||[]).length),null,{timeout:15000}).catch(()=>{});await ka.waitForTimeout(300);
  const kv=await ka.evaluate(()=>({sync:getSync(),ouv:document.body.classList.contains('role-ouvrier'),ev:db.events.filter(e=>e.t==='rdv').map(e=>e.title),
   devis:getComputedStyle(document.querySelector('nav [data-pat]')).display,pt:getComputedStyle(document.querySelector('nav button[onclick^="tab(\'pt\'"]')).display!=='none'}));
  ok('Karim est dans l\'espace de son patron, en ouvrier',kv.sync.url.endsWith('/e/'+esp)&&kv.sync.role==='ouvrier',JSON.stringify(kv.sync));

@@ -194,6 +194,10 @@ function createServer(opts={}){
    distant.erreur=null;return true}
   catch(e){distant.erreur=String(e&&e.message||e).slice(0,200);console.error('[casô] copie de la sauvegarde hors du serveur',distant.erreur);return false}}
  /* Une sauvegarde par jour, gardée 14 jours (plus la dernière de chaque mois, 6 mois). Seul le serveur qui a la main en fait. */
+ /* droits de l'abonnement du patron, pour un espace d'entreprise relié à son compte casô (l'espace d'origine n'est pas concerné) */
+ function droitsEspace(){if(!opts._inner||!auth.proprioEspace)return null;const c=auth.proprioEspace(ESPACE);
+  return c?PLAN.droits(c,opts.maintenant?opts.maintenant():Date.now()):null}
+ const moisDe=t=>{const d=new Date(+t||0);return isNaN(d)?'':d.toISOString().slice(0,7)};
  /* ---------- espace du client : ce que le client a le droit de voir ---------- */
  const nomCle=n=>String(n||'').replace(/^(m\.|mme|mlle|monsieur|madame|mr|mrs)\s+/i,'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\u0400-\u04ff\u0600-\u06ff]+/g,' ').trim();
  const r2=x=>Math.round((+x||0)*100)/100;
@@ -938,6 +942,7 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
    /* numéro de facture : suite continue, sans trou ni doublon, tenue par le serveur */
    if(POST&&url==='/api/inv/next'){
     if(user.role==='ouvrier')return send(res,403,{error:'Réservé au patron et au chef.'});
+    {const D=droitsEspace();if(D&&!D.ouvert('devis'))return send(res,403,{error:'Les factures font partie du module Devis.',module:'devis'})}
     const b=await readBody(req),key=String(b.key||'');if(!/^[FA]\d{4}$/.test(key))return send(res,400,{error:'Clé invalide.'});
     const iid=typeof b.inv==='string'?cut(b.inv,64):'';if(iid&&own(data.invIds,key+'|'+iid))return send(res,200,{n:data.invIds[key+'|'+iid]});
     const cur=own(data.invSeq,key)?data.invSeq[key]:0,loc=Math.max(0,Math.floor(Number(b.local)||0));
@@ -975,6 +980,10 @@ data.invSeq[key]=n;if(iid)data.invIds[key+'|'+iid]=n;await persist();return send
     if(POST&&url==='/api/sign/new'){
      const b=await readBody(req),doc=cleanDoc(b.doc);
      if(!doc.quote.lines.length)return send(res,400,{error:'Le devis est vide.'});
+     /* abonnement du patron : sans le module Devis, 1 devis envoyé à signer par mois (comme l'appli) */
+     {const D=droitsEspace();if(D&&!D.ouvert('devis')){const mois=moisDe(Date.now()),q=new Set();
+      for(const x of Object.values(data.signs))if(x&&moisDe(x.sentAt)===mois)q.add(x.doc&&x.doc.quote&&x.doc.quote.id||x.token);
+      if(!q.has(doc.quote.id)&&q.size>=PLAN.DEVIS_GRATUITS_MOIS)return send(res,403,{error:'Sans le module Devis, un seul devis par mois peut être envoyé à signer.',module:'devis'})}}
      if(!okPng(b.img))return send(res,400,{error:'Signature manquante.'});
      const at=Date.now(),token=crypto.randomBytes(16).toString('hex');
      // un seul lien actif par devis : l'ancien est remplacé
