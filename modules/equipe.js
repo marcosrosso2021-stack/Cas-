@@ -207,7 +207,7 @@ function eqRentRender(per){if(per)EQ_RPER=per;const p=eqMoi(),box=$('cpRent');if
    Le lien avec l'équipe est mis de côté (caso_equipe_ext) : « Chantiers chez <entreprise> » montre ses rendez-vous et ses chantiers là-bas. */
 const EQ_EXT='caso_equipe_ext';
 function eqExt(){try{const x=JSON.parse(localStorage.getItem(EQ_EXT)||'null');return x&&x.url&&x.token?x:null}catch(e){return null}}
-function eqPro(){const c=getSync(),ent=((db.prof||{}).nom||'').trim();if(!c.token)return;
+function eqPro(){const c=getSync(),ent=((db.prof||{}).nom||'').trim();if(!c.token)return;syncEncore=false;
  if(!confirm(i18nT('Tu crées ton compte pro, comme tout artisan. Tu restes dans l\'équipe de {1} : tes chantiers chez eux restent visibles. Continuer ?').replace('{1}',ent||i18nT('ton entreprise'))))return;
  try{localStorage.setItem(EQ_EXT,JSON.stringify({url:c.url,token:c.token,user:c.user,role:c.role,entreprise:ent,logo:(db.prof||{}).logo||''}))}catch(e){}
  setSync({});/* le jeton de l'équipe n'est pas annulé : il sert à « Chantiers chez … » */
