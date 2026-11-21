@@ -53,6 +53,7 @@ function chsRender(){const box=$('s-chs');if(!box)return;
    <button type="button" class="nf-tl" onclick="go('agenda')"><svg class="i"><use href="#i-cal"/></svg><b>${esc(i18nT('Planning'))}</b></button>
    <button type="button" class="nf-tl" onclick="drawerGo('pt')"><svg class="i"><use href="#i-clock"/></svg><b>${esc(i18nT('Heures'))}</b></button>
   </div>
+  <button type="button" class="nf-tl" onclick="go('p3d')"><svg class="i"><use href="#i-plan"/></svg><b class="nf-g">${esc(i18nT('Plan et 3D'))}</b>${nfChev}</button>
   <button type="button" class="nf-b s" onclick="go('pt');ptPage('set');setTimeout(()=>{const i=$('chNew');i&&i.focus()},80)"><svg class="i"><use href="#i-plus"/></svg>${esc(i18nT('Nouveau chantier'))}</button>
  </div>`;try{aboMenu()}catch(e){}}
 
@@ -92,3 +93,25 @@ function cliStatut(c){const n=nfNom(c.nom),t=agToday();
 
 /* pointage : pour le collaborateur, c'est son écran principal (pas de retour vers Chantiers) */
 {const r=window.renderPt;if(typeof r==='function'&&!r.nf){const w=function(){const b=document.querySelector('#s-pt .back');if(b)b.hidden=!!(typeof ptOuvrier==='function'&&ptOuvrier());return r.apply(this,arguments)};w.nf=1;window.renderPt=w}}
+
+/* ---------- Plan et 3D : les quatre façons de mesurer une pièce, puis les plans déjà faits ---------- */
+function p3dRender(){const box=$('s-p3d');if(!box)return;
+ const T=(ic,t,js)=>`<button type="button" class="p3-t" onclick="${js}"><svg class="i"><use href="#${ic}"/></svg><b>${esc(i18nT(t))}</b></button>`;
+ const P=(db.plans||[]).slice().sort((a,b)=>(b.date||0)-(a.date||0));
+ box.innerHTML=`<button class="btn sec back" onclick="go('chs')">Retour</button><h1 class="pg-t">${esc(i18nT('Plan et 3D'))}</h1><div class="nf">
+  <div class="nf-2">${T('i-cam','Plan depuis une photo','plStart()')}${T('i-360','Tour de la pièce','plStart();plTour()')}${T('i-doc','Lire un plan',"go('chat');setTimeout(chatFilePick,120)")}${T('i-blocks','Vue 3D et vidéo','m3dOpen()')}</div>
+  ${P.length?`<div class="lst">${P.map(p=>plItem(p,'p3d')).join('')}</div>`:''}</div>`}
+{const b=window.plBack;if(typeof b==='function'&&!b.nf){const w=function(){if(typeof PLB!=='undefined'&&PLB==='p3d'){go('p3d');return}return b.apply(this,arguments)};w.nf=1;window.plBack=w}}
+
+/* ---------- Planning, vue Jour : la liste du jour, le résumé, Ajouter, Dicter (la grille horaire n'est plus affichée) ---------- */
+{const r=window.agRenderDay;if(typeof r==='function'&&!r.nf){const w=function(){const x=r.apply(this,arguments),z=$('agNf');if(!z)return x;
+  const d=agSel,E=agDayEvents(d).slice().sort((a,b)=>(a.a||'').localeCompare(b.a||'')),ouv=typeof ptOuvrier==='function'&&ptOuvrier();
+  const H=e=>e.a?(+e.a.slice(0,2))+' h'+(e.a.slice(3)!=='00'?' '+e.a.slice(3):''):'';
+  let min=0;E.forEach(e=>{if(e.t==='rdv'&&e.a&&e.b)min+=Math.max(0,agMin(e.b)-agMin(e.a))});
+  const rows=E.map(e=>{const c=e.cid&&db.clients.find(k=>k.id===e.cid),ch=e.ch&&db.chantiers.find(k=>k.id===e.ch),sub=[e.adr||(ch&&ch.adr)||(c&&c.adr)||(c&&c.nom)||'',agTeamTxt(e)].filter(Boolean).join(' · ');
+   return `<button type="button" class="nf-r" onclick="agEdit('${e.id}','${d}')"><span class="ag-h" data-noi18n>${esc(H(e))}</span><span class="nf-g"><b data-noi18n dir="auto">${esc(e.title||i18nT(e.t==='off'?'Indisponible':'Rendez-vous'))}</b>${sub?`<span data-noi18n>${esc(sub)}</span>`:''}</span></button>`}).join('');
+  z.innerHTML=`<div class="nf"><div class="nf-card">${rows||`<p class="nf-vide">${esc(i18nT('Aucun rendez-vous prévu.'))}</p>`}</div>
+   ${min||!ouv?`<div class="nf-card">${min?`<div class="nf-r"><span class="nf-g">${esc(i18nT('Temps prévu'))}</span><b data-noi18n>${esc(agFmtH(min))}</b></div>`:''}
+    ${ouv?'':nfRow('Tournée de la semaine sur la carte',"go('chat');chatSend('tournée de la semaine')")+nfRow('Rappels',"agPage('set')")}</div>`:''}
+   ${ouv?'':`<div class="nf-3"><button type="button" class="nf-b" onclick="agEdit(null,agSel)">${esc(i18nT('Rendez-vous'))}</button><button type="button" class="nf-b s" onclick="agEdit(null,agSel);agTyp('off')">${esc(i18nT('Indisponible'))}</button><button type="button" class="nf-b s" onclick="go('chat');setTimeout(vnRec,120)">${esc(i18nT('Dicter'))}</button></div>`}</div>`;
+  return x};w.nf=1;window.agRenderDay=w}}

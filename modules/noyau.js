@@ -78,7 +78,7 @@ function tab(n,b){
  if(n==='cpt'){fillProf();renderSync();bkRefresh();renderNotif();const t=$('trOpen');if(t)t.hidden=I18N.lang==='fr'}
  if(n==='tr')trRender();
  if(n==='home'&&typeof homeRender==='function')homeRender();
- if(n==='prof'&&typeof profRender==='function')profRender();if(n==='chs'&&typeof chsRender==='function')chsRender();if(n==='mc'&&typeof mcRender==='function')mcRender();
+ if(n==='prof'&&typeof profRender==='function')profRender();if(n==='chs'&&typeof chsRender==='function')chsRender();if(n==='mc'&&typeof mcRender==='function')mcRender();if(n==='p3d'&&typeof p3dRender==='function')p3dRender();
  window.scrollTo(0,0);
 }
 
@@ -92,7 +92,7 @@ function hdBackSync(){const b=$('hdBack');if(b)b.hidden=!document.querySelector(
 /* titre de la page affichée, recopié dans la barre du haut */
 function hdTitle(){const t=document.querySelector('section.on .pg-t'),h=$('hdT');if(!h)return;const v=t?t.textContent.trim():'';if(h.textContent!==v)h.textContent=v;hdVoir()}
 {let q=0;new MutationObserver(()=>{if(!q)q=requestAnimationFrame(()=>{q=0;hdTitle()})}).observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['class']})}
-function go(n){/* barre du bas : Accueil 0, Chantiers 1 (pointage, planning), Documents 2 (historique, factures, encaissements), Clients 3, Profil 4 */const m={home:0,chs:1,mc:1,prof:4,enc:2,fact:2,agenda:1,plan:-1,sigp:4,devis:-1,chat:-1,edit:-1,prix:4,imp:-1,pt:1,histo:2,mes:-1,four:-1,cpt:4,tr:4,sign:-1,cli:3,clif:3,fou:4,fouf:4,news:4};tab(n,document.querySelectorAll('nav button')[m[n]])}
+function go(n){/* barre du bas : Accueil 0, Chantiers 1 (pointage, planning), Documents 2 (historique, factures, encaissements), Clients 3, Profil 4 */const m={home:0,chs:1,mc:1,p3d:1,prof:4,enc:2,fact:2,agenda:1,plan:-1,sigp:4,devis:-1,chat:-1,edit:-1,prix:4,imp:-1,pt:1,histo:2,mes:-1,four:-1,cpt:4,tr:4,sign:-1,cli:3,clif:3,fou:4,fouf:4,news:4};tab(n,document.querySelectorAll('nav button')[m[n]])}
 
 /* ---------- Langue de l'appli (le devis, le PDF et le message restent en français) ---------- */
 /* traductions de l'interface : i18n/ui-xx.json, seulement la langue choisie ; gardée sur l'appareil, mise à jour en arrière-plan */

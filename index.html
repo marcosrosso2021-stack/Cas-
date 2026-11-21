@@ -815,6 +815,7 @@ nav button{min-width:0}
 .nf-sr{display:flex;align-items:center;gap:10px;margin:0 0 12px}.nf-sr .srch{flex:1;margin:0}.nf-plus{flex:none;width:44px;height:44px;border:0;border-radius:50%;background:var(--acc);color:#18181a;display:grid;place-items:center;cursor:pointer}.nf-plus .i{width:20px;height:20px}
 .nf-pay{width:100%;border:0;background:none;padding:0;margin:0 0 12px;font:inherit;color:var(--ink);text-align:start;cursor:pointer}.nf-pay>span{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border-radius:20px;background:var(--card);box-shadow:var(--lift)}.nf-pay small{font-size:13px;color:var(--mut)}.nf-pay b{font-size:22px}
 .nf-rel{flex:none;min-height:44px;padding:0 18px;border:0;border-radius:999px;background:var(--ink);color:var(--card);font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.p3-t{display:flex;flex-direction:column;align-items:flex-start;gap:14px;min-height:104px;padding:16px;border:0;border-radius:20px;background:var(--card);box-shadow:var(--lift);color:var(--ink);font:inherit;font-size:15px;text-align:start;cursor:pointer}.p3-t .i{width:26px;height:26px}.nf-tl .nf-g{flex:1}
 .mc{display:flex;flex-direction:column;gap:14px;padding:16px;border-radius:26px;background:#121212;color:#fff}
 .mc-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:4px 4px 0}.mc-top b{font-size:17px}.mc-gps{font-size:12px;font-weight:600;padding:5px 12px;border-radius:999px;background:#1f3a2a;color:#7fd9a2}
 .mc-g{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -1649,6 +1650,10 @@ input,select,textarea{border-radius:14px}input:not([type=checkbox]):not([type=ra
 h2{font-size:15px;font-weight:700}h2 .hi,.steps .hi{display:none}
 .grp{margin:14px 4px 8px;color:var(--mut)}.chip{min-height:36px;display:inline-flex;align-items:center;padding:0 14px;border:0;box-shadow:var(--lift);font-size:13px;font-weight:500}
 .tag{border-radius:999px}.srch{border-radius:999px}.srch input{min-height:0}
+.ag-days{gap:2px;margin:0 0 12px}.ag-d{border:0;background:none;border-radius:16px;min-height:62px;padding:8px 0 6px;gap:3px}.ag-d span{font-size:12px;color:var(--mut)}.ag-d b{font-size:17px;font-family:inherit}
+.ag-d.on{background:var(--acc)}.ag-d.on span,.ag-d.on b{color:#18181a}.ag-d.on i{color:#18181a}.ag-d.td b{color:inherit}
+.ag-wk{margin:0 0 8px}#s-agenda .ag-dt{margin:4px 4px 10px;font-size:13px;font-weight:600;color:var(--mut)}#s-agenda .ag-dt::first-letter{text-transform:uppercase}
+.ag-h{width:56px;flex:none;font-weight:700;font-size:16px}.nf-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.nf-3 .nf-b{min-height:48px;font-size:14px;padding:0 6px}
 #priceList{background:var(--card);border-radius:20px;box-shadow:var(--lift);padding:2px 16px}#priceList .line:first-child{border-top:0}#priceList:empty{display:none}
 </style>
 <style>.iso{
@@ -1905,6 +1910,7 @@ h2{font-size:15px;font-weight:700}h2 .hi,.steps .hi{display:none}
 <section id="s-prof"></section>
 <section id="s-chs"></section>
 <section id="s-mc"></section>
+<section id="s-p3d"></section>
 <section id="s-chat" class="on">
  <button class="btn sec back" onclick="go('home')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
  <h1 class="pg-t" data-noi18n>casô</h1>
@@ -2126,13 +2132,14 @@ h2{font-size:15px;font-weight:700}h2 .hi,.steps .hi{display:none}
 </section>
 <section id="s-agenda">
  <button class="btn sec back" onclick="go('chs')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
- <div class="pg-h"><h1 class="pg-t">Mon planning</h1></div>
+ <h1 class="pg-t">Planning</h1>
  <div class="seg" role="tablist" id="agSeg"><button role="tab" data-p="jour" onclick="agPage('jour')">Jour</button><button role="tab" data-p="sem" onclick="agPage('sem')">Semaine</button><button role="tab" data-p="set" onclick="agPage('set')">Créneaux</button></div>
  <div class="ag-wk" data-ag-nav><button class="ag-nv ag-prev" onclick="agShift(-7)" aria-label="Semaine précédente"><svg class="i"><use href="#i-chev"/></svg></button><b id="agMonth" data-noi18n></b><button class="ag-nv" onclick="agShift(7)" aria-label="Semaine suivante"><svg class="i i-flip"><use href="#i-chev"/></svg></button></div>
  <div class="ag-days" id="agDays"></div>
  <p class="ag-dispo mut" id="agDispoT"></p>
  <div data-ag="jour">
-  <div class="card ag-dc"><h2 class="ag-dt" id="agDayT" data-noi18n></h2><div id="agAll" class="ag-all"></div><div class="ag-grid" id="agGrid"></div></div>
+  <h2 class="ag-dt" id="agDayT" data-noi18n></h2><div id="agNf"></div>
+  <div class="ag-dc" hidden><div id="agAll" class="ag-all"></div><div class="ag-grid" id="agGrid"></div></div>
  </div>
  <div data-ag="sem"><div id="agWeek" class="ag-week"></div></div>
  <div data-ag="set">

@@ -12,6 +12,11 @@ main{max-width:720px;margin:0 auto;background:var(--card);border:1px solid var(-
 h1{font-size:24px;margin:0 0 4px}h2{font-size:17px;margin:24px 0 6px}p,li{margin:0 0 8px}.mut{color:var(--mut);font-size:14px}a{color:inherit}
 .todo{background:color-mix(in srgb,var(--acc) 22%,var(--card));border-radius:10px;padding:10px 12px;font-size:14px}
 .tw{overflow-x:auto;margin:0 0 12px}table{border-collapse:collapse;width:100%;font-size:14px}th,td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}th{color:var(--mut);font-weight:600}h3{font-size:15px;margin:18px 0 4px}nav{display:flex;gap:16px;flex-wrap:wrap;margin-top:28px;font-size:14px}
+
+/* nouveau format : police Inter, fond chaud, cartes blanches (comme l'appli) */
+@font-face{font-family:Inter;font-weight:400;font-style:normal;font-display:swap;src:url(/fonts/inter-400.woff) format("woff")}@font-face{font-family:Inter;font-weight:500;font-style:normal;font-display:swap;src:url(/fonts/inter-500.woff) format("woff")}@font-face{font-family:Inter;font-weight:600;font-style:normal;font-display:swap;src:url(/fonts/inter-600.woff) format("woff")}@font-face{font-family:Inter;font-weight:700;font-style:normal;font-display:swap;src:url(/fonts/inter-700.woff) format("woff")}
+@media (prefers-color-scheme:light){:root{--bg:#f4f3ef;--card:#fff;--ink:#141414;--mut:#5e5e5a;--line:#e4e2dc}}
+body{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
 </style>
 </head>
 <body><main>
