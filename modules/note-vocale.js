@@ -265,7 +265,7 @@ function vnUI(){
  const l=VN.lang,d=VL_DEF[l];
  const set=(id,i)=>{const e=$(id);if(e){e.textContent=vlT(i,'fr');e.dir='auto'}};
  set('vnWakeT',2);set('vnMoreT',5);set('vnMakeB',6);set('vnFillB',7);set('vnCopyB',8);
- $('vnTxt').placeholder=vlT(13);{const ci=$('chatIn');if(ci)ci.placeholder=i18nT('Écris ici : client, travaux, quantités…')}$('vnTxt').dir='auto';
+ $('vnTxt').placeholder=vlT(13);{const ci=$('chatIn');if(ci)ci.placeholder=i18nT('Écris ou parle')}$('vnTxt').dir='auto';
  document.querySelectorAll('.lang-sel').forEach(s=>s.value=l);
  vnState(VN.mode);
 }

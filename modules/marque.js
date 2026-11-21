@@ -43,19 +43,8 @@ function mqImage(src){return new Promise((ok,ko)=>{const i=new Image();i.onload=
 function mqPetit(img){const k=Math.min(1,240/Math.max(img.naturalWidth,img.naturalHeight)),c=document.createElement('canvas');
  c.width=Math.max(1,Math.round(img.naturalWidth*k));c.height=Math.max(1,Math.round(img.naturalHeight*k));c.getContext('2d').drawImage(img,0,0,c.width,c.height);return c.toDataURL('image/png')}
 
-/* écran de connexion : le logo de l'entreprise (ou ses initiales) à la place du logo casô, et « avec casô » en bas ;
-   sans marque gardée sur ce téléphone, l'écran reste celui de casô */
-function marqueConnexion(){const f=$('lgForm'),z=f&&f.querySelector('.st-logo');if(!z)return;
- let m=null;try{m=JSON.parse(localStorage.getItem(MQ_KEY)||'null')}catch(e){}
- const img=m&&/^data:image\/png;base64,/.test(m.l||'')?m.l:'',ok=!!(m&&(img||m.ini));
- if(z.dataset.caso==null)z.dataset.caso=z.innerHTML;
- let by=f.querySelector('.st-by');
- if(!ok){if(z.dataset.mq){z.innerHTML=z.dataset.caso;delete z.dataset.mq}if(by)by.remove();return}
- const lg=document.createElement('span');lg.className='sp-lg st-lg'+(img?'':' ini');lg.setAttribute('role','img');lg.setAttribute('aria-label',m.n||'');lg.setAttribute('data-noi18n','');
- if(img){const i=new Image();i.alt='';i.src=img;lg.appendChild(i)}else lg.textContent=m.ini;
- z.innerHTML='';z.appendChild(lg);z.dataset.mq=1;
- if(!by){by=document.createElement('p');by.className='st-by';f.appendChild(by)}
- by.innerHTML='<img src="icon-192.png" alt=""><span></span>';by.lastChild.textContent=typeof i18nT==='function'?i18nT('avec casô'):(m.by||'avec casô')}
+/* écran de connexion : la marque (logique dans index.html, casoCnx, pour l'écran du coffre qui s'ouvre avant les modules) */
+function marqueConnexion(){if(window.casoCnx)casoCnx()}
 
 let mqCle=null;
 /* à chaque enregistrement : si le logo, la couleur ou le nom ont changé, on recalcule et on garde pour l'ouverture */

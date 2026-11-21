@@ -84,8 +84,8 @@ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'caso-esp-'));
  ok('côté patron : Karim « Dans l\'équipe »',await pa.evaluate(()=>eqStatut(db.people.find(x=>x.id==='pk'))==='equipe'));
  const mp=await pa.evaluate(async()=>{drawer('R');await new Promise(r=>setTimeout(r,400));const v=[...document.querySelectorAll('#s-prof .nf-r')].filter(x=>x.offsetParent).map(x=>x.innerText.trim());
   const id=document.querySelector('#s-prof .nf-ph').innerText.replace(/\s+/g,' ');cptPage('acc');const acc=document.getElementById('cpAcc').innerText.replace(/\s+/g,' ');return{v,id,acc}});
- ok('profil du patron : son nom et l\'entreprise en tête ; Mon entreprise, Mon équipe, Ma signature, Fournisseurs, Mes services, Abonnement, Newsletter, Paramètres, Mon compte, Sauvegarde, Se déconnecter, Supprimer mon compte',
-  ['Mon entreprise','Mon équipe','Ma signature','Fournisseurs','Mes services','Abonnement','Paramètres','Mon compte','Sauvegarde','Se déconnecter','Supprimer mon compte'].every(t=>mp.v.includes(t))&&mp.v.some(t=>/^Newsletter/.test(t))&&/Rosso Rénovation/.test(mp.id),JSON.stringify(mp));
+ ok('profil du patron : son nom et l\'entreprise en tête ; Mon entreprise, Mon équipe, Ma signature, Documents, Mes services, Abonnement, Newsletter, Paramètres, Mon compte, Sauvegarde, Se déconnecter, Supprimer mon compte',
+  ['Mon entreprise','Mon équipe','Ma signature','Documents','Mes services','Abonnement','Paramètres','Mon compte','Sauvegarde','Se déconnecter','Supprimer mon compte'].every(t=>mp.v.includes(t))&&mp.v.some(t=>/^Newsletter/.test(t))&&/Rosso Rénovation/.test(mp.id),JSON.stringify(mp));
  ok('Mon compte : prénom, e-mail, connexion',/Marcos/.test(mp.acc)&&/marcos@rosso\.fr/.test(mp.acc)&&/E-mail et mot de passe/.test(mp.acc),mp.acc);
  /* le collaborateur supprime son compte : l'entreprise le voit quitter l'équipe, ses heures restent */
  const c4=await pa.evaluate(async()=>{const c=await eqInviter('pk');return c&&c.url});

@@ -85,7 +85,7 @@ function tab(n,b){
 
 /* historique des écrans : « Retour » revient à l'écran où l'on était juste avant (avec sa page : onglet du pointage, client ouvert…).
    Les cinq onglets de la barre du bas sont des points de départ : y aller vide l'historique. */
-const NAV_RACINES=['home','chs','histo','cli','prof'];let NAV=[],NAV_RET=false;
+const NAV_RACINES=['home','chs','chat','devis','fou','cli','prof'];let NAV=[],NAV_RET=false;
 function navEtat(n){try{if(n==='cpt')return{pg:cptCur};if(n==='pt')return{pg:ptCur};if(n==='clif')return{id:cliCur&&cliCur.id};if(n==='fact')return{id:FA&&FA.id};if(n==='plan')return{id:PL&&PL.id,b:PLB}}catch(e){}return null}
 function navNote(n){if(NAV_RET)return;const top=NAV[NAV.length-1];if(top)top.e=navEtat(top.n);
  if(NAV_RACINES.includes(n))NAV=[{n}];else if(!top||top.n!==n)NAV.push({n})}
@@ -104,9 +104,11 @@ function hdBackSync(){const b=$('hdBack');if(b)b.hidden=!(NAV.length>1||document
 (()=>{const o=new MutationObserver(hdBackSync);document.querySelectorAll('section').forEach(s=>o.observe(s,{attributes:true,attributeFilter:['class']}));
  document.querySelectorAll('section .back').forEach(b=>o.observe(b,{attributes:true,attributeFilter:['hidden']}));hdBackSync()})();
 /* titre de la page affichée, recopié dans la barre du haut */
-function hdTitle(){const t=document.querySelector('section.on .pg-t'),h=$('hdT');if(!h)return;const v=t?t.textContent.trim():'';if(h.textContent!==v)h.textContent=v;hdVoir()}
+function hdTitle(){const t=document.querySelector('section.on .pg-t'),h=$('hdT');if(!h)return;const v=t?t.textContent.trim():'';if(h.textContent!==v)h.textContent=v;
+ /* une action de l'écran (ex. « Conversations » du chat) à droite de la barre du haut */
+ const z=$('hdAct'),x=document.querySelector('section.on [data-hd-act]'),k=x?x.outerHTML:'';if(z&&z.dataset.k!==k){z.dataset.k=k;z.innerHTML=k}hdVoir()}
 {let q=0;new MutationObserver(()=>{if(!q)q=requestAnimationFrame(()=>{q=0;hdTitle()})}).observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['class']})}
-function go(n){/* barre du bas : Accueil 0, Chantiers 1 (pointage, planning), Documents 2 (historique, factures, encaissements), Clients 3, Profil 4 */const m={home:0,chs:1,mc:1,p3d:1,prof:4,enc:2,fact:2,agenda:1,plan:-1,sigp:4,devis:-1,chat:-1,edit:-1,prix:4,imp:-1,pt:1,histo:2,mes:-1,four:-1,cpt:4,tr:4,sign:-1,cli:3,clif:3,fou:4,fouf:4,news:4};tab(n,document.querySelectorAll('nav button')[m[n]])}
+function go(n){/* barre du bas : Accueil 0, Chantiers 1 (pointage, planning, plan et 3D), Chat 2, Fournisseurs 3, Documents et factures depuis l'Accueil et le Profil, Clients 4, Profil 5 */const m={home:0,chs:1,mc:0,p3d:1,chat:2,devis:2,prof:5,enc:0,fact:0,agenda:0,plan:-1,sigp:5,edit:-1,prix:5,imp:-1,pt:1,histo:5,mes:-1,four:-1,cpt:5,tr:5,sign:-1,cli:4,clif:4,fou:3,fouf:3,news:5};tab(n,document.querySelectorAll('nav button')[m[n]])}
 
 /* ---------- Langue de l'appli (le devis, le PDF et le message restent en français) ---------- */
 /* traductions de l'interface : i18n/ui-xx.json, seulement la langue choisie ; gardée sur l'appareil, mise à jour en arrière-plan */

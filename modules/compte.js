@@ -2,12 +2,12 @@
    (sorti de index.html ; chargé dans l'ordre par le démarrage, voir modules/LISEZ-MOI.md) */
 /* ---------- Premier lancement ---------- */
 document.addEventListener('click',e=>{const sp=document.getElementById('splash');if(sp&&!sp.hidden&&sp.contains(e.target))splashEnd()});
-function splashEnd(){const e=$('splash');if(!e||e.hidden)return;e.classList.add('gone');setTimeout(()=>{e.hidden=true;e.remove()},460)}
+function splashEnd(){if(window.casoSplashFin)return casoSplashFin();const e=$('splash');if(!e||e.hidden)return;e.classList.add('gone');setTimeout(()=>{e.hidden=true;e.remove()},460)}
 /* écran de démarrage : affiché dès le premier dessin de la page (index.html, avec le logo de l'entreprise s'il y a un compte) ;
-   il reste environ 5 s la toute première fois, ensuite le temps de charger */
+   il reste 2,5 s la toute première fois, ensuite moins d'une seconde (5 s au plus dans tous les cas) */
 function splashShow(){const sp=$('splash');if(!sp||sp.dataset.done)return;sp.dataset.done=1;sp.hidden=false;window.__splashGo&&__splashGo();
  let neuf=false;try{neuf=!localStorage.getItem('caso_vu');localStorage.setItem('caso_vu','1')}catch(e){}
- setTimeout(splashEnd,matchMedia('(prefers-reduced-motion: reduce)').matches?400:neuf?5000:500)}
+ setTimeout(splashEnd,matchMedia('(prefers-reduced-motion: reduce)').matches?400:neuf?2500:700)}
 function startOpen(){
  splashShow();
  document.body.classList.add('starting');
