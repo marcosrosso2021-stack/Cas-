@@ -4,10 +4,10 @@
    - Mes paiements (à encaisser, en retard) → Mes paiements ;
    - Planning, Pointage (le chantier pointé en ce moment), Mode chantier ;
    - Mes travaux en cours : la liste seule, sans bouton.
-   C'est le premier écran pour tout le monde, visiteur sans compte compris (sans entreprise : le logo casô).
+   C'est le premier écran pour tout le monde. Sans compte : le logo casô seul, sans « Bonjour ».
    Rien n'est calculé ici : les chiffres viennent des modules (paiement.js, pointage.js). */
 function homeLogo(){const p=db.prof||{},ok=typeof rcImg==='function'&&rcImg(p.logo),ini=typeof mqInitiales==='function'?mqInitiales(p.nom):'';
- return ok?`<span class="hm-lg img"><img src="${p.logo}" alt=""></span>`:ini?`<span class="hm-lg" data-noi18n>${esc(ini)}</span>`:`<span class="hm-lg img"><img src="icon-192.png" alt="casô"></span>`}
+ return ok?`<span class="hm-lg img"><img src="${p.logo}" alt=""></span>`:ini?`<span class="hm-lg" data-noi18n>${esc(ini)}</span>`:`<span class="hm-lg cso"><img src="icon-512.png" alt="casô"></span>`}
 function homePaiements(){let tot=0,ret=0;const t=agToday();
  try{encDues().forEach(f=>{const d=faDue(f);tot+=d;if(f.due&&f.due<t)ret+=d})}catch(e){}
  return{tot:faR2(tot),ret:faR2(ret)}}
@@ -21,7 +21,7 @@ function homeRender(){const box=$('s-home');if(!box)return;
  const W=homeTravaux(),chev='<svg class="i i-flip"><use href="#i-chev"/></svg>';
  const tuile=(ic,ti,sub,js,on)=>`<button type="button" class="hm-tl${on?' on':''}" onclick="${js}"><i><svg class="i"><use href="#${ic}"/></svg></i><b>${esc(i18nT(ti))}</b>${sub?`<span>${sub}</span>`:''}</button>`;
  box.innerHTML=`<div class="hm">
-  <div class="hm-h">${homeLogo()}<div class="hm-w"><b>${esc(i18nT('Bonjour'))}${pre?' <span data-noi18n style="font:inherit;color:inherit">'+esc(pre)+'</span>':''}</b>${p.nom?`<span data-noi18n>${esc(p.nom)}</span>`:''}</div></div>
+  <div class="hm-h">${homeLogo()}${!(typeof mqCompte==='function'&&mqCompte())?'':`<div class="hm-w"><b>${esc(i18nT('Bonjour'))}${pre?' <span data-noi18n style="font:inherit;color:inherit">'+esc(pre)+'</span>':''}</b>${p.nom?`<span data-noi18n>${esc(p.nom)}</span>`:''}</div>`}</div>
   <div class="hm-2">
    <button type="button" class="hm-a" onclick="dvOpen()"><svg class="i"><use href="#i-quote"/></svg><span>${esc(i18nT('Nouveau devis'))}</span></button>
    <button type="button" class="hm-a d" onclick="go('fact')"><svg class="i"><use href="#i-doc"/></svg><span>${esc(i18nT('Nouvelle facture'))}</span></button>
