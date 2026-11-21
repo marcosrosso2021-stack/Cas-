@@ -12,7 +12,7 @@ function startOpen(){
  splashShow();
  document.body.classList.add('starting');
  document.querySelectorAll('section').forEach(x=>x.classList.remove('on'));
- $('s-start').classList.add('on');stShow('lg')}
+ $('s-start').classList.add('on');stShow('lg');try{marqueConnexion()}catch(e){}}
 /* ---------- Compte ----------
    Le compte est gardé sur ce téléphone, à part des données synchronisées (clé caso_account) :
    le mot de passe n'est jamais stocké, seulement son empreinte PBKDF2-SHA256 avec un sel aléatoire. */

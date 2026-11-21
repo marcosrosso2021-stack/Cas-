@@ -97,10 +97,16 @@ function cliStatut(c){const n=nfNom(c.nom),t=agToday();
 /* ---------- Plan et 3D : les quatre façons de mesurer une pièce, puis les plans déjà faits ---------- */
 function p3dRender(){const box=$('s-p3d');if(!box)return;
  const T=(ic,t,js)=>`<button type="button" class="p3-t" onclick="${js}"><svg class="i"><use href="#${ic}"/></svg><b>${esc(i18nT(t))}</b></button>`;
- const P=(db.plans||[]).slice().sort((a,b)=>(b.date||0)-(a.date||0));
- box.innerHTML=`<button class="btn sec back" onclick="go('chs')">Retour</button><h1 class="pg-t">${esc(i18nT('Plan et 3D'))}</h1><div class="nf">
+ const P=(db.plans||[]).slice().sort((a,b)=>(b.upd||b.date||0)-(a.upd||a.date||0)),d=P[0];
+ /* le dernier plan : ses mesures, et le bouton pour les reprendre dans le devis (seulement s'il y a un plan) */
+ let der='';if(d){let Q=[];try{Q=plQty(d).filter(x=>x.v>0).slice(0,3)}catch(e){}const c=db.clients.find(x=>x.id===d.cid);
+  der=`<p class="nf-k" data-noi18n>${esc([d.nom,c&&c.nom].filter(Boolean).join(' · '))}</p>
+  <div class="nf-card">${Q.map(x=>`<div class="nf-r"><span class="nf-g">${esc(x.lab)}</span><b data-noi18n>${x.ok||x.u==='u'?'':'~'}${x.u==='u'?x.v:plF(x.v)} ${esc(x.u)}</b></div>`).join('')}
+   <button type="button" class="nf-r" onclick="plOpen('${d.id}','p3d')"><span class="nf-g">${esc(i18nT('Voir le plan'))}</span>${nfChev}</button></div>
+  <button type="button" class="nf-b" onclick="plOpen('${d.id}','p3d').then(()=>plPage('qty'))">${esc(i18nT('Reprendre les mesures dans le devis'))}</button>`}
+ box.innerHTML=`<h1 class="pg-t">${esc(i18nT('Plan et 3D'))}</h1><div class="nf">
   <div class="nf-2">${T('i-cam','Plan depuis une photo','plStart()')}${T('i-360','Tour de la pièce','plStart();plTour()')}${T('i-doc','Lire un plan',"go('chat');setTimeout(chatFilePick,120)")}${T('i-blocks','Vue 3D et vidéo','m3dOpen()')}</div>
-  ${P.length?`<div class="lst">${P.map(p=>plItem(p,'p3d')).join('')}</div>`:''}</div>`}
+  ${der}${P.length>1?`<p class="nf-k">${esc(i18nT('Plans récents'))}</p><div class="lst">${P.slice(1).map(p=>plItem(p,'p3d')).join('')}</div>`:''}</div>`}
 {const b=window.plBack;if(typeof b==='function'&&!b.nf){const w=function(){if(typeof PLB!=='undefined'&&PLB==='p3d'){go('p3d');return}return b.apply(this,arguments)};w.nf=1;window.plBack=w}}
 
 /* ---------- Planning, vue Jour : la liste du jour, le résumé, Ajouter, Dicter (la grille horaire n'est plus affichée) ---------- */

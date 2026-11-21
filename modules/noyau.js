@@ -70,6 +70,7 @@ function tab(n,b){
  document.body.classList.remove('starting');drawerClose(true);
  if(n==='mes'){dvOpen();return}else if(n==='histo')histMode='hist';
  if(n==='devis'||n==='chat'){n='chat';chatRender()} else if(n==='edit'){n='devis';fillForm()}
+ navNote(n);
  document.querySelectorAll('section').forEach(s=>s.classList.remove('on'));
  $('s-'+n).classList.add('on');
  document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));
@@ -82,11 +83,24 @@ function tab(n,b){
  window.scrollTo(0,0);
 }
 
-/* bouton retour de l'en-tête : visible quand la page ouverte a un retour, et il fait ce que ce retour fait */
-function hdBack(){const b=document.querySelector('section.on .back:not([hidden])');if(b)b.click()}
+/* historique des écrans : « Retour » revient à l'écran où l'on était juste avant (avec sa page : onglet du pointage, client ouvert…).
+   Les cinq onglets de la barre du bas sont des points de départ : y aller vide l'historique. */
+const NAV_RACINES=['home','chs','histo','cli','prof'];let NAV=[],NAV_RET=false;
+function navEtat(n){try{if(n==='cpt')return{pg:cptCur};if(n==='pt')return{pg:ptCur};if(n==='clif')return{id:cliCur&&cliCur.id};if(n==='fact')return{id:FA&&FA.id};if(n==='plan')return{id:PL&&PL.id,b:PLB}}catch(e){}return null}
+function navNote(n){if(NAV_RET)return;const top=NAV[NAV.length-1];if(top)top.e=navEtat(top.n);
+ if(NAV_RACINES.includes(n))NAV=[{n}];else if(!top||top.n!==n)NAV.push({n})}
+function navOuvrir(p){const e=p.e||{};
+ if(p.n==='cpt'&&e.pg)return cptPage(e.pg);
+ if(p.n==='pt'){go('pt');if(e.pg)ptPage(e.pg);return}
+ if(p.n==='clif'&&e.id)return cliEdit(e.id);
+ if(p.n==='fact'&&e.id)return faShow(e.id);
+ if(p.n==='plan'&&e.id)return plOpen(e.id,e.b);
+ go(p.n==='devis'?'edit':p.n)}
+function hdBack(){if(NAV.length>1){NAV.pop();const p=NAV[NAV.length-1];NAV_RET=true;try{navOuvrir(p)}catch(e){}NAV_RET=false;hdBackSync();return}
+ const b=document.querySelector('section.on .back:not([hidden])');if(b)b.click()}
 /* la barre du haut ne s'affiche que s'il y a un retour ou un titre à montrer */
 function hdVoir(){const h=$('hd'),b=$('hdBack'),t=$('hdT');if(h)h.hidden=!((b&&!b.hidden)||(t&&t.textContent))}
-function hdBackSync(){const b=$('hdBack');if(b)b.hidden=!document.querySelector('section.on .back:not([hidden])');hdVoir()}
+function hdBackSync(){const b=$('hdBack');if(b)b.hidden=!(NAV.length>1||document.querySelector('section.on .back:not([hidden])'));hdVoir()}
 (()=>{const o=new MutationObserver(hdBackSync);document.querySelectorAll('section').forEach(s=>o.observe(s,{attributes:true,attributeFilter:['class']}));
  document.querySelectorAll('section .back').forEach(b=>o.observe(b,{attributes:true,attributeFilter:['hidden']}));hdBackSync()})();
 /* titre de la page affichée, recopié dans la barre du haut */

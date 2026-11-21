@@ -709,6 +709,8 @@ header .logo{background:none;padding:0;overflow:hidden}
 #splash .sp-n{font-size:22px;font-weight:700;color:var(--ink);text-align:center;max-width:300px}
 #splash .sp-by{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--mut);animation:spIn 1.2s ease both}
 #splash .sp-by svg{width:15px;height:auto;color:var(--mut)}
+.st-lg{width:112px;height:112px;border-radius:28px;background:#fff;display:grid;place-items:center;padding:14px;box-sizing:border-box;box-shadow:0 0 0 1px #0000000f}.st-lg img{max-width:100%;max-height:100%;object-fit:contain}.st-lg.ini{background:var(--acc);color:#18181a;font-size:38px;font-weight:700}
+.st-by{position:fixed;left:0;right:0;bottom:max(24px,env(safe-area-inset-bottom));margin:0;display:flex;align-items:center;justify-content:center;gap:7px;font-size:13px;color:var(--mut);pointer-events:none}.st-by img{width:16px;height:16px;border-radius:5px}
 .st-logo{display:flex;justify-content:center;margin:40px 0 18px;font-size:38px}
 .wm{display:inline-flex;align-items:center;gap:.38em;white-space:nowrap;line-height:1;color:var(--ink)}.cso-tile{width:1.55em;height:1.55em;flex:none}.wm-t{display:inline-flex;align-items:baseline;font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-weight:500;letter-spacing:.06em}.wm-t svg{height:.98em;width:.89em;margin-left:.02em;flex:none;overflow:visible}.dv-splash .wm{font-size:40px}
 #st1 .h1{text-align:center}
@@ -805,7 +807,7 @@ nav button{min-width:0}
 .nf-t.ok{background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok)}.nf-t.ko{background:color-mix(in srgb,var(--ko) 14%,transparent);color:var(--ko)}.nf-t.w{background:color-mix(in srgb,var(--acc) 26%,transparent);color:var(--ink)}
 .nf-ph{display:flex;align-items:center;gap:14px;padding:2px}.nf-ph .nf-g b{font-size:20px}
 .nf-av{width:44px;height:44px;flex:none;border-radius:50%;background:var(--soft);display:grid;place-items:center;font-weight:700;font-size:15px}
-.nf-vide{margin:16px 0;color:var(--mut)}
+.nf-vide{margin:16px 0;color:var(--mut)}.nf-k{margin:6px 4px -4px;font-size:13px;font-weight:600;color:var(--mut)}
 .nf-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .nf-tl{display:flex;align-items:center;gap:10px;min-height:54px;padding:0 16px;border:0;border-radius:20px;background:var(--card);box-shadow:var(--lift);color:var(--ink);font:inherit;font-size:15px;cursor:pointer}.nf-tl .i{width:20px;height:20px}
 .nf-mc{display:flex;align-items:center;gap:12px;width:100%;padding:14px 16px;border:0;border-radius:20px;background:#18181a;color:#fff;font:inherit;font-size:16px;text-align:start;cursor:pointer;box-shadow:0 0 0 1px var(--line)}
@@ -1956,7 +1958,7 @@ h2{font-size:15px;font-weight:700}h2 .hi,.steps .hi{display:none}
    <button type="button" data-u="h" onclick="qkApply('h')"><svg class="i"><use href="#i-height"/></svg><span>Hauteur</span><span class="qk-n" data-noi18n></span></button>
    <button type="button" data-u="hr" onclick="qkApply('hr')"><svg class="i"><use href="#i-clock"/></svg><span class="qk-n" data-noi18n></span><span>Heures</span></button>
   </div>
-  <div class="cmp-row"><button type="button" class="cmp-3d" onclick="m3dOpen()" aria-label="Plan 3D" title="Plan 3D"><svg class="i"><use href="#i-plan"/></svg><span data-noi18n>3D</span></button><button type="button" class="cmp-clip" onclick="chatFilePick()" aria-label="Joindre un plan ou un document" title="Joindre un plan ou un document"><svg class="i"><use href="#i-clip"/></svg></button><input type="file" id="chatFileIn" accept="image/*,application/pdf,.pdf" hidden onchange="chatFile(this)"><textarea id="chatIn" rows="1" placeholder="Écris ici : client, travaux, quantités…" oninput="chatGrow(this);qkUpdate()" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();chatSend()}"></textarea>
+  <div class="cmp-row"><button type="button" class="cmp-3d" onclick="go('p3d')" aria-label="Plan et 3D" title="Plan et 3D"><svg class="i"><use href="#i-plan"/></svg><span data-noi18n>3D</span></button><button type="button" class="cmp-clip" onclick="chatFilePick()" aria-label="Joindre un plan ou un document" title="Joindre un plan ou un document"><svg class="i"><use href="#i-clip"/></svg></button><input type="file" id="chatFileIn" accept="image/*,application/pdf,.pdf" hidden onchange="chatFile(this)"><textarea id="chatIn" rows="1" placeholder="Écris ici : client, travaux, quantités…" oninput="chatGrow(this);qkUpdate()" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();chatSend()}"></textarea>
    <button type="button" id="vnRec" class="cmp-mic" onclick="vnRec()" aria-pressed="false" aria-label="Dicter une note"><svg class="i"><use href="#i-mic"/></svg><span id="vnRecT" class="vn-sr">Dicter une note</span></button>
    <button class="cmp-send" onclick="chatSend()" aria-label="Envoyer"><svg class="i"><use href="#i-send"/></svg></button></div>
  </div>
