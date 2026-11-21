@@ -786,6 +786,33 @@ body.starting #hd{display:none}
 .hm-q{display:flex;align-items:center;gap:10px;width:100%;padding:8px 8px 8px 18px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--mut);font:inherit;font-size:15px;text-align:start;cursor:pointer}
 .hm-q span{flex:1}.hm-q i{width:44px;height:44px;flex:none;border-radius:50%;background:var(--acc);color:#18181a;display:grid;place-items:center}.hm-q .i{width:20px;height:20px}
 nav button{min-width:0}
+/* Nouveau format (modules/format.js) */
+.nf{display:flex;flex-direction:column;gap:12px}
+.nf-card{display:flex;flex-direction:column;padding:2px 16px;border-radius:20px;background:var(--card);box-shadow:var(--lift)}
+.nf-r{display:flex;align-items:center;gap:12px;width:100%;min-height:54px;padding:8px 0;border:0;border-top:1px solid var(--line);background:none;color:var(--ink);font:inherit;font-size:16px;text-align:start;cursor:pointer}
+.nf-card>.nf-r:first-child{border-top:0}.nf-ko{color:var(--ko)}
+.nf-g{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:3px}.nf-g>span:not(.nf-t){font-size:13px;color:var(--mut);overflow-wrap:anywhere}
+.nf-in{border:0;background:none;padding:0;color:inherit;font:inherit;text-align:start;cursor:pointer}
+.nf-c{width:18px;height:18px;flex:none;color:var(--mut)}
+.nf-t{flex:none;border:0;font:inherit;font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:var(--soft);color:var(--mut);white-space:nowrap}
+.nf-t.ok{background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok)}.nf-t.ko{background:color-mix(in srgb,var(--ko) 14%,transparent);color:var(--ko)}.nf-t.w{background:color-mix(in srgb,var(--acc) 26%,transparent);color:var(--ink)}
+.nf-ph{display:flex;align-items:center;gap:14px;padding:2px}.nf-ph .nf-g b{font-size:20px}
+.nf-av{width:44px;height:44px;flex:none;border-radius:50%;background:var(--soft);display:grid;place-items:center;font-weight:700;font-size:15px}
+.nf-vide{margin:16px 0;color:var(--mut)}
+.nf-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.nf-tl{display:flex;align-items:center;gap:10px;min-height:54px;padding:0 16px;border:0;border-radius:20px;background:var(--card);box-shadow:var(--lift);color:var(--ink);font:inherit;font-size:15px;cursor:pointer}.nf-tl .i{width:20px;height:20px}
+.nf-mc{display:flex;align-items:center;gap:12px;width:100%;padding:14px 16px;border:0;border-radius:20px;background:#18181a;color:#fff;font:inherit;font-size:16px;text-align:start;cursor:pointer;box-shadow:0 0 0 1px var(--line)}
+.nf-mc i{width:40px;height:40px;flex:none;border-radius:12px;background:var(--acc);color:#18181a;display:grid;place-items:center}.nf-mc i .i{width:20px;height:20px}.nf-mc b{flex:1}.nf-mc .nf-c{color:#fff}
+.nf-ch{display:flex;gap:8px;overflow-x:auto}.nf-ch button{flex:none;min-height:36px;padding:0 14px;border:0;border-radius:999px;background:var(--card);color:var(--mut);font:inherit;font-size:13px;cursor:pointer}.nf-ch .on{background:var(--acc);color:#18181a;font-weight:700}
+.nf-b{display:flex;align-items:center;justify-content:center;gap:8px;min-height:52px;border:0;border-radius:999px;background:var(--acc);color:#18181a;font:inherit;font-size:16px;font-weight:700;cursor:pointer}.nf-b.s{background:var(--card);color:var(--ink);font-weight:600;box-shadow:var(--lift)}.nf-b .i{width:18px;height:18px}
+.nf-sr{display:flex;align-items:center;gap:10px;margin:0 0 12px}.nf-sr .srch{flex:1;margin:0}.nf-plus{flex:none;width:44px;height:44px;border:0;border-radius:50%;background:var(--acc);color:#18181a;display:grid;place-items:center;cursor:pointer}.nf-plus .i{width:20px;height:20px}
+.nf-pay{width:100%;border:0;background:none;padding:0;margin:0 0 12px;font:inherit;color:var(--ink);text-align:start;cursor:pointer}.nf-pay>span{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border-radius:20px;background:var(--card);box-shadow:var(--lift)}.nf-pay small{font-size:13px;color:var(--mut)}.nf-pay b{font-size:22px}
+.nf-rel{flex:none;min-height:44px;padding:0 18px;border:0;border-radius:999px;background:var(--ink);color:var(--card);font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.mc{display:flex;flex-direction:column;gap:14px;padding:16px;border-radius:26px;background:#121212;color:#fff}
+.mc-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:4px 4px 0}.mc-top b{font-size:17px}.mc-gps{font-size:12px;font-weight:600;padding:5px 12px;border-radius:999px;background:#1f3a2a;color:#7fd9a2}
+.mc-g{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.mc-b{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;min-height:150px;border:0;border-radius:24px;background:#1e1e1e;color:#fff;font:inherit;font-size:16px;font-weight:600;cursor:pointer}.mc-b .i{width:36px;height:36px;color:var(--acc)}
+.mc-go{display:flex;align-items:center;justify-content:center;gap:10px;min-height:60px;border:0;border-radius:999px;background:var(--acc);color:#18181a;font:inherit;font-size:17px;font-weight:700;cursor:pointer}.mc-go .i{width:22px;height:22px}
 .st-set{padding:4px 16px!important}#cpPerm{display:contents}
 .st-r{display:flex;align-items:center;gap:12px;width:100%;min-height:58px;margin:0!important;padding:8px 0;border:0;border-top:1px solid var(--line);background:none;color:var(--ink);font:inherit!important;font-size:16px!important;letter-spacing:0!important;text-transform:none!important;text-align:start;cursor:pointer}
 .st-set>.st-r:first-child{border-top:0}.st-r[hidden]{display:none}
@@ -1859,6 +1886,9 @@ body.role-ouvrier [data-pat]{display:none!important}body:not(.role-ouvrier) .dw-
 
 <!-- ÉTAPE 1-3 : DEVIS -->
 <section id="s-home"></section>
+<section id="s-prof"></section>
+<section id="s-chs"></section>
+<section id="s-mc"></section>
 <section id="s-chat" class="on">
  <button class="btn sec back" onclick="go('home')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
  <h1 class="pg-t" data-noi18n>casô</h1>
@@ -2014,9 +2044,9 @@ body.role-ouvrier [data-pat]{display:none!important}body:not(.role-ouvrier) .dw-
  </div>
 </section>
 <section id="s-cli">
- <div class="pg-h"><h1 class="pg-t">Clients</h1><button class="btn sm" onclick="cliEdit()"><svg class="i i-sm"><use href="#i-plus"/></svg><span>Nouveau</span></button></div>
- <div class="srch"><svg class="i i-sm"><use href="#i-search"/></svg><input type="search" id="cliQ" placeholder="Chercher" oninput="cliRender()"></div>
- <div id="cliList" class="lst"></div>
+ <h1 class="pg-t">Clients</h1>
+ <div class="nf-sr"><div class="srch"><svg class="i i-sm"><use href="#i-search"/></svg><input type="search" id="cliQ" placeholder="Chercher" oninput="cliRender()"></div><button class="nf-plus" type="button" onclick="cliEdit()" aria-label="Nouveau client"><svg class="i"><use href="#i-plus"/></svg></button></div>
+ <div id="cliList" class="nf-card"></div>
 </section>
 <section id="s-clif">
  <input type="file" id="cfCam" accept="image/*" capture="environment" hidden onchange="cfPhoto(this)">
@@ -2042,7 +2072,7 @@ body.role-ouvrier [data-pat]{display:none!important}body:not(.role-ouvrier) .dw-
  </div>
 </section>
 <section id="s-fou">
- <button class="btn sec back" onclick="go('home')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
+ <button class="btn sec back" onclick="go('prof')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
  <div class="pg-h"><h1 class="pg-t">Fournisseurs</h1></div>
  <div class="seg" id="fouSeg"><button type="button" class="on" data-m="mes" onclick="fouMode('mes')">Mes fournisseurs</button><button type="button" data-m="web" onclick="fouMode('web')">Prix en ligne</button></div>
  <div class="fou-bar">
@@ -2077,7 +2107,7 @@ body.role-ouvrier [data-pat]{display:none!important}body:not(.role-ouvrier) .dw-
  <div id="faBody"></div>
 </section>
 <section id="s-agenda">
- <button class="btn sec back" onclick="go('pt')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
+ <button class="btn sec back" onclick="go('chs')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
  <div class="pg-h"><h1 class="pg-t">Mon planning</h1></div>
  <div class="seg" role="tablist" id="agSeg"><button role="tab" data-p="jour" onclick="agPage('jour')">Jour</button><button role="tab" data-p="sem" onclick="agPage('sem')">Semaine</button><button role="tab" data-p="set" onclick="agPage('set')">Créneaux</button></div>
  <div class="ag-wk" data-ag-nav><button class="ag-nv ag-prev" onclick="agShift(-7)" aria-label="Semaine précédente"><svg class="i"><use href="#i-chev"/></svg></button><b id="agMonth" data-noi18n></b><button class="ag-nv" onclick="agShift(7)" aria-label="Semaine suivante"><svg class="i i-flip"><use href="#i-chev"/></svg></button></div>
@@ -2136,7 +2166,7 @@ body.role-ouvrier [data-pat]{display:none!important}body:not(.role-ouvrier) .dw-
  </div>
 </section>
 <section id="s-sigp">
- <button class="btn sec back" onclick="go('home')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
+ <button class="btn sec back" onclick="go('prof')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
  <h1 class="pg-t">Ma signature</h1>
  <div class="card" id="spNew">
   <div class="sg-pad"><canvas id="spPad" class="sigpad" aria-label="Ma signature"></canvas><span class="sg-hint" id="spHint">Signe ici avec le doigt</span><button type="button" class="sg-x" onclick="spClear()">Effacer</button></div>
@@ -2161,7 +2191,7 @@ body.role-ouvrier [data-pat]{display:none!important}body:not(.role-ouvrier) .dw-
  </div>
 </section>
 <section id="s-cpt">
- <button class="btn sec back" onclick="go('home')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
+ <button class="btn sec back" onclick="go('prof')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
  <h1 class="pg-t" id="cptT"></h1>
  <div id="cpMoi" data-cp="moi"></div>
  <div id="cpRent" data-cp="rent"></div>
@@ -2278,12 +2308,12 @@ body.role-ouvrier [data-pat]{display:none!important}body:not(.role-ouvrier) .dw-
 
 <!-- HISTORIQUE -->
 <section id="s-news">
- <button class="btn sec back" onclick="go('home')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
+ <button class="btn sec back" onclick="go('prof')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
  <div class="pg-h"><h1 class="pg-t">Newsletter</h1></div>
  <div id="newsList"></div>
 </section>
 <section id="s-enc">
- <button class="btn sec back" onclick="go('home')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
+ <button class="btn sec back" onclick="go('histo')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
  <div class="pg-h"><h1 class="pg-t">Encaissements</h1></div>
  <div id="encDue"></div>
  <label for="encP">Encaissé sur la période</label><select id="encP" onchange="encRender()"><option value="m">Ce mois-ci</option><option value="pm">Le mois dernier</option><option value="y">Cette année</option><option value="py">L'année dernière</option><option value="c">Choisir les dates</option></select>
@@ -2294,7 +2324,8 @@ body.role-ouvrier [data-pat]{display:none!important}body:not(.role-ouvrier) .dw-
  </section>
 <section id="s-histo">
  <h1 class="pg-t">Documents</h1>
- <div class="seg" role="tablist" id="hiSeg" hidden><button role="tab" data-p="devis" onclick="faTab='devis';renderHisto()">Devis</button><button role="tab" data-p="fac" onclick="faTab='fac';renderHisto()">Factures</button></div>
+ <div id="docTop"></div>
+ <div class="seg" role="tablist" id="hiSeg" hidden><button role="tab" data-p="fac" onclick="faTab='fac';renderHisto()">Factures</button><button role="tab" data-p="devis" onclick="faTab='devis';renderHisto()">Devis</button><button role="tab" data-p="ech" onclick="faTab='ech';renderHisto()">Échéances</button></div>
  
  <div class="card" id="stats"></div>
  <div class="chips" style="margin-bottom:10px" id="filtres"></div>
@@ -2348,8 +2379,9 @@ body.role-ouvrier [data-pat]{display:none!important}body:not(.role-ouvrier) .dw-
 
 <!-- POINTAGE -->
 <section id="s-pt">
- <h1 class="pg-t">Chantiers</h1>
- <div class="seg" role="tablist" id="ptSeg"><button role="tab" data-p="go" onclick="ptPage('go')">Pointer</button><button role="tab" data-p="h" onclick="ptPage('h')">Heures</button><button role="tab" data-p="set" onclick="ptPage('set')">Chantiers</button><button role="tab" onclick="go('agenda')">Planning</button></div>
+ <button class="btn sec back" onclick="go('chs')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
+ <h1 class="pg-t">Pointage</h1>
+ <div class="seg" role="tablist" id="ptSeg"><button role="tab" data-p="go" onclick="ptPage('go')">Pointer</button><button role="tab" data-p="h" onclick="ptPage('h')">Heures</button><button role="tab" data-p="set" onclick="ptPage('set')">Chantiers</button></div>
  <div id="ptFlash"></div>
  <div id="ptBody"></div>
 </section>
@@ -2613,10 +2645,10 @@ body.role-ouvrier [data-pat]{display:none!important}body:not(.role-ouvrier) .dw-
 
 <nav>
  <button data-pat onclick="tab('home',this)"><span class="pill"><svg class="i"><use href="#i-home"/></svg></span>Accueil</button>
- <button onclick="tab('pt',this)"><span class="pill"><svg class="i"><use href="#i-helmet"/></svg></span>Chantiers</button>
+ <button onclick="tab('chs',this)"><span class="pill"><svg class="i"><use href="#i-helmet"/></svg></span>Chantiers</button>
  <button data-pat onclick="tab('histo',this)"><span class="pill"><svg class="i"><use href="#i-doc"/></svg></span>Documents</button>
  <button data-pat onclick="tab('cli',this)"><span class="pill"><svg class="i"><use href="#i-users"/></svg></span>Clients</button>
- <button onclick="drawer('R')"><span class="pill" id="navProfil"><svg class="i"><use href="#i-user"/></svg></span>Profil</button>
+ <button onclick="tab('prof',this)"><span class="pill" id="navProfil"><svg class="i"><use href="#i-user"/></svg></span>Profil</button>
 </nav>
 
 <div id="m3d" hidden></div><button type="button" id="m3d-pill" hidden onclick="m3dOpen(M3D&&M3D.cli)"><i></i><span></span></button>
@@ -2713,6 +2745,7 @@ draw();if(!still)requestAnimationFrame(tick);window.__splashGo=()=>{if(!still){l
 <script type="text/x-caso" data-src="pointage/caso-native.js"></script>
 <script type="text/x-caso" data-src="chat/memoire.js"></script>
 <script type="text/x-caso" data-src="modules/newsletter.js"></script>
+<script type="text/x-caso" data-src="modules/format.js"></script>
 <script type="text/x-caso" data-src="modules/decouverte.js"></script>
 <script>/* démarrage : le coffre s'ouvre (ou il n'y en a pas), puis les scripts de l'appli s'exécutent dans l'ordre.
    Les modules de l'appli (modules/*.js) sont lus tout de suite, pendant que le coffre s'ouvre, puis exécutés d'un seul tenant

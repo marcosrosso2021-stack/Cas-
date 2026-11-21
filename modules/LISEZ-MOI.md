@@ -48,6 +48,7 @@ Un fichier de `modules/` placé après `chat/` ou `pointage/` (comme `newsletter
 | `equipe.js` | Mon équipe : collaborateurs (la liste du pointage), coordonnées, invitation par SMS ou e-mail, heures, à payer, paiements ; le chat de l'équipe dans toutes les langues | commun |
 | `envoi.js` | carte « prêt à envoyer » (invitation, devis) avec Copier le message et Partager, envoi du devis par e-mail (Mailjet) avec un e-mail pro rédigé tout seul, envoi demandé au chat, écran « Rejoindre l'équipe » | commun |
 | `abonnement.js` | verrous des modules non pris : bandeau de lecture seule, ouverture directe de « On construit le plan » avec un petit mot, cadenas du menu, devis gratuit du mois | commun |
+| `format.js` | nouveau format : écrans Profil, Chantiers, Mode chantier, haut de Documents et Échéances, liste des clients avec statut (chargé après `newsletter.js`) | commun |
 | `newsletter.js` | page « Newsletter », pastille du non-lu, « Ça me concerne ? » (chargé après `chat/`) | veille |
 
 La partie serveur de la newsletter est dans `serveur/veille/`. Le module 3D reste dans `lib/m3d.html`, le moteur du chat dans `chat/`, le pointage automatique dans `pointage/`.
