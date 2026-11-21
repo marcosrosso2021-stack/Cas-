@@ -203,10 +203,19 @@ function accRender(){const box=$('cpAcc');if(!box)return;const a=accountGet()||{
   ${c&&c.mode&&window.CasoPlan?`<button class="btn sec" onclick="dwPlanTap()"><svg class="i"><use href="#i-chart"/></svg>${esc(i18nT('Mon abonnement'))}</button>`:''}
   ${accountGet()?`<button class="btn sec" onclick="logout()"><svg class="i"><use href="#i-logout"/></svg>${esc(i18nT('Se déconnecter'))}</button>`:''}</div>`}
 /* Paramètres › Autorisations : position (pointage GPS) et notifications de ce téléphone */
-function permRender(){const b=$('cpPerm');if(!b)return;const AU=window.CasoAuto,np=typeof Notification!=='undefined'?Notification.permission:'';
- b.innerHTML=`<h2><span class="hi"><svg class="i"><use href="#i-shield"/></svg></span>${esc(i18nT('Autorisations'))}</h2>
-  <div class="tot"><span>${esc(i18nT('Position (pointage GPS)'))}</span></div>${AU&&AU.gpsLine?`<div class="au">${AU.gpsLine()}</div>`:`<p class="mut">${esc(i18nT('Le GPS se lance seulement sur un téléphone.'))}</p>`}
-  <div class="tot" style="margin-top:10px"><span>${esc(i18nT('Notifications'))}</span><b>${esc(i18nT(np==='granted'?'Autorisées':np==='denied'?'Refusées':'Pas encore demandées'))}</b></div>`}
+/* une ligne par autorisation : activée, refusée, ou un bouton « Activer » */
+/* ligne de réglage : icône, nom, et à droite l'état (« Activée », « Refusée ») ou le bouton « Activer » */
+function stEtat(s,f,o,n){return s==='granted'?`<span class="st-ok"><svg class="i"><use href="#i-check"/></svg>${esc(i18nT(o))}</span>`
+ :s==='denied'?`<span class="st-no">${esc(i18nT(n))}</span>`:`<button class="st-go" type="button" onclick="${f}">${esc(i18nT('Activer'))}</button>`}
+function stLigne(ic,n,d){return `<div class="st-r"><span class="st-ic"><svg class="i"><use href="#${ic}"/></svg></span><span class="st-n">${esc(i18nT(n))}</span>${d}</div>`}
+async function permRender(){const b=$('cpPerm');if(!b)return;
+ const geo=!!(navigator.geolocation||window.CasoAuto),N=typeof Notification!=='undefined';
+ let gp='';try{gp=navigator.permissions?(await navigator.permissions.query({name:'geolocation'})).state:''}catch(e){}
+ b.innerHTML=(geo?stLigne('i-pin','Position',stEtat(gp,'permGeo()','Activée','Refusée')):'')+(N?stLigne('i-send','Notifications',stEtat(Notification.permission,'permNotif()','Autorisées','Refusées')):'')}
+function permGeo(){if(window.CasoAuto&&CasoAuto.fix){try{CasoAuto.fix()}catch(e){}setTimeout(permRender,1500);return}
+ navigator.geolocation.getCurrentPosition(()=>permRender(),()=>permRender(),{timeout:15000})}
+function permNotif(){Promise.resolve(Notification.requestPermission()).then(r=>{
+ if(r==='granted'){const c=getSync();if(c.url&&c.token)enableNotif();else if(typeof newsNotif==='function')newsNotif()}permRender()}).catch(()=>permRender())}
 function drawer(side){if(side==='L'&&typeof ptOuvrier==='function'&&ptOuvrier())side='R';/* collaborateur : pas de menu « Mon travail » */
  if(side==='R')try{dwIdRender()}catch(e){}
  if(side==='R')try{logoProfil();const x=typeof eqExt==='function'&&eqExt(),b=$('dwExt');if(b){b.hidden=!x||ptOuvrier();if(x)b.querySelector('span').textContent=i18nT('Chantiers chez {1}').replace('{1}',x.entreprise||i18nT('mon équipe'))}}catch(e){}

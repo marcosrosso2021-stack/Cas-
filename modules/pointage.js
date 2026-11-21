@@ -173,11 +173,15 @@ function ptChListe(ouv){const t=agToday(),nx={};
  const vu=new Set(db.pts.map(x=>x.c));
  return db.chantiers.filter(c=>!ouv||nx[c.id]||vu.has(c.id)).map(c=>({c,nx:nx[c.id]||null}))
   .sort((a,b)=>(a.nx?0:1)-(b.nx?0:1)||(a.nx&&b.nx?(a.nx.d+(a.nx.a||'')).localeCompare(b.nx.d+(b.nx.a||'')):String(a.c.nom).localeCompare(String(b.c.nom))))}
-function ptChLigne(x,AU,ouv){const c=x.c,gz=c.geo?['ok',i18nT('Zone GPS')+' '+(c.rayon||100)+' m']:c.adr?['wait',i18nT('Localisation de l\'adresse…')]:['no',i18nT('Sans adresse : pas de pointage GPS')];
- return `<div class="line pt-chl"${ouv?'':` data-sw="ch:${c.id}"`}><div class="t"><b data-noi18n>${esc(c.nom)}</b>${AU&&!ouv&&(c.adr||c.geo)?`<label class="pt-tj"><span>GPS toujours</span><input type="checkbox" role="switch" ${c.toujours?'checked':''} onchange="ptToujours('${c.id}',this.checked)"></label>`:''}</div>
-  ${c.adr&&c.adr!==c.nom&&!String(c.nom).includes(c.adr)?`<div class="mut" data-noi18n>${esc(c.adr)}</div>`:''}
-  ${x.nx?`<div class="mut"><span>${esc(i18nT('Prochain passage'))}</span> : <span data-noi18n>${esc(agFmtD(x.nx.d,{weekday:'short',day:'numeric',month:'short'})+(x.nx.a?' · '+(+x.nx.a.slice(0,2))+' h'+(x.nx.a.slice(3)!=='00'?' '+x.nx.a.slice(3):''):''))}</span></div>`:''}
-  <div class="pt-gz ${gz[0]}"><svg class="i i-sm"><use href="#i-pin"/></svg><span>${esc(gz[1])}</span></div></div>`}
+/* une ligne par chantier : le nom, puis adresse, prochain passage et zone GPS sur une ligne ; à droite « Tous les jours » (GPS) */
+function ptChLigne(x,AU,ouv){const c=x.c,sub=[];
+ const rue=String(c.adr||'').split(/\s\d{5}\b|,/)[0].trim().toLowerCase();
+ if(c.adr&&!(rue&&String(c.nom).toLowerCase().includes(rue)))sub.push(`<span data-noi18n>${esc(c.adr)}</span>`);
+ if(x.nx)sub.push(`<span data-noi18n>${esc(agFmtD(x.nx.d,{weekday:'short',day:'numeric',month:'short'})+(x.nx.a?' · '+(+x.nx.a.slice(0,2))+' h'+(x.nx.a.slice(3)!=='00'?' '+x.nx.a.slice(3):''):''))}</span>`);
+ if(c.geo)sub.push(`<span class="pt-gz">${esc(i18nT('Zone'))} <span data-noi18n>${c.rayon||100} m</span></span>`);
+ else if(!c.adr)sub.push(`<span>${esc(i18nT('Sans adresse'))}</span>`);
+ const sw=AU&&!ouv&&(c.adr||c.geo)?`<label class="pt-tj"><input type="checkbox" role="switch" ${c.toujours?'checked':''} onchange="ptToujours('${c.id}',this.checked)"><span>${esc(i18nT('Tous les jours'))}</span></label>`:'';
+ return `<div class="pt-chl"${ouv?'':` data-sw="ch:${c.id}"`}><div class="pt-cht"><b data-noi18n>${esc(c.nom)}</b>${sub.length?`<span class="pt-chs">${sub.join('<i>·</i>')}</span>`:''}</div>${sw}</div>`}
 function renderPt(){
  ensurePt();
  const AU=window.CasoAuto,auto=!!(AU&&AU.active());
@@ -223,13 +227,13 @@ function renderPt(){
   <button class="btn sec" onclick="addForgot()">Ajouter</button></details></div>`;
  /* --- Chantiers : ceux du planning (rendez-vous avec une adresse, 30 jours) et ceux ajoutés ; le GPS de ce téléphone en tête --- */
  ptPlanCh();const ouv=ptOuvrier();
- let st=`<div class="card au pt-gps"><div class="au-cap">${esc(i18nT('GPS de ce téléphone'))}</div>`+(AU&&AU.gpsLine?AU.gpsLine():`<div class="au-sub">${esc(i18nT('Le GPS se lance seulement sur un téléphone.'))}</div>`)+`</div>`;
+ /* le GPS de ce téléphone (une ligne), puis la liste ; l'équipe se gère dans Mon équipe (menu) */
+ const g=AU&&AU.gps?AU.gps():null;
+ let st=AU?`<div class="card st-set">${stLigne('i-pin','GPS',stEtat(g==='on'?'granted':g,'CasoAuto.fix();setTimeout(renderPt,1500)','Activé','Refusé'))}</div>`:'';
  const L=ptChListe(ouv);
- st+=`<div class="card"><h2><span class="hi"><svg class="i"><use href="#i-pin"/></svg></span>${esc(i18nT(ouv?'Mes chantiers':'Chantiers'))}</h2>`+
-  (ouv?'':`<div class="row"><input id="chNew" placeholder="Nouveau chantier" data-adr autocomplete="off"><button class="btn sm" style="flex:0 0 auto" onclick="addCh()">Ajouter</button></div>`)+
-  (L.length?L.map(x=>ptChLigne(x,AU,ouv)).join(''):`<p class="mut">${esc(i18nT('Aucun chantier. Ils arrivent tout seuls depuis le planning (rendez-vous avec une adresse).'))}</p>`)+`</div>`;
- /* l'équipe se gère dans Mon équipe (une seule liste) ; pas pour le collaborateur */
- if(!ouv)st+=`<button type="button" class="card eq-lien" onclick="cptPage('team')"><span class="hi"><svg class="i"><use href="#i-users"/></svg></span><span class="eq-t"><b>Mon équipe</b><span class="mut" data-noi18n>${esc(db.people.filter(p=>!p.moi&&!p.parti).map(p=>p.nom.split(' ')[0]).join(', '))}</span></span><svg class="i i-flip"><use href="#i-chev"/></svg></button>`;
+ st+=`<div class="card pt-chc">`+
+  (ouv?'':`<div class="pt-add"><input id="chNew" placeholder="Nouveau chantier" data-adr autocomplete="off" onkeydown="if(event.key==='Enter')addCh()"><button type="button" class="pt-plus" onclick="addCh()" aria-label="${esc(i18nT('Ajouter'))}"><svg class="i"><use href="#i-plus"/></svg></button></div>`)+
+  (L.length?L.map(x=>ptChLigne(x,AU,ouv)).join(''):`<p class="mut pt-vide">${esc(i18nT('Aucun chantier. Ils arrivent tout seuls depuis le planning (rendez-vous avec une adresse).'))}</p>`)+`</div>`;
  $('ptBody').innerHTML=`<div data-pg="go">${go}</div><div data-pg="h">${hh}</div><div data-pg="set">${st}</div>`;
  ptBtn();ptPage(ptCur,true);
 }

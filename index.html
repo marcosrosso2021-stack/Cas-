@@ -759,6 +759,15 @@ body.starting #hd{display:none}
 .en-sw input{-webkit-appearance:none;appearance:none;flex:none;position:relative;width:51px;height:31px;min-height:0;padding:0;margin:0;border:0;border-radius:999px;background:var(--line);transition:background .2s}
 .en-sw input::after{content:"";position:absolute;top:2px;inset-inline-start:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 4px #00000033;transition:transform .2s}
 .en-sw input:checked{background:var(--acc)}
+.st-set{padding:4px 16px!important}#cpPerm{display:contents}
+.st-r{display:flex;align-items:center;gap:12px;width:100%;min-height:58px;margin:0!important;padding:8px 0;border:0;border-top:1px solid var(--line);background:none;color:var(--ink);font:inherit!important;font-size:16px!important;letter-spacing:0!important;text-transform:none!important;text-align:start;cursor:pointer}
+.st-set>.st-r:first-child{border-top:0}.st-r[hidden]{display:none}
+.st-ic{width:34px;height:34px;flex:none;border-radius:10px;display:grid;place-items:center;background:var(--soft);color:var(--ink)}.st-ic .i{width:18px;height:18px}
+.st-n{flex:1;min-width:0}
+.st-v{width:auto!important;max-width:48%;min-height:0!important;margin:0!important;padding:6px 26px 6px 10px!important;border:0!important;background-color:var(--soft)!important;border-radius:10px!important;font-size:15px!important;color:var(--ink)}
+.st-go{flex:none;min-height:34px;padding:0 16px;border:0;border-radius:999px;background:var(--acc);color:#111;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.st-ok,.st-no{display:inline-flex;align-items:center;gap:5px;font-size:14px;color:var(--mut)}.st-ok{color:var(--ok)}.st-ok .i{width:16px;height:16px}
+.st-c{width:16px;height:16px;color:var(--mut)}
 .en-sw input:checked::after{transform:translateX(20px)}
 [dir=rtl] .en-sw input:checked::after{transform:translateX(-20px)}
 .en-sig{padding:16px!important}
@@ -1015,8 +1024,8 @@ button.it.it-main{padding:12px 14px}
 .dw-out{color:#c0392b}
 /* compte en bas du menu profil, façon Claude : initiale, nom, plan en petit ; un appui ouvre un petit menu au-dessus */
 .dw-hr{justify-content:flex-end;border-bottom:0;padding-bottom:4px}
-.dw-dec{display:none}body.decouverte .dw-dec{display:flex;flex-direction:column;margin-top:auto}body.decouverte .dw-dec .dw-i{order:-1}body.decouverte .dw-dec .dw-plan{align-self:flex-start}
-body.decouverte #dwR>:not(.dw-h):not(.dw-dec){display:none!important}body.decouverte #dwEnt{visibility:hidden}body.decouverte #dwR .dw-h{order:-2}
+.dw-dec{display:none}body.decouverte .dw-dec{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;border:0}body.decouverte .dw-dec .dw-plan{align-self:flex-start;margin:0 8px}body.decouverte #dwR{bottom:auto;max-height:calc(100dvh - 24px);padding-bottom:12px}
+body.decouverte #dwR>:not(.dw-h):not(.dw-dec){display:none!important}body.decouverte #dwEnt{visibility:hidden}body.decouverte #dwR .dw-h{position:absolute;top:max(10px,env(safe-area-inset-top));right:10px;padding:0;margin:0;border:0}body.decouverte .dw-dec .dw-me{padding-right:52px}
 .dec-sh{text-align:center}.dec-t{margin:6px 8px 16px;font-size:16px;line-height:1.45}.dec-sh .lnk{display:block;margin:12px auto 4px}
 .dec-chat{display:flex;align-items:center;justify-content:center;gap:6px;margin:0 0 8px;font-size:13px;color:var(--mut)}.dec-chat .lnk{color:inherit;text-decoration:underline;text-underline-offset:3px}.dec-x{border:0;background:none;color:inherit;padding:4px;display:grid;place-items:center;cursor:pointer}.dec-x .i{width:14px;height:14px}
 .dec-src{display:flex;flex-direction:column;gap:3px;margin:0 0 10px;padding:14px 16px;border:1px solid var(--line);border-radius:16px;background:var(--card);color:var(--ink);text-decoration:none}.dec-src b{font-size:16px}.dec-src span{font-size:14px;color:var(--mut);line-height:1.4}.dec-src small{font-size:12px;color:var(--mut)}
@@ -1455,8 +1464,17 @@ body.tr-on{overflow:hidden}
 .ag-tip{display:flex;gap:6px;align-items:flex-start}
 .ag-sh{max-height:92vh;max-height:92dvh;overflow:auto}
 .pt-man{margin:0 0 14px}.pt-man summary{cursor:pointer;color:var(--mut);font-size:14px;font-weight:600;padding:6px 2px 10px}.pt-man .card{margin-top:0}
-.pt-chl{display:flex;flex-direction:column;gap:3px}.pt-gz{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--mut)}.pt-gz.ok{color:var(--ok,#1e7a46)}.pt-gz.no{opacity:.8}.pt-gps .au-btn{margin-top:8px}
-.pt-tj{display:inline-flex;align-items:center;gap:8px;margin:0;font-family:inherit;font-size:13px;font-weight:500;text-transform:none;letter-spacing:0;color:var(--mut);cursor:pointer}.pt-tj input{width:18px;height:18px;margin:0;accent-color:var(--acc-d)}
+.pt-chc{padding:4px 16px!important}
+.pt-add{display:flex;align-items:center;gap:10px;padding:10px 0}.pt-add input{flex:1;margin:0!important;min-height:44px}
+.pt-plus{flex:none;width:44px;height:44px;border:0;border-radius:50%;display:grid;place-items:center;background:var(--acc);color:#111;cursor:pointer}.pt-plus .i{width:20px;height:20px}
+.pt-chl{display:flex;align-items:center;gap:12px;min-height:60px;padding:10px 0;border-top:1px solid var(--line)}.pt-chl:first-child{border-top:0}
+.pt-cht{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}.pt-cht b{font-size:16px;line-height:1.3;overflow-wrap:anywhere}
+.pt-chs{font-size:13px;color:var(--mut);line-height:1.4}.pt-chs i{font-style:normal;margin:0 6px;opacity:.6}.pt-gz{color:var(--ok)}
+.pt-vide{margin:6px 0 14px}
+.pt-tj{flex:none;display:flex;flex-direction:column;align-items:center;gap:4px;margin:0!important;font:inherit!important;font-size:11px!important;letter-spacing:0!important;text-transform:none!important;color:var(--mut)!important;cursor:pointer}
+.pt-tj input{-webkit-appearance:none;appearance:none;position:relative;width:46px;height:28px;min-height:0;padding:0;margin:0;border:0;border-radius:999px;background:var(--line);transition:background .2s;cursor:pointer}
+.pt-tj input::after{content:"";position:absolute;top:2px;inset-inline-start:2px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 2px 4px #00000033;transition:transform .2s}
+.pt-tj input:checked{background:var(--acc)}.pt-tj input:checked::after{transform:translateX(18px)}[dir=rtl] .pt-tj input:checked::after{transform:translateX(-18px)}
 .ag-sh-h{display:flex;align-items:center;gap:4px;margin:0 0 12px}.ag-sh-h h3{flex:1;margin:0;text-align:start;font-size:19px;letter-spacing:-.01em}
 .ag-sh-b{width:40px;height:40px;border:0;border-radius:50%;background:transparent;color:var(--ink);display:grid;place-items:center;cursor:pointer}.ag-sh-b:hover{background:var(--bg)}.ag-sh-b.ko{color:#c0392b}
 .eq-h{display:flex;justify-content:flex-end}.eq-h .btn{width:auto;margin:0}
@@ -2119,13 +2137,11 @@ body.role-ouvrier [data-pat]{display:none!important}body:not(.role-ouvrier) .dw-
  <div id="cpMoi" data-cp="moi"></div>
  <div id="cpRent" data-cp="rent"></div>
  <div id="cpExt" data-cp="ext"></div>
- <div class="card" data-cp="app">
-  <h2><span class="hi"><svg class="i"><use href="#i-globe"/></svg></span>Langue de l'appli</h2>
-  <select class="lang-sel" id="uiLang" aria-label="Langue" onchange="vnSetLang(this.value)"></select>
-  <p class="mut" style="margin:8px 0 0">Le devis reste toujours en français pour ton client.</p>
-  <button class="btn sec" id="trOpen" data-pat style="margin-top:10px" onclick="go('tr')">Améliorer la traduction</button>
+ <div class="card st-set" data-cp="app">
+  <label class="st-r" for="uiLang"><span class="st-ic"><svg class="i"><use href="#i-globe"/></svg></span><span class="st-n">Langue</span><select class="lang-sel st-v" id="uiLang" aria-label="Langue" onchange="vnSetLang(this.value)"></select></label>
+  <div id="cpPerm"></div>
+  <button class="st-r" id="trOpen" data-pat type="button" onclick="go('tr')"><span class="st-ic"><svg class="i"><use href="#i-edit"/></svg></span><span class="st-n">Améliorer la traduction</span><svg class="i st-c i-flip"><use href="#i-chev"/></svg></button>
  </div>
- <div class="card" id="cpPerm" data-cp="app"></div>
  <div class="card" id="notifCard" data-cp="app" hidden>
   <h2><span class="hi"><svg class="i"><use href="#i-send"/></svg></span>Notifications</h2>
   <button class="btn sec" id="notifBtn" onclick="enableNotif()">Recevoir une notification quand un client signe</button>
@@ -2525,9 +2541,9 @@ body.role-ouvrier [data-pat]{display:none!important}body:not(.role-ouvrier) .dw-
 </aside>
 <aside class="dw dw-r" id="dwR" hidden aria-label="Compte">
  <div class="dw-acc dw-dec">
-  <button class="dw-i" type="button" onclick="drawerGo('cpt:app')"><svg class="i"><use href="#i-globe"/></svg><span>Paramètres</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
-  <button class="dw-plan" type="button" onclick="drawerClose(true);decCreer()"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 7.5l8 4.5 8-4.5L12 3Z M4 12l8 4.5 8-4.5 M4 16.5 12 21l8-4.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg><b>Créer ton compte</b></button>
   <button class="dw-me" type="button" onclick="decConnexion()"><span class="dw-ini" aria-hidden="true"><svg class="i"><use href="#i-user"/></svg></span><span class="dw-who"><b>Se connecter</b></span></button>
+  <button class="dw-plan" type="button" onclick="drawerClose(true);decCreer()"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 7.5l8 4.5 8-4.5L12 3Z M4 12l8 4.5 8-4.5 M4 16.5 12 21l8-4.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg><b>Créer ton compte</b></button>
+  <button class="dw-i" type="button" onclick="drawerGo('cpt:app')"><svg class="i"><use href="#i-globe"/></svg><span>Paramètres</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
  </div>
  <div class="dw-h dw-hr"><button type="button" class="dw-ent" id="dwEnt" onclick="drawerGo(ptOuvrier()?'cpt:moi':'cpt:ent')" aria-label="Mon entreprise"></button><button class="dw-x" onclick="drawerClose()" aria-label="Fermer"><svg class="i"><use href="#i-x"/></svg></button></div>
  <button type="button" class="dw-id" id="dwId" onclick="drawerGo(ptOuvrier()?'cpt:moi':'cpt:ent')"><b id="dwIdN" data-noi18n></b><span id="dwIdS" data-noi18n></span></button>
