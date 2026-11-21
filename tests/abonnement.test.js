@@ -23,7 +23,8 @@ const J=864e5,TOUS=['devis','planning','pointage','paiement','3d','renovation','
   await p.evaluate(()=>{db.clients.push({id:'c1',nom:'Martin'});
    db.invoices.push({id:'f1',kind:'facture',num:'F2026-001',date:ymdL(),client:{nom:'Martin'},lines:[{label:'Carrelage',qty:20,unit:'m²',pu:45,tva:10}],pays:[]});save()});
   return{c,p,errs}}
- const verrous=p=>p.evaluate(()=>[...document.querySelectorAll('.abo-lk')].map(l=>(/^(?:drawerGo|tab)\('([^']+)'/.exec(l.closest('button').getAttribute('onclick'))||[])[1]).sort().join(','));
+ /* les cadenas sont sur l'Accueil (Mes paiements), le Profil (Fournisseurs) et Chantiers (Heures) : on dessine ces écrans d'abord */
+ const verrous=p=>p.evaluate(()=>{homeRender();profRender();chsRender();return [...new Set([...document.querySelectorAll('.abo-lk')].map(l=>(/^(?:drawerGo|tab)\('([^']+)'/.exec(l.closest('button').getAttribute('onclick'))||[])[1]))].sort().join(',')});
  const fin={mode:'artisan',offre:'artisan_fin_essai',essaiFin:Date.now()-J,modules:[]};
 
  /* 1. après l'essai, sans abonnement : socle gratuit seulement */

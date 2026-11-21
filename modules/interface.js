@@ -216,14 +216,8 @@ function permGeo(){if(window.CasoAuto&&CasoAuto.fix){try{CasoAuto.fix()}catch(e)
  navigator.geolocation.getCurrentPosition(()=>permRender(),()=>permRender(),{timeout:15000})}
 function permNotif(){Promise.resolve(Notification.requestPermission()).then(r=>{
  if(r==='granted'){const c=getSync();if(c.url&&c.token)enableNotif();else if(typeof newsNotif==='function')newsNotif()}permRender()}).catch(()=>permRender())}
-function drawer(side){if(side==='L'&&typeof ptOuvrier==='function'&&ptOuvrier())side='R';/* collaborateur : pas de menu « Mon travail » */
- if(side==='R')try{dwIdRender()}catch(e){}
- if(side==='R')try{logoProfil();const x=typeof eqExt==='function'&&eqExt(),b=$('dwExt');if(b){b.hidden=!x||ptOuvrier();if(x)b.querySelector('span').textContent=i18nT('Chantiers chez {1}').replace('{1}',x.entreprise||i18nT('mon équipe'))}}catch(e){}
- if(dwLocked()){drawerClose(true);return}
- const d=$(side==='L'?'dwL':'dwR');if(!d)return;
- if(side==='R'){const a=accountGet()||{},c=getSync();$('dwName').textContent=a.prenom||c.user||'';$('dwMail').textContent=a.email||'';authLigne()}
- $('dwBg').hidden=false;d.hidden=false;requestAnimationFrame(()=>{$('dwBg').classList.add('on');d.classList.add('on')});
- document.body.classList.add('dw-open')}
+/* nouveau format : le Profil est une page de la barre du bas (modules/format.js), plus un menu latéral */
+function drawer(){if(dwLocked())return;go('prof')}
 function drawerClose(now){
  try{dwPopClose()}catch(e){}
  ['dwL','dwR'].forEach(id=>{const d=$(id);if(d)d.classList.remove('on')});const bg=$('dwBg');if(bg)bg.classList.remove('on');
@@ -342,7 +336,7 @@ function rc2Copy(){const c=$('rc2Code').textContent;
 function rc2Next(){ONB.code=null;$('rc2Code').textContent='';modeEnter()}
 function modeEnter(){const a=accountGet();try{window.CasoAuth&&CasoAuth.profil()}catch(e){}
  if(a&&a.mode==='bricoleur'){stScreen('s-mode');m3dOpen(true);return}
- document.body.classList.remove('starting');go('devis')}
+ document.body.classList.remove('starting');go('home')}
 
 /* ---------- Sous-écrans ---------- */
 let prCur='list',ptCur='go';

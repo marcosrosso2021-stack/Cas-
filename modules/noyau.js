@@ -77,18 +77,22 @@ function tab(n,b){
  if(n==='news'&&window.casoVeille){casoVeille.page();casoVeille.charger(true)}if(n==='histo')renderHisto();if(n==='cli')cliRender();if(n==='clif')plCliBlock();if(n==='agenda')agPage(agMode);if(n==='fact')faRender();if(n==='plan')plRender();if(n==='sigp')spRender();if(n==='fou')fouRender(); if(n==='four')renderFour(); if(n==='prix'){renderPrices();prPage(prCur)} if(n==='pt')renderPt();if(n==='enc')encRender();
  if(n==='cpt'){fillProf();renderSync();bkRefresh();renderNotif();const t=$('trOpen');if(t)t.hidden=I18N.lang==='fr'}
  if(n==='tr')trRender();
+ if(n==='home'&&typeof homeRender==='function')homeRender();
+ if(n==='prof'&&typeof profRender==='function')profRender();if(n==='chs'&&typeof chsRender==='function')chsRender();if(n==='mc'&&typeof mcRender==='function')mcRender();if(n==='p3d'&&typeof p3dRender==='function')p3dRender();
  window.scrollTo(0,0);
 }
 
 /* bouton retour de l'en-tête : visible quand la page ouverte a un retour, et il fait ce que ce retour fait */
 function hdBack(){const b=document.querySelector('section.on .back:not([hidden])');if(b)b.click()}
-function hdBackSync(){const b=$('hdBack');if(b)b.hidden=!document.querySelector('section.on .back:not([hidden])')}
+/* la barre du haut ne s'affiche que s'il y a un retour ou un titre à montrer */
+function hdVoir(){const h=$('hd'),b=$('hdBack'),t=$('hdT');if(h)h.hidden=!((b&&!b.hidden)||(t&&t.textContent))}
+function hdBackSync(){const b=$('hdBack');if(b)b.hidden=!document.querySelector('section.on .back:not([hidden])');hdVoir()}
 (()=>{const o=new MutationObserver(hdBackSync);document.querySelectorAll('section').forEach(s=>o.observe(s,{attributes:true,attributeFilter:['class']}));
  document.querySelectorAll('section .back').forEach(b=>o.observe(b,{attributes:true,attributeFilter:['hidden']}));hdBackSync()})();
 /* titre de la page affichée, recopié dans la barre du haut */
-function hdTitle(){const t=document.querySelector('section.on .pg-t'),h=$('hdT');if(!h)return;const v=t?t.textContent.trim():'';if(h.textContent!==v)h.textContent=v}
+function hdTitle(){const t=document.querySelector('section.on .pg-t'),h=$('hdT');if(!h)return;const v=t?t.textContent.trim():'';if(h.textContent!==v)h.textContent=v;hdVoir()}
 {let q=0;new MutationObserver(()=>{if(!q)q=requestAnimationFrame(()=>{q=0;hdTitle()})}).observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['class']})}
-function go(n){const m={enc:-1,fact:-1,agenda:1,plan:-1,sigp:-1,devis:-1,chat:-1,edit:-1,prix:-1,imp:-1,pt:2,histo:3,mes:-1,four:-1,cpt:-1,tr:-1,sign:0,cli:-1,clif:-1,fou:-1,fouf:-1,news:-1};tab(n,document.querySelectorAll('nav button')[m[n]])}
+function go(n){/* barre du bas : Accueil 0, Chantiers 1 (pointage, planning), Documents 2 (historique, factures, encaissements), Clients 3, Profil 4 */const m={home:0,chs:1,mc:1,p3d:1,prof:4,enc:2,fact:2,agenda:1,plan:-1,sigp:4,devis:-1,chat:-1,edit:-1,prix:4,imp:-1,pt:1,histo:2,mes:-1,four:-1,cpt:4,tr:4,sign:-1,cli:3,clif:3,fou:4,fouf:4,news:4};tab(n,document.querySelectorAll('nav button')[m[n]])}
 
 /* ---------- Langue de l'appli (le devis, le PDF et le message restent en français) ---------- */
 /* traductions de l'interface : i18n/ui-xx.json, seulement la langue choisie ; gardée sur l'appareil, mise à jour en arrière-plan */

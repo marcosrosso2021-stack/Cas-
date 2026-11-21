@@ -59,7 +59,7 @@ function dvOpen(id){drawerClose(true);const box=$('dvx');box.hidden=false;docume
  dvSync();DVA.aller('list');if(id)DVA.ouvrir(id)}
 (function(){const go=()=>{try{dvPrecharger()}catch(e){}};/* après le démarrage du chat : le module Devis ne lui prend pas la connexion */const later=()=>setTimeout(()=>('requestIdleCallback' in window)?requestIdleCallback(go,{timeout:6000}):go(),6000);
  if(document.readyState==='complete')setTimeout(later,800);else addEventListener('load',()=>setTimeout(later,800))})();
-function dvClose(rester){$('dvx').hidden=true;document.body.classList.remove('dv-on');if(!rester)go('chat')}
+function dvClose(rester){$('dvx').hidden=true;document.body.classList.remove('dv-on');if(!rester)go('home')}
 function entLogo(inp){const f=inp.files[0];inp.value='';if(!f)return;const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const k=Math.min(1,480/Math.max(i.naturalWidth,i.naturalHeight)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(i.naturalWidth*k));c.height=Math.max(1,Math.round(i.naturalHeight*k));c.getContext('2d').drawImage(i,0,0,c.width,c.height);
   db.prof=Object.assign({},db.prof||{},{logo:c.toDataURL('image/png'),couleurs:[],couleur:'',logoCle:''});db.profAt=Date.now();save();entExtra();toast(i18nT('Enregistré.'))};i.src=r.result};r.readAsDataURL(f)}
 function entExtra(){try{logoProfil()}catch(e){}const p=db.prof||{},v=$('eLogoV');if(v)v.innerHTML=rcImg(p.logo)?`<img src="${p.logo}" alt="">`:'';const cw=$('eCapW');if(cw)cw.hidden=!p.forme||/^(EI|micro)$/i.test(p.forme);const tw=$('eTvaW');if(tw)tw.hidden=!!p.franchise}

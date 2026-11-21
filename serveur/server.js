@@ -574,7 +574,7 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
  const SEC={'x-content-type-options':'nosniff','referrer-policy':'no-referrer','x-frame-options':'DENY','permissions-policy':'geolocation=(), payment=(), usb=()','cross-origin-opener-policy':'same-origin'};
  if(HOSTED)SEC['strict-transport-security']='max-age=63072000; includeSubDomains'+(process.env.HSTS_PRELOAD==='1'?'; preload':'');
  const CSP_APP="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/ https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1/ https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/ https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/ https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/ https://cdnjs.cloudflare.com/ajax/libs/onnxruntime-web/1.20.1/; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: mediastream:; font-src 'self' data:; connect-src 'self' https:; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
- const CSP_PUB="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
+ const CSP_PUB="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
  function send(res,code,obj,extra){
   const isHtml=typeof obj==='string';
   if(code<400)tryBack(res);
@@ -601,6 +601,9 @@ self.addEventListener('notificationclick',e=>{e.notification.close();const u=(e.
    if(NEWL&&req.method==='GET'&&url==='/devis.html'){/* module Devis, ouvert dans un cadre de l'appli */
     let html;try{html=fs.readFileSync(path.join(ROOT,'devis.html'),'utf8')}catch(e){return send(res,404,{error:'introuvable'})}
     return send(res,200,html,{'content-security-policy':CSP_APP.replace("frame-ancestors 'none'","frame-ancestors 'self'"),'x-frame-options':'SAMEORIGIN'})}
+   if(NEWL&&req.method==='GET'&&/^\/fonts\/inter-(?:400|500|600|700)\.woff$/.test(url)){/* police de l'appli (Inter, licence OFL : fonts/inter.LICENSE) */
+    let b;try{b=fs.readFileSync(path.join(ROOT,url))}catch(e){return send(res,404,{error:'introuvable'})}
+    res.writeHead(200,Object.assign({'content-type':'font/woff','cache-control':'public, max-age=31536000, immutable'},SEC));return res.end(b)}
    if(NEWL&&req.method==='GET'&&!url.includes('..')&&/^\/(?:chat|lib|i18n|modules|pointage)\/[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)*\.(?:js|json|wasm|mjs|onnx)$/.test(url)){/* fichiers du chat, modules de l'appli, pointage, bibliothèques et traductions */
     let b;try{b=fs.readFileSync(path.join(ROOT,url))}catch(e){return send(res,404,{error:'introuvable'})}
     const ty=url.endsWith('.json')?'application/json; charset=utf-8':url.endsWith('.wasm')?'application/wasm':url.endsWith('.onnx')?'application/octet-stream':'text/javascript; charset=utf-8';

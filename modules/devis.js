@@ -683,8 +683,8 @@ let filt='tous';
 function renderHisto(){
  const open=histMode==='open';
  $('hiSeg').hidden=open;segOn('hiSeg',open?'devis':faTab);
- if(!open&&faTab==='fac'){const pt=document.querySelector('#s-histo .pg-t');if(pt)pt.textContent='Historique';$('histoList').innerHTML=faList();if($('stats'))$('stats').hidden=true;if($('filtres'))$('filtres').hidden=true;return}
- const pt=document.querySelector('#s-histo .pg-t');if(pt)pt.textContent=open?'Mes devis':'Historique';
+ if(!open&&faTab==='fac'){const pt=document.querySelector('#s-histo .pg-t');if(pt)pt.textContent='Documents';$('histoList').innerHTML=faList();if($('stats'))$('stats').hidden=true;if($('filtres'))$('filtres').hidden=true;return}
+ const pt=document.querySelector('#s-histo .pg-t');if(pt)pt.textContent='Documents';
  const G=open?[['envoye','En cours de signature'],['brouillon','Brouillons']]
   :[['accepte','Validés, à encaisser'],['paye','Payés'],['refuse','Refusés ou expirés']];
  const when=x=>(x.sign&&(x.sign.signedAt||x.sign.sentAt))||Date.parse(x.date)||0;

@@ -78,12 +78,12 @@ function ecrit(s){try{racine.localStorage.setItem(K,JSON.stringify(s))}catch(e){
 function artisan(){try{var a=racine.accountGet&&racine.accountGet();return !a||a.mode!=='bricoleur'}catch(e){return true}}
 function prof(){try{return (typeof db!=='undefined'&&db&&db.prof)||{}}catch(e){return {}}}   // « db » est une variable de l'appli, pas une propriété de window
 function tr(x){try{return racine.i18nT?racine.i18nT(x):x}catch(e){return x}}
-/* la pastille : il y a du nouveau à lire (dans le menu et sur le logo) */
+/* la pastille : il y a du nouveau à lire (dans le menu et sur l'onglet Profil) */
 function pastille(){
- var s=lit(),n=artisan()?aMontrer(s.items,s.vus||{},prof(),jour()).length:0,d=doc.getElementById('newsDot'),t=doc.querySelector('#hd .ttl');
+ var s=lit(),n=artisan()?aMontrer(s.items,s.vus||{},prof(),jour()).length:0,d=doc.getElementById('newsDot'),t=doc.getElementById('navProfil');
  if(d)d.hidden=!n;
  if(t){var p=doc.getElementById('newsDotHd');if(n&&!p){p=doc.createElement('i');p.id='newsDotHd';p.setAttribute('aria-hidden','true');
-   p.style.cssText='position:absolute;top:-3px;inset-inline-start:29px;width:10px;height:10px;border-radius:50%;background:#e5484d;border:2px solid var(--bg,#f2f2ef)';
+   p.style.cssText='position:absolute;top:1px;inset-inline-end:10px;width:9px;height:9px;border-radius:50%;background:#e5484d;border:2px solid var(--bg,#f2f2ef)';
    if(racine.getComputedStyle&&racine.getComputedStyle(t).position==='static')t.style.position='relative';t.appendChild(p)}
   if(p)p.hidden=!n}
 }
