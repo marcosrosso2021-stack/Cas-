@@ -637,8 +637,15 @@ label.btn.sec.cv-file{font-size:15px;font-weight:600;color:var(--ink)}
  #print .cvd .cvb-lines,#print .cvd .cvb-text{break-inside:auto}
 }
 
-/* ---- Style « anatomy » : sobre, filets fins, étiquettes en mono, clair + sombre ---- */
-:root{--bg:#f2f2ef;--card:#fbfbfa;--soft:#f0f0ed;--ink:#18181a;--mut:#6b6b70;--line:#e2e2de;--acc:#ffc21a;--acc-d:#e0a800;--mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;--lift:0 0 0 1px #0000000a,0 1px 1px -.5px #0000000d,0 3px 3px -1.5px #0000000d,0 8px 8px -4px #0000000a;color-scheme:light}
+/* ---- Nouveau format : police Inter (fonts/, licence OFL), fond chaud, cartes blanches à plat ; clair + sombre ---- */
+@font-face{font-family:Inter;font-weight:400;font-style:normal;font-display:swap;src:url(fonts/inter-400.woff) format("woff")}
+@font-face{font-family:Inter;font-weight:500;font-style:normal;font-display:swap;src:url(fonts/inter-500.woff) format("woff")}
+@font-face{font-family:Inter;font-weight:600;font-style:normal;font-display:swap;src:url(fonts/inter-600.woff) format("woff")}
+@font-face{font-family:Inter;font-weight:700;font-style:normal;font-display:swap;src:url(fonts/inter-700.woff) format("woff")}
+body{font-family:Inter,-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;font-feature-settings:"calt","liga"}
+button,input,select,textarea{font-family:inherit}
+:root{--bg:#f4f3ef;--card:#fff;--soft:#f4f3ef;--ink:#141414;--mut:#5e5e5a;--line:#e4e2dc;--acc:#ffc21a;--acc-d:#e0a800;--mono:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;--lift:0 0 0 1px #0000000a;color-scheme:light}
+.en-h,.tr-h,.grp,.dw-g,.sg-l,.vn-sec h3,.pc-st,.au-cap{font-family:inherit!important;text-transform:none!important;letter-spacing:0!important;font-size:13px!important;font-weight:600!important}
 @media (prefers-color-scheme:dark){:root{--bg:#0b0b0b;--card:#131313;--soft:#1b1b1b;--ink:#e6e6e6;--mut:#8c8c8c;--line:#262626;--lift:inset 0 1px 0 0 #ffffff0a,0 0 0 1px #00000026,0 6px 6px -3px #00000030;color-scheme:dark}
  .err{background:#2a1413}}
 body{background:var(--bg);color:var(--ink)}
@@ -648,13 +655,13 @@ header .logo{width:34px;height:34px;border-radius:9px}
 header .acct{border:1px solid var(--line);color:var(--ink);border-radius:999px;width:42px;height:42px}
 .tape{display:none}
 nav{background:color-mix(in srgb,var(--card) 88%,transparent);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-top:1px solid var(--line)}
-nav button{font-family:var(--mono);font-size:10.5px;font-weight:500;letter-spacing:.06em;text-transform:uppercase}
-nav button.on .pill{background:var(--ink);color:var(--card)}
+nav button{font-size:11px;font-weight:500;letter-spacing:0;text-transform:none;gap:4px}nav button.on{font-weight:700}nav button .pill{width:52px}
+nav button.on .pill{background:var(--acc);color:#18181a}
 section{padding:16px;max-width:640px;margin:0 auto}
 .card{background:var(--card);border:0;border-radius:18px;padding:18px;box-shadow:var(--lift)}
 h2{font-size:17px;font-weight:600}
 h2 .hi,.steps .hi{background:var(--soft);color:var(--ink);border:1px solid var(--line);border-radius:10px}
-label{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+label{font-size:13px;font-weight:500;letter-spacing:0;text-transform:none;color:var(--mut)}
 input,select{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:12px}
 input:focus-visible,select:focus-visible{outline:2px solid var(--ink);outline-offset:0;border-color:var(--ink)}
 .btn{background:var(--ink);color:var(--card);border:0;border-radius:14px;font-weight:600;letter-spacing:.01em}
