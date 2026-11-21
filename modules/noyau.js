@@ -83,11 +83,13 @@ function tab(n,b){
 
 /* bouton retour de l'en-tête : visible quand la page ouverte a un retour, et il fait ce que ce retour fait */
 function hdBack(){const b=document.querySelector('section.on .back:not([hidden])');if(b)b.click()}
-function hdBackSync(){const b=$('hdBack');if(b)b.hidden=!document.querySelector('section.on .back:not([hidden])')}
+/* la barre du haut ne s'affiche que s'il y a un retour ou un titre à montrer */
+function hdVoir(){const h=$('hd'),b=$('hdBack'),t=$('hdT');if(h)h.hidden=!((b&&!b.hidden)||(t&&t.textContent))}
+function hdBackSync(){const b=$('hdBack');if(b)b.hidden=!document.querySelector('section.on .back:not([hidden])');hdVoir()}
 (()=>{const o=new MutationObserver(hdBackSync);document.querySelectorAll('section').forEach(s=>o.observe(s,{attributes:true,attributeFilter:['class']}));
  document.querySelectorAll('section .back').forEach(b=>o.observe(b,{attributes:true,attributeFilter:['hidden']}));hdBackSync()})();
 /* titre de la page affichée, recopié dans la barre du haut */
-function hdTitle(){const t=document.querySelector('section.on .pg-t'),h=$('hdT');if(!h)return;const v=t?t.textContent.trim():'';if(h.textContent!==v)h.textContent=v}
+function hdTitle(){const t=document.querySelector('section.on .pg-t'),h=$('hdT');if(!h)return;const v=t?t.textContent.trim():'';if(h.textContent!==v)h.textContent=v;hdVoir()}
 {let q=0;new MutationObserver(()=>{if(!q)q=requestAnimationFrame(()=>{q=0;hdTitle()})}).observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['class']})}
 function go(n){/* barre du bas : Accueil 0, Chantiers 1 (pointage, planning), Documents 2 (historique, factures, encaissements), Clients 3, Profil 4 */const m={home:0,enc:2,fact:2,agenda:1,plan:-1,sigp:-1,devis:-1,chat:-1,edit:-1,prix:-1,imp:-1,pt:1,histo:2,mes:-1,four:-1,cpt:4,tr:4,sign:-1,cli:3,clif:3,fou:-1,fouf:-1,news:-1};tab(n,document.querySelectorAll('nav button')[m[n]])}
 

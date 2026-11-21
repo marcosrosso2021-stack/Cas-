@@ -56,7 +56,7 @@ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'caso-esp-'));
  ok('« Moi » : ses heures, dû, reçu (120 €) et ses paiements',/Karim/.test(moi)&&/Reçu/.test(moi)&&/120,00/.test(moi)&&/virement/.test(moi),moi);
  /* l'environnement du collaborateur : son menu, ses pages ; rien de l'entreprise */
  const env=await ka.evaluate(async()=>{drawer('L');await new Promise(r=>setTimeout(r,400));const vis=[...document.querySelectorAll('#dwR .dw-i')].filter(x=>x.offsetParent).map(x=>x.innerText.trim());const pro=[...document.querySelectorAll('#dwR .dw-ouv-acc')].some(x=>x.offsetParent&&/Ta propre boîte \?/.test(x.innerText)&&/Créer mon compte entreprise/.test(x.innerText));const pop=[...document.querySelectorAll('#dwPopO .dw-pi')].map(x=>x.innerText.trim());const idh=document.getElementById('dwIdN').innerText+' | '+document.getElementById('dwIdS').innerText;const idn=document.getElementById('dwIdS').textContent;
-  const gauche=document.getElementById('dwL').classList.contains('on');drawerClose(true);cptPage('ent');const ent=cptCur;cptPage('rent');await new Promise(r=>setTimeout(r,200));
+  const gauche=!!document.getElementById('dwL');drawerClose(true);cptPage('ent');const ent=cptCur;cptPage('rent');await new Promise(r=>setTimeout(r,200));
   const rent=document.getElementById('cpRent').innerText.replace(/\s+/g,' ');cptPage('moi');const pf=document.getElementById('cpMoi').innerText.replace(/\s+/g,' ');
   go('pt');ptPage('set');const add=!!document.getElementById('chNew')&&document.getElementById('chNew').offsetParent!==null;
   agEdit(null,ymdL(),'10:00');const edit=!document.getElementById('agSh').hidden;

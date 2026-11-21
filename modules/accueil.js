@@ -21,12 +21,13 @@ function homeRender(){const box=$('s-home');if(!box)return;
    <button type="button" class="hm-a" onclick="dvOpen()"><svg class="i"><use href="#i-quote"/></svg><span>${esc(i18nT('Nouveau devis'))}</span></button>
    <button type="button" class="hm-a d" onclick="go('fact')"><svg class="i"><use href="#i-doc"/></svg><span>${esc(i18nT('Nouvelle facture'))}</span></button>
   </div>
-  <button type="button" class="hm-c" onclick="go('enc')"><span class="hm-t"><b>${esc(i18nT('Mes paiements'))}</b>${chev}</span>
+  <button type="button" class="hm-c" onclick="drawerGo('enc')"><span class="hm-t"><b>${esc(i18nT('Mes paiements'))}</b>${chev}</span>
    <span class="hm-m"><span><small>${esc(i18nT('À encaisser'))}</small><b class="hm-ok" data-noi18n>${eur(pay.tot)}</b></span><span><small>${esc(i18nT('En retard'))}</small><b class="${pay.ret>0?'hm-ko':''}" data-noi18n>${eur(pay.ret)}</b></span></span></button>
   <button type="button" class="hm-c" onclick="go('pt');ptPage('set')"><span class="hm-t"><b>${esc(i18nT('Mes chantiers'))}</b>${L.length?`<span data-noi18n>${L.length}</span>`:chev}</span>
    ${x?`<span class="hm-r"><span class="hm-ri"><svg class="i"><use href="#i-helmet"/></svg></span><span class="hm-rt"><b data-noi18n>${esc(x.c.nom)}</b><span data-noi18n>${esc(quand)}</span></span></span>`:''}</button>
   <button type="button" class="hm-q" onclick="go('chat');setTimeout(()=>{const i=$('chatIn');i&&i.focus()},60)"><span>${esc(i18nT('Écris ou parle à casô'))}</span><i><svg class="i"><use href="#i-mic"/></svg></i></button>
- </div>`}
+ </div>`;
+ try{aboMenu()}catch(e){}}
 /* à l'ouverture, avec un compte : l'Accueil (le visiteur sans compte arrive sur le chat, le collaborateur sur ses chantiers) */
 setTimeout(()=>{try{if(document.body.classList.contains('starting')||!$('s-chat').classList.contains('on'))return;
  if(typeof ptOuvrier==='function'&&ptOuvrier()){go('pt');return}

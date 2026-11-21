@@ -720,7 +720,7 @@ h2 .hi,.steps .hi{color:var(--ink)}
 .st-logo .cso-tile{display:none}
 header .wm-t{display:none}
 header .cso-tile{width:38px;height:38px}
-header .ttl{min-width:0}.hd-t{font-size:17px;font-weight:600;letter-spacing:-.01em;margin-inline-start:12px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+header .ttl{min-width:0}.hd-t{flex:1;font-size:19px;font-weight:600;letter-spacing:-.01em;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* titre des pages dans la barre du haut, à droite du logo */
 body:not(.starting) section .pg-t{position:absolute!important;width:1px;height:1px;margin:0;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 body:not(.starting) .pg-h{justify-content:flex-end}body:not(.starting) .pg-h:not(:has(>:not(.pg-t))){display:none}body:not(.starting) .pg-h:has(>.pl-tt){justify-content:space-between}
@@ -776,7 +776,7 @@ body.starting #hd{display:none}
 .hm-w{display:flex;flex-direction:column;gap:2px;min-width:0}.hm-w b{font-size:21px;line-height:1.2}.hm-w span{font-size:13px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hm-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .hm-a{display:flex;flex-direction:column;gap:12px;align-items:flex-start;padding:16px;border:0;border-radius:20px;background:var(--acc);color:#18181a;font:inherit;font-size:17px;font-weight:700;text-align:start;cursor:pointer}
-.hm-a.d{background:var(--ink);color:var(--card)}.hm-a .i{width:28px;height:28px}
+.hm-a.d{background:#18181a;color:#fff;box-shadow:0 0 0 1px var(--line)}.hm-a .i{width:28px;height:28px}
 .hm-c{display:flex;flex-direction:column;gap:12px;width:100%;padding:16px;border:0;border-radius:20px;background:var(--card);box-shadow:var(--lift);color:var(--ink);font:inherit;text-align:start;cursor:pointer}
 .hm-t{display:flex;align-items:center;justify-content:space-between;gap:10px}.hm-t b{font-size:15px}.hm-t span{font-size:13px;color:var(--mut)}.hm-t .i{width:18px;height:18px;color:var(--mut)}
 .hm-m{display:grid;grid-template-columns:1fr 1fr;gap:10px}.hm-m>span{display:flex;flex-direction:column;gap:4px;padding:12px;border-radius:14px;background:var(--soft)}
@@ -976,7 +976,7 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;justify-conten
 /* retour : le bouton de chaque page reste dans la page (il porte l'action) mais ne s'affiche plus ; un seul bouton rond dans l'en-tête, à gauche du logo, l'actionne */
 section .back{display:none!important}
 header .hd-back{flex:none;width:44px;height:44px;border-radius:50%;border:1px solid color-mix(in srgb,currentColor 22%,transparent);background:none;color:inherit;display:grid;place-items:center;padding:0;cursor:pointer;transition:transform .15s}
-header .hd-back[hidden]{display:none}header .hd-back:active{transform:scale(.92)}header .hd-back:focus-visible{outline:3px solid var(--acc)}
+header[hidden]{display:none}header{border-bottom:0!important;padding-bottom:6px!important}.hd-t{font-size:22px!important;font-weight:700!important}body:has(#hd[hidden]) section{padding-top:calc(16px + env(safe-area-inset-top,0px))}header .hd-back[hidden]{display:none}header .hd-back:active{transform:scale(.92)}header .hd-back:focus-visible{outline:3px solid var(--acc)}
 body.starting header .hd-back{display:none}
 /* même bouton rond pour les retours hors en-tête : connexion, fenêtre du planning, visionneuse */
 button.rnd{flex:none;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:none;color:var(--ink);display:grid;place-items:center;padding:0;margin:0;cursor:pointer;text-decoration:none;transition:transform .15s}button.rnd:active{transform:scale(.92)}button.rnd:focus-visible{outline:3px solid var(--acc)}
@@ -1102,7 +1102,7 @@ header .ttl{cursor:pointer}
 .cli-po.cli-new{border-style:dashed}
 .ag-ask{margin-top:4px}
 #chatIn::placeholder{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ct-bar{display:flex;align-items:center;gap:8px;margin:0 0 10px}
+.ct-bar{display:flex;align-items:center;gap:8px;margin:0 0 10px}.ct-n{flex:none;width:48px;height:48px;border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);display:grid;place-items:center;cursor:pointer}
 .ct-q{flex:1;min-width:0;display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px 12px;font:inherit;color:var(--ink);text-align:start;cursor:pointer;min-height:48px}
 .ct-t{display:flex;flex-direction:column;min-width:0}
 .ct-t b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1781,7 +1781,7 @@ body.role-ouvrier [data-pat]{display:none!important}body:not(.role-ouvrier) .dw-
 <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" stroke-width="2.2"/></symbol>
 <symbol id="i-chart" viewBox="0 0 24 24"><path d="M5 20V11M12 20V4M19 20v-7M3 20h18"/></symbol>
 </defs></svg>
-<header id="hd"><button class="hd-back" id="hdBack" type="button" hidden aria-label="Retour" onclick="hdBack()"><svg class="i i-flip"><use href="#i-back"/></svg></button><span class="ttl" role="button" tabindex="0" aria-label="Menu" onclick="drawer('L')" onkeydown="if(event.key==='Enter')drawer('L')"><span class="wm" role="img" aria-label="casô"><svg class="cso-tile" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#ffc21a"/><g transform="translate(10.5 3.5) scale(1.075)"><path d="M10 16.5 17.6 9.4Q20 7.2 22.4 9.4L30 16.5" fill="none" stroke="#18181a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="20" cy="33" r="12" fill="none" stroke="#18181a" stroke-width="3.2"/><clipPath id="csoc3"><circle cx="20" cy="33" r="8.9"/></clipPath><g fill="#18181a" clip-path="url(#csoc3)"><rect x="9.7" y="26.7" width="9.6" height="5.6" rx="1.2"/><rect x="20.7" y="26.7" width="9.6" height="5.6" rx="1.2"/><rect x="4.2" y="33.7" width="9.6" height="5.6" rx="1.2"/><rect x="15.2" y="33.7" width="9.6" height="5.6" rx="1.2"/><rect x="26.2" y="33.7" width="9.6" height="5.6" rx="1.2"/></g></g></svg><span class="wm-t" aria-hidden="true">cas<svg viewBox="0 3 40 44" aria-hidden="true"><path d="M10 16.5 17.6 9.4Q20 7.2 22.4 9.4L30 16.5" fill="none" stroke="#ffc21a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="20" cy="33" r="12" fill="none" stroke="currentColor" stroke-width="3.2"/><clipPath id="csoc4"><circle cx="20" cy="33" r="8.9"/></clipPath><g fill="currentColor" clip-path="url(#csoc4)"><rect x="9.7" y="26.7" width="9.6" height="5.6" rx="1.2"/><rect x="20.7" y="26.7" width="9.6" height="5.6" rx="1.2"/><rect x="4.2" y="33.7" width="9.6" height="5.6" rx="1.2"/><rect x="15.2" y="33.7" width="9.6" height="5.6" rx="1.2"/><rect x="26.2" y="33.7" width="9.6" height="5.6" rx="1.2"/></g></svg></span></span><span class="hd-t" id="hdT" data-noi18n aria-hidden="true"></span></span><button class="acct" id="hdAcct" onclick="drawer('R')" aria-label="Compte"><svg class="i"><use href="#i-user"/></svg></button></header>
+<header id="hd" hidden><button class="hd-back" id="hdBack" type="button" hidden aria-label="Retour" onclick="hdBack()"><svg class="i i-flip"><use href="#i-back"/></svg></button><span class="hd-t" id="hdT" data-noi18n aria-hidden="true"></span></header>
 <div class="tape"></div>
 
 <!-- DÉMARRAGE -->
@@ -1860,7 +1860,9 @@ body.role-ouvrier [data-pat]{display:none!important}body:not(.role-ouvrier) .dw-
 <!-- ÉTAPE 1-3 : DEVIS -->
 <section id="s-home"></section>
 <section id="s-chat" class="on">
- <div class="ct-bar"><button class="ct-q" onclick="go('edit')"><svg class="i"><use href="#i-quote"/></svg><span class="ct-t"><b id="ctNum" data-noi18n></b><span id="ctTot" class="mut"></span></span></button></div>
+ <button class="btn sec back" onclick="go('home')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
+ <h1 class="pg-t" data-noi18n>casô</h1>
+ <div class="ct-bar"><button class="ct-q" onclick="go('edit')"><svg class="i"><use href="#i-quote"/></svg><span class="ct-t"><b id="ctNum" data-noi18n></b><span id="ctTot" class="mut"></span></span></button><button type="button" class="ct-n" data-pat onclick="chatNew()" aria-label="Nouvelle conversation"><svg class="i"><use href="#i-plus"/></svg></button></div>
  <div id="chatLog" class="chat-log" aria-live="polite"></div>
  <div class="composer" id="composer">
  <div class="vn" id="vnCard">
@@ -2012,7 +2014,6 @@ body.role-ouvrier [data-pat]{display:none!important}body:not(.role-ouvrier) .dw-
  </div>
 </section>
 <section id="s-cli">
- <button class="btn sec back" onclick="go('devis')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
  <div class="pg-h"><h1 class="pg-t">Clients</h1><button class="btn sm" onclick="cliEdit()"><svg class="i i-sm"><use href="#i-plus"/></svg><span>Nouveau</span></button></div>
  <div class="srch"><svg class="i i-sm"><use href="#i-search"/></svg><input type="search" id="cliQ" placeholder="Chercher" oninput="cliRender()"></div>
  <div id="cliList" class="lst"></div>
@@ -2041,7 +2042,7 @@ body.role-ouvrier [data-pat]{display:none!important}body:not(.role-ouvrier) .dw-
  </div>
 </section>
 <section id="s-fou">
- <button class="btn sec back" onclick="go('devis')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
+ <button class="btn sec back" onclick="go('home')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
  <div class="pg-h"><h1 class="pg-t">Fournisseurs</h1></div>
  <div class="seg" id="fouSeg"><button type="button" class="on" data-m="mes" onclick="fouMode('mes')">Mes fournisseurs</button><button type="button" data-m="web" onclick="fouMode('web')">Prix en ligne</button></div>
  <div class="fou-bar">
@@ -2076,7 +2077,7 @@ body.role-ouvrier [data-pat]{display:none!important}body:not(.role-ouvrier) .dw-
  <div id="faBody"></div>
 </section>
 <section id="s-agenda">
- <button class="btn sec back" onclick="go('devis')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
+ <button class="btn sec back" onclick="go('pt')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
  <div class="pg-h"><h1 class="pg-t">Mon planning</h1></div>
  <div class="seg" role="tablist" id="agSeg"><button role="tab" data-p="jour" onclick="agPage('jour')">Jour</button><button role="tab" data-p="sem" onclick="agPage('sem')">Semaine</button><button role="tab" data-p="set" onclick="agPage('set')">Créneaux</button></div>
  <div class="ag-wk" data-ag-nav><button class="ag-nv ag-prev" onclick="agShift(-7)" aria-label="Semaine précédente"><svg class="i"><use href="#i-chev"/></svg></button><b id="agMonth" data-noi18n></b><button class="ag-nv" onclick="agShift(7)" aria-label="Semaine suivante"><svg class="i i-flip"><use href="#i-chev"/></svg></button></div>
@@ -2135,7 +2136,7 @@ body.role-ouvrier [data-pat]{display:none!important}body:not(.role-ouvrier) .dw-
  </div>
 </section>
 <section id="s-sigp">
- <button class="btn sec back" onclick="go('devis')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
+ <button class="btn sec back" onclick="go('home')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
  <h1 class="pg-t">Ma signature</h1>
  <div class="card" id="spNew">
   <div class="sg-pad"><canvas id="spPad" class="sigpad" aria-label="Ma signature"></canvas><span class="sg-hint" id="spHint">Signe ici avec le doigt</span><button type="button" class="sg-x" onclick="spClear()">Effacer</button></div>
@@ -2160,7 +2161,7 @@ body.role-ouvrier [data-pat]{display:none!important}body:not(.role-ouvrier) .dw-
  </div>
 </section>
 <section id="s-cpt">
- <button class="btn sec back" onclick="go('devis')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
+ <button class="btn sec back" onclick="go('home')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
  <h1 class="pg-t" id="cptT"></h1>
  <div id="cpMoi" data-cp="moi"></div>
  <div id="cpRent" data-cp="rent"></div>
@@ -2277,12 +2278,12 @@ body.role-ouvrier [data-pat]{display:none!important}body:not(.role-ouvrier) .dw-
 
 <!-- HISTORIQUE -->
 <section id="s-news">
- <button class="btn sec back" onclick="go('devis')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
+ <button class="btn sec back" onclick="go('home')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
  <div class="pg-h"><h1 class="pg-t">Newsletter</h1></div>
  <div id="newsList"></div>
 </section>
 <section id="s-enc">
- <button class="btn sec back" onclick="go('devis')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
+ <button class="btn sec back" onclick="go('home')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
  <div class="pg-h"><h1 class="pg-t">Encaissements</h1></div>
  <div id="encDue"></div>
  <label for="encP">Encaissé sur la période</label><select id="encP" onchange="encRender()"><option value="m">Ce mois-ci</option><option value="pm">Le mois dernier</option><option value="y">Cette année</option><option value="py">L'année dernière</option><option value="c">Choisir les dates</option></select>
@@ -2292,8 +2293,7 @@ body.role-ouvrier [data-pat]{display:none!important}body:not(.role-ouvrier) .dw-
  <button class="btn sec" onclick="encCsv()"><svg class="i"><use href="#i-doc"/></svg>Exporter en CSV (Excel)</button>
  </section>
 <section id="s-histo">
- <button class="btn sec back" onclick="go('devis')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
- <h1 class="pg-t">Mes devis</h1>
+ <h1 class="pg-t">Documents</h1>
  <div class="seg" role="tablist" id="hiSeg" hidden><button role="tab" data-p="devis" onclick="faTab='devis';renderHisto()">Devis</button><button role="tab" data-p="fac" onclick="faTab='fac';renderHisto()">Factures</button></div>
  
  <div class="card" id="stats"></div>
@@ -2348,6 +2348,7 @@ body.role-ouvrier [data-pat]{display:none!important}body:not(.role-ouvrier) .dw-
 
 <!-- POINTAGE -->
 <section id="s-pt">
+ <h1 class="pg-t">Chantiers</h1>
  <div class="seg" role="tablist" id="ptSeg"><button role="tab" data-p="go" onclick="ptPage('go')">Pointer</button><button role="tab" data-p="h" onclick="ptPage('h')">Heures</button><button role="tab" data-p="set" onclick="ptPage('set')">Chantiers</button><button role="tab" onclick="go('agenda')">Planning</button></div>
  <div id="ptFlash"></div>
  <div id="ptBody"></div>
@@ -2557,21 +2558,14 @@ body.role-ouvrier [data-pat]{display:none!important}body:not(.role-ouvrier) .dw-
  <button class="btn sec" onclick="rcCopy()"><svg class="i"><use href="#i-link"/></svg>Copier</button>
  <button class="btn" onclick="rcClose()">C'est noté</button>
 </div>
-<aside class="dw dw-l" id="dwL" hidden aria-label="Menu">
- <div class="dw-h"><span class="dw-logo"><svg class="cso-tile" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#ffc21a"/><g transform="translate(10.5 3.5) scale(1.075)"><path d="M10 16.5 17.6 9.4Q20 7.2 22.4 9.4L30 16.5" fill="none" stroke="#18181a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="20" cy="33" r="12" fill="none" stroke="#18181a" stroke-width="3.2"/><clipPath id="csoc9"><circle cx="20" cy="33" r="8.9"/></clipPath><g fill="#18181a" clip-path="url(#csoc9)"><rect x="9.7" y="26.7" width="9.6" height="5.6" rx="1.2"/><rect x="20.7" y="26.7" width="9.6" height="5.6" rx="1.2"/><rect x="4.2" y="33.7" width="9.6" height="5.6" rx="1.2"/><rect x="15.2" y="33.7" width="9.6" height="5.6" rx="1.2"/><rect x="26.2" y="33.7" width="9.6" height="5.6" rx="1.2"/></g></g></svg></span><button class="dw-x" onclick="drawerClose()" aria-label="Fermer"><svg class="i"><use href="#i-x"/></svg></button></div>
- <p class="dw-g">Mon travail</p>
- <button class="dw-i" data-pat onclick="drawerGo('devis')"><svg class="i"><use href="#i-plus"/></svg><span>Nouvelle conversation</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
- <button class="dw-i" data-pat onclick="drawerGo('cli')"><svg class="i"><use href="#i-user"/></svg><span>Clients</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
- <button class="dw-i" data-pat onclick="drawerGo('prix')"><svg class="i"><use href="#i-tag"/></svg><span>Mes services</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
- <button class="dw-i" data-pat onclick="drawerGo('fou')"><svg class="i"><use href="#i-truck"/></svg><span>Fournisseurs</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
- <button class="dw-i" data-pat onclick="drawerGo('enc')"><svg class="i"><use href="#i-chart"/></svg><span>Encaissements</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
- <button class="dw-i" data-pat onclick="drawerGo('news')"><svg class="i"><use href="#i-doc"/></svg><span>Newsletter</span><i id="newsDot" hidden aria-hidden="true" style="width:9px;height:9px;border-radius:50%;background:#e5484d;margin-inline-start:8px;flex:none"></i><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
-</aside>
 <aside class="dw dw-r" id="dwR" hidden aria-label="Compte">
  <div class="dw-acc dw-dec">
   <button class="dw-me" type="button" onclick="decConnexion()"><span class="dw-ini" aria-hidden="true"><svg class="i"><use href="#i-user"/></svg></span><span class="dw-who"><b>Se connecter</b></span></button>
   <button class="dw-plan" type="button" onclick="drawerClose(true);decCreer()"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 7.5l8 4.5 8-4.5L12 3Z M4 12l8 4.5 8-4.5 M4 16.5 12 21l8-4.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg><b>Créer ton compte</b></button>
   <button class="dw-i" type="button" onclick="drawerGo('cpt:app')"><svg class="i"><use href="#i-globe"/></svg><span>Paramètres</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
+  <button class="dw-i" type="button" onclick="drawerClose(true);go('prix')"><svg class="i"><use href="#i-tag"/></svg><span>Mes services</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
+  <button class="dw-i" type="button" onclick="drawerClose(true);go('fou')"><svg class="i"><use href="#i-truck"/></svg><span>Fournisseurs</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
+  <button class="dw-i" type="button" onclick="drawerClose(true);go('news')"><svg class="i"><use href="#i-doc"/></svg><span>Newsletter</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
  </div>
  <div class="dw-h dw-hr"><button type="button" class="dw-ent" id="dwEnt" onclick="drawerGo(ptOuvrier()?'cpt:moi':'cpt:ent')" aria-label="Mon entreprise"></button><button class="dw-x" onclick="drawerClose()" aria-label="Fermer"><svg class="i"><use href="#i-x"/></svg></button></div>
  <button type="button" class="dw-id" id="dwId" onclick="drawerGo(ptOuvrier()?'cpt:moi':'cpt:ent')"><b id="dwIdN" data-noi18n></b><span id="dwIdS" data-noi18n></span></button>
@@ -2589,6 +2583,10 @@ body.role-ouvrier [data-pat]{display:none!important}body:not(.role-ouvrier) .dw-
   </div>
   <button class="dw-me" id="dwMeO" type="button" aria-haspopup="menu" aria-expanded="false" onclick="dwPopOToggle()"><span class="dw-ini" id="dwIniO" aria-hidden="true"></span><span class="dw-who"><b id="dwNameO" data-noi18n></b></span><svg class="dw-ud" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 15 5 5 5-5M7 9l5-5 5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
  </div>
+ <p class="dw-g" data-pat>Mon travail</p>
+ <button class="dw-i" data-pat onclick="drawerGo('prix')"><svg class="i"><use href="#i-tag"/></svg><span>Mes services</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
+ <button class="dw-i" data-pat onclick="drawerGo('fou')"><svg class="i"><use href="#i-truck"/></svg><span>Fournisseurs</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
+ <button class="dw-i" data-pat onclick="drawerGo('news')"><svg class="i"><use href="#i-doc"/></svg><span>Newsletter</span><i id="newsDot" hidden aria-hidden="true" style="width:9px;height:9px;border-radius:50%;background:#e5484d;margin-inline-start:8px;flex:none"></i><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
  <p class="dw-g" data-pat>Mon entreprise</p>
  <button class="dw-i" id="dwExt" hidden onclick="drawerGo('cpt:ext')"><svg class="i"><use href="#i-users"/></svg><span data-noi18n>Chantiers chez mon équipe</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
  <button class="dw-i" data-pat onclick="drawerGo('cpt:ent')"><svg class="i"><use href="#i-building"/></svg><span>Mon entreprise</span><svg class="i dw-c i-flip"><use href="#i-chev"/></svg></button>
@@ -2618,7 +2616,7 @@ body.role-ouvrier [data-pat]{display:none!important}body:not(.role-ouvrier) .dw-
  <button onclick="tab('pt',this)"><span class="pill"><svg class="i"><use href="#i-helmet"/></svg></span>Chantiers</button>
  <button data-pat onclick="tab('histo',this)"><span class="pill"><svg class="i"><use href="#i-doc"/></svg></span>Documents</button>
  <button data-pat onclick="tab('cli',this)"><span class="pill"><svg class="i"><use href="#i-users"/></svg></span>Clients</button>
- <button onclick="drawer('R')"><span class="pill"><svg class="i"><use href="#i-user"/></svg></span>Profil</button>
+ <button onclick="drawer('R')"><span class="pill" id="navProfil"><svg class="i"><use href="#i-user"/></svg></span>Profil</button>
 </nav>
 
 <div id="m3d" hidden></div><button type="button" id="m3d-pill" hidden onclick="m3dOpen(M3D&&M3D.cli)"><i></i><span></span></button>
