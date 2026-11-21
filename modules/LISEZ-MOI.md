@@ -38,6 +38,7 @@ Un fichier de `modules/` placé après `chat/` ou `pointage/` (comme `newsletter
 | `fournisseurs.js` | liste et fiche des fournisseurs, prix en ligne, favoris, import intelligent, devis et factures des fournisseurs | fournisseurs |
 | `pointage.js` | écran Pointage et ses actions | pointage |
 | `compte.js` | premier lancement, compte, sauvegarde | commun |
+| `marque.js` | la marque de l'artisan : couleur de l'appli tirée du logo, logo à l'ouverture (« avec casô ») | commun |
 | `synchro.js` | QR code, synchronisation, équipe, démarrage de l'appli | commun |
 | `planning-phrases.js` | compréhension des phrases : planning dicté | planning |
 | `paiement-phrases.js` | factures et paiements dictés (« Osvald a payé 500 € ») | paiement |
