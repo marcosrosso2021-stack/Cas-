@@ -759,6 +759,15 @@ body.starting #hd{display:none}
 .en-sw input{-webkit-appearance:none;appearance:none;flex:none;position:relative;width:51px;height:31px;min-height:0;padding:0;margin:0;border:0;border-radius:999px;background:var(--line);transition:background .2s}
 .en-sw input::after{content:"";position:absolute;top:2px;inset-inline-start:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 4px #00000033;transition:transform .2s}
 .en-sw input:checked{background:var(--acc)}
+.st-set{padding:4px 16px!important}#cpPerm{display:contents}
+.st-r{display:flex;align-items:center;gap:12px;width:100%;min-height:58px;margin:0!important;padding:8px 0;border:0;border-top:1px solid var(--line);background:none;color:var(--ink);font:inherit!important;font-size:16px!important;letter-spacing:0!important;text-transform:none!important;text-align:start;cursor:pointer}
+.st-set>.st-r:first-child{border-top:0}.st-r[hidden]{display:none}
+.st-ic{width:34px;height:34px;flex:none;border-radius:10px;display:grid;place-items:center;background:var(--soft);color:var(--ink)}.st-ic .i{width:18px;height:18px}
+.st-n{flex:1;min-width:0}
+.st-v{width:auto!important;max-width:48%;min-height:0!important;margin:0!important;padding:6px 26px 6px 10px!important;border:0!important;background-color:var(--soft)!important;border-radius:10px!important;font-size:15px!important;color:var(--ink)}
+.st-go{flex:none;min-height:34px;padding:0 16px;border:0;border-radius:999px;background:var(--acc);color:#111;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.st-ok,.st-no{display:inline-flex;align-items:center;gap:5px;font-size:14px;color:var(--mut)}.st-ok{color:var(--ok)}.st-ok .i{width:16px;height:16px}
+.st-c{width:16px;height:16px;color:var(--mut)}
 .en-sw input:checked::after{transform:translateX(20px)}
 [dir=rtl] .en-sw input:checked::after{transform:translateX(-20px)}
 .en-sig{padding:16px!important}
@@ -2119,13 +2128,11 @@ body.role-ouvrier [data-pat]{display:none!important}body:not(.role-ouvrier) .dw-
  <div id="cpMoi" data-cp="moi"></div>
  <div id="cpRent" data-cp="rent"></div>
  <div id="cpExt" data-cp="ext"></div>
- <div class="card" data-cp="app">
-  <h2><span class="hi"><svg class="i"><use href="#i-globe"/></svg></span>Langue de l'appli</h2>
-  <select class="lang-sel" id="uiLang" aria-label="Langue" onchange="vnSetLang(this.value)"></select>
-  <p class="mut" style="margin:8px 0 0">Le devis reste toujours en français pour ton client.</p>
-  <button class="btn sec" id="trOpen" data-pat style="margin-top:10px" onclick="go('tr')">Améliorer la traduction</button>
+ <div class="card st-set" data-cp="app">
+  <label class="st-r" for="uiLang"><span class="st-ic"><svg class="i"><use href="#i-globe"/></svg></span><span class="st-n">Langue</span><select class="lang-sel st-v" id="uiLang" aria-label="Langue" onchange="vnSetLang(this.value)"></select></label>
+  <div id="cpPerm"></div>
+  <button class="st-r" id="trOpen" data-pat type="button" onclick="go('tr')"><span class="st-ic"><svg class="i"><use href="#i-edit"/></svg></span><span class="st-n">Améliorer la traduction</span><svg class="i st-c i-flip"><use href="#i-chev"/></svg></button>
  </div>
- <div class="card" id="cpPerm" data-cp="app"></div>
  <div class="card" id="notifCard" data-cp="app" hidden>
   <h2><span class="hi"><svg class="i"><use href="#i-send"/></svg></span>Notifications</h2>
   <button class="btn sec" id="notifBtn" onclick="enableNotif()">Recevoir une notification quand un client signe</button>
