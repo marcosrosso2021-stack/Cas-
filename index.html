@@ -823,6 +823,11 @@ nav button{min-width:0}
 .nf-pay{width:100%;border:0;background:none;padding:0;margin:0 0 12px;font:inherit;color:var(--ink);text-align:start;cursor:pointer}.nf-pay>span{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border-radius:20px;background:var(--card);box-shadow:var(--lift)}.nf-pay small{font-size:13px;color:var(--mut)}.nf-pay b{font-size:22px}
 .nf-rel{flex:none;min-height:44px;padding:0 18px;border:0;border-radius:999px;background:var(--ink);color:var(--card);font:inherit;font-size:14px;font-weight:600;cursor:pointer}
 .p3-t{display:flex;flex-direction:column;align-items:flex-start;gap:14px;min-height:104px;padding:16px;border:0;border-radius:20px;background:var(--card);box-shadow:var(--lift);color:var(--ink);font:inherit;font-size:15px;text-align:start;cursor:pointer}.p3-t .i{width:26px;height:26px}.nf-tl .nf-g{flex:1}
+.p3-t[disabled]{opacity:.4;cursor:default}
+.p3-ch{display:flex;align-items:center;gap:10px;margin:0!important;padding:4px 6px 4px 16px;border-radius:999px;background:var(--card);box-shadow:var(--lift);font-size:14px!important;color:var(--mut)!important}.p3-ch select{flex:1;min-width:0;border:0!important;background:transparent!important;box-shadow:none;min-height:44px;font-size:16px;font-weight:600;color:var(--ink)}
+.p3-mini{display:grid;place-items:center;min-height:200px;padding:20px;border-radius:20px;background:var(--card);box-shadow:var(--lift)}.p3-mini svg{width:100%;max-width:300px;height:auto;max-height:220px}.p3-mini .mp line{stroke:var(--ink)}
+.nf-v{font-size:14px;color:var(--mut)}#p3dSh .nf-r .i{width:20px;height:20px;flex:none}
+.p3-sp{width:22px;height:22px;flex:none;border-radius:50%;border:2.5px solid var(--line);border-top-color:var(--acc);animation:p3sp 1s linear infinite}@keyframes p3sp{to{transform:rotate(360deg)}}
 .mc{display:flex;flex-direction:column;gap:14px;padding:16px;border-radius:26px;background:#121212;color:#fff}
 .mc-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:4px 4px 0}.mc-top b{font-size:17px}.mc-gps{font-size:12px;font-weight:600;padding:5px 12px;border-radius:999px;background:#1f3a2a;color:#7fd9a2}
 .mc-g{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -2391,7 +2396,8 @@ document.addEventListener('DOMContentLoaded',function(){try{casoCnx()}catch(e){}
 </section>
 <section id="s-enc">
  <button class="btn sec back" onclick="go('histo')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
- <div class="pg-h"><h1 class="pg-t">Encaissements</h1></div>
+ <h1 class="pg-t">Mes paiements</h1>
+ <div id="docTop"></div>
  <div id="encDue"></div>
  <label for="encP">Encaissé sur la période</label><select id="encP" onchange="encRender()"><option value="m">Ce mois-ci</option><option value="pm">Le mois dernier</option><option value="y">Cette année</option><option value="py">L'année dernière</option><option value="c">Choisir les dates</option></select>
  <div class="row" id="encC" hidden><div><label for="encA">Du</label><input type="date" id="encA" onchange="encRender()"></div><div><label for="encB">Au</label><input type="date" id="encB" onchange="encRender()"></div></div>
@@ -2401,8 +2407,7 @@ document.addEventListener('DOMContentLoaded',function(){try{casoCnx()}catch(e){}
  </section>
 <section id="s-histo">
  <h1 class="pg-t">Documents</h1>
- <div id="docTop"></div>
- <div class="seg" role="tablist" id="hiSeg" hidden><button role="tab" data-p="fac" onclick="faTab='fac';renderHisto()">Factures</button><button role="tab" data-p="devis" onclick="faTab='devis';renderHisto()">Devis</button><button role="tab" data-p="ech" onclick="faTab='ech';renderHisto()">Échéances</button></div>
+ <div class="seg" role="tablist" id="hiSeg" hidden><button role="tab" data-p="fac" onclick="faTab='fac';renderHisto()">Factures</button><button role="tab" data-p="devis" onclick="faTab='devis';renderHisto()">Devis</button></div>
  
  <div class="card" id="stats"></div>
  <div class="chips" style="margin-bottom:10px" id="filtres"></div>
@@ -2595,6 +2600,26 @@ document.addEventListener('DOMContentLoaded',function(){try{casoCnx()}catch(e){}
  <button type="button" class="lnk sheet-x" onclick="cvSheet('cvTp',false)">Annuler</button>
 </div>
 <div class="sheet-bg" id="plShBg" hidden onclick="plSheet(false)"></div>
+<input type="file" id="p3dCam" accept="image/*,video/*" capture="environment" hidden onchange="p3dFichier(this)">
+<input type="file" id="p3dLib" accept="image/*,video/*" hidden onchange="p3dFichier(this)">
+<input type="file" id="p3dDoc" accept="image/*,application/pdf,.pdf" hidden onchange="p3dFichier(this)">
+<div class="sheet-bg" id="p3dBg" hidden onclick="p3dFerme()"></div>
+<div class="sheet" id="p3dSh" role="dialog" aria-modal="true" aria-labelledby="p3dT" hidden>
+ <div class="sheet-grip"></div>
+ <h3 id="p3dT">Lire un plan</h3>
+ <div class="nf-card">
+  <button type="button" class="nf-r" onclick="p3dPrendre('doc')"><svg class="i"><use href="#i-doc"/></svg><span class="nf-g">Fichier</span></button>
+  <button type="button" class="nf-r" onclick="p3dPrendre('lib')"><svg class="i"><use href="#i-img"/></svg><span class="nf-g">Photothèque</span></button>
+  <button type="button" class="nf-r" onclick="p3dPrendre('cam')"><svg class="i"><use href="#i-cam"/></svg><span class="nf-g">Prendre une photo ou une vidéo</span></button>
+ </div>
+</div>
+<div class="sheet-bg" id="p3dDvBg" hidden onclick="p3dDevisFerme()"></div>
+<div class="sheet" id="p3dDv" role="dialog" aria-modal="true" aria-labelledby="p3dDvT" hidden>
+ <div class="sheet-grip"></div>
+ <h3 id="p3dDvT">Reprendre les mesures dans le devis</h3>
+ <div id="p3dQ"></div>
+ <button type="button" class="nf-b" style="width:100%;margin-top:12px" onclick="p3dDevisOk()">Ajouter au devis</button>
+</div>
 <div class="sheet-bg" id="cvsBg" hidden onclick="chatConvsFerme()"></div>
 <div class="sheet" id="cvsSh" role="dialog" aria-modal="true" aria-labelledby="cvsT" hidden>
  <div class="sheet-grip"></div>
@@ -2743,15 +2768,22 @@ document.addEventListener('DOMContentLoaded',function(){try{casoCnx()}catch(e){}
 /* module 3D : lib/m3d.html, chargé au premier usage (gardé hors ligne par sw.js) */
 let M3D_SRC=null;function m3dSrc(){if(M3D_SRC)return Promise.resolve(M3D_SRC);return fetch('lib/m3d.html').then(r=>{if(!r.ok)throw new Error('m3d '+r.status);return r.text()}).then(t=>M3D_SRC=t)}
 let M3D=null;
-function m3dOpen(cli){if(M3D){if(!M3D.bg)return;if(!!cli===M3D.cli){M3D.bg=false;M3D.ready=false;$('m3d').hidden=false;m3dPill();return}m3dClose(true)}const m={cli:!!cli};M3D=m;$('m3d').hidden=false;
+function m3dOpen(cli,silent){if(M3D){if(silent&&!!cli===M3D.cli)return;if(!M3D.bg)return;if(!!cli===M3D.cli){M3D.bg=false;M3D.silent=false;M3D.ready=false;$('m3d').hidden=false;m3dPill();return}m3dClose(true)}
+ const m={cli:!!cli,silent:!!silent,bg:!!silent};m.pret=new Promise(r=>m.fini=r);M3D=m;$('m3d').hidden=!!silent;
  m3dSrc().then(src=>{if(M3D!==m)return;const f=document.createElement('iframe'),a=accountGet()||{};
   f.setAttribute('allow','camera; screen-wake-lock');f.title='casô 3D';
   f.srcdoc=cli?src.replace('const CLIENT=/*CLIENT*/false;',()=>'const CLIENT=true;'):src;
-  f.onload=()=>{try{f.contentWindow.postMessage({source:'caso-app',type:'init',data:{lang:vlGet(),name:a.prenom||'',email:a.email||''}},'*')}catch(e){}};
+  f.onload=()=>{try{f.contentWindow.postMessage({source:'caso-app',type:'init',data:{lang:vlGet(),name:a.prenom||'',email:a.email||''}},'*')}catch(e){}setTimeout(m.fini,300)};
   m.f=f;$('m3d').appendChild(f)}).catch(()=>{if(M3D===m){M3D=null;$('m3d').hidden=true}})}
+/* écran « Plan et 3D » : le module travaille sans se montrer (lecture du plan, maquette) ; il ne s'affiche que quand on le demande.
+   Fermé depuis cet écran, il reste chargé en arrière-plan : la maquette se rouvre tout de suite. */
+async function m3dCmd(d,voir){if(!M3D||M3D.cli)m3dOpen(false,true);const m=M3D;if(!m)return;m.from='p3d';try{await m.pret}catch(e){}
+ if(voir){m.bg=false;m.silent=false;$('m3d').hidden=false}
+ try{m.f.contentWindow.postMessage({source:'caso-app',type:'cmd',data:d},'*')}catch(e){}}
+function m3dCacher(){if(!M3D)return;M3D.bg=true;M3D.silent=true;$('m3d').hidden=true;m3dPill()}
 /* pendant un travail long du module (série de photos, maquette), le quitter le garde ouvert en arrière-plan : le calcul continue (sauf déconnexion) */
 function m3dClose(force){if(!M3D)return;if(M3D.busy&&!force){M3D.bg=true;$('m3d').hidden=true;m3dPill();return}if(M3D.f)M3D.f.remove();M3D=null;$('m3d').hidden=true;m3dPill()}
-function m3dPill(){const b=$('m3d-pill');if(!b)return;const on=!!(M3D&&M3D.bg&&(M3D.busy||M3D.ready));b.hidden=!on;if(!on)return;b.classList.toggle('ok',!M3D.busy);b.lastChild.textContent=M3D.busy?(M3D.lbl||'…')+(M3D.n?' · '+Math.min(M3D.n,M3D.done+1)+'/'+M3D.n:''):(M3D.readyLbl||'')}
+function m3dPill(){const b=$('m3d-pill');if(!b)return;const on=!!(M3D&&M3D.bg&&!M3D.silent&&(M3D.busy||M3D.ready));b.hidden=!on;if(!on)return;b.classList.toggle('ok',!M3D.busy);b.lastChild.textContent=M3D.busy?(M3D.lbl||'…')+(M3D.n?' · '+Math.min(M3D.n,M3D.done+1)+'/'+M3D.n:''):(M3D.readyLbl||'')}
 /* analyse vidéo interrompue (appli quittée ou verrouillée) : le module est rouvert en arrière-plan et l'analyse reprend seule ; la pastille la suit */
 function m3dPending(){return new Promise(ok=>{try{const r=indexedDB.open('caso_vjob',1);r.onupgradeneeded=()=>r.result.createObjectStore('s');r.onerror=()=>ok(false);
   r.onsuccess=()=>{try{const q=r.result.transaction('s').objectStore('s').get('job');q.onsuccess=()=>{const j=q.result;r.result.close();ok(!!(j&&j.file&&Date.now()-j.at<864e5&&(j.tries||0)<3))};q.onerror=()=>ok(false)}catch(e){ok(false)}}}catch(e){ok(false)}})}
@@ -2760,9 +2792,10 @@ function m3dPending(){return new Promise(ok=>{try{const r=indexedDB.open('caso_v
 /* module 3D : préchargé quand le téléphone ne fait rien, pour qu'il s'ouvre vite (et hors ligne) */
 setTimeout(()=>{const go=()=>m3dSrc().catch(()=>{});window.requestIdleCallback?requestIdleCallback(go,{timeout:15000}):go()},8000);
 window.addEventListener('message',e=>{if(!M3D||!M3D.f||e.source!==M3D.f.contentWindow)return;const m=e.data;if(!m||m.source!=='caso-3d')return;
- if(m.type==='close'&&!M3D.cli){m3dClose();go('chat')}
+ if(m.type==='close'&&!M3D.cli){if(M3D.from==='p3d'){m3dCacher();go('p3d');try{m3dCmd({k:'data'})}catch(e){}}else{m3dClose();go('chat')}}
+ else if((m.type==='lu'||m.type==='proj')&&!M3D.cli){if(typeof p3dRecu==='function')p3dRecu(m.type,m.data||{})}
  /* travail long : étapes suivies ; « Continuer en arrière-plan » ramène à la conversation, la pastille montre l'étape en cours puis le résultat prêt */
- else if(m.type==='busy'&&m.data){const d=m.data;M3D.busy=!!d.on;M3D.lbl=String(d.label||'').slice(0,80);M3D.done=+d.done||0;M3D.n=+d.n||0;if(!d.on){M3D.readyLbl=String(d.ready||'').slice(0,60);M3D.ready=!!M3D.bg}m3dPill()}
+ else if(m.type==='busy'&&m.data){const d=m.data;M3D.busy=!!d.on;M3D.lbl=String(d.label||'').slice(0,80);M3D.done=+d.done||0;M3D.n=+d.n||0;if(!d.on){M3D.readyLbl=String(d.ready||'').slice(0,60);M3D.ready=!!M3D.bg}m3dPill();if(M3D.from==='p3d'&&typeof p3dBusy==='function')p3dBusy(M3D)}
  else if(m.type==='bg'&&M3D.busy&&!M3D.cli){M3D.bg=true;$('m3d').hidden=true;go('chat');m3dPill()}
  /* demande du chat Pro tapée dans le chat 3D (devis, client, rendez-vous…) : elle repart dans la conversation de casô */
  else if(m.type==='pro'&&!M3D.cli){const t=String(m.data&&m.data.text||'').trim();if(t){m3dClose();go('chat');chatSend(t)}}

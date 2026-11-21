@@ -49,10 +49,9 @@ async function chatFile(inp){const f=inp.files&&inp.files[0];if(!f)return;inp.va
 function chType(k){const a=CH_ASK;if(!a||a.k!=='type')return;CH_ASK=null;chAsked();if(k==='plan')return chPlan(a.f);
  if(k==='photo')return casoPont.photoChantier(a.f,'');
  $('impFour').value='';go('imp');runImport({files:[a.f],value:''})}
-/* plan → la maquette 3D le prend tout de suite (cadrage, puis les murs sont tracés) */
-function chPlan(f){chBot(`<p><svg class="i i-sm"><use href="#i-plan"/></svg> <span>Plan envoyé à la maquette 3D.</span></p>`);
- if(typeof m3dOpen!=='function')return;m3dOpen();let n=0;(function essai(){const fr=document.querySelector('#m3d iframe');let w=null;try{w=fr&&fr.contentWindow}catch(e){}
-  if(w&&w.casoModule&&w.casoModule.loadFile){try{w.casoModule.loadFile(f)}catch(e){}return}if(++n<40)setTimeout(essai,250)})()}
+/* plan → « Plan et 3D » : lu en arrière-plan pour le chantier choisi */
+function chPlan(f){chBot(`<p><svg class="i i-sm"><use href="#i-plan"/></svg> <span>Plan envoyé à Plan et 3D : il est lu en arrière-plan.</span></p>`);
+ if(typeof p3dFichier!=='function')return;go('p3d');if(typeof p3dCh==='function'&&!p3dCh())return;p3dFichier({files:[f],value:''})}
 /* document d'un fournisseur : on dit ce qu'on a lu, une question, « oui » enregistre */
 function chDocAsk(f,T,W){const M=docMeta(T);$('impFour').value=M.four||'';
  const rows=rowsFromWords(W,T).filter(r=>r.on!==false&&r.pu>0&&r.label&&/\p{L}{3}/u.test(r.label)&&!/\b(t[ée]l|siret|tva|total|iban|bic|capital|rcs|ape|net [àa] payer|acompte)\b/i.test(r.label)).map(r=>Object.assign(r,{label:r.label.replace(/[\[\]|]+.*$/,'').replace(/\s+/g,' ').trim()})).filter(r=>r.label.length>2);

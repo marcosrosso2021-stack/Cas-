@@ -174,7 +174,7 @@ function html(r,id){var h="";/* avec la carte du devis, pas de phrase à l'infin
 function csv(v){v=String(v==null?"":v);return /[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
 P.action=function(a){try{
   if(a==="sauvegarde"&&typeof backupNow==="function")return backupNow();
-  if(a==="3d"&&typeof m3dOpen==="function")return m3dOpen();
+  if(a==="3d"&&typeof go==="function")return go("p3d");
   if(a==="prix"&&typeof exportCsv==="function")return exportCsv();
   if(a==="clients"&&typeof dl==="function"){var L=["Nom;Téléphone;E-mail;Adresse;Note"].concat((db.clients||[]).map(function(c){return [c.nom,c.tel,c.email,c.adr||c.adresse,c.note].map(csv).join(";");}));return dl("mes-clients.csv","\ufeff"+L.join("\n"),"text/csv");}
   if(a==="bricoleur"&&typeof modePick==="function"){if(typeof chatSave==="function")chatSave();return modePick("bricoleur");}
@@ -359,7 +359,7 @@ function appFaire(a,o,r,t){var x={says:[],explain:r.explain};var cur=devisCouran
     case "oubli":ecran("pt","#ptBody>.card:last-of-type",function(){ptPage("j",true);});break;
     case "chantiers":ecran("pt",null,function(){ptPage("set");});break;
     case "plan":ecran("plan");break;
-    case "m3d":x.apres=function(){if(typeof m3dOpen==="function")m3dOpen();};break;
+    case "m3d":x.apres=function(){if(typeof go==="function")go("p3d");};break;
     case "faceid":{var bn=typeof bioNom==="function"?bioNom():"Face ID";x.bouton={act:"faceid",label:bn.charAt(0).toUpperCase()+bn.slice(1)};}x.explain="";break;
     case "prix_ligne":ecran("fou",null,function(){var i=document.getElementById("fouQ");if(i)i.value=o.q||"";if(typeof fouMode==="function")fouMode("web");});break;
     case "video":{var M=typeof M3D!=="undefined"?M3D:null;
