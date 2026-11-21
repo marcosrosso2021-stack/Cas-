@@ -1,5 +1,5 @@
 /* casô · Mode découverte : essayer casô sans compte.
-   - à l'ouverture, sans compte sur ce téléphone (et sans équipe) : le chat, directement ;
+   - à l'ouverture, sans compte sur ce téléphone (et sans équipe) : l'Accueil, directement ;
    - rien n'est enregistré sur le téléphone tant que le compte n'est pas créé (tout reste en mémoire, et part à la fermeture) ;
    - limites : 2 clients, 2 rendez-vous, 1 devis (pas d'envoi), 2 fournisseurs, 2 chantiers, 1 plan ; Mes services libres ;
      encaissements, factures, équipe, signature : avec un compte ;
@@ -23,7 +23,7 @@ function decStart(){
  Storage.prototype.setItem=function(k,v){if(this===window.localStorage&&DEC.on&&DEC_RIEN.test(String(k))&&decSans())return;return decSet.call(this,k,v)};
  decGarder();
  document.body.classList.remove('starting');
- try{go('devis')}catch(e){}
+ try{go('home')}catch(e){}
  decMenu()}
 
 /* fin de la découverte : le compte vient d'être créé (ou une équipe rejointe) ; on enregistre ce qui a été fait */
@@ -63,7 +63,7 @@ function decFerme(){const s=$('decSh');if(!s)return;s.classList.remove('on');$('
 /* aller créer le compte ou se connecter ; « Retour » ramène au chat sans rien perdre */
 function decCreer(){decFerme();drawerClose&&drawerClose(true);stScreen('s-start');stShow('ac')}
 function decConnexion(){decFerme();drawerClose&&drawerClose(true);stScreen('s-start');stShow('lg')}
-function decRetour(){document.body.classList.remove('starting');go('devis')}
+function decRetour(){document.body.classList.remove('starting');go('home')}
 
 /* menu profil : icône sans identité, « Créer ton compte », « Se connecter » */
 function decMenu(){const ini=$('dwIni');if(ini&&DEC.on)ini.innerHTML='<svg class="i"><use href="#i-user"/></svg>'}

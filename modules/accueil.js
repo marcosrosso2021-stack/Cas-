@@ -4,9 +4,10 @@
    - Mes paiements (à encaisser, en retard) → Encaissements ;
    - Mes chantiers (le prochain passage) → Chantiers ;
    - la barre « Écris ou parle à casô » → le chat.
+   C'est le premier écran pour tout le monde, visiteur sans compte compris (sans entreprise : le logo casô).
    Rien n'est calculé ici : les chiffres viennent des modules (paiement.js, pointage.js). */
 function homeLogo(){const p=db.prof||{},ok=typeof rcImg==='function'&&rcImg(p.logo),ini=typeof mqInitiales==='function'?mqInitiales(p.nom):'';
- return ok?`<span class="hm-lg img"><img src="${p.logo}" alt=""></span>`:ini?`<span class="hm-lg" data-noi18n>${esc(ini)}</span>`:`<span class="hm-lg"><svg class="i"><use href="#i-user"/></svg></span>`}
+ return ok?`<span class="hm-lg img"><img src="${p.logo}" alt=""></span>`:ini?`<span class="hm-lg" data-noi18n>${esc(ini)}</span>`:`<span class="hm-lg img"><img src="icon-192.png" alt="casô"></span>`}
 function homePaiements(){let tot=0,ret=0;const t=agToday();
  try{encDues().forEach(f=>{const d=faDue(f);tot+=d;if(f.due&&f.due<t)ret+=d})}catch(e){}
  return{tot:faR2(tot),ret:faR2(ret)}}
@@ -28,7 +29,7 @@ function homeRender(){const box=$('s-home');if(!box)return;
   <button type="button" class="hm-q" onclick="go('chat');setTimeout(()=>{const i=$('chatIn');i&&i.focus()},60)"><span>${esc(i18nT('Écris ou parle à casô'))}</span><i><svg class="i"><use href="#i-mic"/></svg></i></button>
  </div>`;
  try{aboMenu()}catch(e){}}
-/* à l'ouverture, avec un compte : l'Accueil (le visiteur sans compte arrive sur le chat, le collaborateur sur ses chantiers) */
-setTimeout(()=>{try{if(document.body.classList.contains('starting')||!$('s-chat').classList.contains('on'))return;
+/* à l'ouverture : l'Accueil est l'écran affiché d'office (index.html) ; on le remplit. Le collaborateur arrive sur ses chantiers. */
+setTimeout(()=>{try{if(document.body.classList.contains('starting')||!$('s-home').classList.contains('on'))return;
  if(typeof ptOuvrier==='function'&&ptOuvrier()){go('pt');return}
- if(accountGet())go('home')}catch(e){}},0);
+ go('home')}catch(e){}},0);

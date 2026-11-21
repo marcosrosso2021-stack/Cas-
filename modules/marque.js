@@ -43,18 +43,34 @@ function mqImage(src){return new Promise((ok,ko)=>{const i=new Image();i.onload=
 function mqPetit(img){const k=Math.min(1,240/Math.max(img.naturalWidth,img.naturalHeight)),c=document.createElement('canvas');
  c.width=Math.max(1,Math.round(img.naturalWidth*k));c.height=Math.max(1,Math.round(img.naturalHeight*k));c.getContext('2d').drawImage(img,0,0,c.width,c.height);return c.toDataURL('image/png')}
 
+/* écran de connexion : le logo de l'entreprise (ou ses initiales) à la place du logo casô, et « avec casô » en bas ;
+   sans marque gardée sur ce téléphone, l'écran reste celui de casô */
+function marqueConnexion(){const f=$('lgForm'),z=f&&f.querySelector('.st-logo');if(!z)return;
+ let m=null;try{m=JSON.parse(localStorage.getItem(MQ_KEY)||'null')}catch(e){}
+ const img=m&&/^data:image\/png;base64,/.test(m.l||'')?m.l:'',ok=!!(m&&(img||m.ini));
+ if(z.dataset.caso==null)z.dataset.caso=z.innerHTML;
+ let by=f.querySelector('.st-by');
+ if(!ok){if(z.dataset.mq){z.innerHTML=z.dataset.caso;delete z.dataset.mq}if(by)by.remove();return}
+ const lg=document.createElement('span');lg.className='sp-lg st-lg'+(img?'':' ini');lg.setAttribute('role','img');lg.setAttribute('aria-label',m.n||'');lg.setAttribute('data-noi18n','');
+ if(img){const i=new Image();i.alt='';i.src=img;lg.appendChild(i)}else lg.textContent=m.ini;
+ z.innerHTML='';z.appendChild(lg);z.dataset.mq=1;
+ if(!by){by=document.createElement('p');by.className='st-by';f.appendChild(by)}
+ by.innerHTML='<img src="icon-192.png" alt=""><span></span>';by.lastChild.textContent=typeof i18nT==='function'?i18nT('avec casô'):(m.by||'avec casô')}
+
 let mqCle=null;
 /* à chaque enregistrement : si le logo, la couleur ou le nom ont changé, on recalcule et on garde pour l'ouverture */
 async function marqueMaj(){
+ /* téléphone verrouillé ou écran de connexion : les données ne sont pas lues, on ne touche pas à la marque gardée */
+ {let v=false;try{v=localStorage.getItem('caso_locked')==='1'}catch(e){}if(v||document.body.classList.contains('starting'))return}
  if(!mqCompte()){try{localStorage.removeItem(MQ_KEY)}catch(e){}mqAppliquer(null);mqCle=null;return}
  const p=(typeof db!=='undefined'&&db&&db.prof)||{},logo=typeof rcImg==='function'&&rcImg(p.logo)?p.logo:'';
- const cle=[p.couleur||'',logo.length,logo.slice(-48),p.nom||''].join('|');if(cle===mqCle)return;mqCle=cle;
+ const cle=[p.couleur||'',logo.length,logo.slice(-48),p.nom||'',typeof I18N!=='undefined'?I18N.lang:''].join('|');if(cle===mqCle)return;mqCle=cle;
  let c=/^#[0-9a-f]{6}$/i.test(p.couleur||'')?p.couleur:'',l='';
  if(logo){try{const i=await mqImage(logo);if(!c)c=mqExtraire(i);l=mqPetit(i)}catch(e){}}
- const a=mqAccent(c),m={c,acc:a&&a.acc,accD:a&&a.accD,l,ini:mqInitiales(p.nom),n:String(p.nom||'').slice(0,60)};
+ const a=mqAccent(c),m={c,acc:a&&a.acc,accD:a&&a.accD,l,ini:mqInitiales(p.nom),n:String(p.nom||'').slice(0,60),by:typeof i18nT==='function'?i18nT('avec casô'):'avec casô'};
  if(cle!==mqCle)return;
  try{if(m.l||m.ini||m.acc)localStorage.setItem(MQ_KEY,JSON.stringify(m));else localStorage.removeItem(MQ_KEY)}catch(e){}
- mqAppliquer(m)}
+ mqAppliquer(m);try{marqueConnexion()}catch(e){}}
 
 {const s=window.save;if(typeof s==='function'&&!s.mq){const w=function(){const r=s.apply(this,arguments);try{marqueMaj()}catch(e){}return r};w.mq=1;window.save=w}}
-setTimeout(()=>{try{marqueMaj()}catch(e){}},0);
+setTimeout(()=>{try{marqueConnexion()}catch(e){}try{marqueMaj()}catch(e){}},0);

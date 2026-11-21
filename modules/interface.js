@@ -296,10 +296,22 @@ async function loginSubmit(){
    a.mode : 'artisan' ou 'bricoleur' (gardé dans le compte du téléphone) */
 const ONB={code:null,change:false};
 function stScreen(id){document.body.classList.add('starting');drawerClose&&drawerClose(true);document.querySelectorAll('section').forEach(x=>x.classList.remove('on'));$(id).classList.add('on');window.scrollTo(0,0)}
-function modeOpen(){ONB.change=false;['mdArt','mdBri'].forEach(k=>$(k).classList.remove('on'));$('mdSir').hidden=true;{const p=db.prof||{};$('mdSiret').value=p.siret||'';$('mdSiren').value=p.siren||(p.siret||'').slice(0,9)}$('mdErr').hidden=true;
- /* fin de la création du compte : conditions (obligatoire) et notifications, une seule fois */
- {const a=accountGet();$('mdCk').hidden=!!(a&&a.cgu);$('mdCkErr').hidden=true}
- stScreen('s-mode')}
+/* choix du type de compte, dans l'ordre : 1. le type (l'autre choix disparaît ; un appui sur le choix le rouvre) ;
+   2. artisan : le SIREN ou le SIRET ; 3. les conditions et les notifications (une seule fois, à la création) ; puis « Continuer ». */
+let MD_M=null;
+function modeOpen(){ONB.change=false;{const p=db.prof||{};$('mdSiret').value=p.siret||'';$('mdSiren').value=p.siren||(p.siret||'').slice(0,9)}$('mdErr').hidden=true;$('mdCkErr').hidden=true;
+ modeChoix(null);stScreen('s-mode')}
+function modeChoix(m){MD_M=m&&m!==MD_M?m:null;const A=$('mdArt'),B=$('mdBri');
+ [[A,'artisan'],[B,'bricoleur']].forEach(([e,k])=>{const on=MD_M===k;e.classList.toggle('on',on);e.setAttribute('aria-pressed',on);e.hidden=!!MD_M&&!on});
+ $('mdSir').hidden=!(MD_M==='artisan'&&!sirOk((db.prof||{}).siret));$('mdErr').hidden=true;mdSuite();
+ if(!$('mdSir').hidden)setTimeout(()=>{try{$('mdSiret').focus()}catch(e){}},60)}
+/* la suite n'apparaît que quand l'étape d'avant est faite : numéro saisi en entier pour l'artisan */
+function mdSuite(){const a=accountGet(),sir=$('mdSiret').value.replace(/\D/g,'').length===14||$('mdSiren').value.replace(/\D/g,'').length===9||sirOk((db.prof||{}).siret);
+ const pret=MD_M==='bricoleur'||(MD_M==='artisan'&&sir);
+ $('mdCk').hidden=!pret||!!(a&&a.cgu);$('mdGo').hidden=!pret}
+function mdGo(){if(!MD_M||!mdCkOk())return;
+ if(MD_M==='artisan'&&!sirOk((db.prof||{}).siret))return mdSirOk();
+ modePick(MD_M)}
 function mdCkOk(){const a=accountGet();if(!a||a.cgu)return true;
  if(!$('mdCgu').checked){$('mdCgu').closest('label').classList.add('bad');$('mdCkErr').hidden=false;$('mdCgu').focus();return false}
  a.cgu={v:'2026-11-19',at:Date.now()};a.notif=$('mdNotif').checked;accountPut(a);
@@ -312,8 +324,13 @@ function sirSync(e,o){const d=e.value.replace(/\D/g,''),t=$(o),td=t.value.replac
  if(/Siret$/.test(e.id)){if(d.length>=9)t.value=d.slice(0,9)}
  else if(d.length===9&&td.slice(0,9)!==d)t.value=d+td.slice(9)}
 function sirOk(n){n=String(n||'').replace(/\s/g,'');return /^\d{14}$/.test(n)&&(/^356000000/.test(n)||(luhnOk(n.slice(0,9))&&luhnOk(n)))}
-async function mdSirOk(){const n=$('mdSiret').value.replace(/\D/g,''),sr=$('mdSiren').value.replace(/\D/g,''),e=$('mdErr'),b=$('mdSirGo'),bad=t=>{e.textContent=i18nT(t);e.hidden=false;$('mdSiret').setAttribute('aria-invalid','true');$('mdSiret').focus()};
+async function mdSirOk(){let n=$('mdSiret').value.replace(/\D/g,'');const sr=$('mdSiren').value.replace(/\D/g,''),e=$('mdErr'),b=$('mdGo'),bad=t=>{e.textContent=i18nT(t);e.hidden=false;$('mdSiret').setAttribute('aria-invalid','true');$('mdSiret').focus()};
  e.hidden=true;$('mdSiret').removeAttribute('aria-invalid');
+ /* SIREN seul : le registre donne le SIRET du siège */
+ if(!n&&sirenOk(sr)){b.disabled=true;let st='';try{const ctl=window.AbortController?new AbortController():null,tm=setTimeout(()=>ctl&&ctl.abort(),7000);
+   const q=await fetch('https://recherche-entreprises.api.gouv.fr/search?q='+sr+'&page=1&per_page=1',ctl?{signal:ctl.signal}:{});clearTimeout(tm);
+   const x=q.ok?((await q.json()).results||[])[0]:null;if(x&&x.siren===sr&&x.siege)st=String(x.siege.siret||'')}catch(x){}
+  b.disabled=false;if(!sirOk(st))return bad('Indique le SIRET (14 chiffres).');n=st;$('mdSiret').value=st}
  if(!sirOk(n)||(sr&&sr!==n.slice(0,9)))return bad('Ce numéro ne semble pas valide : vérifie-le.');
  b.disabled=true;let co=null,net=true;
  try{const ctl=window.AbortController?new AbortController():null,tm=setTimeout(()=>ctl&&ctl.abort(),7000);
@@ -327,7 +344,7 @@ async function mdSirOk(){const n=$('mdSiret').value.replace(/\D/g,''),sr=$('mdSi
   if(!P.adr)P.adr=acCap(et.adresse||'');if(!P.forme)P.forme=acForme(co.nature_juridique);if(!P.tvai)P.tvai=(co.tva&&co.tva[0])||acTva(n.slice(0,9))}
  db.profAt=Date.now();save();try{fillProf()}catch(x){}
  modePick('artisan')}
-function modePick(m){if(!mdCkOk())return;if(m==='artisan'&&!sirOk((db.prof||{}).siret)){$('mdArt').classList.add('on');$('mdSir').hidden=false;$('mdSiret').focus();return}
+function modePick(m){if(!mdCkOk())return;if(m==='artisan'&&!sirOk((db.prof||{}).siret)){if(MD_M!=='artisan')modeChoix('artisan');return}
  const a=accountGet();if(a){a.mode=m;delete a.wait;accountPut(a)}
  if(ONB.code){$('rc2Code').textContent=ONB.code;stScreen('s-rc');return}
  modeEnter()}
