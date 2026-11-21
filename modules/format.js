@@ -1,6 +1,6 @@
 /* casô · Le nouveau format : les écrans principaux de la barre du bas.
-   Profil (une page, plus de menu latéral), Chantiers (liste, filtres, mode chantier), Documents (à encaisser, en retard,
-   Factures · Devis · Échéances, Relancer), Clients (initiale et statut). Les fonctions restent celles des modules :
+   Profil (une page, plus de menu latéral), Chantiers (liste, filtres, 3D par chantier), Documents (Factures · Devis, depuis le Profil),
+   Mes paiements (à encaisser, en retard, échéances, Relancer), Clients (initiale et statut). Les fonctions restent celles des modules :
    ces écrans les présentent, ils ne recalculent rien et n'enregistrent rien eux-mêmes. */
 const nfChev='<svg class="i nf-c i-flip"><use href="#i-chev"/></svg>';
 const nfRow=(t,js,x)=>`<button type="button" class="nf-r" onclick="${js}"><span class="nf-g">${esc(i18nT(t))}</span>${x||''}${nfChev}</button>`;
@@ -16,7 +16,7 @@ function profRender(){const box=$('s-prof');if(!box)return;
  let h='';
  if(inv){h=`<div class="nf-card"><button type="button" class="nf-r" onclick="decConnexion()"><span class="nf-g"><b>${esc(i18nT('Se connecter'))}</b></span>${nfChev}</button>
    <button type="button" class="nf-r" onclick="decCreer()"><span class="nf-g"><b>${esc(i18nT('Créer ton compte'))}</b></span>${nfChev}</button></div>
-  <div class="nf-card">${nfRow('Mes services',"go('prix')")}${nfRow('Fournisseurs',"go('fou')")}${nfRow('Newsletter',"go('news')")}${nfRow('Paramètres',"cptPage('app')")}</div>`}
+  <div class="nf-card">${nfRow('Mes services',"go('prix')")}${nfRow('Documents',"go('histo')")}${nfRow('Newsletter',"go('news')")}${nfRow('Paramètres',"cptPage('app')")}</div>`}
  else{
   /* collaborateur : « Karim · Ouvrier » (dwIdRender) ; patron : son prénom et son nom */
   let nom=[a.prenom,a.nom].filter(Boolean).join(' ')||(getSync()||{}).user||'';if(ouv)try{dwIdRender();nom=($('dwIdN')||{}).textContent||nom}catch(e){}
@@ -25,7 +25,7 @@ function profRender(){const box=$('s-prof');if(!box)return;
    <div class="nf-card">${nfRow('Créer mon compte entreprise','eqPro()')}</div>
    <div class="nf-card"><button type="button" class="nf-r" onclick="eqQuitter()"><span class="nf-g">${esc(i18nT('Se déconnecter'))}</span></button></div>`;
   else{const ext=typeof eqExt==='function'&&eqExt();
-   h+=`<div class="nf-card">${nfRow('Mon entreprise',"cptPage('ent')")}${nfRow('Mon équipe',"cptPage('team')")}${nfRow('Ma signature',"go('sigp')")}${nfRow('Fournisseurs',"drawerGo('fou')")}${nfRow('Mes services',"go('prix')")}${ext?nfRow('Chantiers chez mon équipe',"cptPage('ext')"):''}</div>
+   h+=`<div class="nf-card">${nfRow('Mon entreprise',"cptPage('ent')")}${nfRow('Mon équipe',"cptPage('team')")}${nfRow('Ma signature',"go('sigp')")}${nfRow('Documents',"go('histo')")}${nfRow('Mes services',"go('prix')")}${ext?nfRow('Chantiers chez mon équipe',"cptPage('ext')"):''}</div>
    <div class="nf-card">${nfRow('Abonnement','dwPlanTap()')}${nfRow('Newsletter',"go('news')",nouv)}${nfRow('Paramètres',"cptPage('app')")}${nfRow('Mon compte',"cptPage('acc')")}${nfRow('Sauvegarde',"cptPage('bk')")}</div>
    <div class="nf-card"><button type="button" class="nf-r" onclick="logout()"><span class="nf-g">${esc(i18nT('Se déconnecter'))}</span></button>
     <button type="button" class="nf-r nf-ko" onclick="delOpen()"><span class="nf-g">${esc(i18nT('Supprimer mon compte'))}</span></button></div>`}}
@@ -41,27 +41,22 @@ function chsRender(){const box=$('s-chs');if(!box)return;
  let L=[];try{L=ptChListe(false).map(x=>Object.assign({e:chsEtat(x)},x))}catch(e){}
  const F=[['tous','Tous'],['cours','En cours'],['venir','À venir'],['fini','Terminés']],T={cours:['ok','En cours'],venir:['','À venir'],fini:['','Terminé']};
  const V=L.filter(x=>chsF==='tous'||x.e===chsF);
- box.innerHTML=`<div class="pg-h"><h1 class="pg-t">${esc(i18nT('Chantiers'))}</h1></div><div class="nf">
-  <button type="button" class="nf-mc" onclick="go('mc')"><i><svg class="i"><use href="#i-helmet"/></svg></i><b>${esc(i18nT('Mode chantier'))}</b>${nfChev}</button>
+ const nv=`<button type="button" class="chs-nv" data-hd-act onclick="go('pt');ptPage('set');setTimeout(()=>{const i=$('chNew');i&&i.focus()},80)"><svg class="i"><use href="#i-plus"/></svg>${esc(i18nT('Nouveau'))}</button>`;
+ box.innerHTML=`<div class="pg-h"><h1 class="pg-t">${esc(i18nT('Chantiers'))}</h1>${nv}</div><div class="nf">
   <div class="nf-ch">${F.map(f=>`<button type="button" class="${chsF===f[0]?'on':''}" onclick="chsF='${f[0]}';chsRender()">${esc(i18nT(f[1]))}</button>`).join('')}</div>
-  <div class="nf-card">${V.length?V.map(x=>{const c=x.c,sub=[];
-    const rue=String(c.adr||'').split(/\s\d{5}\b|,/)[0].trim().toLowerCase();if(c.adr&&!(rue&&String(c.nom).toLowerCase().includes(rue)))sub.push(esc(c.adr));
+  <div class="nf-card">${V.length?V.map(x=>{const c=x.c,sub=[],cl=typeof homeClient==='function'?homeClient(c):'';
+    if(cl)sub.push(esc(cl));
+    else{const rue=String(c.adr||'').split(/\s\d{5}\b|,/)[0].trim().toLowerCase();if(c.adr&&!(rue&&String(c.nom).toLowerCase().includes(rue)))sub.push(esc(c.adr))}
     if(x.nx)sub.push(esc(nfQuand(x.nx)));
-    return `<button type="button" class="nf-r" onclick="go('pt');ptPage('set')"><span class="nf-g"><b data-noi18n>${esc(c.nom)}</b>${sub.length?`<span data-noi18n>${sub.join(' · ')}</span>`:''}</span><span class="nf-t ${T[x.e][0]}">${esc(i18nT(T[x.e][1]))}</span></button>`}).join('')
+    return `<div class="nf-r"><button type="button" class="nf-g nf-in" onclick="go('pt');ptPage('set')"><b data-noi18n>${esc(c.nom)}</b>${sub.length?`<span data-noi18n>${sub.join(' · ')}</span>`:''}<span class="nf-t ${T[x.e][0]}">${esc(i18nT(T[x.e][1]))}</span></button><button type="button" class="chs-3d${p3dMaq(c.id)?' on':''}" onclick="go('p3d');p3dChoix('${esc(c.id)}')" aria-label="3D">3D</button></div>`}).join('')
    :`<p class="nf-vide">${esc(i18nT('Aucun chantier.'))}</p>`}</div>
-  <div class="nf-2">
-   <button type="button" class="nf-tl" onclick="go('agenda')"><svg class="i"><use href="#i-cal"/></svg><b>${esc(i18nT('Planning'))}</b></button>
-   <button type="button" class="nf-tl" onclick="drawerGo('pt')"><svg class="i"><use href="#i-clock"/></svg><b>${esc(i18nT('Heures'))}</b></button>
-  </div>
-  <button type="button" class="nf-tl" onclick="go('p3d')"><svg class="i"><use href="#i-plan"/></svg><b class="nf-g">${esc(i18nT('Plan et 3D'))}</b>${nfChev}</button>
-  <button type="button" class="nf-b s" onclick="go('pt');ptPage('set');setTimeout(()=>{const i=$('chNew');i&&i.focus()},80)"><svg class="i"><use href="#i-plus"/></svg>${esc(i18nT('Nouveau chantier'))}</button>
  </div>`;try{aboMenu()}catch(e){}}
 
 /* ---------- Mode chantier : quatre gros gestes, écran sombre ---------- */
 function mcRender(){const box=$('s-mc');if(!box)return;const AU=window.CasoAuto,g=AU&&AU.gps?AU.gps():null;
  let ici='';try{const o=summarize('all').open[0];if(o)ici=chName(o.c)}catch(e){}
  const B=(ic,t,js)=>`<button type="button" class="mc-b" onclick="${js}"><svg class="i"><use href="#${ic}"/></svg>${esc(i18nT(t))}</button>`;
- box.innerHTML=`<button class="btn sec back" onclick="go('chs')">Retour</button><h1 class="pg-t">${esc(i18nT('Mode chantier'))}</h1>
+ box.innerHTML=`<button class="btn sec back" onclick="go('home')">Retour</button><h1 class="pg-t">${esc(i18nT('Mode chantier'))}</h1>
   <div class="mc">${ici||g==='on'?`<div class="mc-top">${ici?`<b data-noi18n>${esc(ici)}</b>`:'<span></span>'}${g==='on'?`<span class="mc-gps">${esc(i18nT('GPS activé'))}</span>`:''}</div>`:''}
   <div class="mc-g">${B('i-mic','Dicter une note',"go('chat');setTimeout(vnRec,120)")}${B('i-cam','Prendre une photo',"go('chat');setTimeout(chatFilePick,120)")}${B('i-quote','Créer un devis','dvOpen()')}${B('i-clock','Noter mes heures',"go('pt');ptPage('go')")}</div>
   <button type="button" class="mc-go" onclick="go('chat');setTimeout(()=>{const i=$('chatIn');i&&i.focus()},60)"><svg class="i"><use href="#i-mic"/></svg>${esc(i18nT('Parler à l\'assistant'))}</button></div>`}

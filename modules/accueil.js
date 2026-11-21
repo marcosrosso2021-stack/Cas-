@@ -1,9 +1,9 @@
 /* casô · Accueil : l'essentiel en un coup d'œil.
    - le logo de l'entreprise (ou ses initiales) et « Bonjour <prénom> » ;
    - deux grandes actions : Nouveau devis, Nouvelle facture ;
-   - Mes paiements (à encaisser, en retard) → Encaissements ;
-   - Mes chantiers (le prochain passage) → Chantiers ;
-   - la barre « Écris ou parle à casô » → le chat.
+   - Mes paiements (à encaisser, en retard) → Mes paiements ;
+   - Planning, Pointage (le chantier pointé en ce moment), Mode chantier ;
+   - Mes travaux en cours : la liste seule, sans bouton.
    C'est le premier écran pour tout le monde, visiteur sans compte compris (sans entreprise : le logo casô).
    Rien n'est calculé ici : les chiffres viennent des modules (paiement.js, pointage.js). */
 function homeLogo(){const p=db.prof||{},ok=typeof rcImg==='function'&&rcImg(p.logo),ini=typeof mqInitiales==='function'?mqInitiales(p.nom):'';
@@ -11,11 +11,15 @@ function homeLogo(){const p=db.prof||{},ok=typeof rcImg==='function'&&rcImg(p.lo
 function homePaiements(){let tot=0,ret=0;const t=agToday();
  try{encDues().forEach(f=>{const d=faDue(f);tot+=d;if(f.due&&f.due<t)ret+=d})}catch(e){}
  return{tot:faR2(tot),ret:faR2(ret)}}
+/* travaux en cours : le chantier pointé en ce moment ou prévu aujourd'hui (même règle que l'écran Chantiers) */
+function homeTravaux(){let L=[];try{L=ptChListe(false).filter(x=>chsEtat(x)==='cours')}catch(e){}return L}
 function homeRender(){const box=$('s-home');if(!box)return;
  const a=accountGet()||{},p=db.prof||{},pre=a.prenom||(typeof getSync==='function'&&(getSync()||{}).user)||'';
- const pay=homePaiements();let L=[];try{L=ptChListe(false).filter(x=>x.nx)}catch(e){}
- const x=L[0],quand=x?agFmtD(x.nx.d,{weekday:'short',day:'numeric',month:'short'})+(x.nx.a?' · '+(+x.nx.a.slice(0,2))+' h'+(x.nx.a.slice(3)!=='00'?' '+x.nx.a.slice(3):''):''):'';
- const chev='<svg class="i i-flip"><use href="#i-chev"/></svg>';
+ const pay=homePaiements(),t=agToday();let auj=0,ici='';
+ try{auj=agDayEvents(t).filter(e=>e.t==='rdv').length}catch(e){}
+ try{const o=summarize('all').open[0];if(o)ici=chName(o.c)}catch(e){}
+ const W=homeTravaux(),chev='<svg class="i i-flip"><use href="#i-chev"/></svg>';
+ const tuile=(ic,ti,sub,js,on)=>`<button type="button" class="hm-tl${on?' on':''}" onclick="${js}"><i><svg class="i"><use href="#${ic}"/></svg></i><b>${esc(i18nT(ti))}</b>${sub?`<span>${sub}</span>`:''}</button>`;
  box.innerHTML=`<div class="hm">
   <div class="hm-h">${homeLogo()}<div class="hm-w"><b>${esc(i18nT('Bonjour'))}${pre?' <span data-noi18n style="font:inherit;color:inherit">'+esc(pre)+'</span>':''}</b>${p.nom?`<span data-noi18n>${esc(p.nom)}</span>`:''}</div></div>
   <div class="hm-2">
@@ -24,11 +28,18 @@ function homeRender(){const box=$('s-home');if(!box)return;
   </div>
   <button type="button" class="hm-c" onclick="drawerGo('enc')"><span class="hm-t"><b>${esc(i18nT('Mes paiements'))}</b>${chev}</span>
    <span class="hm-m"><span><small>${esc(i18nT('À encaisser'))}</small><b class="hm-ok" data-noi18n>${eur(pay.tot)}</b></span><span><small>${esc(i18nT('En retard'))}</small><b class="${pay.ret>0?'hm-ko':''}" data-noi18n>${eur(pay.ret)}</b></span></span></button>
-  <button type="button" class="hm-c" onclick="go('pt');ptPage('set')"><span class="hm-t"><b>${esc(i18nT('Mes chantiers'))}</b>${L.length?`<span data-noi18n>${L.length}</span>`:chev}</span>
-   ${x?`<span class="hm-r"><span class="hm-ri"><svg class="i"><use href="#i-helmet"/></svg></span><span class="hm-rt"><b data-noi18n>${esc(x.c.nom)}</b><span data-noi18n>${esc(quand)}</span></span></span>`:''}</button>
-  <button type="button" class="hm-q" onclick="go('chat');setTimeout(()=>{const i=$('chatIn');i&&i.focus()},60)"><span>${esc(i18nT('Écris ou parle'))}</span><i><svg class="i"><use href="#i-mic"/></svg></i></button>
+  <div class="hm-3">
+   ${tuile('i-cal','Planning',auj?'<span data-noi18n>'+auj+'</span> '+esc(i18nT(auj>1?'passages':'passage')):'',"go('agenda')")}
+   ${tuile('i-clock','Pointage',ici?'<span data-noi18n>'+esc(ici)+'</span>':'',"drawerGo('pt');ptPage('go')",!!ici)}
+   ${tuile('i-helmet','Mode chantier','',"go('mc')")}
+  </div>
+  ${W.length?`<p class="hm-k">${esc(i18nT('Mes travaux en cours'))}</p><div class="hm-l">${W.map(x=>{const cl=homeClient(x.c);
+   return `<div class="hm-li"><b data-noi18n>${esc(x.c.nom)}</b>${cl?`<span data-noi18n>${esc(cl)}</span>`:''}</div>`}).join('')}</div>`:''}
  </div>`;
  try{aboMenu()}catch(e){}}
+/* client d'un chantier : la fiche liée (cid), sinon rien — le nom du chantier porte souvent déjà le client */
+function homeClient(c){const x=c&&c.cid&&(db.clients||[]).find(k=>k.id===c.cid);if(!x||!x.nom)return'';
+ return String(c.nom||'').toLowerCase().includes(String(x.nom).toLowerCase())?'':x.nom}
 /* à l'ouverture : l'Accueil est l'écran affiché d'office (index.html) ; on le remplit. Le collaborateur arrive sur ses chantiers. */
 setTimeout(()=>{try{if(document.body.classList.contains('starting')||!$('s-home').classList.contains('on'))return;
  if(typeof ptOuvrier==='function'&&ptOuvrier()){go('pt');return}

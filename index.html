@@ -837,6 +837,19 @@ nav button{min-width:0}
 #hdAct{flex:none;display:flex}#hdAct:empty{display:none}#s-chat .ct-cv{display:none}
 .ct-cv{min-height:44px;padding:0 18px;border:0;border-radius:999px;background:var(--card);box-shadow:var(--lift);color:var(--ink);font:inherit;font-size:15px;font-weight:600;cursor:pointer}
 #hdAct .ct-cv{display:block}
+/* Chantiers : « Nouveau » discret dans la barre du haut, bouton 3D à droite de chaque chantier ; Accueil : Planning, Pointage, Mode chantier, travaux en cours */
+#s-chs .chs-nv{display:none}#hdAct .chs-nv{display:flex}
+.chs-nv{align-items:center;gap:6px;min-height:40px;padding:0 16px;border:1px solid var(--line);border-radius:999px;background:none;color:var(--ink);font:inherit;font-size:14px;font-weight:600;cursor:pointer}.chs-nv .i{width:16px;height:16px}
+.chs-3d{flex:none;min-width:52px;min-height:40px;margin-inline-start:8px;border:1px solid var(--line);border-radius:12px;background:none;color:var(--ink);font:inherit;font-size:14px;font-weight:700;cursor:pointer}.chs-3d.on{border-color:var(--acc);background:var(--acc);color:#18181a}
+#s-chs .nf-r .nf-in{display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+.hm-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.hm-tl{display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-width:0;padding:14px;border:0;border-radius:20px;background:var(--card);box-shadow:var(--lift);color:var(--ink);font:inherit;text-align:start;cursor:pointer}
+.hm-tl i{width:36px;height:36px;border-radius:11px;background:var(--soft);display:grid;place-items:center}.hm-tl i .i{width:20px;height:20px}
+.hm-tl b{font-size:15px;line-height:1.2}.hm-tl>span{max-width:100%;font-size:13px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hm-tl.on i{background:var(--acc);color:#18181a}
+.hm-k{margin:6px 4px 0;font-size:13px;font-weight:600;color:var(--mut)}
+.hm-l{display:flex;flex-direction:column;padding:2px 16px;border-radius:20px;background:var(--card);box-shadow:var(--lift)}
+.hm-li{display:flex;flex-direction:column;gap:3px;padding:12px 0}.hm-li+.hm-li{border-top:1px solid var(--line)}.hm-li b{font-size:15px}.hm-li span{font-size:13px;color:var(--mut)}
 .msg{border-radius:22px;padding:12px 16px}.msg.bot{border:0;box-shadow:var(--lift);border-bottom-left-radius:22px}.msg.me{border-bottom-right-radius:22px}
 .cmp-row{align-items:center;gap:6px;border:0;border-radius:999px;padding:6px;box-shadow:0 0 0 1px var(--line)}
 .cmp-row textarea{padding:9px 6px}
@@ -2153,7 +2166,6 @@ document.addEventListener('DOMContentLoaded',function(){try{casoCnx()}catch(e){}
  </div>
 </section>
 <section id="s-fou">
- <button class="btn sec back" onclick="go('prof')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
  <div class="pg-h"><h1 class="pg-t">Fournisseurs</h1></div>
  <div class="seg" id="fouSeg"><button type="button" class="on" data-m="mes" onclick="fouMode('mes')">Mes fournisseurs</button><button type="button" data-m="web" onclick="fouMode('web')">Prix en ligne</button></div>
  <div class="fou-bar">
@@ -2395,7 +2407,7 @@ document.addEventListener('DOMContentLoaded',function(){try{casoCnx()}catch(e){}
  <div id="newsList"></div>
 </section>
 <section id="s-enc">
- <button class="btn sec back" onclick="go('histo')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
+ <button class="btn sec back" onclick="go('home')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
  <h1 class="pg-t">Mes paiements</h1>
  <div id="docTop"></div>
  <div id="encDue"></div>
@@ -2756,7 +2768,7 @@ document.addEventListener('DOMContentLoaded',function(){try{casoCnx()}catch(e){}
  <button data-pat onclick="tab('home',this)"><span class="pill"><svg class="i"><use href="#i-home"/></svg></span>Accueil</button>
  <button onclick="tab('chs',this)"><span class="pill"><svg class="i"><use href="#i-helmet"/></svg></span>Chantiers</button>
  <button onclick="tab('chat',this)"><span class="pill"><svg class="i"><use href="#i-chat"/></svg></span>Chat</button>
- <button data-pat onclick="tab('histo',this)"><span class="pill"><svg class="i"><use href="#i-doc"/></svg></span>Documents</button>
+ <button data-pat onclick="tab('fou',this)"><span class="pill"><svg class="i"><use href="#i-truck"/></svg></span>Fournisseurs</button>
  <button data-pat onclick="tab('cli',this)"><span class="pill"><svg class="i"><use href="#i-users"/></svg></span>Clients</button>
  <button onclick="tab('prof',this)"><span class="pill" id="navProfil"><svg class="i"><use href="#i-user"/></svg></span>Profil</button>
 </nav>

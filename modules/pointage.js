@@ -105,7 +105,7 @@ function ptSetupHtml(){let h='';
   h+=`<label for="ptQP">Personne</label><div class="row"><input id="ptQP" placeholder="Prénom" autocapitalize="words" value="${esc((a&&a.prenom&&a.prenom.split(' ')[0])||'')}"><button class="btn sm" style="flex:0 0 auto" onclick="ptQuickP()">Ajouter</button></div>`}
  return h}
 function ptQuickCh(){const v=($('ptQC').value||'').trim();if(!v){$('ptQC').focus();return}db.chantiers.push({id:uid().slice(-6),nom:v});save();renderPt()}
-function ptChCli(id){const c=(db.clients||[]).find(x=>x.id===id);if(!c)return;db.chantiers.push({id:uid().slice(-6),nom:c.nom+(c.adr?' — '+c.adr:'')});save();renderPt()}
+function ptChCli(id){const c=(db.clients||[]).find(x=>x.id===id);if(!c)return;db.chantiers.push({id:uid().slice(-6),nom:c.nom+(c.adr?' — '+c.adr:''),adr:c.adr||undefined,cid:c.id});save();renderPt()}
 function ptQuickP(){const v=ctCap(($('ptQP').value||'').trim());if(!v){$('ptQP').focus();return}db.people.push({id:uid(),nom:v});save();renderPt()}
 
 function addCh(){
