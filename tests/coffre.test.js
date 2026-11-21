@@ -22,12 +22,12 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   const code=await p.evaluate(async()=>{document.getElementById('acNom').value='Jean Dupont';document.getElementById('acMail').value='jean@test.fr';document.getElementById('acPass').value='motdepasse1';
    await acSubmit();
    /* fin de la création : sans la case des conditions, le choix du mode est refusé ; cochée, l'acceptation est enregistrée */
-   window.__ck=!document.getElementById('mdCk').hidden;modePick('bricoleur');window.__refus=!(accountGet()||{}).mode&&!document.getElementById('mdCkErr').hidden;
+   window.__avant=document.getElementById('mdCk').hidden;modeChoix('bricoleur');window.__ck=!document.getElementById('mdCk').hidden&&document.getElementById('mdArt').hidden&&!document.getElementById('mdGo').hidden;mdGo();window.__refus=!(accountGet()||{}).mode&&!document.getElementById('mdCkErr').hidden;
    document.getElementById('mdCgu').checked=true;mdCkOk();window.__cgu=!!(accountGet()||{}).cgu;db.quotes.push({id:'qsecret',client:'Marie Dupont Secret',lines:[],date:'2026-11-08'});db.prof.iban='FR7612345678901234567890123';save();
    localStorage.setItem('devis_sync',JSON.stringify({url:'https://srv.example',token:'TOKEN-SECRET-123'}));
    await new Promise(r=>setTimeout(r,1500));return ONB.code});
-  const ck=await p.evaluate(()=>({ck:window.__ck,refus:window.__refus,cgu:window.__cgu}));
-  ok('1.0b fin de création : case des conditions obligatoire, puis acceptation enregistrée',ck.ck&&ck.refus&&ck.cgu,JSON.stringify(ck));
+  const ck=await p.evaluate(()=>({avant:window.__avant,ck:window.__ck,refus:window.__refus,cgu:window.__cgu}));
+  ok('1.0b fin de création : d\'abord le type de compte (l\'autre choix disparaît), puis les conditions ; case obligatoire, puis acceptation enregistrée',ck.avant&&ck.ck&&ck.refus&&ck.cgu,JSON.stringify(ck));
   ok('1.1 code de secours créé',/^[A-Z0-9]{5}-[A-Z0-9]{5}$/.test(code||''),code);
   const r=await raw(p),J=JSON.stringify(r);
   ok('1.2 coffre créé (mot de passe + code de secours)',(()=>{const m=JSON.parse(r.caso_vault||'null');return !!(m&&m.p&&m.r)})());

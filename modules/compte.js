@@ -3,20 +3,9 @@
 /* ---------- Premier lancement ---------- */
 document.addEventListener('click',e=>{const sp=document.getElementById('splash');if(sp&&!sp.hidden&&sp.contains(e.target))splashEnd()});
 function splashEnd(){const e=$('splash');if(!e||e.hidden)return;e.classList.add('gone');setTimeout(()=>{e.hidden=true;e.remove()},460)}
-/* écran de démarrage : le logo seul ; environ 5 s la toute première fois, ensuite le temps de charger */
-/* avec un compte : le logo de l'entreprise (ou ses initiales et son nom), et « avec casô » en bas ; sans compte : le logo casô */
-function splashMarque(sp){let m=null;try{m=JSON.parse(localStorage.getItem('caso_marque')||'null')}catch(e){}
- const cpt=(()=>{try{return !!(accountGet()||(typeof getSync==='function'&&(getSync()||{}).token))}catch(e){return false}})();
- const img=m&&/^data:image\/png;base64,/.test(m.l||'')?m.l:'';if(!cpt||!m||!(img||m.ini))return;
- const mk=sp.querySelector('.sp-mark svg'),T=s=>typeof i18nT==='function'?i18nT(s):s;
- const lg=document.createElement('div');lg.className='sp-lg'+(img?'':' ini');
- if(img){const i=new Image();i.alt='';i.src=img;lg.appendChild(i)}else{lg.textContent=m.ini;lg.setAttribute('data-noi18n','')}
- const box=document.createElement('div');box.className='sp-mq';box.setAttribute('role','img');box.setAttribute('aria-label',m.n||'');box.appendChild(lg);
- if(!img&&m.n){const n=document.createElement('b');n.className='sp-n';n.setAttribute('data-noi18n','');n.textContent=m.n;box.appendChild(n)}
- const by=document.createElement('div');by.className='sp-by';if(mk)by.appendChild(mk.cloneNode(true));
- const t=document.createElement('span');t.textContent=T('avec casô');by.appendChild(t);
- sp.innerHTML='';sp.classList.add('mq');sp.appendChild(box);sp.appendChild(by)}
-function splashShow(){const sp=$('splash');if(!sp||sp.dataset.done)return;sp.dataset.done=1;try{splashMarque(sp)}catch(e){}sp.hidden=false;window.__splashGo&&__splashGo();
+/* écran de démarrage : affiché dès le premier dessin de la page (index.html, avec le logo de l'entreprise s'il y a un compte) ;
+   il reste environ 5 s la toute première fois, ensuite le temps de charger */
+function splashShow(){const sp=$('splash');if(!sp||sp.dataset.done)return;sp.dataset.done=1;sp.hidden=false;window.__splashGo&&__splashGo();
  let neuf=false;try{neuf=!localStorage.getItem('caso_vu');localStorage.setItem('caso_vu','1')}catch(e){}
  setTimeout(splashEnd,matchMedia('(prefers-reduced-motion: reduce)').matches?400:neuf?5000:500)}
 function startOpen(){

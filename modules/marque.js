@@ -48,10 +48,10 @@ let mqCle=null;
 async function marqueMaj(){
  if(!mqCompte()){try{localStorage.removeItem(MQ_KEY)}catch(e){}mqAppliquer(null);mqCle=null;return}
  const p=(typeof db!=='undefined'&&db&&db.prof)||{},logo=typeof rcImg==='function'&&rcImg(p.logo)?p.logo:'';
- const cle=[p.couleur||'',logo.length,logo.slice(-48),p.nom||''].join('|');if(cle===mqCle)return;mqCle=cle;
+ const cle=[p.couleur||'',logo.length,logo.slice(-48),p.nom||'',typeof I18N!=='undefined'?I18N.lang:''].join('|');if(cle===mqCle)return;mqCle=cle;
  let c=/^#[0-9a-f]{6}$/i.test(p.couleur||'')?p.couleur:'',l='';
  if(logo){try{const i=await mqImage(logo);if(!c)c=mqExtraire(i);l=mqPetit(i)}catch(e){}}
- const a=mqAccent(c),m={c,acc:a&&a.acc,accD:a&&a.accD,l,ini:mqInitiales(p.nom),n:String(p.nom||'').slice(0,60)};
+ const a=mqAccent(c),m={c,acc:a&&a.acc,accD:a&&a.accD,l,ini:mqInitiales(p.nom),n:String(p.nom||'').slice(0,60),by:typeof i18nT==='function'?i18nT('avec casô'):'avec casô'};
  if(cle!==mqCle)return;
  try{if(m.l||m.ini||m.acc)localStorage.setItem(MQ_KEY,JSON.stringify(m));else localStorage.removeItem(MQ_KEY)}catch(e){}
  mqAppliquer(m)}
