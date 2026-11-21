@@ -1641,6 +1641,15 @@ body.role-ouvrier [data-pat]{display:none!important}body:not(.role-ouvrier) .dw-
 .vn-w{font-size:12px;color:#b45309}
 #toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--ink);color:var(--card);padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;transition:.25s;z-index:20;max-width:calc(100% - 32px)}
 #toast.on{opacity:1;transform:translate(-50%,0)}
+/* ---- Nouveau format : habillage commun des écrans intérieurs (mêmes formes que les écrans principaux) ---- */
+.card{border-radius:20px;padding:16px}.lst{border:0;border-radius:20px;box-shadow:var(--lift)}.it{padding:14px 16px}button.it.it-main{padding:14px 16px}.lst>.it:last-child{border-bottom:0}
+.seg{border:0;border-radius:999px;box-shadow:var(--lift);padding:4px}.seg button{border-radius:999px;min-height:38px;font-weight:500}.seg button.on{background:var(--acc);color:#18181a;font-weight:700}
+.btn{border-radius:999px;min-height:52px;font-weight:700;border:0}.btn.sec{background:var(--card);border:0;box-shadow:var(--lift);font-weight:600}.btn.sm{min-height:44px;padding-inline:16px}
+input,select,textarea{border-radius:14px}input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),select{min-height:48px}
+h2{font-size:15px;font-weight:700}h2 .hi,.steps .hi{display:none}
+.grp{margin:14px 4px 8px;color:var(--mut)}.chip{min-height:36px;display:inline-flex;align-items:center;padding:0 14px;border:0;box-shadow:var(--lift);font-size:13px;font-weight:500}
+.tag{border-radius:999px}.srch{border-radius:999px}.srch input{min-height:0}
+#priceList{background:var(--card);border-radius:20px;box-shadow:var(--lift);padding:2px 16px}#priceList .line:first-child{border-top:0}#priceList:empty{display:none}
 </style>
 <style>.iso{
   --anatomy-page:#0b0b0b;--anatomy-card:#131313;--anatomy-text:#a3a3a3;--anatomy-strong:#e6e6e6;--anatomy-muted:#6e6e6e;
@@ -1980,6 +1989,8 @@ body.role-ouvrier [data-pat]{display:none!important}body:not(.role-ouvrier) .dw-
 
 <!-- MES PRIX -->
 <section id="s-prix">
+ <button class="btn sec back" onclick="go('prof')"><svg class="i i-flip"><use href="#i-back"/></svg>Retour</button>
+ <h1 class="pg-t">Mes services</h1>
  <div class="seg" role="tablist" id="prSeg"><button role="tab" data-p="list" onclick="prPage('list')">Services</button><button role="tab" data-p="add" onclick="prPage('add')">Ajouter</button><button role="tab" data-p="io" onclick="prPage('io')">Importer</button></div>
  <button class="btn sec" data-pp="io" style="margin:0 0 12px" onclick="go('imp')"><svg class="i" style="vertical-align:-4px;margin-right:6px"><use href="#i-scan"/></svg>Importer une facture ou une liste</button>
  <div class="card" data-pp="add">
