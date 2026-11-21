@@ -204,13 +204,14 @@ function accRender(){const box=$('cpAcc');if(!box)return;const a=accountGet()||{
   ${accountGet()?`<button class="btn sec" onclick="logout()"><svg class="i"><use href="#i-logout"/></svg>${esc(i18nT('Se déconnecter'))}</button>`:''}</div>`}
 /* Paramètres › Autorisations : position (pointage GPS) et notifications de ce téléphone */
 /* une ligne par autorisation : activée, refusée, ou un bouton « Activer » */
+/* ligne de réglage : icône, nom, et à droite l'état (« Activée », « Refusée ») ou le bouton « Activer » */
+function stEtat(s,f,o,n){return s==='granted'?`<span class="st-ok"><svg class="i"><use href="#i-check"/></svg>${esc(i18nT(o))}</span>`
+ :s==='denied'?`<span class="st-no">${esc(i18nT(n))}</span>`:`<button class="st-go" type="button" onclick="${f}">${esc(i18nT('Activer'))}</button>`}
+function stLigne(ic,n,d){return `<div class="st-r"><span class="st-ic"><svg class="i"><use href="#${ic}"/></svg></span><span class="st-n">${esc(i18nT(n))}</span>${d}</div>`}
 async function permRender(){const b=$('cpPerm');if(!b)return;
  const geo=!!(navigator.geolocation||window.CasoAuto),N=typeof Notification!=='undefined';
  let gp='';try{gp=navigator.permissions?(await navigator.permissions.query({name:'geolocation'})).state:''}catch(e){}
- const etat=(s,f,o,n)=>s==='granted'?`<span class="st-ok"><svg class="i"><use href="#i-check"/></svg>${esc(i18nT(o))}</span>`
-  :s==='denied'?`<span class="st-no">${esc(i18nT(n))}</span>`:`<button class="st-go" type="button" onclick="${f}">${esc(i18nT('Activer'))}</button>`;
- const r=(ic,n,d)=>`<div class="st-r"><span class="st-ic"><svg class="i"><use href="#${ic}"/></svg></span><span class="st-n">${esc(i18nT(n))}</span>${d}</div>`;
- b.innerHTML=(geo?r('i-pin','Position',etat(gp,'permGeo()','Activée','Refusée')):'')+(N?r('i-send','Notifications',etat(Notification.permission,'permNotif()','Autorisées','Refusées')):'')}
+ b.innerHTML=(geo?stLigne('i-pin','Position',stEtat(gp,'permGeo()','Activée','Refusée')):'')+(N?stLigne('i-send','Notifications',stEtat(Notification.permission,'permNotif()','Autorisées','Refusées')):'')}
 function permGeo(){if(window.CasoAuto&&CasoAuto.fix){try{CasoAuto.fix()}catch(e){}setTimeout(permRender,1500);return}
  navigator.geolocation.getCurrentPosition(()=>permRender(),()=>permRender(),{timeout:15000})}
 function permNotif(){Promise.resolve(Notification.requestPermission()).then(r=>{
