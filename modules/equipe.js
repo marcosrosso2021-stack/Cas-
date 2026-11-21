@@ -147,7 +147,12 @@ function eqChat(t){if(typeof db==='undefined')return false;const f=eqFold(t),c=e
  /* « Karim 15 € de l'heure » */
  if(pc&&EQ_HEURE.test(f)&&!EQ_PAY.test(f)){const amt=eqMontant(f);if(amt>0){pc.taux=faR2(amt);pc.at=Date.now();save();return eqBulle(t,`<p><svg class="i i-sm ok-c"><use href="#i-check"/></svg> <span data-noi18n>${esc(pc.nom)} · ${esc(eur(pc.taux))}/h</span></p>`)}}
  /* « Karim est dans mon équipe », « ajoute Ali à l'équipe », « nouveau collaborateur Paul 06… » */
- const veut=(EQ_TEAM.test(f)&&(EQ_ADD.test(f)||EQ_IS.test(f)||c.tel||c.email))||(EQ_COLLAB.test(f)&&(EQ_NEW.test(f)||EQ_ADD.test(f)));
+ /* « combien d'heures a fait Karim (ce mois / cette semaine) » : ses heures pointées */
+ if(pc&&/(combien d.heures|combien d heures|ses heures|heures de|how many hours|cuantas horas|quantas horas|quante ore|cate ore|kac saat|ile godzin|сколько часов|كم ساعة)/.test(f)&&!EQ_PAY.test(f)){
+  const per=/(semaine|week|semana|settimana|saptaman|hafta|tydzien|недел|أسبوع)/.test(f)?'week':/(tout|total|depuis le debut|all|todo|tutto)/.test(f)?'all':'month',h=eqHeures(pc.id,per),est=eqEstime(pc,per);
+  return eqBulle(t,`<p><b data-noi18n>${esc(pc.nom)}</b> · <span>${esc(i18nT(per==='week'?'cette semaine':per==='all'?'en tout':'ce mois-ci'))}</span> : <b data-noi18n>${esc(fmtH(h))}</b>${est!=null?` · <span>${esc(i18nT('Dû'))}</span> <b data-noi18n>${esc(eur(est))}</b>`:''}</p>`)}
+ /* « invite Karim » (déjà dans l'équipe) : sa carte d'invitation */
+ const veut=(EQ_TEAM.test(f)&&(EQ_ADD.test(f)||EQ_IS.test(f)||c.tel||c.email))||(EQ_COLLAB.test(f)&&(EQ_NEW.test(f)||EQ_ADD.test(f)))||(pc&&/(^|[^\p{L}])(invite|inviter|invitation|invita|invitar|convida)(?=[^\p{L}]|$)/u.test(f));
  if(!veut||/(^|[^\p{L}])(retire|enleve|supprime|remove|quita|elimina|rimuovi|sterge|cikar|usun|удали)(?=[^\p{L}]|$)/u.test(f))return false;
  let nom=eqNomDe(t);if(!nom&&pc)nom=pc.nom;if(!nom)return false;nom=typeof chatCasse==='function'?chatCasse(nom):nom;
  ensurePt();let p=db.people.find(x=>nameKey(x.nom)===nameKey(nom))||(pc&&nameKey(pc.nom.split(' ')[0])===nameKey(nom.split(' ')[0])?pc:null);const neuf=!p;

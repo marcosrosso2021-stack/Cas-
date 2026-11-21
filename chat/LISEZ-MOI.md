@@ -356,3 +356,21 @@ Source du moteur et outils de traduction : le module « caso-ia » (moteur, cata
 - essai : `outils/chat/essai-titres.js` (sans navigateur) : 47 phrases attendues, et toutes les phrases « Ouvrir… » des 9 catalogues raccourcies en titre (126/126).
 - essais : `outils/chat/essai-photo.js` (10 contrôles), 4 conversations de plus dans `essai-fiabilite.js`.
 
+
+**Fonctions récentes dans le chat, adresses dictées (21 nov. 2026)** :
+- **Prix en ligne** (`brain.js`, `prix_ligne`) : un magasin nommé (« cherche le prix de vis chez Leroy Merlin »), « combien coûte un sac de ciment »,
+  « trouve-moi des vis à bois 5x50 » ouvrent les prix en ligne avec le produit (avant : maquette 3D, ou une ligne ajoutée au devis).
+- **Espace client** (`espace_client`) : « lien client de Martin », « envoie l'espace client à Dupont » ouvrent sa fiche et préparent son lien
+  (avant : « supprimer la fiche de Martin ? »).
+- **GPS** (`gps`) : « active le GPS » ouvre l'autorisation de la position (avant : « Gps : client ou fournisseur ? »).
+- **Pointage** : « pointe-moi chez Martin », « je commence chez Dupont » pointent sur le chantier de ce client (créé avec son adresse
+  s'il n'existe pas) ; c'est l'artisan lui-même qui pointe (sa fiche « moi »), le collaborateur sur sa fiche ; « j'ai fini » pointe la sortie.
+- **Compte** : « mon abonnement » ouvre le plan ; « mes paramètres » ouvre Paramètres ; « mon compte » ouvre Mon compte.
+- **Mon entreprise** : SIRET, numéro de TVA, décennale, nom, téléphone, e-mail et adresse de l'entreprise se changent au chat
+  (« mon numéro de TVA est FR… », « l'adresse de l'entreprise est … ») ; avant, seuls IBAN, RCS, capital… l'étaient.
+- **Équipe** (`modules/equipe.js`) : « invite Karim » prépare son invitation ; « combien d'heures a fait Karim ce mois / cette semaine ».
+- **Adresses dictées** (`modules/clients.js` : `adrAvant`, `adrApres`, `adrOfficielle`) : la dictée suit la langue de l'appli, une ville
+  française dite dans une autre langue arrive mal écrite (« ex en provence »). Après chaque message, les adresses nouvelles des clients,
+  chantiers et rendez-vous sont cherchées dans la Base Adresse Nationale : la commune et le code postal officiels sont repris
+  (« 42 Avenue Philippe Solari 13090 Aix-en-Provence »), l'écrit d'origine est gardé (`adrSaisie`). Rien sans réseau.
+- essai : `tests/chat-fonctions.test.js` (18 contrôles).

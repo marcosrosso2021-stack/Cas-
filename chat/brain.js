@@ -1615,7 +1615,7 @@ function create(E,X,saved,opts){
     ["ar","arabe|arabic|arabo|araba|arabski|arapca|араб\\S*|عرب\\S*"]];
   function appLang(n){for(var i=0;i<APP_LANGS.length;i++)if(new RegExp("(?:^|\\s)(?:"+APP_LANGS[i][1]+")(?=\\s|$)").test(n))return APP_LANGS[i][0];return null;}
   /* champs de « Mon entreprise » (fiche de casô) */
-  var APP_CHAMPS=[["iban","iban"],["bic","bic|swift"],["tauxH","taux horaire|tarif horaire|prix de l heure|prix horaire|heure ht|taux de l heure"],
+  var APP_CHAMPS=[["tvai","numero de tva(?: intra\\w*)?|tva intra\\w*|numero intracom\\w*|tva intracom\\w*"],["iban","iban"],["bic","bic|swift"],["tauxH","taux horaire|tarif horaire|prix de l heure|prix horaire|heure ht|taux de l heure"],
     ["depl","frais de deplacement|deplacement par defaut|prix du deplacement|forfait deplacement"],["capital","capital social|capital"],
     ["rcpro","responsabilite civile|rc pro"],["delai","delai de paiement|delais de paiement"],
     ["zone","zone couverte par l assurance|zone couverte|zone d assurance|zone de l assurance|zone geographique"],["med","mediateur"],["rm","rcs|numero rm|rne|repertoire des metiers"],["forme","forme juridique|statut juridique"],
@@ -1643,7 +1643,17 @@ function create(E,X,saved,opts){
     if(/\b(deconnecte|deconnecter|deconnexion|deconnectes|deconnectez|log out|logout|sign out|se deconnecter)\b/.test(n)||/\b(quitter|quitte|sortir|sors|sortie)\b (?:de )?(?:mon |du |le )?compte\b/.test(n))return A("deconnexion");
     if(/\b(supprime|supprimer|efface|effacer|ferme|fermer|resilie|resilier|detruis|detruire|clore|cloturer)\b.*\b(mon|le|ce) compte\b|\bsuppression (?:de |du )?(?:mon )?compte\b/.test(n))return A("compte",{suppr:true});
     if(/\bcode (?:de )?(?:secours|recuperation)\b/.test(n))return A("secours");
-    if(/^(?:ouvre |voir |affiche |montre |va dans )?(?:mon compte|mes reglages|les reglages|reglages|parametres|mes parametres|preferences|mes preferences)$/.test(n)||/\b(reglages|parametres|preferences)\b/.test(n)&&!/\b(porte|fenetre|chaudiere|radiateur|mur)\b/.test(n))return A("compte");
+    if(/^(?:ouvre |voir |affiche |montre |va dans )?(?:mon compte|mes infos|mes informations)$/.test(n))return A("compte");
+    if(/^(?:ouvre |voir |affiche |montre |va dans )?(?:mes reglages|les reglages|reglages|parametres|mes parametres|preferences|mes preferences|les parametres)$/.test(n)||/\b(reglages|parametres|preferences|autorisations)\b/.test(n)&&!/\b(porte|fenetre|chaudiere|radiateur|mur|devis)\b/.test(n))return A("parametres");
+    /* abonnement : « mon abonnement », « mes modules », « ajoute le module pointage » */
+    if(/\b(abonnement|abonnements|abonne|mon plan casô|mon forfait|mes modules|souscri\w*|resilier casô)\b|\b(ajoute|prendre|prends|active|activer)\b.*\bmodule\b/.test(n)&&!/\b(devis|facture|client)\b/.test(n))return A("abonnement");
+    /* GPS du pointage */
+    if(/\b(gps|geolocalisation|localisation|position)\b/.test(n)&&/\b(active|activer|allume|allumer|autorise|autoriser|mets|met|marche|ouvre|branche|brancher|lance|lancer|etat|ou en est|mon|le)\b/.test(n)&&!/\b(client|devis|facture|adresse de)\b/.test(n))return A("gps");
+    /* espace du client (casô client final) : son lien personnel */
+    if(/\bespace (?:du |de mon |client|clients)\b|\b(?:lien|portail|acces|page) (?:du |de mon |pour le |pour mon )?client\b|\blien client\b/.test(n)&&!/\b(supprime|supprimer|efface|effacer)\b/.test(n))return A("espace_client",{client:cl()});
+    /* pointer chez un client, ou finir la journée */
+    if(/\b(pointe|pointer|pointes|je pointe|pointe moi)\b/.test(n)&&!/\b(oubli\w*|journal|heures de|combien)\b/.test(n)){var so0=/\b(sortie|depointe|depointer|je pars|fin|termine)\b/.test(n);return [C("pointage",so0?"sortie":"entree",{client:cl()})];}
+    if(/^(?:c est bon |bon |ok )?(?:j ai (?:fini|termine)|je m en vais|je rentre|fini pour aujourd hui|termine pour aujourd hui)(?: pour aujourd hui| ma journee| la journee)?$/.test(n))return [C("pointage","sortie",{})];
     /* déverrouillage par le visage ou l'empreinte (Sauvegarde) */
     if(/\b(face ?id|touch ?id|empreinte digitale|biometri\w*)\b|\bdeverrouill\w*\b.*\b(visage|empreinte)\b/.test(n))return A("faceid");
     /* métier */
@@ -1652,6 +1662,12 @@ function create(E,X,saved,opts){
       if(me)return A("entreprise",{champ:"metier",v:me});if(/\bmetier\b/.test(n)&&/^(?:(?:ouvre|voir|affiche|montre|change|changer|modifie|modifier|choisis|choisir)\s+)?(?:mon|notre) metier$/.test(n))return A("entreprise",{champ:"metier"});}
     if((m=/^(?:ouvre|voir|affiche|montre|change|changer|modifie|modifier|corrige|corriger)\s+(?:mon |ma |le |la |l |notre )?(siret|siren|tva intra\w*|numero de tva|assurance decennale|decennale|validite des devis|logo)$/.exec(n)))
       return A("entreprise",{champ:/^sire/.test(m[1])?"siret":/tva/.test(m[1])?"tvai":/decennale/.test(m[1])?"assur":/validite/.test(m[1])?"valid":"nomEnt"});
+    /* prix d'un matériau en ligne : un magasin nommé, « combien coûte… », « cherche / trouve-moi des… » (pas un devis, un client, un rendez-vous) */
+    if(!/\b(devis|facture|factures|client|clients|rdv|rendez|creneau|planning|heure|heures|chantier|mes prix|mon prix|mes services|tarif horaire|taux horaire|main d oeuvre)\b/.test(n)&&(
+      /\b(prix|tarifs?|coute|coutent|cout|vaut|valent)\b/.test(n)&&/\bchez (?:leroy ?merlin|castorama|casto|brico ?depot|bricomarche|point ?p|cedeo|gedimat|big ?mat|bigmat|manomano|mano mano|amazon|wurth|rexel|sonepar|tout faire|weldom|mr bricolage|lapeyre|kiloutou|dispano|bricoman|tereva|richardson|trenois decamps)\b/.test(n)||
+      /^(?:dis moi |donne moi )?combien (?:coute|coutent|vaut|valent)\b/.test(n)||
+      /^(?:cherche|chercher|recherche|rechercher|trouve|trouver|trouves)(?: moi| nous)? (?:le prix|les prix|le tarif|les tarifs|des|du|de la|de l|un|une|les)\b/.test(n)&&!/\b(photo|plan|adresse|numero|telephone|mail|document|fichier)\b/.test(n)))
+      return A("prix_ligne",{q:appCherche(n.replace(/^(?:dis moi |donne moi )?(?:cherche|chercher|recherche|rechercher|trouve|trouver|trouves|combien)(?: moi| nous)? (?:coute|coutent|vaut|valent)?\s*/,"").replace(/^(?:le |les )?(?:prix|tarifs?) (?:de |du |des |d )?/,"").replace(/^(?:des|du|de la|de l|un|une|les|le|la|d) /,"").replace(/\bchez .*$/,"")).trim()||appCherche(n)});
     /* prix d'un matériau en ligne (écran Fournisseurs) */
     if(!/\b(devis|facture|client|rdv|rendez)\b/.test(n)&&(/\b(en ligne|sur internet|sur le web|sur le net|online)\b/.test(n)&&/\b(prix|tarifs?|coutent?|combien|cherche|chercher|trouve|trouver|compare|comparer|recherche)\b/.test(n)||/\b(compare|comparer|comparaison)\b.*\b(prix|tarifs?)\b/.test(n)||/\b(cherche|chercher|trouve|trouver)\b.*\bchez (?:les|mes) fournisseurs\b/.test(n)||/^(?:ouvre |voir |affiche |montre )?(?:les )?prix en ligne$/.test(n)))
       return A("prix_ligne",{q:/^(?:ouvre |voir |affiche |montre )?(?:les )?prix en ligne$/.test(n)?"":appCherche(n)});
@@ -1712,7 +1728,7 @@ function create(E,X,saved,opts){
     if(/\bjournal\b/.test(n)&&(/\bpoint\w*|heures|entrees|sorties/.test(n)||/^(?:ouvre |voir |affiche |montre |le |mon )*journal$/.test(n)))return A("journal");
     if(/\b(?:etiquettes?|badges?|puces?) nfc\b|\bchantiers?\b.*\bnfc\b|^(?:\S+ )?chantiers$|\bmes chantiers\b/.test(n)&&!/\b(associe|associer|lie|lier|programme)\b/.test(n))return A("chantiers");
     var HEURE=/\b\d{1,2}\s*h|\d{1,2}:\d{2}|\bheures?\b/.test(n);
-    if(!HEURE&&/\bje (?:commence|demarre|debute|attaque|embauche)\b(?! (?:le |la |les |un |une |a ))|\bje suis (?:arrive|arrivee|sur (?:le chantier|place|site))\b|\bdebut de (?:ma )?journee\b|\bje prends (?:mon|le) poste\b/.test(n))return [C("pointage","entree",{})];
+    if(!HEURE&&/\bje (?:commence|demarre|debute|attaque|embauche)\b(?! (?:le |la |les |un |une |a ))|\bje suis (?:arrive|arrivee|sur (?:le chantier|place|site))\b|\bdebut de (?:ma )?journee\b|\bje prends (?:mon|le) poste\b/.test(n))return [C("pointage","entree",{client:cl()})];
     if(!HEURE&&/\bje (?:termine|finis|debauche|m en vais|quitte le chantier)\b(?! (?:le |la |les |un |une |de ))|\bfin de (?:ma )?journee\b|\bj ai fini (?:ma journee|pour aujourd hui)\b/.test(n))return [C("pointage","sortie",{})];
     /* plan d'une pièce (photo, laser) et maquette 3D */
     if(!/\b(planning|maquette|3d)\b/.test(n)&&(/\b(?:plan|metre) (?:de la |d une |de ma |de |du )?(?:piece|pieces|salle|chambre|cuisine|sejour|salon)\b|\b(?:fais|faire|nouveau|cree|creer|dessine|dessiner|prends|prendre)\b.*\bplan\b(?! de (?:travail|paiement|financement))|\bplan (?:photo|depuis (?:une|la) photo|a partir d une photo)\b|\b(?:calibr\w*|telemetre|laser)\b/.test(n)))return A("plan",{laser:/\b(calibr\w*|telemetre|laser)\b/.test(n)});
@@ -1743,7 +1759,7 @@ function create(E,X,saved,opts){
   B.appCmds=appCmds;
   /* rien à faire dans le moteur : c'est casô qui exécute (chat/pont.js) */
   ["langue","compte","secours","deconnexion","entreprise","notifs","restaurer","traduction","equipe","inviter","signature","dictee","devis_module","payant","acompte","autoliq","sanstva","debut","valider","lien","pdf","modele",
-   "avoir","enc_export","encaissements","histo","client_nouveau","contacts","importer","ics","planning","presents","oubli","journal","chantiers","plan","m3d","aide","faceid","prix_ligne","video"].forEach(function(k){X_["app."+k]=function(){return {say:"",ui:"app"};};});
+   "avoir","enc_export","encaissements","histo","client_nouveau","contacts","importer","ics","planning","presents","oubli","journal","chantiers","plan","m3d","aide","faceid","prix_ligne","video","parametres","abonnement","gps","espace_client"].forEach(function(k){X_["app."+k]=function(){return {say:"",ui:"app"};};});
   var LANGN={fr:"français",en:"anglais",es:"espagnol",pt:"portugais",it:"italien",ro:"roumain",pl:"polonais",tr:"turc",ru:"russe",ar:"arabe"};
   var CHN={iban:"IBAN",bic:"BIC",siret:"SIRET",tauxH:"taux horaire",depl:"frais de déplacement",capital:"capital",tvai:"TVA intracommunautaire",assur:"assurance décennale",rcpro:"responsabilité civile pro",valid:"validité des devis",delai:"délai de paiement",metier:"métier",zone:"zone couverte par l’assurance",med:"médiateur",rm:"RCS / RM",forme:"forme juridique",nomEnt:"nom de l’entreprise",telEnt:"téléphone de l’entreprise",mailEnt:"e-mail de l’entreprise",adrEnt:"adresse de l’entreprise"};
   var MODN={depannage:"dépannage",diagnostic:"diagnostic",dpgf:"décomposition du prix global",dqe:"détail quantitatif estimatif",bordereau:"bordereau des prix",travaux:"devis travaux",libre:"devis libre"};
@@ -1769,7 +1785,7 @@ function create(E,X,saved,opts){
     "app.importer":function(a){return a.photo?tr("Photo d’un document fournisseur"):tr("Importer un document fournisseur");},
     "app.ics":function(){return tr("Agenda de l’iPhone");},"app.planning":function(a){return a.vue==="set"?tr("Créneaux de travail"):a.vue==="jour"?tr("Planning du jour"):tr("Planning de la semaine");},
     "app.presents":function(){return tr("Qui est présent");},"app.oubli":function(){return tr("Ajouter un oubli de pointage");},"app.journal":function(){return tr("Journal de pointage");},
-    "app.chantiers":function(){return tr("Chantiers et NFC");},"app.plan":function(a){return a.laser?tr("Plan calibré au laser"):tr("Plan d’une pièce");},
+    "app.chantiers":function(){return tr("Mes chantiers");},"app.parametres":function(){return tr("Paramètres");},"app.abonnement":function(){return tr("Mon abonnement");},"app.gps":function(){return tr("GPS du pointage");},"app.espace_client":function(a){return a.client?tr("Espace client de {0}",[a.client]):tr("Espace client");},"app.plan":function(a){return a.laser?tr("Plan calibré au laser"):tr("Plan d’une pièce");},
     "app.m3d":function(a){return a.nouveau?tr("Nouveau projet 3D"):tr("Maquette 3D");},"app.aide":function(){return tr("Ce que je sais faire");},
     "app.faceid":function(){return "Face ID";},"app.prix_ligne":function(a){return a.q?tr("Prix en ligne : {0}",[a.q]):tr("Prix en ligne");},"app.video":function(){return tr("Maquette depuis une vidéo");}};
   var _dx4=B.describeExtra;B.describeExtra=function(c){var f=D4[c.m+"."+c.a];return f?f(c.args||{}):_dx4(c);};
