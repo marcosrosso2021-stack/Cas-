@@ -342,7 +342,7 @@ function rc2Copy(){const c=$('rc2Code').textContent;
 function rc2Next(){ONB.code=null;$('rc2Code').textContent='';modeEnter()}
 function modeEnter(){const a=accountGet();try{window.CasoAuth&&CasoAuth.profil()}catch(e){}
  if(a&&a.mode==='bricoleur'){stScreen('s-mode');m3dOpen(true);return}
- document.body.classList.remove('starting');go('devis')}
+ document.body.classList.remove('starting');go('home')}
 
 /* ---------- Sous-écrans ---------- */
 let prCur='list',ptCur='go';
