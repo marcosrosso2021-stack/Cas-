@@ -113,7 +113,7 @@ function eqBulleInv(t,tete,p){eqBulle(t,tete+`<p class="mut">…</p>`);const m=C
 const eqFold=s=>String(s||'').normalize('NFD').replace(/\p{M}/gu,'').toLowerCase().replace(/ı/g,'i');/* accents, hamza et ı turc retirés : « أضف » → « اضف » */
 const EQ_TEAM=/(equipe|team|equipo|equipa|squadra|echipa|ekib|ekip|zespol|zespole|zespolu|فريق|команд)/;
 const EQ_COLLAB=/(collaborateur|collaboratrice|ouvrier|ouvriere|employe|employee|salarie|salariee|apprenti|apprentie|compagnon|coworker|colleague|worker|employee|empleado|empleada|trabajador|operario|colaborador|funcionario|operaio|dipendente|collaboratore|angajat|muncitor|colaborator|isci|calisan|pracownik|pracownica|عامل|موظف|рабочий|сотрудник|работник)/;
-const EQ_ADD=/(^|[^\p{L}])(ajoute|ajouter|rajoute|mets|inscris|invite|inviter|invita|invitar|convida|zapros|davet|пригласи|ادع|add|put|anade|agrega|pon|adiciona|coloca|aggiungi|metti|adauga|pune|ekle|dodaj|добавь|добавить|أضف|اضف)(?=[^\p{L}]|$)/u;
+const EQ_ADD=/(^|[^\p{L}])(ajoute|ajouter|rajoute|mets|inscris|add|put|anade|agrega|pon|adiciona|coloca|aggiungi|metti|adauga|pune|ekle|dodaj|добавь|добавить|أضف|اضف)(?=[^\p{L}]|$)/u;
 const EQ_IS=/(^|[^\p{L}])(est|fait partie|travaille|bosse|is|joins|works|esta|forma parte|trabaja|e|fa parte|lavora|este|lucreaza|face parte|var|calisiyor|jest|pracuje|يعمل|работает|теперь)(?=[^\p{L}]|$)/u;
 const EQ_NEW=/(^|[^\p{L}])(nouveau|nouvelle|new|nuevo|nueva|novo|nova|nuovo|nuova|nou|noua|yeni|nowy|nowa|новый|новая|جديد)(?=[^\p{L}]|$)/u;
 const EQ_PAY=/(^|[^\p{L}])(paye|regle|verse|vire|paid|pay|payed|pague|pagado|pagamos|paguei|pagato|pagata|platit|platesc|odedim|odendi|zaplacilem|zaplacilam|zaplacone|دفعت|заплатил|заплатила|выплатил)(?=[^\p{L}]|$)/u;

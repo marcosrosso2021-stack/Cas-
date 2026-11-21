@@ -37,7 +37,7 @@ const DONNEES=()=>{db.clients.push({id:'c1',nom:'Martin',tel:'0611111111',adr:'3
   ['mon abonnement',r=>/abonnement/.test(r.rep)],
   ['mes paramètres',r=>r.scr==='s-cpt'],
   ['mon numéro de TVA est FR12345678901',r=>/FR12345678901/.test(r.rep)],
-  ['mon siret est 123 456 789 00011',r=>/12345678900011/.test(r.rep)],
+  ['mon siret est 123 456 789 00011',r=>/123 456 789 00011/.test(r.rep)],
   ['invite Karim dans mon équipe',r=>/Karim/.test(r.rep)&&/numéro ou son e-mail/.test(r.rep)],
   ['combien d\'heures a fait Karim ce mois',r=>/Karim · ce mois-ci : 0 h 00/.test(r.rep)],
   ['j\'ai fini',r=>/pas pointé/.test(r.rep)],

@@ -1615,7 +1615,7 @@ function create(E,X,saved,opts){
     ["ar","arabe|arabic|arabo|araba|arabski|arapca|араб\\S*|عرب\\S*"]];
   function appLang(n){for(var i=0;i<APP_LANGS.length;i++)if(new RegExp("(?:^|\\s)(?:"+APP_LANGS[i][1]+")(?=\\s|$)").test(n))return APP_LANGS[i][0];return null;}
   /* champs de « Mon entreprise » (fiche de casô) */
-  var APP_CHAMPS=[["tvai","numero de tva(?: intra\\w*)?|tva intra\\w*|numero intracom\\w*|tva intracom\\w*"],["siret","numero siret|siret"],["assur","assurance decennale|decennale"],["telEnt","telephone de l entreprise|telephone pro|numero pro"],["mailEnt","e ?mail de l entreprise|e ?mail pro|adresse mail pro"],["adrEnt","adresse de l entreprise|adresse pro|adresse du siege"],["nomEnt","nom de l entreprise|raison sociale"],["iban","iban"],["bic","bic|swift"],["tauxH","taux horaire|tarif horaire|prix de l heure|prix horaire|heure ht|taux de l heure"],
+  var APP_CHAMPS=[["tvai","numero de tva(?: intra\\w*)?|tva intra\\w*|numero intracom\\w*|tva intracom\\w*"],["iban","iban"],["bic","bic|swift"],["tauxH","taux horaire|tarif horaire|prix de l heure|prix horaire|heure ht|taux de l heure"],
     ["depl","frais de deplacement|deplacement par defaut|prix du deplacement|forfait deplacement"],["capital","capital social|capital"],
     ["rcpro","responsabilite civile|rc pro"],["delai","delai de paiement|delais de paiement"],
     ["zone","zone couverte par l assurance|zone couverte|zone d assurance|zone de l assurance|zone geographique"],["med","mediateur"],["rm","rcs|numero rm|rne|repertoire des metiers"],["forme","forme juridique|statut juridique"],
