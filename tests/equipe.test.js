@@ -54,7 +54,7 @@ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'caso-eq-'));
  await p.evaluate(()=>eqEdit());await p.fill('#eqNom','Sami Benali');await p.fill('#eqTel','07 11 22 33 44');await p.fill('#eqTaux','18');
  await p.evaluate(()=>segOn('eqRole','chef'));await p.evaluate(()=>eqSave());const s=await P('Sami Benali');
  await p.waitForTimeout(400);ok('saisie à la main : chef, 18 €/h, carte d\'invitation dans la fiche',s&&s.role==='chef'&&s.taux===18&&s.inv&&await p.evaluate(()=>/Invitation · Sami Benali/.test($('eqSh').innerText)));
- ok('Pointage : plus de liste « Personnes » en double, un lien vers Mon équipe',await p.evaluate(()=>{ptPage&&go('pt');ptPage('set');return !document.querySelector('#pnNew')&&!!document.querySelector('.eq-lien')}));
+ ok('Pointage : ni liste « Personnes » ni lien Mon équipe en double (l\'équipe se gère dans le menu)',await p.evaluate(()=>{ptPage&&go('pt');ptPage('set');return !document.querySelector('#pnNew')&&!document.querySelector('#ptBody .eq-lien')}));
 
  /* 3. avec l'espace d'équipe du patron : un lien personnel pour rejoindre */
  const st=await p.evaluate(async b=>{const r=await fetch(b+'/api/setup',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({user:'Marcos',password:'motdepasse1'})});const j=await r.json();
