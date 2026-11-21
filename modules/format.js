@@ -64,7 +64,7 @@ function mcRender(){const box=$('s-mc');if(!box)return;const AU=window.CasoAuto,
  box.innerHTML=`<button class="btn sec back" onclick="go('chs')">Retour</button><h1 class="pg-t">${esc(i18nT('Mode chantier'))}</h1>
   <div class="mc">${ici||g==='on'?`<div class="mc-top">${ici?`<b data-noi18n>${esc(ici)}</b>`:'<span></span>'}${g==='on'?`<span class="mc-gps">${esc(i18nT('GPS activé'))}</span>`:''}</div>`:''}
   <div class="mc-g">${B('i-mic','Dicter une note',"go('chat');setTimeout(vnRec,120)")}${B('i-cam','Prendre une photo',"go('chat');setTimeout(chatFilePick,120)")}${B('i-quote','Créer un devis','dvOpen()')}${B('i-clock','Noter mes heures',"go('pt');ptPage('go')")}</div>
-  <button type="button" class="mc-go" onclick="go('chat');setTimeout(()=>{const i=$('chatIn');i&&i.focus()},60)"><svg class="i"><use href="#i-mic"/></svg>${esc(i18nT('Parler à casô'))}</button></div>`}
+  <button type="button" class="mc-go" onclick="go('chat');setTimeout(()=>{const i=$('chatIn');i&&i.focus()},60)"><svg class="i"><use href="#i-mic"/></svg>${esc(i18nT('Parler à l\'assistant'))}</button></div>`}
 
 /* ---------- Documents : le haut de page et l'onglet Échéances (le reste est dessiné par renderHisto) ---------- */
 function docsTop(){const z=$('docTop');if(!z)return;const p=typeof homePaiements==='function'?homePaiements():{tot:0,ret:0};

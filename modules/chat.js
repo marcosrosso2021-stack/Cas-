@@ -129,14 +129,29 @@ function chUndoGo(u){if(u.back){const b=JSON.parse(u.back);db.prices=b.p;db.supp
 let CHAT={qid:null,m:[]};
 function chatLoad(){try{const c=JSON.parse(localStorage.getItem('caso_chat')||'null');if(c&&c.qid)CHAT=c}catch(e){}}
 function chatSave(){CHAT.m.forEach((x,i)=>{if(i<CHAT.m.length-1&&x.undo)delete x.undo});try{localStorage.setItem('caso_chat',JSON.stringify({qid:CHAT.qid,m:CHAT.m.slice(-60)}))}catch(e){}}
-function chatPush(msg){if(CHAT.qid!==q.id){CHAT={qid:q.id,m:[]}}CHAT.m.push(msg);chatSave();chatRender(true)}
+/* conversations précédentes (seulement avec un compte : sans compte, rien n'est enregistré) ; gardées par le coffre comme le reste */
+const CHATS_K='caso_chats';
+function chatsGet(){try{return JSON.parse(localStorage.getItem(CHATS_K)||'[]')||[]}catch(e){return[]}}
+function chatArchive(){if(!CHAT||!CHAT.m||!CHAT.m.some(x=>x.who==='me'))return;if(typeof accountGet==='function'&&!accountGet()&&!(getSync()||{}).token)return;
+ const L=chatsGet().filter(x=>x.qid!==CHAT.qid);L.unshift({qid:CHAT.qid,at:Date.now(),m:CHAT.m.slice(-60)});
+ try{localStorage.setItem(CHATS_K,JSON.stringify(L.slice(0,30)))}catch(e){try{localStorage.setItem(CHATS_K,JSON.stringify(L.slice(0,8)))}catch(x){}}}
+function chatConvTitre(c){const d=db.quotes.find(x=>x.id===c.qid),me=(c.m||[]).find(x=>x.who==='me');const t=String((d&&d.client)||(me&&me.text)||i18nT('Conversation'));return t.charAt(0).toUpperCase()+t.slice(1)}
+function chatConvs(){const L=chatsGet(),cur=CHAT&&CHAT.m&&CHAT.m.some(x=>x.who==='me')?[{qid:CHAT.qid,at:Date.now(),m:CHAT.m,cur:1}]:[];
+ const T=cur.concat(L.filter(x=>!cur.length||x.qid!==CHAT.qid));
+ $('cvsL').innerHTML=T.map(c=>`<button type="button" class="nf-r${c.cur?' on':''}" onclick="chatConvOuvrir('${esc(c.qid)}')"><span class="nf-g"><b data-noi18n dir="auto">${esc(String(chatConvTitre(c)).slice(0,70))}</b><span data-noi18n>${esc(agFmtD(new Date(c.at).toISOString().slice(0,10),{weekday:undefined}))}</span></span></button>`).join('');
+ const s=$('cvsSh'),b=$('cvsBg');b.hidden=false;s.hidden=false;requestAnimationFrame(()=>{s.classList.add('on');b.classList.add('on')})}
+function chatConvsFerme(){const s=$('cvsSh'),b=$('cvsBg');if(!s)return;s.classList.remove('on');b.classList.remove('on');setTimeout(()=>{s.hidden=true;b.hidden=true},200)}
+function chatConvOuvrir(qid){chatConvsFerme();if(CHAT&&CHAT.qid===qid)return;const c=chatsGet().find(x=>x.qid===qid);if(!c)return;
+ chatArchive();const d=db.quotes.find(x=>x.id===qid);if(d){q=JSON.parse(JSON.stringify(d));fillForm()}else{newQuote();q.id=qid}
+ CHAT={qid,m:c.m||[]};chatSave();go('chat')}
+function chatPush(msg){if(CHAT.qid!==q.id){chatArchive();CHAT={qid:q.id,m:[]}}CHAT.m.push(msg);chatSave();chatRender(true)}
 function chatGreet(){const a=accountGet()||{},n=a.prenom||getSync().user||'';
  return{who:'bot',html:`<p>${esc(i18nT('Bonjour {1} !').replace('{1}',n)).replace(' !',n?' !':'!')}</p><p>Dis-moi le client, les travaux et les quantités : je prépare ton devis.</p>`}}
 function chatGrow(t){t.style.height='auto';t.style.height=Math.min(t.scrollHeight,140)+'px'}
 function chatTop(){const t=totals(q);$('ctNum').textContent=[q.client,q.num].filter(Boolean).join(' · ');$('ctTot').textContent=q.lines.length?eur(t.ttc)+' TTC':'';
  const e=$('ctNum').closest('.ct-q');e.hidden=!q.lines.length&&!q.client;e.parentNode.hidden=e.hidden}
 function chatRender(scroll){
- if(CHAT.qid!==q.id){CHAT={qid:q.id,m:[]}}
+ if(CHAT.qid!==q.id){chatArchive();CHAT={qid:q.id,m:[]}}
  const log=$('chatLog');if(!log)return;
  const M=CHAT.m.length?CHAT.m:[chatGreet()];
  const ac=(i,me)=>CHAT.m.length?`<div class="acts${me?' acts-me':''}" data-i="${i}">${chatIc('copier',i)}${me?chatIc('renvoyer',i)+chatIc('modifier',i):''}</div>`:'';
@@ -175,7 +190,7 @@ document.addEventListener('click',ev=>{const b=ev.target.closest('#chatLog [data
  if(b.dataset.ac==='copier'){const x=document.querySelector('#chatLog .msg[data-i="'+i+'"]')||(b.closest('.acts')&&b.closest('.acts').previousElementSibling);chatCopy(m.who==='me'?m.text:(x?x.innerText:'').trim(),b)}
  else if(b.dataset.ac==='renvoyer')chatSend(m.text);
  else if(b.dataset.ac==='modifier')chatEdit(i)});
-function chatNew(){newQuote();CHAT={qid:q.id,m:[]};chatSave();chatRender()}
+function chatNew(){chatArchive();newQuote();CHAT={qid:q.id,m:[]};chatSave();chatRender()}
 function chatNonUndo(){const b=CHAT.m[CHAT.m.length-1];if(!b||b.who!=='bot')return false;if(b.mUndo)return chatMultiUndo();if(b.agUndo&&typeof agUndoLast==='function')agUndoLast();else if(b.prUndo&&typeof prUndoLast==='function')prUndoLast();else if(b.pUndo)chatPontUndo();else if(b.undo)chatUndo();else if(b.chUndo)chUndoGo(b.chUndo);else return false;return true}
 function chatUndo(){const m=CHAT.m[CHAT.m.length-1];if(!m||!m.undo)return;{const cur=q;q=JSON.parse(m.undo);if(cur.num)q.num=cur.num;if(cur.sign)q.sign=cur.sign;if(cur.status)q.status=cur.status}fillForm();store();CHAT.m.pop();
  const me=CHAT.m[CHAT.m.length-1];if(me&&me.who==='me'){$('chatIn').value=me.text;CHAT.m.pop()}chatSave();chatRender()}

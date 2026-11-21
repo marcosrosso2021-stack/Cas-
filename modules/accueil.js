@@ -26,7 +26,7 @@ function homeRender(){const box=$('s-home');if(!box)return;
    <span class="hm-m"><span><small>${esc(i18nT('À encaisser'))}</small><b class="hm-ok" data-noi18n>${eur(pay.tot)}</b></span><span><small>${esc(i18nT('En retard'))}</small><b class="${pay.ret>0?'hm-ko':''}" data-noi18n>${eur(pay.ret)}</b></span></span></button>
   <button type="button" class="hm-c" onclick="go('pt');ptPage('set')"><span class="hm-t"><b>${esc(i18nT('Mes chantiers'))}</b>${L.length?`<span data-noi18n>${L.length}</span>`:chev}</span>
    ${x?`<span class="hm-r"><span class="hm-ri"><svg class="i"><use href="#i-helmet"/></svg></span><span class="hm-rt"><b data-noi18n>${esc(x.c.nom)}</b><span data-noi18n>${esc(quand)}</span></span></span>`:''}</button>
-  <button type="button" class="hm-q" onclick="go('chat');setTimeout(()=>{const i=$('chatIn');i&&i.focus()},60)"><span>${esc(i18nT('Écris ou parle à casô'))}</span><i><svg class="i"><use href="#i-mic"/></svg></i></button>
+  <button type="button" class="hm-q" onclick="go('chat');setTimeout(()=>{const i=$('chatIn');i&&i.focus()},60)"><span>${esc(i18nT('Écris ou parle'))}</span><i><svg class="i"><use href="#i-mic"/></svg></i></button>
  </div>`;
  try{aboMenu()}catch(e){}}
 /* à l'ouverture : l'Accueil est l'écran affiché d'office (index.html) ; on le remplit. Le collaborateur arrive sur ses chantiers. */
