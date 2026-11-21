@@ -287,18 +287,37 @@ function garderDevis(){try{storeQ(q);if(typeof fillForm==="function")fillForm();
 var CHAMPS_ENT={nomEnt:"nom",telEnt:"tel",mailEnt:"email",adrEnt:"adr",med:"mediateur"};
 function nb(v){var m=String(v||"").replace(",",".").match(/\d+(?:\.\d+)?/);return m?m[0].replace(".",","):"";}
 /* la personne et le chantier du pointage, quand casô peut les savoir sans demander */
-function quiPointe(){var P0=db.people||[],a=typeof accountGet==="function"?accountGet()||{}:{},pr=cle(a.prenom||"");
-  var p=P0.filter(function(x){return pr&&cle(x.nom).split(" ")[0]===pr.split(" ")[0];})[0]||(P0.length===1?P0[0]:null);return p;}
+function quiPointe(){var P0=(db.people||[]).filter(function(x){return !x.parti;}),a=typeof accountGet==="function"?accountGet()||{}:{},pr=cle(a.prenom||"");
+  /* collaborateur : sa fiche dans l'équipe ; artisan : sa fiche « moi » (créée la première fois, comme le pointage automatique) */
+  if(typeof eqMoi==="function"){var em=eqMoi();if(em)return em;}
+  var p=P0.filter(function(x){return x.moi;})[0]||P0.filter(function(x){return pr&&cle(x.nom).split(" ")[0]===pr.split(" ")[0];})[0]||(!a.prenom&&P0.length===1?P0[0]:null);/* « pointe-moi » : l'artisan lui-même, pas son seul ouvrier */
+  if(!p&&a.prenom){p={id:"moi",nom:String(a.prenom).split(" ")[0],moi:true,role:"patron",at:Date.now()};if(!(db.people||[]).some(function(x){return x.id==="moi";})){(db.people=db.people||[]).push(p);save();}}
+  return p;}
+/* le chantier d'un client : celui qui existe déjà, sinon créé avec son adresse (pour le pointage et le GPS) */
+function chantierClient(nom){var k=cle(nom||"");if(!k)return null;var C0=db.chantiers=db.chantiers||[],cl=(db.clients||[]).filter(function(c){return cle(c.nom)===k;})[0];
+  var ch=C0.filter(function(c){return cl&&c.cid===cl.id;})[0]||C0.filter(function(c){return cle(c.nom).indexOf(k)===0;})[0];if(ch)return ch.id;
+  ch={id:(typeof uid==="function"?uid():String(Date.now())).slice(-6),nom:(cl?cl.nom:nom)+(cl&&cl.adr?" – "+cl.adr:""),adr:cl&&cl.adr||"",cid:cl?cl.id:undefined,at:Date.now()};C0.push(ch);save();return ch.id;}
 function chantierDe(pid,sortie){var E0=(db.pts||[]).filter(function(x){return x.p===pid;}).sort(function(x,y){return y.ts-x.ts;});
   if(sortie){var o=E0[0];return o&&o.t==="in"?o.c:(E0.length?E0[0].c:null);}var C0=db.chantiers||[];return E0.length?E0[0].c:(C0.length===1?C0[0].id:null);}
 function appFaire(a,o,r,t){var x={says:[],explain:r.explain};var cur=devisCourant(),pasDevis=function(){x.says=[P.tr("Il n’y a pas encore de devis.")];};
   switch(a){
     case "langue":if(o.l&&typeof vnSetLang==="function"){x.explain="";try{vnSetLang(o.l);P.B.setLangue(o.l);}catch(y){}x.says=[P.tr("C’est fait.")];}else ecran("cpt","#uiLang");break;
-    case "compte":ecran("cpt","#acctCard",function(){cptPage("bk");});break;
+    case "compte":ecran("cpt",null,function(){cptPage(typeof ptOuvrier==="function"&&ptOuvrier()?"moi":"acc");});break;
+    case "parametres":ecran("cpt",null,function(){cptPage("app");});break;
+    case "abonnement":x.explain="";if(typeof dwPlanTap==="function"&&document.getElementById("dwPlanGo")&&!document.getElementById("dwPlanGo").hidden)setTimeout(function(){try{dwPlanTap();}catch(y){}},50);
+      else if(typeof aboOpen==="function")setTimeout(function(){try{aboOpen("");}catch(y){}},50);else ecran("cpt",null,function(){cptPage("acc");});x.says=[P.tr("Ton abonnement : les modules que tu as, et ceux que tu peux ajouter.")];break;
+    case "gps":ecran("pt",null,function(){ptPage("set");if(window.CasoAuto&&CasoAuto.fix)setTimeout(function(){CasoAuto.fix();},300);});
+      x.says=[window.CasoAuto?(CasoAuto.gps&&CasoAuto.gps()==="on"?P.tr("Le GPS est déjà activé. Tes chantiers avec une adresse sont surveillés."):P.tr("J’ouvre l’autorisation de la position : accepte, et le pointage se fera tout seul sur tes chantiers.")):P.tr("Le GPS se lance seulement sur un téléphone.")];x.explain="";break;
+    case "espace_client":{var kc=cle(o.client||""),cc=(db.clients||[]).filter(function(c){return kc&&cle(c.nom)===kc;})[0];x.explain="";
+      if(!cc){x.says=[P.tr("De quel client ? Dis par exemple « espace client de Martin ».")];break;}
+      ecran("cli",null,function(){if(typeof cliEdit==="function"){cliEdit(cc.id);setTimeout(function(){if(typeof cliEspace==="function")cliEspace();},200);}});
+      x.says=[P.tr("Je prépare l’espace client de {0} : son lien personnel, à envoyer.",[cc.nom])];break;}
     case "secours":x.bouton={act:"secours",label:r.explain};x.explain="";break;
     case "deconnexion":x.bouton={act:"deconnexion",label:r.explain};x.explain="";break;
     case "entreprise":
       if(o.champ&&o.v){var k=CHAMPS_ENT[o.champ]||o.champ,v=o.v;if(/^(tauxH|depl|capital|valid)$/.test(k))v=nb(v);if(/^(iban|bic)$/.test(k))v=String(o.v).toUpperCase().replace(/[^A-Z0-9 ]/g,"").trim();
+        if(k==="tvai")v=String(o.v).toUpperCase().replace(/[^A-Z0-9]/g,"");if(k==="siret"){v=String(o.v).replace(/\D/g,"");if(v.length!==14){x.says=[P.tr("Le SIRET a 14 chiffres.")];break;}}
+        if(/^(nom|tel|email|adr|assur)$/.test(k)){var mr=/(?:c[’']est|\best|\bsera|:|=)\s*(.+?)[\s.!]*$/i.exec(t);if(mr)v=mr[1];}
         if(!v){x.says=[P.tr("Je n’ai pas compris la valeur.")];break;}
         var vAff=v;if(k==="metier"){var om=[].slice.call(document.querySelectorAll("#eMetier option")).filter(function(y){return y.value===v;})[0];if(!om){ecran("cpt","#eMetier");break;}vAff=om.textContent;}
         if(k==="zone"){var mz=/(?:c[’']est|\best|:|=)\s*(.+?)[\s.!]*$/i.exec(t);if(mz)v=vAff=mz[1];}
@@ -376,7 +395,8 @@ function autreFaire(l,o,r,t,avant){var x=null;
     case "pointage.nfc":ecran("pt",null,function(){ptPage("set");});x={says:[],explain:P.B.describe([{m:"app",a:"chantiers",args:{}}])};break;
     case "bibliotheque.ouvrir":x=appFaire("aide",{},r,t);break;
     case "devis.pdf":case "factures.pdf":x={says:r.says,explain:r.explain};break;
-    case "pointage.entree":case "pointage.sortie":{var pp=quiPointe(),so=l==="pointage.sortie",cid=pp?chantierDe(pp.id,so):null;
+    case "pointage.entree":case "pointage.sortie":{var pp=quiPointe(),so=l==="pointage.sortie",cid=pp?(!so&&o.client?chantierClient(o.client):chantierDe(pp.id,so)):null;
+      if(so&&pp&&!cid){x={says:[P.tr("Tu n’es pas pointé.")],explain:""};break;}
       if(!pp||!cid||typeof punch!=="function"){ecran("pt",null,function(){ptPage("go");});x={says:[],explain:P.B.describe([{m:"pointage",a:"ouvrir",args:{}}])};break;}
       {var le=(db.pts||[]).filter(function(e2){return e2.p===pp.id;}).sort(function(e2,e3){return e3.ts-e2.ts;})[0],dedans=le&&le.t==="in"&&Date.now()-le.ts<16*3600000;
         if(!so&&dedans){var h0=new Date(le.ts);x={says:[P.tr("Tu es déjà pointé depuis {0}.",[(h0.getHours()<10?"0":"")+h0.getHours()+":"+(h0.getMinutes()<10?"0":"")+h0.getMinutes()])],explain:""};break;}

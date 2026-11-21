@@ -112,6 +112,29 @@ function adrInput(el){clearTimeout(ADR.t);const v=el.value.trim();
   b.hidden=false}catch(e){}},350)}
 document.addEventListener('input',e=>{const el=e.target;if(el&&el.matches&&el.matches('input[data-adr]')&&e.isTrusted)adrInput(el)});
 document.addEventListener('focusout',e=>{const el=e.target;if(el&&el.matches&&el.matches('input[data-adr]'))setTimeout(()=>adrHide(el),150)});
+/* ---------- adresses dites au chat (tapées ou dictées) : vérifiées auprès de la Base Adresse Nationale ----------
+   La dictée suit la langue de l'appli : une ville française dite dans une autre langue arrive mal écrite
+   (« ex em provença »). Après chaque message, les adresses nouvelles ou changées des clients, chantiers et rendez-vous
+   sont cherchées dans la base officielle, qui rend la commune et le code postal exacts (l'écrit d'origine est gardé). */
+const ADRV={q:[],busy:false,snap:null};
+const adrCles=()=>{const m=new Map();['clients','chantiers','events'].forEach(k=>(db[k]||[]).forEach(o=>{if(o&&o.adr)m.set(k+':'+o.id,o.adr)}));return m};
+function adrAvant(){try{ADRV.snap=adrCles()}catch(e){ADRV.snap=null}}
+function adrApres(){const a=ADRV.snap;ADRV.snap=null;if(!a)return;
+ ['clients','chantiers','events'].forEach(k=>(db[k]||[]).forEach(o=>{if(o&&o.adr&&!o.adrOk&&a.get(k+':'+o.id)!==o.adr&&!ADRV.q.includes(o))ADRV.q.push(o)}));
+ if(ADRV.q.length)setTimeout(adrTourne,300)}
+async function adrTourne(){if(ADRV.busy)return;if(navigator.webdriver&&!window.ADR_VERIF){ADRV.q=[];return}/* essais automatiques : pas d'appel réseau */
+ ADRV.busy=true;try{while(ADRV.q.length){const o=ADRV.q.shift();if(!o.adr||o.adrOk)continue;const r=await adrOfficielle(o.adr);if(!r)continue;
+  const av=o.adr;if(r.label!==av){o.adrSaisie=o.adrSaisie||av;o.adr=r.label;
+   /* le chantier qui porte l'adresse dans son nom suit la correction */
+   (db.chantiers||[]).forEach(c=>{if(c.nom&&c.nom.includes(av)){c.nom=c.nom.replace(av,r.label);if(c.adr===av)c.adr=r.label;c.geo=c.geo||r.geo;c.at=Date.now()}})}
+  o.adrOk=1;if((db.chantiers||[]).includes(o)&&r.geo&&!o.geo)o.geo=r.geo;o.at=Date.now();o.updatedAt=Date.now();save()}}
+ finally{ADRV.busy=false}}
+/* l'adresse officielle la plus proche (score de la base ≥ 0,6), ou rien */
+async function adrOfficielle(a){if(navigator.onLine===false)return null;
+ try{const r=await fetch((window.ADR_GEO||'https://data.geopf.fr/geocodage/search')+'?limit=1&q='+encodeURIComponent(String(a).slice(0,200)));if(!r.ok)return null;
+  const j=await r.json(),f=(j.features||[])[0],p=f&&f.properties;if(!p||!p.label||(+p.score||0)<0.6)return null;
+  const g=f.geometry&&f.geometry.coordinates;return{label:p.label,ville:p.city||'',cp:p.postcode||'',geo:g?{lat:g[1],lng:g[0]}:null}}catch(e){return null}}
+
 /* actions rapides d'une fiche : appeler, SMS, e-mail, itinéraire */
 function cfActs(x){if(!x)return'';const A=[];
  if(x.tel){const d=x.tel.replace(/[^\d+]/g,'');A.push(`<a href="tel:${esc(d)}"><svg class="i"><use href="#i-phone"/></svg><span>Appeler</span></a>`,`<a href="sms:${esc(d)}"><svg class="i"><use href="#i-sms"/></svg><span>SMS</span></a>`)}

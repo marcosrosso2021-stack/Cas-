@@ -44,6 +44,8 @@ function planRoute(t0){const r=' '+String(t0).toLowerCase().normalize('NFD').rep
 function planH(h){const H=Math.floor(h),M=Math.round((h-H)*60);return H+' h'+(M?' '+String(M).padStart(2,'0'):'')}
 function chatSend(text){
  const inp=$('chatIn');const t0=String(text??inp.value).trim();if(!t0)return;
+ /* adresses dites dans ce message : vérifiées ensuite (modules/clients.js) */
+ if(typeof adrAvant==='function'&&!chatSend.multi&&!ADRV.snap){adrAvant();setTimeout(()=>{try{adrApres()}catch(e){}},2500)}
  /* une phrase à plusieurs demandes est en cours : la suivante attend son tour */
  if(chatMulti.busy&&!chatSend.multi){inp.value='';setTimeout(()=>chatSend(t0),400);return}
  /* premier message : le modèle qui comprend les fautes doit être là */
